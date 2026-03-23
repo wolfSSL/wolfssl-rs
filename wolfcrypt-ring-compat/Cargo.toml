@@ -1,0 +1,68 @@
+[package]
+name = "wolfcrypt-ring-compat"
+authors = ["wolfSSL"]
+version = "1.16.1"
+links = "wolfcrypt_ring_compat_sys"
+edition = "2021"
+rust-version = "1.71.0"
+keywords = ["wolfcrypt", "wolfssl", "fips"]
+license = "MIT"
+description = "wolfcrypt-ring-compat is a cryptographic library using wolfSSL for its cryptographic operations. This library strives to be API-compatible with the popular Rust library named ring."
+documentation = "https://docs.rs/crate/wolfcrypt-ring-compat"
+homepage = "https://github.com/wolfSSL/wolfssl-rs"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+# Exclude tests and test data from published crate
+exclude = [
+    "third_party/NIST/*",
+    "tests/**/*",
+    "*.txt",
+    "*.p8",
+    "*.der",
+    "*.bin",
+]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# The lib name is intentionally `ring` — this crate is a drop-in replacement
+# for briansmith/ring. Downstream code uses `use ring::...` unchanged, and
+# swaps backends via Cargo [patch]. You MUST NOT have both `ring` and
+# `wolfcrypt-ring-compat` in the same dependency tree — they export the same
+# library name and will collide.
+[lib]
+name = "ring"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "wolfcrypt_ring_compat_docsrs"]
+features = ["unstable"]
+
+[features]
+alloc = []
+std = ["alloc"]
+default = ["wolfcrypt-rs", "std", "alloc", "ring-io", "ring-sig-verify"]
+ring-io = ["dep:untrusted"]
+ring-sig-verify = ["dep:untrusted"]
+test_logging = []
+unstable = []
+dev-tests-only = []
+
+# require non-FIPS
+non-fips = ["wolfcrypt-rs"]
+
+# require FIPS
+fips = ["wolfcrypt-rs", "wolfcrypt-rs/fips"]
+
+[dependencies]
+spin.workspace = true
+untrusted = { workspace = true, optional = true }
+wolfcrypt-rs = { version = "0.1.0", path = "../wolfcrypt-rs", default-features = false, optional = true }
+zeroize.workspace = true
+
+[dev-dependencies]
+paste.workspace = true
+lazy_static.workspace = true
+clap = { workspace = true, features = ["derive"] }
+hex.workspace = true
+regex.workspace = true
+
+[package.metadata.cargo-udeps.ignore]
+development = ["which", "home", "regex", "regex-automata", "regex-syntax", "proc-macro2", "jobserver", "cc", "once_cell"]

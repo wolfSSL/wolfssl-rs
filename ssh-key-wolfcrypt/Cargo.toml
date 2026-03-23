@@ -1,0 +1,111 @@
+[package]
+name = "ssh-key-wolfcrypt"
+version = "0.1.0"
+description = """
+Fork of ssh-key with wolfCrypt as the cryptographic backend.
+
+SSH key file format decoders/encoders as described in RFC4251/RFC4253
+and OpenSSH key formats, with signing and verification powered by wolfCrypt
+instead of pure-Rust RustCrypto implementations.
+"""
+license = "Apache-2.0 OR MIT"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+
+# The lib name is intentionally `ssh_key` — NOT `ssh_key_wolfcrypt`.
+# This crate is a drop-in replacement for RustCrypto's `ssh-key`: downstream
+# code uses `use ssh_key::...` unchanged, and swaps backends by switching the
+# Cargo dependency.  You MUST NOT have both `ssh-key` and `ssh-key-wolfcrypt`
+# in the same dependency tree — they export the same `ssh_key` library name
+# and will collide.
+[lib]
+name = "ssh_key"
+
+# ssh-cipher and ssh-encoding: pre-release crates from upstream RustCrypto/SSH,
+# pinned to the rc.8 release commit. Not yet on crates.io.
+[dependencies.cipher]
+git = "https://github.com/RustCrypto/SSH"
+tag = "ssh-cipher/v0.3.0-rc.8"
+package = "ssh-cipher"
+features = ["zeroize"]
+
+[dependencies.encoding]
+git = "https://github.com/RustCrypto/SSH"
+tag = "ssh-encoding/v0.3.0-rc.8"
+package = "ssh-encoding"
+features = ["base64", "digest", "pem", "subtle", "zeroize"]
+
+[dependencies]
+sha2 = { version = "0.11.0-rc.5", default-features = false }
+signature = { version = "3.0.0-rc.10", default-features = false }
+subtle = { version = "2", default-features = false }
+zeroize = { version = "1", default-features = false }
+
+# wolfcrypt — provides all cryptographic operations.
+#
+# VERSION MISMATCH: this crate uses pre-release RustCrypto trait versions
+# (signature 3.0-rc) because upstream ssh-key tracks the RustCrypto SSH
+# crates' next-gen releases. wolfcrypt uses signature 2.2 (current stable) —
+# see wolfcrypt/Cargo.toml for the version policy.
+#
+# Workaround: FFI bridging in signature.rs bypasses wolfcrypt's
+# Signer/Verifier trait impls (blocked on signature 3.0 stable).
+# See signature.rs for details.
+wolfcrypt = { path = "../wolfcrypt", default-features = false, features = [
+    "rand", "ed25519", "ecdsa", "ecdh", "ecc", "rsa", "rsa-direct", "signature", "digest",
+] }
+
+# optional dependencies (non-crypto, kept as-is)
+argon2 = { version = "0.6.0-rc.7", optional = true, default-features = false, features = ["alloc"] }
+bcrypt-pbkdf = { version = "0.11.0-rc.6", optional = true, default-features = false, features = ["alloc"] }
+hex = { version = "0.4", optional = true, default-features = false, features = ["alloc"] }
+hmac = { version = "0.13.0-rc.5", optional = true }
+rand_core = { version = "0.10", optional = true, default-features = false }
+sec1 = { version = "0.8", optional = true, default-features = false, features = ["point"] }
+serde = { version = "1.0.16", optional = true }
+sha1 = { version = "0.11.0-rc.5", optional = true, default-features = false, features = ["oid"] }
+
+[dev-dependencies]
+chacha20 = { version = "0.10", features = ["rng"] }
+hex-literal = "1"
+signature = { version = "3.0.0-rc.10" }
+
+[features]
+default = ["ecdsa", "rand_core", "std"]
+alloc = ["encoding/alloc", "signature/alloc", "zeroize/alloc"]
+std = ["alloc"]
+
+# Crypto features — now backed by wolfcrypt instead of pure-Rust crates
+crypto = ["ed25519", "p256", "p384", "p521", "rsa"]
+# DSA is not supported — enabling this feature is a compile error.
+# DSA was deprecated by NIST (FIPS 186-5, 2023) and removed from OpenSSH 9.8
+# (2024). Use Ed25519 or ECDSA instead. DSA key *parsing* still works (gated
+# on `alloc`), but signing/verification is not available.
+# NOTE: this feature is deliberately excluded from `crypto` and from the
+# docs.rs `features` list so that `--all-features` builds still succeed.
+dsa = []
+ecdsa = ["dep:sec1"]
+ed25519 = ["rand_core"]
+encryption = [
+    "dep:bcrypt-pbkdf",
+    "alloc",
+    "cipher/aes-cbc",
+    "cipher/aes-ctr",
+    "cipher/aes-gcm",
+    "cipher/chacha20poly1305",
+    "rand_core"
+]
+p256 = ["ecdsa"]
+p384 = ["ecdsa"]
+p521 = ["ecdsa"]
+rsa = ["alloc", "encoding/bigint", "rand_core"]
+sha1 = ["dep:sha1"]
+tdes = ["cipher/tdes", "encryption"]
+ppk = ["dep:hex", "alloc", "cipher/aes-cbc", "dep:hmac", "dep:argon2", "dep:sha1"]
+
+[package.metadata.docs.rs]
+# Explicit feature list instead of all-features = true, because the `dsa`
+# feature is a compile_error! gate and must not be enabled by docs builds.
+features = ["crypto", "encryption", "ppk", "sha1", "tdes", "serde", "std"]
+rustdoc-args = ["--cfg", "docsrs"]

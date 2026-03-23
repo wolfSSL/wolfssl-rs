@@ -1,0 +1,1462 @@
+//! RSA signing/verification and encryption/decryption backed by wolfCrypt.
+//!
+//! Provides [`RsaPrivateKey`] and [`RsaPublicKey`] that implement the
+//! RustCrypto [`signature::Signer`] and [`signature::Verifier`] traits for
+//! both PKCS#1v1.5 ([`RsaPkcs1v15Signature`]) and PSS ([`RsaPssSignature`])
+//! schemes. The trait impls default to SHA-256; the `_with_digest` methods
+//! accept an [`RsaDigest`] to select SHA-256, SHA-384, or SHA-512.
+//!
+//! The same key types also provide RSA encryption (OAEP and PKCS#1v1.5
+//! padding) because RSA uses the same keypair for both operations:
+//! the private key signs and decrypts, the public key verifies and encrypts.
+//!
+//! Key generation uses the EVP_PKEY API with wolfSSL's OpenSSL compatibility
+//! layer. Signing and verification use the `EVP_DigestSign*` /
+//! `EVP_DigestVerify*` family per RFC 8017 (PKCS#1 v2.2).
+//!
+//! # Example
+//!
+//! ```ignore
+//! use wolfcrypt::rsa::{RsaPrivateKey, RsaPkcs1v15Signature};
+//! use signature_trait::{Signer, Verifier};
+//!
+//! let sk = RsaPrivateKey::generate(2048).unwrap();
+//! let pk = sk.public_key();
+//! let sig: RsaPkcs1v15Signature = sk.sign(b"hello world");
+//! pk.verify(b"hello world", &sig).unwrap();
+//! ```
+
+use core::cell::UnsafeCell;
+use core::ffi::c_void;
+use core::ptr;
+
+use alloc::boxed::Box;
+use alloc::vec;
+use alloc::vec::Vec;
+
+use crate::error::{check, len_as_u32, WolfCryptError};
+use wolfcrypt_rs::{
+    EVP_DigestSignFinal, EVP_DigestSignInit, EVP_DigestSignUpdate,
+    EVP_DigestVerifyFinal, EVP_DigestVerifyInit, EVP_DigestVerifyUpdate,
+    EVP_MD, EVP_MD_CTX, EVP_MD_CTX_free, EVP_MD_CTX_new,
+    EVP_PKEY, EVP_PKEY_CTX, EVP_PKEY_CTX_free, EVP_PKEY_CTX_new,
+    EVP_PKEY_CTX_new_id,
+    EVP_PKEY_CTX_set_rsa_keygen_bits, EVP_PKEY_CTX_set_rsa_mgf1_md,
+    EVP_PKEY_CTX_set_rsa_oaep_md,
+    EVP_PKEY_CTX_set_rsa_padding, EVP_PKEY_CTX_set_rsa_pss_saltlen,
+    EVP_PKEY_encrypt, EVP_PKEY_encrypt_init,
+    EVP_PKEY_decrypt, EVP_PKEY_decrypt_init,
+    EVP_PKEY_free, EVP_PKEY_keygen, EVP_PKEY_keygen_init,
+    EVP_PKEY_RSA, EVP_sha1, EVP_sha256, EVP_sha384, EVP_sha512,
+    i2d_PUBKEY, i2d_PrivateKey, d2i_PUBKEY, d2i_PrivateKey,
+    RSA_PKCS1_PADDING, RSA_PKCS1_OAEP_PADDING,
+    RSA_PKCS1_PSS_PADDING, RSA_PSS_SALTLEN_DIGEST,
+};
+
+// ---------------------------------------------------------------------------
+// Signature types
+// ---------------------------------------------------------------------------
+
+/// Minimum RSA signature length in bytes. Corresponds to a 512-bit modulus,
+/// which is the smallest wolfSSL can be configured to support (`RSA_MIN_SIZE`).
+/// Any signature shorter than this is not a valid RSA signature.
+const RSA_MIN_SIG_BYTES: usize = 64;
+
+/// An RSA PKCS#1v1.5 signature (RFC 8017 Section 8.2).
+///
+/// Variable-length: the size equals the RSA modulus size in bytes (e.g. 256
+/// bytes for a 2048-bit key).
+#[derive(Clone, Debug)]
+pub struct RsaPkcs1v15Signature(Vec<u8>);
+
+impl AsRef<[u8]> for RsaPkcs1v15Signature {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl signature_trait::SignatureEncoding for RsaPkcs1v15Signature {
+    type Repr = Box<[u8]>;
+}
+
+impl TryFrom<&[u8]> for RsaPkcs1v15Signature {
+    type Error = signature_trait::Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if bytes.len() < RSA_MIN_SIG_BYTES {
+            return Err(signature_trait::Error::new());
+        }
+        Ok(Self(bytes.to_vec()))
+    }
+}
+
+impl From<RsaPkcs1v15Signature> for Box<[u8]> {
+    fn from(sig: RsaPkcs1v15Signature) -> Box<[u8]> {
+        sig.0.into_boxed_slice()
+    }
+}
+
+/// An RSA-PSS signature (RFC 8017 Section 8.1).
+///
+/// Variable-length: the size equals the RSA modulus size in bytes.
+#[derive(Clone, Debug)]
+pub struct RsaPssSignature(Vec<u8>);
+
+impl AsRef<[u8]> for RsaPssSignature {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl signature_trait::SignatureEncoding for RsaPssSignature {
+    type Repr = Box<[u8]>;
+}
+
+impl TryFrom<&[u8]> for RsaPssSignature {
+    type Error = signature_trait::Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if bytes.len() < RSA_MIN_SIG_BYTES {
+            return Err(signature_trait::Error::new());
+        }
+        Ok(Self(bytes.to_vec()))
+    }
+}
+
+impl From<RsaPssSignature> for Box<[u8]> {
+    fn from(sig: RsaPssSignature) -> Box<[u8]> {
+        sig.0.into_boxed_slice()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// RAII wrapper for EVP_MD_CTX
+// ---------------------------------------------------------------------------
+
+/// Owned EVP_MD_CTX that frees on drop.
+struct MdCtx(*mut EVP_MD_CTX);
+
+impl MdCtx {
+    fn new() -> Result<Self, WolfCryptError> {
+        let p = unsafe { EVP_MD_CTX_new() };
+        if p.is_null() {
+            return Err(WolfCryptError::ALLOC_FAILED);
+        }
+        Ok(Self(p))
+    }
+
+    fn as_mut_ptr(&self) -> *mut EVP_MD_CTX {
+        self.0
+    }
+}
+
+impl Drop for MdCtx {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { EVP_MD_CTX_free(self.0) };
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// RAII wrapper for EVP_PKEY_CTX
+// ---------------------------------------------------------------------------
+
+/// Owned EVP_PKEY_CTX that frees on drop.
+struct PkeyCtx(*mut EVP_PKEY_CTX);
+
+impl PkeyCtx {
+    /// Create a new EVP_PKEY_CTX from an existing EVP_PKEY.
+    fn new(pkey: *mut EVP_PKEY) -> Result<Self, WolfCryptError> {
+        let p = unsafe { EVP_PKEY_CTX_new(pkey, ptr::null_mut()) };
+        if p.is_null() {
+            return Err(WolfCryptError::ALLOC_FAILED);
+        }
+        Ok(Self(p))
+    }
+
+    fn as_mut_ptr(&self) -> *mut EVP_PKEY_CTX {
+        self.0
+    }
+}
+
+impl Drop for PkeyCtx {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { EVP_PKEY_CTX_free(self.0) };
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/// Hash algorithm used for RSA signing/verification.
+///
+/// Selects which `EVP_MD` is passed to `EVP_DigestSign*`/`EVP_DigestVerify*`
+/// and to the PSS MGF1 configuration.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RsaDigest {
+    /// SHA-1 (20-byte digest). Required for legacy SSH `ssh-rsa` signatures.
+    Sha1,
+    /// SHA-256 (32-byte digest).
+    Sha256,
+    /// SHA-384 (48-byte digest).
+    Sha384,
+    /// SHA-512 (64-byte digest).
+    Sha512,
+}
+
+impl RsaDigest {
+    /// Return the wolfSSL `EVP_MD` pointer for this digest.
+    fn evp_md(self) -> *const EVP_MD {
+        unsafe {
+            match self {
+                Self::Sha1 => EVP_sha1(),
+                Self::Sha256 => EVP_sha256(),
+                Self::Sha384 => EVP_sha384(),
+                Self::Sha512 => EVP_sha512(),
+            }
+        }
+    }
+}
+
+/// RSA padding mode used by the internal `evp_*` helpers.
+///
+/// Converts to the wolfSSL `i32` constant at the FFI boundary via
+/// [`as_c_int`](Self::as_c_int).
+#[derive(Clone, Copy)]
+enum RsaPadding {
+    /// PKCS#1 v1.5 (RFC 8017 §7.2 / §8.2).
+    Pkcs1v15,
+    /// PSS with SHA-256, salt length = digest length (RFC 8017 §8.1).
+    Pss,
+    /// OAEP with SHA-256 (RFC 8017 §7.1).
+    Oaep,
+}
+
+impl RsaPadding {
+    fn as_c_int(self) -> i32 {
+        match self {
+            Self::Pkcs1v15 => RSA_PKCS1_PADDING,
+            Self::Pss => RSA_PKCS1_PSS_PADDING,
+            Self::Oaep => RSA_PKCS1_OAEP_PADDING,
+        }
+    }
+}
+
+/// RSA public-key encryption via `EVP_PKEY_encrypt` with the given padding.
+///
+/// For [`RsaPadding::Oaep`], also sets the OAEP hash to SHA-256.
+/// The two-call pattern queries the output length first, then performs the
+/// actual encryption.
+unsafe fn evp_encrypt(
+    pkey: *mut EVP_PKEY,
+    plaintext: &[u8],
+    padding: RsaPadding,
+) -> Result<Vec<u8>, WolfCryptError> {
+    // SAFETY: caller guarantees `pkey` is a valid, non-null EVP_PKEY.
+    // All FFI calls below operate on `pkey` or the derived `ctx`.
+    unsafe {
+        let ctx = PkeyCtx::new(pkey)?;
+
+        let rc = EVP_PKEY_encrypt_init(ctx.as_mut_ptr());
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_encrypt_init" });
+        }
+
+        let rc = EVP_PKEY_CTX_set_rsa_padding(ctx.as_mut_ptr(), padding.as_c_int());
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_padding" });
+        }
+
+        if matches!(padding, RsaPadding::Oaep) {
+            let rc = EVP_PKEY_CTX_set_rsa_oaep_md(ctx.as_mut_ptr(), EVP_sha256());
+            if rc != 1 {
+                return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_oaep_md" });
+            }
+        }
+
+        // First call: determine output size.
+        let mut out_len: usize = 0;
+        let rc = EVP_PKEY_encrypt(
+            ctx.as_mut_ptr(),
+            ptr::null_mut(),
+            &mut out_len,
+            plaintext.as_ptr(),
+            plaintext.len(),
+        );
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_encrypt" });
+        }
+        if out_len == 0 {
+            return Err(WolfCryptError::Ffi { code: 0, func: "EVP_PKEY_encrypt (zero output length)" });
+        }
+
+        // Second call: perform encryption.
+        let mut out = vec![0u8; out_len];
+        let rc = EVP_PKEY_encrypt(
+            ctx.as_mut_ptr(),
+            out.as_mut_ptr(),
+            &mut out_len,
+            plaintext.as_ptr(),
+            plaintext.len(),
+        );
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_encrypt" });
+        }
+        out.truncate(out_len);
+        Ok(out)
+    }
+}
+
+/// RSA private-key decryption via `EVP_PKEY_decrypt` with the given padding.
+///
+/// For [`RsaPadding::Oaep`], also sets the OAEP hash to SHA-256.
+unsafe fn evp_decrypt(
+    pkey: *mut EVP_PKEY,
+    ciphertext: &[u8],
+    padding: RsaPadding,
+) -> Result<Vec<u8>, WolfCryptError> {
+    // SAFETY: caller guarantees `pkey` is a valid, non-null EVP_PKEY.
+    unsafe {
+        let ctx = PkeyCtx::new(pkey)?;
+
+        let rc = EVP_PKEY_decrypt_init(ctx.as_mut_ptr());
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_decrypt_init" });
+        }
+
+        let rc = EVP_PKEY_CTX_set_rsa_padding(ctx.as_mut_ptr(), padding.as_c_int());
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_padding" });
+        }
+
+        if matches!(padding, RsaPadding::Oaep) {
+            let rc = EVP_PKEY_CTX_set_rsa_oaep_md(ctx.as_mut_ptr(), EVP_sha256());
+            if rc != 1 {
+                return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_oaep_md" });
+            }
+        }
+
+        // First call: determine output size.
+        let mut out_len: usize = 0;
+        let rc = EVP_PKEY_decrypt(
+            ctx.as_mut_ptr(),
+            ptr::null_mut(),
+            &mut out_len,
+            ciphertext.as_ptr(),
+            ciphertext.len(),
+        );
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_decrypt" });
+        }
+        if out_len == 0 {
+            return Err(WolfCryptError::Ffi { code: 0, func: "EVP_PKEY_decrypt (zero output length)" });
+        }
+
+        // Second call: perform decryption.
+        let mut out = vec![0u8; out_len];
+        let rc = EVP_PKEY_decrypt(
+            ctx.as_mut_ptr(),
+            out.as_mut_ptr(),
+            &mut out_len,
+            ciphertext.as_ptr(),
+            ciphertext.len(),
+        );
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_decrypt" });
+        }
+        out.truncate(out_len);
+        Ok(out)
+    }
+}
+
+/// Perform an RSA signature using EVP_DigestSign with the given padding mode.
+///
+/// `pkey` must be a valid EVP_PKEY containing an RSA private key.
+/// For [`RsaPadding::Pss`], also sets salt length to digest length and
+/// MGF1 hash to the same digest.
+unsafe fn evp_sign(
+    pkey: *mut EVP_PKEY,
+    msg: &[u8],
+    padding: RsaPadding,
+    digest: RsaDigest,
+) -> Result<Vec<u8>, WolfCryptError> {
+    // SAFETY: caller guarantees `pkey` is a valid EVP_PKEY with an RSA
+    // private key.  All FFI calls operate on `pkey` or the derived contexts.
+    unsafe {
+        let md_ctx = MdCtx::new()?;
+
+        // EVP_DigestSignInit sets up the context. The returned pkey_ctx is
+        // owned by md_ctx and must NOT be freed separately.
+        let mut pkey_ctx: *mut EVP_PKEY_CTX = ptr::null_mut();
+        let rc = EVP_DigestSignInit(
+            md_ctx.as_mut_ptr(),
+            &mut pkey_ctx,
+            digest.evp_md(),
+            ptr::null_mut(), // no ENGINE
+            pkey,
+        );
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_DigestSignInit" });
+        }
+
+        // Configure padding.
+        let rc = EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, padding.as_c_int());
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_padding" });
+        }
+
+        if matches!(padding, RsaPadding::Pss) {
+            // wolfSSL's set_rsa_pss_saltlen and set_rsa_mgf1_md may return 0
+            // on success (wolfSSL convention) rather than 1 (OpenSSL convention).
+            // Check for negative error codes only.
+            let rc = EVP_PKEY_CTX_set_rsa_pss_saltlen(pkey_ctx, RSA_PSS_SALTLEN_DIGEST);
+            if rc < 0 {
+                return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_pss_saltlen" });
+            }
+            let rc = EVP_PKEY_CTX_set_rsa_mgf1_md(pkey_ctx, digest.evp_md());
+            if rc < 0 {
+                return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_mgf1_md" });
+            }
+        }
+
+        // Feed message data.
+        let rc = EVP_DigestSignUpdate(
+            md_ctx.as_mut_ptr(),
+            msg.as_ptr() as *const c_void,
+            len_as_u32(msg.len()),
+        );
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_DigestSignUpdate" });
+        }
+
+        // First call: determine signature length.
+        let mut sig_len: usize = 0;
+        let rc = EVP_DigestSignFinal(md_ctx.as_mut_ptr(), ptr::null_mut(), &mut sig_len);
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_DigestSignFinal" });
+        }
+        if sig_len == 0 {
+            return Err(WolfCryptError::Ffi { code: 0, func: "EVP_DigestSignFinal (zero output length)" });
+        }
+
+        // Second call: produce the signature.
+        let mut sig = vec![0u8; sig_len];
+        let rc = EVP_DigestSignFinal(md_ctx.as_mut_ptr(), sig.as_mut_ptr(), &mut sig_len);
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_DigestSignFinal" });
+        }
+        sig.truncate(sig_len);
+
+        Ok(sig)
+    }
+}
+
+/// Verify an RSA signature using EVP_DigestVerify with the given padding mode.
+unsafe fn evp_verify(
+    pkey: *mut EVP_PKEY,
+    msg: &[u8],
+    sig: &[u8],
+    padding: RsaPadding,
+    digest: RsaDigest,
+) -> Result<(), WolfCryptError> {
+    // SAFETY: caller guarantees `pkey` is a valid EVP_PKEY.
+    unsafe {
+        let md_ctx = MdCtx::new()?;
+
+        let mut pkey_ctx: *mut EVP_PKEY_CTX = ptr::null_mut();
+        let rc = EVP_DigestVerifyInit(
+            md_ctx.as_mut_ptr(),
+            &mut pkey_ctx,
+            digest.evp_md(),
+            ptr::null_mut(),
+            pkey,
+        );
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_DigestVerifyInit" });
+        }
+
+        let rc = EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, padding.as_c_int());
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_padding" });
+        }
+
+        if matches!(padding, RsaPadding::Pss) {
+            // wolfSSL's set_rsa_pss_saltlen and set_rsa_mgf1_md may return 0
+            // on success (wolfSSL convention) rather than 1 (OpenSSL convention).
+            // Check for negative error codes only.
+            let rc = EVP_PKEY_CTX_set_rsa_pss_saltlen(pkey_ctx, RSA_PSS_SALTLEN_DIGEST);
+            if rc < 0 {
+                return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_pss_saltlen" });
+            }
+            let rc = EVP_PKEY_CTX_set_rsa_mgf1_md(pkey_ctx, digest.evp_md());
+            if rc < 0 {
+                return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_mgf1_md" });
+            }
+        }
+
+        let rc = EVP_DigestVerifyUpdate(
+            md_ctx.as_mut_ptr(),
+            msg.as_ptr() as *const c_void,
+            msg.len(),
+        );
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_DigestVerifyUpdate" });
+        }
+
+        let rc = EVP_DigestVerifyFinal(md_ctx.as_mut_ptr(), sig.as_ptr(), sig.len());
+        if rc != 1 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "EVP_DigestVerifyFinal" });
+        }
+
+        Ok(())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// RsaPrivateKey
+// ---------------------------------------------------------------------------
+
+/// An RSA private key backed by wolfCrypt's EVP_PKEY.
+///
+/// Supports both PKCS#1v1.5 and PSS signing with SHA-256, and OAEP /
+/// PKCS#1v1.5 encryption/decryption. The key is generated via
+/// `EVP_PKEY_keygen` and freed on drop.
+pub struct RsaPrivateKey {
+    /// Heap-allocated EVP_PKEY.
+    ///
+    /// Strictly speaking `UnsafeCell` around the raw pointer is not
+    /// required for soundness — `&self`'s aliasing scope covers the
+    /// struct's own memory (the pointer value) but not the heap data
+    /// behind it, so passing `*mut EVP_PKEY` to FFI is already legal.
+    /// We keep `UnsafeCell` because it makes the type `!Sync`, which
+    /// is the correct contract (wolfCrypt contexts are not thread-safe).
+    pkey: UnsafeCell<*mut EVP_PKEY>,
+}
+
+// SAFETY: EVP_PKEY is a self-contained heap object with no shared global
+// mutable state. The struct can safely be moved between threads.
+// NOTE: NOT Sync — wolfSSL's EVP_PKEY has internal mutable state that is
+// not protected against concurrent access from multiple threads.
+unsafe impl Send for RsaPrivateKey {}
+
+impl RsaPrivateKey {
+    /// Import an RSA private key from a PKCS#1 DER-encoded `RSAPrivateKey`
+    /// (RFC 8017 Appendix A.1.2).
+    ///
+    /// Uses `d2i_PrivateKey(EVP_PKEY_RSA, ...)` from wolfSSL's OpenSSL
+    /// compatibility layer.
+    pub fn from_pkcs1_der(der: &[u8]) -> Result<Self, WolfCryptError> {
+        unsafe {
+            let mut in_ptr = der.as_ptr();
+            let pkey = d2i_PrivateKey(
+                EVP_PKEY_RSA,
+                ptr::null_mut(),
+                &mut in_ptr as *mut *const u8 as *mut *const u8,
+                der.len() as core::ffi::c_long,
+            );
+            if pkey.is_null() {
+                return Err(WolfCryptError::Ffi { code: -1, func: "d2i_PrivateKey" });
+            }
+            Ok(Self {
+                pkey: UnsafeCell::new(pkey),
+            })
+        }
+    }
+
+    /// Export the private key as a PKCS#1 DER-encoded `RSAPrivateKey`.
+    ///
+    /// Uses `i2d_PrivateKey` from wolfSSL's OpenSSL compatibility layer.
+    pub fn to_pkcs1_der(&self) -> Result<Vec<u8>, WolfCryptError> {
+        unsafe {
+            let pkey = *self.pkey.get();
+
+            // First call: determine DER output size.
+            let der_len = i2d_PrivateKey(pkey as *const _, ptr::null_mut());
+            if der_len <= 0 {
+                return Err(WolfCryptError::Ffi { code: der_len, func: "i2d_PrivateKey" });
+            }
+
+            // Second call: write DER bytes.
+            let mut der = vec![0u8; der_len as usize];
+            let mut out_ptr = der.as_mut_ptr();
+            let written = i2d_PrivateKey(pkey as *const _, &mut out_ptr);
+            if written != der_len {
+                return Err(WolfCryptError::Ffi { code: written, func: "i2d_PrivateKey" });
+            }
+            Ok(der)
+        }
+    }
+
+    /// Generate an RSA keypair of the given bit size (e.g. 2048, 3072, 4096).
+    ///
+    /// Uses `EVP_PKEY_keygen` from wolfSSL's OpenSSL compatibility layer.
+    pub fn generate(bits: u32) -> Result<Self, WolfCryptError> {
+        unsafe {
+            let ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, ptr::null_mut());
+            if ctx.is_null() {
+                return Err(WolfCryptError::ALLOC_FAILED);
+            }
+
+            let rc = EVP_PKEY_keygen_init(ctx);
+            if rc != 1 {
+                EVP_PKEY_CTX_free(ctx);
+                return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_keygen_init" });
+            }
+
+            let rc = EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, bits as i32);
+            if rc != 1 {
+                EVP_PKEY_CTX_free(ctx);
+                return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_CTX_set_rsa_keygen_bits" });
+            }
+
+            let mut pkey: *mut EVP_PKEY = ptr::null_mut();
+            let rc = EVP_PKEY_keygen(ctx, &mut pkey);
+            EVP_PKEY_CTX_free(ctx);
+
+            if rc != 1 || pkey.is_null() {
+                if !pkey.is_null() {
+                    EVP_PKEY_free(pkey);
+                }
+                return Err(WolfCryptError::Ffi { code: rc, func: "EVP_PKEY_keygen" });
+            }
+
+            Ok(Self {
+                pkey: UnsafeCell::new(pkey),
+            })
+        }
+    }
+
+    /// Return the corresponding public key.
+    ///
+    /// Creates a fully independent `EVP_PKEY` by exporting the public key
+    /// as DER and re-importing it, so the public key shares no mutable
+    /// state with this private key.  This is safe to send to another thread.
+    pub fn public_key(&self) -> RsaPublicKey {
+        unsafe {
+            let pkey = *self.pkey.get();
+
+            // First call: determine DER output size.
+            let der_len = i2d_PUBKEY(pkey as *const _, ptr::null_mut());
+            assert!(der_len > 0, "i2d_PUBKEY failed (invalid key)");
+
+            // Second call: write DER bytes.
+            let mut der = vec![0u8; der_len as usize];
+            let mut out_ptr = der.as_mut_ptr();
+            let written = i2d_PUBKEY(pkey as *const _, &mut out_ptr);
+            assert_eq!(written, der_len, "i2d_PUBKEY size mismatch");
+
+            // Import into a fresh, independent EVP_PKEY.
+            let mut in_ptr = der.as_ptr();
+            let new_pkey = d2i_PUBKEY(
+                ptr::null_mut(),
+                &mut in_ptr as *mut *const u8 as *mut *const u8,
+                der_len as core::ffi::c_long,
+            );
+            assert!(!new_pkey.is_null(), "d2i_PUBKEY failed (invalid DER)");
+
+            RsaPublicKey {
+                pkey: UnsafeCell::new(new_pkey),
+            }
+        }
+    }
+
+    /// Sign `msg` with PKCS#1v1.5 padding (RFC 8017 Section 8.2) and SHA-256.
+    pub fn sign_pkcs1v15(&self, msg: &[u8]) -> Result<RsaPkcs1v15Signature, WolfCryptError> {
+        self.sign_pkcs1v15_with_digest(msg, RsaDigest::Sha256)
+    }
+
+    /// Sign `msg` with PKCS#1v1.5 padding using the specified digest.
+    pub fn sign_pkcs1v15_with_digest(
+        &self,
+        msg: &[u8],
+        digest: RsaDigest,
+    ) -> Result<RsaPkcs1v15Signature, WolfCryptError> {
+        let sig = unsafe { evp_sign(*self.pkey.get(), msg, RsaPadding::Pkcs1v15, digest)? };
+        Ok(RsaPkcs1v15Signature(sig))
+    }
+
+    /// Sign `msg` with PSS padding (RFC 8017 Section 8.1) and SHA-256.
+    ///
+    /// Salt length equals the digest length (32 bytes for SHA-256). MGF1 hash
+    /// is SHA-256.
+    pub fn sign_pss(&self, msg: &[u8]) -> Result<RsaPssSignature, WolfCryptError> {
+        self.sign_pss_with_digest(msg, RsaDigest::Sha256)
+    }
+
+    /// Sign `msg` with PSS padding using the specified digest.
+    ///
+    /// Salt length equals the digest length. MGF1 hash matches the digest.
+    pub fn sign_pss_with_digest(
+        &self,
+        msg: &[u8],
+        digest: RsaDigest,
+    ) -> Result<RsaPssSignature, WolfCryptError> {
+        let sig = unsafe { evp_sign(*self.pkey.get(), msg, RsaPadding::Pss, digest)? };
+        Ok(RsaPssSignature(sig))
+    }
+
+    /// Encrypt `plaintext` with OAEP padding and SHA-256 (RFC 8017 Section 7.1).
+    ///
+    /// For a 2048-bit key the maximum plaintext size is 190 bytes
+    /// (256 - 2*32 - 2).
+    pub fn encrypt_oaep(&self, plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        unsafe { evp_encrypt(*self.pkey.get(), plaintext, RsaPadding::Oaep) }
+    }
+
+    /// Decrypt `ciphertext` with OAEP padding and SHA-256 (RFC 8017 Section 7.1).
+    pub fn decrypt_oaep(&self, ciphertext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        unsafe { evp_decrypt(*self.pkey.get(), ciphertext, RsaPadding::Oaep) }
+    }
+
+    /// Encrypt `plaintext` with PKCS#1 v1.5 padding (RFC 8017 Section 7.2).
+    ///
+    /// For a 2048-bit key the maximum plaintext size is 245 bytes
+    /// (256 - 11).
+    pub fn encrypt_pkcs1v15(&self, plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        unsafe { evp_encrypt(*self.pkey.get(), plaintext, RsaPadding::Pkcs1v15) }
+    }
+
+    /// Decrypt `ciphertext` with PKCS#1 v1.5 padding (RFC 8017 Section 7.2).
+    pub fn decrypt_pkcs1v15(&self, ciphertext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        unsafe { evp_decrypt(*self.pkey.get(), ciphertext, RsaPadding::Pkcs1v15) }
+    }
+}
+
+impl Drop for RsaPrivateKey {
+    fn drop(&mut self) {
+        unsafe {
+            let pkey = *self.pkey.get();
+            if !pkey.is_null() {
+                EVP_PKEY_free(pkey);
+            }
+        }
+    }
+}
+
+/// Signs with PKCS#1v1.5 / SHA-256.
+impl signature_trait::Signer<RsaPkcs1v15Signature> for RsaPrivateKey {
+    fn try_sign(&self, msg: &[u8]) -> Result<RsaPkcs1v15Signature, signature_trait::Error> {
+        self.sign_pkcs1v15(msg).map_err(|_| signature_trait::Error::new())
+    }
+}
+
+/// Signs with PSS / SHA-256.
+impl signature_trait::Signer<RsaPssSignature> for RsaPrivateKey {
+    fn try_sign(&self, msg: &[u8]) -> Result<RsaPssSignature, signature_trait::Error> {
+        self.sign_pss(msg).map_err(|_| signature_trait::Error::new())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// RsaPublicKey
+// ---------------------------------------------------------------------------
+
+/// An RSA public key backed by wolfCrypt's EVP_PKEY.
+///
+/// Obtained from [`RsaPrivateKey::public_key()`]. Owns an independent
+/// `EVP_PKEY` (no shared state with the private key), so it is safe to
+/// move to another thread.
+pub struct RsaPublicKey {
+    /// Heap-allocated EVP_PKEY (public-only).
+    ///
+    /// `UnsafeCell` around the pointer: same rationale as
+    /// [`RsaPrivateKey::pkey`] — provides `!Sync`.
+    pkey: UnsafeCell<*mut EVP_PKEY>,
+}
+
+// SAFETY: same reasoning as RsaPrivateKey — Send but not Sync.
+unsafe impl Send for RsaPublicKey {}
+
+impl RsaPublicKey {
+    /// Import a public key from a DER-encoded SubjectPublicKeyInfo (SPKI) blob.
+    ///
+    /// This is the standard format produced by `i2d_PUBKEY` / OpenSSL's
+    /// `PEM_write_bio_PUBKEY` and used by Wycheproof test vectors
+    /// (`publicKeyDer` field).
+    pub fn from_der(der: &[u8]) -> Result<Self, WolfCryptError> {
+        unsafe {
+            let mut in_ptr = der.as_ptr();
+            let pkey = d2i_PUBKEY(
+                ptr::null_mut(),
+                &mut in_ptr as *mut *const u8 as *mut *const u8,
+                der.len() as core::ffi::c_long,
+            );
+            if pkey.is_null() {
+                return Err(WolfCryptError::Ffi { code: -1, func: "d2i_PUBKEY" });
+            }
+            Ok(Self {
+                pkey: UnsafeCell::new(pkey),
+            })
+        }
+    }
+
+    /// Encrypt `plaintext` with OAEP padding and SHA-256 (RFC 8017 Section 7.1).
+    ///
+    /// RSA encryption only requires the public key. Decryption requires the
+    /// private key held by [`RsaPrivateKey`].
+    pub fn encrypt_oaep(&self, plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        unsafe { evp_encrypt(*self.pkey.get(), plaintext, RsaPadding::Oaep) }
+    }
+
+    /// Encrypt `plaintext` with PKCS#1 v1.5 padding (RFC 8017 Section 7.2).
+    pub fn encrypt_pkcs1v15(&self, plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        unsafe { evp_encrypt(*self.pkey.get(), plaintext, RsaPadding::Pkcs1v15) }
+    }
+
+    /// Verify a PKCS#1v1.5 signature (RFC 8017 Section 8.2) with SHA-256.
+    pub fn verify_pkcs1v15(
+        &self,
+        msg: &[u8],
+        sig: &RsaPkcs1v15Signature,
+    ) -> Result<(), WolfCryptError> {
+        self.verify_pkcs1v15_with_digest(msg, sig, RsaDigest::Sha256)
+    }
+
+    /// Verify a PKCS#1v1.5 signature using the specified digest.
+    pub fn verify_pkcs1v15_with_digest(
+        &self,
+        msg: &[u8],
+        sig: &RsaPkcs1v15Signature,
+        digest: RsaDigest,
+    ) -> Result<(), WolfCryptError> {
+        unsafe { evp_verify(*self.pkey.get(), msg, &sig.0, RsaPadding::Pkcs1v15, digest) }
+    }
+
+    /// Verify a PSS signature (RFC 8017 Section 8.1) with SHA-256.
+    pub fn verify_pss(&self, msg: &[u8], sig: &RsaPssSignature) -> Result<(), WolfCryptError> {
+        self.verify_pss_with_digest(msg, sig, RsaDigest::Sha256)
+    }
+
+    /// Verify a PSS signature using the specified digest.
+    ///
+    /// Salt length equals the digest length. MGF1 hash matches the digest.
+    pub fn verify_pss_with_digest(
+        &self,
+        msg: &[u8],
+        sig: &RsaPssSignature,
+        digest: RsaDigest,
+    ) -> Result<(), WolfCryptError> {
+        unsafe { evp_verify(*self.pkey.get(), msg, &sig.0, RsaPadding::Pss, digest) }
+    }
+}
+
+impl Drop for RsaPublicKey {
+    fn drop(&mut self) {
+        unsafe {
+            let pkey = *self.pkey.get();
+            if !pkey.is_null() {
+                EVP_PKEY_free(pkey);
+            }
+        }
+    }
+}
+
+/// Verifies PKCS#1v1.5 / SHA-256.
+impl signature_trait::Verifier<RsaPkcs1v15Signature> for RsaPublicKey {
+    fn verify(
+        &self,
+        msg: &[u8],
+        signature: &RsaPkcs1v15Signature,
+    ) -> Result<(), signature_trait::Error> {
+        self.verify_pkcs1v15(msg, signature)
+            .map_err(|_| signature_trait::Error::new())
+    }
+}
+
+/// Verifies PSS / SHA-256.
+impl signature_trait::Verifier<RsaPssSignature> for RsaPublicKey {
+    fn verify(
+        &self,
+        msg: &[u8],
+        signature: &RsaPssSignature,
+    ) -> Result<(), signature_trait::Error> {
+        self.verify_pss(msg, signature)
+            .map_err(|_| signature_trait::Error::new())
+    }
+}
+
+// ===========================================================================
+// RSA direct (no-padding) operations via native wolfCrypt API
+// ===========================================================================
+
+/// The `type_` parameter for [`wc_RsaFunction`].
+///
+/// wolfSSL defines these in `wolfssl/wolfcrypt/rsa.h`:
+/// ```c
+/// #define RSA_PUBLIC_ENCRYPT  0
+/// #define RSA_PUBLIC_DECRYPT  1
+/// #define RSA_PRIVATE_ENCRYPT 2
+/// #define RSA_PRIVATE_DECRYPT 3
+/// ```
+#[cfg(feature = "rsa-direct")]
+const RSA_TYPE_PUBLIC_ENCRYPT: i32 = 0;
+#[cfg(feature = "rsa-direct")]
+const RSA_TYPE_PUBLIC_DECRYPT: i32 = 1;
+#[cfg(feature = "rsa-direct")]
+const RSA_TYPE_PRIVATE_ENCRYPT: i32 = 2;
+#[cfg(feature = "rsa-direct")]
+const RSA_TYPE_PRIVATE_DECRYPT: i32 = 3;
+
+/// Selects which RSA primitive operation [`NativeRsaKey::rsa_direct`] performs.
+///
+/// These map 1:1 to wolfCrypt's `RSA_PUBLIC_ENCRYPT`, etc.  "Encrypt" and
+/// "decrypt" are misnomers inherited from PKCS#1 — they really mean
+/// "apply the public exponent" and "apply the private exponent".
+#[cfg(feature = "rsa-direct")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RsaDirectType {
+    /// Apply the public exponent (m^e mod n).
+    PublicEncrypt,
+    /// Apply the public exponent to recover a signature (m^e mod n).
+    PublicDecrypt,
+    /// Apply the private exponent (m^d mod n).
+    PrivateEncrypt,
+    /// Apply the private exponent to recover plaintext (m^d mod n).
+    PrivateDecrypt,
+}
+
+#[cfg(feature = "rsa-direct")]
+impl RsaDirectType {
+    fn as_c_int(self) -> i32 {
+        match self {
+            Self::PublicEncrypt => RSA_TYPE_PUBLIC_ENCRYPT,
+            Self::PublicDecrypt => RSA_TYPE_PUBLIC_DECRYPT,
+            Self::PrivateEncrypt => RSA_TYPE_PRIVATE_ENCRYPT,
+            Self::PrivateDecrypt => RSA_TYPE_PRIVATE_DECRYPT,
+        }
+    }
+}
+
+/// An RSA key using the **native** wolfCrypt `RsaKey` type (not the
+/// OpenSSL-compat `EVP_PKEY` wrapper used by [`RsaPrivateKey`]).
+///
+/// This is needed for raw / no-padding RSA operations via
+/// [`wc_RsaFunction`], which operates directly on the modulus without
+/// applying PKCS#1, OAEP, or PSS padding.  The caller is responsible
+/// for any padding or encoding applied before calling [`rsa_direct`].
+///
+/// # Construction
+///
+/// - [`NativeRsaKey::from_private_der`] — import a DER-encoded PKCS#1
+///   RSA private key (`RSAPrivateKey` ASN.1 structure).
+/// - [`NativeRsaKey::from_public_der`] — import a DER-encoded PKCS#1
+///   RSA public key (`RSAPublicKey` ASN.1 structure).
+/// - [`NativeRsaKey::generate`] — generate a new keypair.
+///
+/// [`rsa_direct`]: NativeRsaKey::rsa_direct
+#[cfg(feature = "rsa-direct")]
+pub struct NativeRsaKey {
+    key: *mut wolfcrypt_rs::RsaKey,
+}
+
+// SAFETY: The RsaKey is a self-contained heap object. Safe to move
+// between threads, but not safe to share (not Sync).
+#[cfg(feature = "rsa-direct")]
+unsafe impl Send for NativeRsaKey {}
+
+#[cfg(feature = "rsa-direct")]
+impl NativeRsaKey {
+    /// Allocate a new, empty `RsaKey` via `wc_NewRsaKey`.
+    fn alloc() -> Result<*mut wolfcrypt_rs::RsaKey, WolfCryptError> {
+        let mut rc: core::ffi::c_int = 0;
+        let key = unsafe {
+            wolfcrypt_rs::wc_NewRsaKey(
+                ptr::null_mut(),
+                wolfcrypt_rs::INVALID_DEVID,
+                &mut rc,
+            )
+        };
+        if key.is_null() {
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_NewRsaKey" });
+        }
+        Ok(key)
+    }
+
+    /// Generate a new RSA key pair of the given bit size (e.g. 2048, 3072, 4096).
+    ///
+    /// Uses wolfCrypt's `wc_MakeRsaKey` with public exponent 65537.
+    pub fn generate_native(
+        bits: u32,
+        rng: &mut crate::rand::WolfRng,
+    ) -> Result<Self, WolfCryptError> {
+        let key = Self::alloc()?;
+        let rc = unsafe {
+            wolfcrypt_rs::wc_MakeRsaKey(
+                key,
+                bits as core::ffi::c_int,
+                65537,
+                &mut rng.rng,
+            )
+        };
+        if rc != 0 {
+            unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()) };
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_MakeRsaKey" });
+        }
+        Ok(Self { key })
+    }
+
+    /// Export the key to PKCS#1 DER format (`RSAPrivateKey`).
+    ///
+    /// The returned buffer contains the full ASN.1 structure including
+    /// n, e, d, p, q, dp, dq, and iqmp.
+    pub fn to_pkcs1_der(&self) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
+        // Start with a generous buffer; typical 2048-bit key DER is ~1200 bytes.
+        let mut buf = alloc::vec![0u8; 4096];
+        let rc = unsafe {
+            wolfcrypt_rs::wc_RsaKeyToDer(
+                self.key,
+                buf.as_mut_ptr(),
+                len_as_u32(buf.len()),
+            )
+        };
+        if rc < 0 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaKeyToDer" });
+        }
+        buf.truncate(rc as usize);
+        Ok(buf)
+    }
+
+    /// Import a DER-encoded PKCS#1 RSA private key (`RSAPrivateKey`).
+    ///
+    /// This is the "traditional" private-key format (not wrapped in
+    /// PKCS#8 `PrivateKeyInfo`).
+    pub fn from_private_der(der: &[u8]) -> Result<Self, WolfCryptError> {
+        let key = Self::alloc()?;
+        let mut idx: u32 = 0;
+        let rc = unsafe {
+            wolfcrypt_rs::wc_RsaPrivateKeyDecode(
+                der.as_ptr(),
+                &mut idx,
+                key,
+                len_as_u32(der.len()),
+            )
+        };
+        if rc != 0 {
+            // Clean up on failure.
+            unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()); }
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaPrivateKeyDecode" });
+        }
+        Ok(Self { key })
+    }
+
+    /// Import a DER-encoded PKCS#1 RSA public key (`RSAPublicKey`).
+    ///
+    /// Also accepts SubjectPublicKeyInfo (SPKI) DER — wolfCrypt's
+    /// `wc_RsaPublicKeyDecode` handles both formats.
+    pub fn from_public_der(der: &[u8]) -> Result<Self, WolfCryptError> {
+        let key = Self::alloc()?;
+        let mut idx: u32 = 0;
+        let rc = unsafe {
+            wolfcrypt_rs::wc_RsaPublicKeyDecode(
+                der.as_ptr(),
+                &mut idx,
+                key,
+                len_as_u32(der.len()),
+            )
+        };
+        if rc != 0 {
+            unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()); }
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaPublicKeyDecode" });
+        }
+        Ok(Self { key })
+    }
+
+    /// Generate a new RSA keypair of the given bit size.
+    ///
+    /// `bits` is typically 2048, 3072, or 4096.  `rng` provides the
+    /// randomness source.
+    pub fn generate(bits: u32, rng: &mut crate::rand::WolfRng) -> Result<Self, WolfCryptError> {
+        let key = Self::alloc()?;
+        let rc = unsafe {
+            wolfcrypt_rs::wc_MakeRsaKey(
+                key,
+                bits as core::ffi::c_int,
+                65537, // standard public exponent
+                &mut rng.rng,
+            )
+        };
+        if rc != 0 {
+            unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()); }
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_MakeRsaKey" });
+        }
+        Ok(Self { key })
+    }
+
+    /// Return the RSA modulus size in bytes (i.e. the output size of
+    /// `rsa_direct`).
+    pub fn encrypt_size(&self) -> Result<usize, WolfCryptError> {
+        let sz = unsafe { wolfcrypt_rs::wc_RsaEncryptSize(self.key as *const _) };
+        if sz <= 0 {
+            return Err(WolfCryptError::Ffi { code: sz, func: "wc_RsaEncryptSize" });
+        }
+        Ok(sz as usize)
+    }
+
+    /// Perform a raw RSA operation (no padding) via `wc_RsaFunction`.
+    ///
+    /// `input` must be exactly [`encrypt_size()`](Self::encrypt_size)
+    /// bytes — the raw modular-exponentiation input.  Returns a
+    /// buffer of the same size containing the result.
+    ///
+    /// `rng` is required by wolfCrypt for blinding during private-key
+    /// operations.  For public-key operations it may still be passed
+    /// (wolfCrypt ignores it if not needed).
+    pub fn rsa_direct(
+        &mut self,
+        input: &[u8],
+        type_: RsaDirectType,
+        rng: &mut crate::rand::WolfRng,
+    ) -> Result<Vec<u8>, WolfCryptError> {
+        let key_sz = self.encrypt_size()?;
+        if input.len() != key_sz {
+            return Err(WolfCryptError::InvalidInput);
+        }
+
+        let mut out = vec![0u8; key_sz];
+        let mut out_len: u32 = key_sz as u32;
+
+        let rc = unsafe {
+            wolfcrypt_rs::wc_RsaFunction(
+                input.as_ptr(),
+                len_as_u32(input.len()),
+                out.as_mut_ptr(),
+                &mut out_len,
+                type_.as_c_int(),
+                self.key,
+                &mut rng.rng,
+            )
+        };
+        check(rc, "wc_RsaFunction")?;
+
+        out.truncate(out_len as usize);
+        Ok(out)
+    }
+
+    /// Import an RSA private key from raw big-endian component byte arrays.
+    ///
+    /// This calls `wc_RsaPrivateKeyDecodeRaw` which accepts the components
+    /// directly, avoiding the need to construct a PKCS#1 DER encoding.
+    /// wolfCrypt will compute dp and dq internally if not provided.
+    ///
+    /// # Parameters
+    /// - `n`: modulus
+    /// - `e`: public exponent
+    /// - `d`: private exponent
+    /// - `p`, `q`: prime factors
+    /// - `iqmp`: CRT coefficient (q^{-1} mod p)
+    pub fn from_raw_components(
+        n: &[u8],
+        e: &[u8],
+        d: &[u8],
+        p: &[u8],
+        q: &[u8],
+        iqmp: &[u8],
+    ) -> Result<Self, WolfCryptError> {
+        let key = Self::alloc()?;
+        let rc = unsafe {
+            wolfcrypt_rs::wc_RsaPrivateKeyDecodeRaw(
+                n.as_ptr(), len_as_u32(n.len()),
+                e.as_ptr(), len_as_u32(e.len()),
+                d.as_ptr(), len_as_u32(d.len()),
+                iqmp.as_ptr(), len_as_u32(iqmp.len()),
+                p.as_ptr(), len_as_u32(p.len()),
+                q.as_ptr(), len_as_u32(q.len()),
+                ptr::null(), 0, // dp — let wolfCrypt compute
+                ptr::null(), 0, // dq — let wolfCrypt compute
+                key,
+            )
+        };
+        if rc != 0 {
+            unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()) };
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaPrivateKeyDecodeRaw" });
+        }
+        Ok(Self { key })
+    }
+
+    /// Get the RSA key size (modulus size in bytes).
+    pub fn key_size(&self) -> Result<usize, WolfCryptError> {
+        let rc = unsafe { wolfcrypt_rs::wc_RsaEncryptSize(self.key) };
+        if rc < 0 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaEncryptSize" });
+        }
+        Ok(rc as usize)
+    }
+
+    /// PKCS#1v1.5 sign: applies type-1 block padding and RSA private-key
+    /// operation.  `digest_info` must already contain the DER-encoded
+    /// `DigestInfo` (OID + hash), as specified in RFC 8017 §9.2.
+    ///
+    /// Returns the raw signature bytes (length = key size).
+    pub fn sign_pkcs1v15_raw(
+        &self,
+        digest_info: &[u8],
+        rng: &mut crate::rand::WolfRng,
+    ) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
+        let key_sz = self.key_size()?;
+        let mut out = alloc::vec![0u8; key_sz];
+        let rc = unsafe {
+            wolfcrypt_rs::wc_RsaSSL_Sign(
+                digest_info.as_ptr(),
+                len_as_u32(digest_info.len()),
+                out.as_mut_ptr(),
+                len_as_u32(out.len()),
+                self.key,
+                &mut rng.rng,
+            )
+        };
+        if rc < 0 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaSSL_Sign" });
+        }
+        out.truncate(rc as usize);
+        Ok(out)
+    }
+
+    /// PKCS#1v1.5 verify: applies RSA public-key operation and checks
+    /// type-1 block padding.  Returns the recovered `DigestInfo` bytes.
+    pub fn verify_pkcs1v15_raw(
+        &self,
+        signature: &[u8],
+    ) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
+        let key_sz = self.key_size()?;
+        let mut out = alloc::vec![0u8; key_sz];
+        let rc = unsafe {
+            wolfcrypt_rs::wc_RsaSSL_Verify(
+                signature.as_ptr(),
+                len_as_u32(signature.len()),
+                out.as_mut_ptr(),
+                len_as_u32(out.len()),
+                self.key,
+            )
+        };
+        if rc < 0 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaSSL_Verify" });
+        }
+        out.truncate(rc as usize);
+        Ok(out)
+    }
+
+    /// Export all RSA key components as raw big-endian byte vectors.
+    ///
+    /// Uses `wc_RsaExportKey` for (e, n, d, p, q) and extracts iqmp from
+    /// the PKCS#1 DER via `wc_RsaKeyToDer` (the only way to get iqmp out
+    /// of wolfCrypt's opaque `RsaKey`).
+    pub fn export_raw_components(
+        &mut self,
+    ) -> Result<RsaRawComponents, WolfCryptError> {
+        // Use key_size as a conservative upper bound for all component buffers.
+        let sz = self.key_size()?;
+        let mut e = alloc::vec![0u8; sz];
+        let mut n = alloc::vec![0u8; sz];
+        let mut d = alloc::vec![0u8; sz];
+        let mut p = alloc::vec![0u8; sz];
+        let mut q = alloc::vec![0u8; sz];
+        let mut e_sz = len_as_u32(e.len());
+        let mut n_sz = len_as_u32(n.len());
+        let mut d_sz = len_as_u32(d.len());
+        let mut p_sz = len_as_u32(p.len());
+        let mut q_sz = len_as_u32(q.len());
+
+        let rc = unsafe {
+            wolfcrypt_rs::wc_RsaExportKey(
+                self.key,
+                e.as_mut_ptr(), &mut e_sz,
+                n.as_mut_ptr(), &mut n_sz,
+                d.as_mut_ptr(), &mut d_sz,
+                p.as_mut_ptr(), &mut p_sz,
+                q.as_mut_ptr(), &mut q_sz,
+            )
+        };
+        check(rc, "wc_RsaExportKey")?;
+
+        e.truncate(e_sz as usize);
+        n.truncate(n_sz as usize);
+        d.truncate(d_sz as usize);
+        p.truncate(p_sz as usize);
+        q.truncate(q_sz as usize);
+
+        // wc_RsaExportKey doesn't export iqmp. Extract it from the PKCS#1
+        // DER which contains all 9 fields: version, n, e, d, p, q, dp, dq, iqmp.
+        let der = self.to_pkcs1_der()?;
+        let iqmp = extract_iqmp_from_pkcs1_der(&der)?;
+
+        Ok(RsaRawComponents { e, n, d, p, q, iqmp })
+    }
+
+    /// Import an RSA public key from raw big-endian (n, e) byte arrays.
+    ///
+    /// Uses wolfCrypt's `wc_RsaFlattenPublicKey` in reverse: we first
+    /// allocate a key, then call `from_raw_components` with only the
+    /// public components — but that requires private key fields too.
+    /// Instead we build a minimal PKCS#1 DER and use `from_public_der`.
+    pub fn from_raw_public(n: &[u8], e: &[u8]) -> Result<Self, WolfCryptError> {
+        let der = build_pkcs1_public_key_der(n, e);
+        Self::from_public_der(&der)
+    }
+}
+
+/// Raw RSA key components exported from a [`NativeRsaKey`].
+#[cfg(feature = "rsa-direct")]
+pub struct RsaRawComponents {
+    /// Public exponent (e), big-endian.
+    pub e: alloc::vec::Vec<u8>,
+    /// Modulus (n), big-endian.
+    pub n: alloc::vec::Vec<u8>,
+    /// Private exponent (d), big-endian.
+    pub d: alloc::vec::Vec<u8>,
+    /// First prime factor (p), big-endian.
+    pub p: alloc::vec::Vec<u8>,
+    /// Second prime factor (q), big-endian.
+    pub q: alloc::vec::Vec<u8>,
+    /// CRT coefficient: (inverse of q) mod p, big-endian.
+    pub iqmp: alloc::vec::Vec<u8>,
+}
+
+/// Build a minimal PKCS#1 DER-encoded `RSAPublicKey` from raw (n, e).
+///
+/// ```text
+/// RSAPublicKey ::= SEQUENCE { modulus INTEGER, publicExponent INTEGER }
+/// ```
+#[cfg(feature = "rsa-direct")]
+fn build_pkcs1_public_key_der(n: &[u8], e: &[u8]) -> alloc::vec::Vec<u8> {
+    let n_der = der_encode_unsigned_integer(n);
+    let e_der = der_encode_unsigned_integer(e);
+    let content_len = n_der.len() + e_der.len();
+
+    let mut der = alloc::vec::Vec::with_capacity(content_len + 10);
+    der.push(0x30); // SEQUENCE tag
+    der_push_length(content_len, &mut der);
+    der.extend_from_slice(&n_der);
+    der.extend_from_slice(&e_der);
+    der
+}
+
+/// DER-encode a non-negative integer with tag 0x02.
+#[cfg(feature = "rsa-direct")]
+fn der_encode_unsigned_integer(bytes: &[u8]) -> alloc::vec::Vec<u8> {
+    if bytes.is_empty() {
+        return alloc::vec![0x02, 0x01, 0x00];
+    }
+    // Strip leading zeros (keep at least one byte)
+    let significant = match bytes.iter().position(|&b| b != 0) {
+        Some(i) => &bytes[i..],
+        None => &bytes[bytes.len() - 1..], // all zeros → keep one 0x00
+    };
+    let needs_pad = significant[0] & 0x80 != 0;
+    let value_len = significant.len() + usize::from(needs_pad);
+
+    let mut out = alloc::vec::Vec::with_capacity(value_len + 4);
+    out.push(0x02); // INTEGER tag
+    der_push_length(value_len, &mut out);
+    if needs_pad {
+        out.push(0x00);
+    }
+    out.extend_from_slice(significant);
+    out
+}
+
+/// Push a DER length encoding into `out`.
+#[cfg(feature = "rsa-direct")]
+fn der_push_length(len: usize, out: &mut alloc::vec::Vec<u8>) {
+    if len < 0x80 {
+        out.push(len as u8);
+    } else if len < 0x100 {
+        out.push(0x81);
+        out.push(len as u8);
+    } else {
+        out.push(0x82);
+        out.push((len >> 8) as u8);
+        out.push(len as u8);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Minimal DER helpers for iqmp extraction
+// ---------------------------------------------------------------------------
+//
+// `wc_RsaExportKey` exports (e, n, d, p, q) but NOT iqmp. The only way to
+// get iqmp out of wolfCrypt's opaque `RsaKey` is via `wc_RsaKeyToDer`, which
+// produces a PKCS#1 DER containing all 9 fields. We skip the first 8
+// INTEGERs and return the 9th (iqmp).
+
+/// Extract the iqmp (CRT coefficient) from a PKCS#1 `RSAPrivateKey` DER.
+///
+/// PKCS#1 layout (RFC 8017 A.1.2):
+///   SEQUENCE { version, n, e, d, p, q, dp, dq, iqmp }
+#[cfg(feature = "rsa-direct")]
+fn extract_iqmp_from_pkcs1_der(der: &[u8]) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
+    let err = || WolfCryptError::Ffi { code: -1, func: "extract_iqmp_from_pkcs1_der" };
+    let mut pos = 0;
+
+    // SEQUENCE tag
+    if pos >= der.len() || der[pos] != 0x30 { return Err(err()); }
+    pos = pos.checked_add(1).ok_or_else(err)?;
+    let (_seq_len, hdr) = der_read_len(der, pos).ok_or_else(err)?;
+    pos = pos.checked_add(hdr).ok_or_else(err)?;
+
+    // Skip 8 INTEGERs: version, n, e, d, p, q, dp, dq
+    for _ in 0..8 {
+        pos = der_skip_int(der, pos).ok_or_else(err)?;
+    }
+
+    // 9th INTEGER is iqmp
+    let val = der_read_int(der, pos).ok_or_else(err)?;
+    Ok(val.to_vec())
+}
+
+/// Read a DER length at `pos`. Returns `Some((value, bytes_consumed))`.
+#[cfg(feature = "rsa-direct")]
+fn der_read_len(data: &[u8], pos: usize) -> Option<(usize, usize)> {
+    let b = *data.get(pos)?;
+    if b < 0x80 {
+        Some((b as usize, 1))
+    } else {
+        let n = (b & 0x7f) as usize;
+        if n == 0 || n > 4 { return None; }
+        let end = pos.checked_add(1)?.checked_add(n)?;
+        if end > data.len() { return None; }
+        let mut len = 0usize;
+        for i in 0..n {
+            len = len.checked_shl(8)? | (*data.get(pos + 1 + i)? as usize);
+        }
+        Some((len, 1 + n))
+    }
+}
+
+/// Read a DER INTEGER at `pos`, stripping leading zero padding.
+/// Returns the unsigned value bytes.
+#[cfg(feature = "rsa-direct")]
+fn der_read_int(data: &[u8], pos: usize) -> Option<&[u8]> {
+    if *data.get(pos)? != 0x02 { return None; }
+    let (len, hdr) = der_read_len(data, pos.checked_add(1)?)?;
+    let start = pos.checked_add(1)?.checked_add(hdr)?;
+    let end = start.checked_add(len)?;
+    if end > data.len() { return None; }
+    let mut val = &data[start..end];
+    while val.len() > 1 && val[0] == 0 { val = &val[1..]; }
+    Some(val)
+}
+
+/// Skip a DER INTEGER at `pos`, returning the position after it.
+#[cfg(feature = "rsa-direct")]
+fn der_skip_int(data: &[u8], pos: usize) -> Option<usize> {
+    if *data.get(pos)? != 0x02 { return None; }
+    let (len, hdr) = der_read_len(data, pos.checked_add(1)?)?;
+    let end = pos.checked_add(1)?.checked_add(hdr)?.checked_add(len)?;
+    if end > data.len() { return None; }
+    Some(end)
+}
+
+#[cfg(feature = "rsa-direct")]
+impl Drop for NativeRsaKey {
+    fn drop(&mut self) {
+        if !self.key.is_null() {
+            unsafe {
+                wolfcrypt_rs::wc_DeleteRsaKey(self.key, ptr::null_mut());
+            }
+        }
+    }
+}

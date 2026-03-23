@@ -1,0 +1,23 @@
+[package]
+name = "wolfcrypt-wrapper"
+version = "1.1.0"
+edition = "2021"
+description = "Rust wrapper for wolfssl C library cryptographic functionality"
+license = "MIT"
+repository = "https://github.com/wolfSSL/wolfssl"
+documentation = "https://github.com/wolfSSL/wolfssl/tree/master/wrapper/rust"
+keywords = ["wolfcrypt", "wolfssl", "fips"]
+categories = ["cryptography", "security", "api-bindings"]
+readme = "README.md"
+
+[features]
+default = []
+std = []
+fips = ["wolfcrypt-sys/fips"]
+
+[dependencies]
+wolfcrypt-sys = { version = "0.1.0", path = "../wolfcrypt-sys", default-features = false, features = ["vendored"] }
+
+[build-dependencies]
+bindgen = { workspace = true }
+regex = { workspace = true }

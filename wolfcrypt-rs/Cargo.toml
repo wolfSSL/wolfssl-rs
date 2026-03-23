@@ -1,0 +1,21 @@
+[package]
+name = "wolfcrypt-rs"
+description = "Low-level FFI bindings for wolfSSL/wolfCrypt cryptographic library."
+version = "0.1.0"
+authors = ["wolfSSL"]
+edition = "2021"
+license = "MIT"
+keywords = ["wolfcrypt", "wolfssl", "fips"]
+rust-version = "1.71.0"
+build = "build.rs"
+links = "wolfssl"
+
+[dependencies]
+wolfcrypt-sys = { version = "0.1.0", path = "../wolfcrypt-sys", default-features = false, features = ["vendored"] }
+
+[features]
+default = []
+fips = ["wolfcrypt-sys/fips"]
+
+[build-dependencies]
+cc = { workspace = true, features = ["parallel"] }

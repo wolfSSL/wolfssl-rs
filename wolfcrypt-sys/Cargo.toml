@@ -1,0 +1,18 @@
+[package]
+name = "wolfcrypt-sys"
+version = "0.1.0"
+edition = "2021"
+description = "Auto-generated Rust FFI bindings to wolfSSL via bindgen"
+license = "MIT"
+keywords = ["wolfcrypt", "wolfssl", "fips"]
+links = "wolfcrypt_sys"
+
+[features]
+default = []
+fips = []
+vendored = []
+
+[build-dependencies]
+bindgen = "0.72.0"
+pkg-config = "0.3"
+wolfssl-src = { version = "0.1.0", path = "../wolfssl-src" }
