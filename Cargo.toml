@@ -1,0 +1,81 @@
+# Workspace layout — two API surfaces over the same wolfCrypt C library:
+#
+#   wolfcrypt-ring-compat  — drop-in replacement for the `ring` crate (exports
+#                            lib.name = "ring"). Uses wolfcrypt-rs's OpenSSL
+#                            compat layer. Enables wolfCrypt as a rustls backend
+#                            via Cargo [patch]. Cannot coexist with `ring` in
+#                            the same dependency tree.
+#
+#   wolfcrypt              — RustCrypto trait implementations (digest, signature,
+#                            aead, cipher, etc.) over wolfCrypt's native C API.
+#                            Used by ssh-key-wolfcrypt, wolfcrypt-dpe, and any
+#                            crate that programs against RustCrypto traits.
+#
+# Both are needed: ring-compat serves the rustls/ring ecosystem, wolfcrypt
+# serves the RustCrypto ecosystem. They share the same FFI layer (wolfcrypt-rs
+# → wolfcrypt-sys → wolfssl-src) but expose different Rust API surfaces.
+[workspace]
+members = [
+    "wolfcrypt-ring-compat",
+    "wolfcrypt-rs",
+    "wolfcrypt",
+    "wolfcrypt-ring-testing",
+    "links-testing",
+    "builder-test",
+    "wolfcrypt-dpe",
+    "wolfcrypt-sys",
+    "wolfssl-src",
+    "wolfcrypt-wrapper",
+    "wolfcrypt-conformance",
+    "wolfcrypt-dpe-conformance",
+    "ssh-key-wolfcrypt",
+    "wolfcrypt-tls",
+]
+exclude = [
+    "scripts/tools/cargo-dig.rs",
+    "scripts/tools/semver.rs",
+    "scripts/tools/target-platform.rs",
+    "scripts/tests/assert_cpu_jitter_entropy.rs",
+    "scripts/tests/prefix_test.rs",
+]
+resolver = "2"
+
+# Edition policy: edition 2021 is the workspace floor.
+# Exception: wolfcrypt-wrapper uses let-chains (edition 2024 feature).
+
+[workspace.dependencies]
+bindgen = "0.72.0"
+cc = "1.2.26"
+cmake = "0.1.54"
+dunce = "1.0.5"
+fs_extra = "1.3.0"
+regex = "1.11.1"
+untrusted = "0.7.1"
+spin = "0.9.8"
+zeroize = "1.8.1"
+
+# The dependencies below do not affect our MSRV. They are only used as
+# a dev-dependency or only used outside of our public crates.
+# These can be updated to the latest versions.
+clap = "4.4"
+criterion = "0.8.2"
+hex = "0.4.3"
+lazy_static = "1.5.0"
+openssl = "0.10.73"
+paste = "1.0.15"
+ring = "0.17.14"
+toml_edit = "0.25.0"
+
+# Pre-release RustCrypto SSH crates, not yet on crates.io.
+# Pinned to the rc.8 release commit. Remove these patches once
+# upstream publishes stable 0.3 releases to crates.io.
+[patch.crates-io]
+ssh-encoding = { git = "https://github.com/RustCrypto/SSH", tag = "ssh-encoding/v0.3.0-rc.8" }
+ssh-cipher = { git = "https://github.com/RustCrypto/SSH", tag = "ssh-cipher/v0.3.0-rc.8" }
+
+[profile.bench]
+lto = true
+
+[profile.release-lto]
+inherits = "release"
+lto = true

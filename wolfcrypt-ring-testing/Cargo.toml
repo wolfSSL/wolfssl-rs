@@ -1,0 +1,68 @@
+[package]
+name = "wolfcrypt-ring-testing"
+authors = ["wolfSSL Inc."]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.86.0"
+license = "MIT"
+publish = false
+keywords = ["wolfcrypt", "wolfssl", "fips"]
+
+[features]
+ring-benchmarks = []
+openssl-benchmarks = []
+ring-sig-verify = ["wolfcrypt-ring-compat/ring-sig-verify"]
+fips = ["wolfcrypt-ring-compat/fips"]
+
+[dev-dependencies]
+wolfcrypt-ring-compat = { version = "1.0", path = "../wolfcrypt-ring-compat", features = ["ring-sig-verify", "unstable"] }
+untrusted.workspace = true
+paste.workspace = true
+criterion = { workspace = true, features = ["csv_output"] }
+ring.workspace = true
+openssl = { workspace = true, features = ["vendored"] }
+
+[[bench]]
+name = "aead_benchmark"
+harness = false
+
+[[bench]]
+name = "digest_benchmark"
+harness = false
+
+[[bench]]
+name = "hkdf_benchmark"
+harness = false
+
+[[bench]]
+name = "hmac_benchmark"
+harness = false
+
+[[bench]]
+name = "pbkdf2_benchmark"
+harness = false
+
+[[bench]]
+name = "quic_benchmark"
+harness = false
+
+[[bench]]
+name = "rsa_benchmark"
+harness = false
+
+[[bench]]
+name = "ecdsa_benchmark"
+harness = false
+
+[[bench]]
+name = "ed25519_benchmark"
+harness = false
+
+[[bench]]
+name = "agreement_benchmark"
+harness = false
+
+[[bench]]
+name = "cipher_benchmark"
+harness = false
+

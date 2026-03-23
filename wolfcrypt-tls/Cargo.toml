@@ -1,0 +1,19 @@
+[package]
+name = "wolfcrypt-tls"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Safe Rust TLS API backed by wolfSSL"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+
+# Export as "wolfssl" so downstream code uses `use wolfssl::...`.
+# Once we recover the `wolfssl` crate name on crates.io, rename the
+# package to `wolfssl` and remove this [lib] override.
+[lib]
+name = "wolfssl"
+
+[dependencies]
+wolfcrypt-sys = { path = "../wolfcrypt-sys" }
+zeroize = { workspace = true }
+
+[dev-dependencies]

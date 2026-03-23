@@ -1,0 +1,43 @@
+[package]
+name = "wolfcrypt-dpe-conformance"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Cross-validation and conformance tests for wolfcrypt-dpe against caliptra-dpe reference"
+keywords = ["wolfcrypt", "wolfssl", "fips"]
+
+[lib]
+path = "src/lib.rs"
+
+[dev-dependencies]
+# === Wolf backend ===
+wolfcrypt-dpe = { path = "../wolfcrypt-dpe" }
+wolfcrypt-ring-compat = { path = "../wolfcrypt-ring-compat", default-features = false, features = ["wolfcrypt-rs", "alloc"] }
+
+# === Reference backend (RustCrypto) — same crypto crate with rustcrypto feature ===
+caliptra-dpe-crypto = { git = "https://github.com/chipsalliance/caliptra-dpe", rev = "6dfc502a30d443e5e054db1344a97eeb823ea5b9", package = "caliptra-dpe-crypto", default-features = false, features = ["rustcrypto"] }
+
+# === DPE engine ===
+caliptra-dpe = { git = "https://github.com/chipsalliance/caliptra-dpe", rev = "6dfc502a30d443e5e054db1344a97eeb823ea5b9", package = "caliptra-dpe", default-features = false, features = ["p384"] }
+
+# === Platform abstraction ===
+caliptra-dpe-platform = { git = "https://github.com/chipsalliance/caliptra-dpe", rev = "6dfc502a30d443e5e054db1344a97eeb823ea5b9", package = "caliptra-dpe-platform", default-features = false, features = ["rustcrypto"] }
+
+# === CFI (required for DPE engine tests) ===
+caliptra-cfi-lib = { git = "https://github.com/chipsalliance/caliptra-cfi.git", package = "caliptra-cfi-lib", rev = "767d4ef59a106aea683b883c07bd65456fb3ba6b", default-features = false, features = ["cfi-test"] }
+
+# === Independent signature verification ===
+p256 = { version = "0.13", features = ["ecdsa"] }
+p384 = { version = "0.13", features = ["ecdsa"] }
+ecdsa = "0.16"
+sha2 = "0.10"
+
+# === X.509 parsing ===
+x509-cert = { version = "0.2", features = ["std"] }
+der = { version = "0.7", features = ["alloc", "oid"] }
+
+# === Test infrastructure ===
+rand = "0.8"
+hex = "0.4"
+zerocopy = "0.8"

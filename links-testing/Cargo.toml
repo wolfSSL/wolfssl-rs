@@ -1,0 +1,25 @@
+[package]
+name = "links-testing"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.70.0"
+publish = false
+
+[features]
+default = ["wolfcrypt-rs"]
+wolfcrypt-ring-compat = ["dep:wolfcrypt-ring-compat"]
+wolfcrypt-ring-compat-fips = ["dep:wolfcrypt-ring-compat", "wolfcrypt-ring-compat/fips"]
+wolfcrypt-rs = ["dep:wolfcrypt-rs"]
+wolfcrypt-rs-fips = ["dep:wolfcrypt-rs", "wolfcrypt-rs/fips"]
+
+[dependencies]
+wolfcrypt-ring-compat = { path = "../wolfcrypt-ring-compat", optional = true }
+wolfcrypt-rs = { path = "../wolfcrypt-rs", optional = true }
+
+[build-dependencies]
+cc.workspace = true
+toml_edit.workspace = true
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["wolfcrypt-ring-compat", "wolfcrypt-rs"] # the sys crate is only used through a C library build

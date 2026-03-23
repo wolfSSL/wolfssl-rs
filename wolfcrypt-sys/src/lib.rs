@@ -1,0 +1,15 @@
+//
+// Auto-generated FFI bindings to wolfSSL via bindgen.
+// No safe wrappers — just the raw C interface.
+
+#![no_std]
+#![allow(clippy::missing_safety_doc)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::upper_case_acronyms)]
+#![allow(dead_code)]
+#![allow(improper_ctypes)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+#![allow(non_upper_case_globals)]
+
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
