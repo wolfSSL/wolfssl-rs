@@ -1,18 +1,23 @@
 [package]
 name = "wolfcrypt-ring-testing"
-authors = ["wolfSSL Inc."]
+authors = ["WolfSSL Inc"]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.86.0"
 license = "MIT"
-publish = false
-keywords = ["wolfcrypt", "wolfssl", "fips"]
+description = "Tests and benchmarks for wolfcrypt-ring-compat"
+homepage = "http://wolfssl.com"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+keywords = ["wolfcrypt", "wolfssl", "fips", "ring", "benchmarks"]
+categories = ["cryptography"]
 
 [features]
 ring-benchmarks = []
 openssl-benchmarks = []
 ring-sig-verify = ["wolfcrypt-ring-compat/ring-sig-verify"]
 fips = ["wolfcrypt-ring-compat/fips"]
+
+[dependencies]
+wolfcrypt-ring-compat = { version = "1.0", path = "../wolfcrypt-ring-compat", optional = true }
 
 [dev-dependencies]
 wolfcrypt-ring-compat = { version = "1.0", path = "../wolfcrypt-ring-compat", features = ["ring-sig-verify", "unstable"] }

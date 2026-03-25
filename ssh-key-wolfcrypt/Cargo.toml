@@ -1,5 +1,6 @@
 [package]
 name = "ssh-key-wolfcrypt"
+authors = ["WolfSSL Inc"]
 version = "0.1.0"
 description = """
 Fork of ssh-key with wolfCrypt as the cryptographic backend.
@@ -8,6 +9,10 @@ SSH key file format decoders/encoders as described in RFC4251/RFC4253
 and OpenSSH key formats, with signing and verification powered by wolfCrypt
 instead of pure-Rust RustCrypto implementations.
 """
+keywords = ["wolfcrypt", "wolfssl", "ssh", "fips", "cryptography"]
+categories = ["cryptography"]
+homepage = "http://wolfssl.com"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
 license = "Apache-2.0 OR MIT"
 edition = "2021"
 rust-version = "1.85"
