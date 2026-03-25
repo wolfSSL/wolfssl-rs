@@ -5,13 +5,11 @@ use helpers::wycheproof::*;
 
 use wolfcrypt::keywrap::{aes_unwrap_key, aes_wrap_key};
 
-const AES_WRAP_VECTORS: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/aes_wrap_test.json");
-
 #[test]
 fn aes_keywrap() {
+    let json_str = helpers::load_wycheproof("aes_wrap_test.json");
     let file: WycheproofFile<KeyWrapTestGroup> =
-        serde_json::from_str(AES_WRAP_VECTORS).expect("failed to parse Wycheproof AES-WRAP JSON");
+        serde_json::from_str(&json_str).expect("failed to parse Wycheproof AES-WRAP JSON");
     file.assert_vector_count();
 
     let mut valid_count: usize = 0;

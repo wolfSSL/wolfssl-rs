@@ -5,18 +5,11 @@ use helpers::wycheproof::*;
 
 use signature::Verifier;
 
-const ED25519_VECTORS: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/ed25519_test.json");
-
-#[cfg(wolfssl_ed448)]
-const ED448_VECTORS: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/ed448_test.json");
-
 /// Generate a Wycheproof EdDSA verification test.
 ///
 /// Parameters:
 /// - `$name`: test function name
-/// - `$json`: JSON vector constant
+/// - `$json`: JSON vector expression
 /// - `$curve`: expected curve string in the JSON ("edwards25519" or "edwards448")
 /// - `$pk_len`: public key byte length (32 for Ed25519, 57 for Ed448)
 /// - `$vk_from_bytes`: expression to construct a verifying key from a fixed-size array
@@ -31,8 +24,9 @@ macro_rules! wycheproof_eddsa_test {
         $(#[cfg($cfg)])*
         #[test]
         fn $name() {
+            let json_str = $json;
             let file: WycheproofFile<EddsaTestGroup> =
-                serde_json::from_str($json)
+                serde_json::from_str(&json_str)
                     .expect(concat!("failed to parse Wycheproof ", $label, " JSON"));
             file.assert_vector_count();
 
@@ -128,7 +122,7 @@ macro_rules! wycheproof_eddsa_test {
 
 wycheproof_eddsa_test!(
     ed25519,
-    ED25519_VECTORS,
+    helpers::load_wycheproof("ed25519_test.json"),
     "edwards25519",
     32,
     |arr: [u8; 32]| wolfcrypt::Ed25519VerifyingKey::from_bytes(&arr).ok(),
@@ -139,7 +133,7 @@ wycheproof_eddsa_test!(
 
 wycheproof_eddsa_test!(
     ed448,
-    ED448_VECTORS,
+    helpers::load_wycheproof("ed448_test.json"),
     "edwards448",
     57,
     |arr: [u8; 57]| wolfcrypt::Ed448VerifyingKey::from_bytes(&arr).ok(),

@@ -11,46 +11,16 @@ use wolfcrypt::rsa::{
 // PKCS#1 v1.5 signature verification
 // ---------------------------------------------------------------------------
 
-const PKCS1_2048_SHA256: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_signature_2048_sha256_test.json");
-
-const PKCS1_3072_SHA256: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_signature_3072_sha256_test.json");
-
-#[cfg(wolfssl_sha384)]
-const PKCS1_2048_SHA384: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_signature_2048_sha384_test.json");
-
-#[cfg(wolfssl_sha384)]
-const PKCS1_3072_SHA384: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_signature_3072_sha384_test.json");
-
-#[cfg(wolfssl_sha384)]
-const PKCS1_4096_SHA384: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_signature_4096_sha384_test.json");
-
-#[cfg(wolfssl_sha512)]
-const PKCS1_2048_SHA512: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_signature_2048_sha512_test.json");
-
-#[cfg(wolfssl_sha512)]
-const PKCS1_3072_SHA512: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_signature_3072_sha512_test.json");
-
-#[cfg(wolfssl_sha512)]
-const PKCS1_4096_SHA512: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_signature_4096_sha512_test.json");
-
 // --- SHA-256 ---
 
 #[test]
 fn rsa_pkcs1v15_2048_sha256() {
-    run_wycheproof_pkcs1v15(PKCS1_2048_SHA256, "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_2048_sha256_test.json"), "SHA-256", RsaDigest::Sha256);
 }
 
 #[test]
 fn rsa_pkcs1v15_3072_sha256() {
-    run_wycheproof_pkcs1v15(PKCS1_3072_SHA256, "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_3072_sha256_test.json"), "SHA-256", RsaDigest::Sha256);
 }
 
 // --- SHA-384 ---
@@ -58,19 +28,19 @@ fn rsa_pkcs1v15_3072_sha256() {
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pkcs1v15_2048_sha384() {
-    run_wycheproof_pkcs1v15(PKCS1_2048_SHA384, "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_2048_sha384_test.json"), "SHA-384", RsaDigest::Sha384);
 }
 
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pkcs1v15_3072_sha384() {
-    run_wycheproof_pkcs1v15(PKCS1_3072_SHA384, "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_3072_sha384_test.json"), "SHA-384", RsaDigest::Sha384);
 }
 
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pkcs1v15_4096_sha384() {
-    run_wycheproof_pkcs1v15(PKCS1_4096_SHA384, "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_4096_sha384_test.json"), "SHA-384", RsaDigest::Sha384);
 }
 
 // --- SHA-512 ---
@@ -78,19 +48,19 @@ fn rsa_pkcs1v15_4096_sha384() {
 #[cfg(wolfssl_sha512)]
 #[test]
 fn rsa_pkcs1v15_2048_sha512() {
-    run_wycheproof_pkcs1v15(PKCS1_2048_SHA512, "SHA-512", RsaDigest::Sha512);
+    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_2048_sha512_test.json"), "SHA-512", RsaDigest::Sha512);
 }
 
 #[cfg(wolfssl_sha512)]
 #[test]
 fn rsa_pkcs1v15_3072_sha512() {
-    run_wycheproof_pkcs1v15(PKCS1_3072_SHA512, "SHA-512", RsaDigest::Sha512);
+    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_3072_sha512_test.json"), "SHA-512", RsaDigest::Sha512);
 }
 
 #[cfg(wolfssl_sha512)]
 #[test]
 fn rsa_pkcs1v15_4096_sha512() {
-    run_wycheproof_pkcs1v15(PKCS1_4096_SHA512, "SHA-512", RsaDigest::Sha512);
+    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_4096_sha512_test.json"), "SHA-512", RsaDigest::Sha512);
 }
 
 fn run_wycheproof_pkcs1v15(json: &str, expected_sha: &str, digest: RsaDigest) {
@@ -194,42 +164,21 @@ fn run_wycheproof_pkcs1v15(json: &str, expected_sha: &str, digest: RsaDigest) {
 // PSS signature verification (salt_len = digest_len, MGF1 hash = digest)
 // ---------------------------------------------------------------------------
 
-const PSS_2048_SHA256_32: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_pss_2048_sha256_mgf1_32_test.json");
-
-const PSS_3072_SHA256_32: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_pss_3072_sha256_mgf1_32_test.json");
-
-const PSS_4096_SHA256_32: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_pss_4096_sha256_mgf1_32_test.json");
-
-#[cfg(wolfssl_sha384)]
-const PSS_2048_SHA384_48: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_pss_2048_sha384_mgf1_48_test.json");
-
-#[cfg(wolfssl_sha384)]
-const PSS_4096_SHA384_48: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_pss_4096_sha384_mgf1_48_test.json");
-
-#[cfg(wolfssl_sha512)]
-const PSS_4096_SHA512_64: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/rsa_pss_4096_sha512_mgf1_64_test.json");
-
 // --- SHA-256 ---
 
 #[test]
 fn rsa_pss_2048_sha256_mgf1_32() {
-    run_wycheproof_pss(PSS_2048_SHA256_32, "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_2048_sha256_mgf1_32_test.json"), "SHA-256", RsaDigest::Sha256);
 }
 
 #[test]
 fn rsa_pss_3072_sha256_mgf1_32() {
-    run_wycheproof_pss(PSS_3072_SHA256_32, "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_3072_sha256_mgf1_32_test.json"), "SHA-256", RsaDigest::Sha256);
 }
 
 #[test]
 fn rsa_pss_4096_sha256_mgf1_32() {
-    run_wycheproof_pss(PSS_4096_SHA256_32, "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_4096_sha256_mgf1_32_test.json"), "SHA-256", RsaDigest::Sha256);
 }
 
 // --- SHA-384 ---
@@ -237,13 +186,13 @@ fn rsa_pss_4096_sha256_mgf1_32() {
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pss_2048_sha384_mgf1_48() {
-    run_wycheproof_pss(PSS_2048_SHA384_48, "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_2048_sha384_mgf1_48_test.json"), "SHA-384", RsaDigest::Sha384);
 }
 
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pss_4096_sha384_mgf1_48() {
-    run_wycheproof_pss(PSS_4096_SHA384_48, "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_4096_sha384_mgf1_48_test.json"), "SHA-384", RsaDigest::Sha384);
 }
 
 // --- SHA-512 ---
@@ -251,7 +200,7 @@ fn rsa_pss_4096_sha384_mgf1_48() {
 #[cfg(wolfssl_sha512)]
 #[test]
 fn rsa_pss_4096_sha512_mgf1_64() {
-    run_wycheproof_pss(PSS_4096_SHA512_64, "SHA-512", RsaDigest::Sha512);
+    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_4096_sha512_mgf1_64_test.json"), "SHA-512", RsaDigest::Sha512);
 }
 
 /// Wycheproof RSA-PSS test. Uses `verify_pss_with_digest` so the digest,

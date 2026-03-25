@@ -206,6 +206,42 @@ macro_rules! mac_equiv {
 
 pub(crate) use mac_equiv;
 
+/// Load a Wycheproof test vector file.
+///
+/// Checks `WYCHEPROOF_DIR` env var first, falls back to
+/// `CARGO_MANIFEST_DIR/third_party/wycheproof`.
+pub fn load_wycheproof(filename: &str) -> String {
+    let dir = std::env::var("WYCHEPROOF_DIR").unwrap_or_else(|_| {
+        format!("{}/third_party/wycheproof", env!("CARGO_MANIFEST_DIR"))
+    });
+    let path = format!("{dir}/testvectors_v1/{filename}");
+    std::fs::read_to_string(&path).unwrap_or_else(|e| {
+        panic!(
+            "Cannot read {path}: {e}\n\
+             Set WYCHEPROOF_DIR to the wycheproof repository root, e.g.:\n  \
+             WYCHEPROOF_DIR=/path/to/wycheproof cargo test -p wolfcrypt-conformance"
+        )
+    })
+}
+
+/// Load a CAVP/SHAVS test vector file.
+///
+/// Checks `CONFORMANCE_VECTORS_DIR` env var first, falls back to
+/// `CARGO_MANIFEST_DIR/vectors`.
+pub fn load_vectors(path: &str) -> String {
+    let dir = std::env::var("CONFORMANCE_VECTORS_DIR").unwrap_or_else(|_| {
+        format!("{}/vectors", env!("CARGO_MANIFEST_DIR"))
+    });
+    let full = format!("{dir}/{path}");
+    std::fs::read_to_string(&full).unwrap_or_else(|e| {
+        panic!(
+            "Cannot read {full}: {e}\n\
+             Set CONFORMANCE_VECTORS_DIR to the vectors directory, e.g.:\n  \
+             CONFORMANCE_VECTORS_DIR=/path/to/vectors cargo test -p wolfcrypt-conformance"
+        )
+    })
+}
+
 use cipher::generic_array::GenericArray;
 use cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit};
 use rand::RngCore;
