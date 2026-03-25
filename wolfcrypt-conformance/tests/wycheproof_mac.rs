@@ -5,19 +5,6 @@ use helpers::wycheproof::*;
 
 use hmac::Mac;
 
-const HMAC_SHA1: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/hmac_sha1_test.json");
-const HMAC_SHA256: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/hmac_sha256_test.json");
-const HMAC_SHA384: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/hmac_sha384_test.json");
-const HMAC_SHA512: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/hmac_sha512_test.json");
-
-#[cfg(all(wolfssl_openssl_extra, wolfssl_cmac))]
-const AES_CMAC: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/aes_cmac_test.json");
-
 /// Run a Wycheproof MAC test for one HMAC variant.
 ///
 /// Computes the full MAC, then truncates to `tag_size/8` bytes before comparing
@@ -27,8 +14,9 @@ macro_rules! wycheproof_hmac_test {
         #[cfg(all($($cfg),*))]
         #[test]
         fn $name() {
+            let json_str = $json;
             let file: WycheproofFile<MacTestGroup> =
-                serde_json::from_str($json).expect("failed to parse Wycheproof MAC JSON");
+                serde_json::from_str(&json_str).expect("failed to parse Wycheproof MAC JSON");
             file.assert_vector_count();
 
             let mut valid_count: usize = 0;
@@ -117,28 +105,28 @@ macro_rules! wycheproof_hmac_test {
 
 wycheproof_hmac_test!(
     hmac_sha1,
-    HMAC_SHA1,
+    helpers::load_wycheproof("hmac_sha1_test.json"),
     wolfcrypt::WolfHmacSha1,
     [wolfssl_openssl_extra, wolfssl_hmac]
 );
 
 wycheproof_hmac_test!(
     hmac_sha256,
-    HMAC_SHA256,
+    helpers::load_wycheproof("hmac_sha256_test.json"),
     wolfcrypt::WolfHmacSha256,
     [wolfssl_openssl_extra, wolfssl_hmac]
 );
 
 wycheproof_hmac_test!(
     hmac_sha384,
-    HMAC_SHA384,
+    helpers::load_wycheproof("hmac_sha384_test.json"),
     wolfcrypt::WolfHmacSha384,
     [wolfssl_openssl_extra, wolfssl_hmac, wolfssl_sha384]
 );
 
 wycheproof_hmac_test!(
     hmac_sha512,
-    HMAC_SHA512,
+    helpers::load_wycheproof("hmac_sha512_test.json"),
     wolfcrypt::WolfHmacSha512,
     [wolfssl_openssl_extra, wolfssl_hmac, wolfssl_sha512]
 );
@@ -155,8 +143,9 @@ macro_rules! wycheproof_cmac_test {
         #[cfg(all($($cfg),*))]
         #[test]
         fn $name() {
+            let json_str = $json;
             let file: WycheproofFile<MacTestGroup> =
-                serde_json::from_str($json).expect("failed to parse Wycheproof CMAC JSON");
+                serde_json::from_str(&json_str).expect("failed to parse Wycheproof CMAC JSON");
             file.assert_vector_count();
 
             let mut valid_count: usize = 0;
@@ -255,7 +244,7 @@ macro_rules! wycheproof_cmac_test {
 #[cfg(all(wolfssl_openssl_extra, wolfssl_cmac))]
 wycheproof_cmac_test!(
     cmac_aes128,
-    AES_CMAC,
+    helpers::load_wycheproof("aes_cmac_test.json"),
     wolfcrypt::WolfCmacAes128,
     16,
     [wolfssl_openssl_extra, wolfssl_cmac]
@@ -264,7 +253,7 @@ wycheproof_cmac_test!(
 #[cfg(all(wolfssl_openssl_extra, wolfssl_cmac))]
 wycheproof_cmac_test!(
     cmac_aes256,
-    AES_CMAC,
+    helpers::load_wycheproof("aes_cmac_test.json"),
     wolfcrypt::WolfCmacAes256,
     32,
     [wolfssl_openssl_extra, wolfssl_cmac]

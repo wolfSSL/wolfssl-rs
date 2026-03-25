@@ -6,13 +6,6 @@ use helpers::wycheproof::*;
 use aead::{AeadInPlace, KeyInit};
 use generic_array::GenericArray;
 
-const AES_GCM_VECTORS: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/aes_gcm_test.json");
-
-#[cfg(wolfssl_chacha20_poly1305)]
-const CHACHA_VECTORS: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/chacha20_poly1305_test.json");
-
 /// Generate a Wycheproof AEAD test for a given algorithm.
 ///
 /// The macro:
@@ -29,8 +22,9 @@ macro_rules! wycheproof_aead_test {
         #[cfg(all($($cfg),*))]
         #[test]
         fn $name() {
+            let json_str = $json;
             let file: WycheproofFile<AeadTestGroup> =
-                serde_json::from_str($json).expect("failed to parse Wycheproof AEAD JSON");
+                serde_json::from_str(&json_str).expect("failed to parse Wycheproof AEAD JSON");
             file.assert_vector_count();
 
             let mut valid_count: usize = 0;
@@ -164,7 +158,7 @@ macro_rules! wycheproof_aead_test {
 
 wycheproof_aead_test!(
     aes_128_gcm,
-    AES_GCM_VECTORS,
+    helpers::load_wycheproof("aes_gcm_test.json"),
     wolfcrypt::Aes128Gcm,
     16,
     12,
@@ -173,7 +167,7 @@ wycheproof_aead_test!(
 
 wycheproof_aead_test!(
     aes_256_gcm,
-    AES_GCM_VECTORS,
+    helpers::load_wycheproof("aes_gcm_test.json"),
     wolfcrypt::Aes256Gcm,
     32,
     12,
@@ -182,7 +176,7 @@ wycheproof_aead_test!(
 
 wycheproof_aead_test!(
     chacha20_poly1305,
-    CHACHA_VECTORS,
+    helpers::load_wycheproof("chacha20_poly1305_test.json"),
     wolfcrypt::ChaCha20Poly1305,
     32,
     12,

@@ -4,9 +4,6 @@ mod helpers;
 use helpers::cavp::parse_cavp;
 use digest::Mac;
 
-const AES128_CMAC: &str = include_str!("../vectors/cavp/cavp_aes128_cmac_tests.txt");
-const AES256_CMAC: &str = include_str!("../vectors/cavp/cavp_aes256_cmac_tests.txt");
-
 /// Run CAVP CMAC verification tests for a given AES key size.
 ///
 /// Each test case specifies `Key`, `Msg`, `Mac`, `Tlen` (truncation length in
@@ -17,7 +14,8 @@ macro_rules! cavp_cmac_test {
     ($name:ident, $wolf_type:ty, $klen:expr, $file:expr) => {
         #[test]
         fn $name() {
-            let cases = parse_cavp($file);
+            let file_str = $file;
+            let cases = parse_cavp(&file_str);
             let mut pass_count = 0usize;
             let mut fail_count = 0usize;
 
@@ -85,5 +83,5 @@ macro_rules! cavp_cmac_test {
     };
 }
 
-cavp_cmac_test!(aes128_cmac_cavp, wolfcrypt::WolfCmacAes128, 16, AES128_CMAC);
-cavp_cmac_test!(aes256_cmac_cavp, wolfcrypt::WolfCmacAes256, 32, AES256_CMAC);
+cavp_cmac_test!(aes128_cmac_cavp, wolfcrypt::WolfCmacAes128, 16, helpers::load_vectors("cavp/cavp_aes128_cmac_tests.txt"));
+cavp_cmac_test!(aes256_cmac_cavp, wolfcrypt::WolfCmacAes256, 32, helpers::load_vectors("cavp/cavp_aes256_cmac_tests.txt"));

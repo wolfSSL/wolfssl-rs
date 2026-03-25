@@ -3,17 +3,6 @@
 mod helpers;
 use helpers::wycheproof::*;
 
-const HKDF_SHA256: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/hkdf_sha256_test.json");
-
-#[cfg(wolfssl_sha384)]
-const HKDF_SHA384: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/hkdf_sha384_test.json");
-
-#[cfg(wolfssl_sha512)]
-const HKDF_SHA512: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/hkdf_sha512_test.json");
-
 /// Run a Wycheproof HKDF test for one hash variant.
 ///
 /// For each vector:
@@ -25,8 +14,9 @@ macro_rules! wycheproof_hkdf_test {
         #[cfg(all($($cfg),*))]
         #[test]
         fn $name() {
+            let json_str = $json;
             let file: WycheproofFile<HkdfTestGroup> =
-                serde_json::from_str($json).expect("failed to parse Wycheproof HKDF JSON");
+                serde_json::from_str(&json_str).expect("failed to parse Wycheproof HKDF JSON");
             file.assert_vector_count();
 
             let mut valid_count: usize = 0;
@@ -104,7 +94,7 @@ macro_rules! wycheproof_hkdf_test {
 
 wycheproof_hkdf_test!(
     hkdf_sha256,
-    HKDF_SHA256,
+    helpers::load_wycheproof("hkdf_sha256_test.json"),
     wolfcrypt::WolfHkdfSha256,
     [wolfssl_hkdf]
 );
@@ -112,7 +102,7 @@ wycheproof_hkdf_test!(
 #[cfg(wolfssl_sha384)]
 wycheproof_hkdf_test!(
     hkdf_sha384,
-    HKDF_SHA384,
+    helpers::load_wycheproof("hkdf_sha384_test.json"),
     wolfcrypt::WolfHkdfSha384,
     [wolfssl_hkdf, wolfssl_sha384]
 );
@@ -120,7 +110,7 @@ wycheproof_hkdf_test!(
 #[cfg(wolfssl_sha512)]
 wycheproof_hkdf_test!(
     hkdf_sha512,
-    HKDF_SHA512,
+    helpers::load_wycheproof("hkdf_sha512_test.json"),
     wolfcrypt::WolfHkdfSha512,
     [wolfssl_hkdf, wolfssl_sha512]
 );

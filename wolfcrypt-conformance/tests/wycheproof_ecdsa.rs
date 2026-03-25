@@ -5,20 +5,6 @@ use helpers::wycheproof::*;
 
 use signature::Verifier;
 
-// P-256 with SHA-256 (the curve's canonical hash).
-const P256_SHA256: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/ecdsa_secp256r1_sha256_p1363_test.json");
-
-// P-384 with SHA-384 (the curve's canonical hash).
-#[cfg(wolfssl_ecc_p384)]
-const P384_SHA384: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/ecdsa_secp384r1_sha384_p1363_test.json");
-
-// P-521 with SHA-512 (the curve's canonical hash).
-#[cfg(wolfssl_ecc_p521)]
-const P521_SHA512: &str =
-    include_str!("../third_party/wycheproof/testvectors_v1/ecdsa_secp521r1_sha512_p1363_test.json");
-
 /// Run a Wycheproof ECDSA P1363 verification test for one curve/hash combo.
 ///
 /// Wolf's `Verifier::verify(msg, &sig)` hashes the message internally using the
@@ -38,8 +24,9 @@ macro_rules! wycheproof_ecdsa_test {
         #[cfg(all($($cfg),*))]
         #[test]
         fn $name() {
+            let json_str = $json;
             let file: WycheproofFile<EcdsaP1363TestGroup> =
-                serde_json::from_str($json)
+                serde_json::from_str(&json_str)
                     .expect("failed to parse Wycheproof ECDSA P1363 JSON");
             file.assert_vector_count();
 
@@ -148,7 +135,7 @@ macro_rules! wycheproof_ecdsa_test {
 
 wycheproof_ecdsa_test!(
     ecdsa_p256_sha256,
-    P256_SHA256,
+    helpers::load_wycheproof("ecdsa_secp256r1_sha256_p1363_test.json"),
     wolfcrypt::P256,
     wolfcrypt::EcdsaVerifyingKey<wolfcrypt::P256>,
     wolfcrypt::EcdsaSignature<wolfcrypt::P256>,
@@ -159,7 +146,7 @@ wycheproof_ecdsa_test!(
 
 wycheproof_ecdsa_test!(
     ecdsa_p384_sha384,
-    P384_SHA384,
+    helpers::load_wycheproof("ecdsa_secp384r1_sha384_p1363_test.json"),
     wolfcrypt::P384,
     wolfcrypt::EcdsaVerifyingKey<wolfcrypt::P384>,
     wolfcrypt::EcdsaSignature<wolfcrypt::P384>,
@@ -170,7 +157,7 @@ wycheproof_ecdsa_test!(
 
 wycheproof_ecdsa_test!(
     ecdsa_p521_sha512,
-    P521_SHA512,
+    helpers::load_wycheproof("ecdsa_secp521r1_sha512_p1363_test.json"),
     wolfcrypt::P521,
     wolfcrypt::EcdsaVerifyingKey<wolfcrypt::P521>,
     wolfcrypt::EcdsaSignature<wolfcrypt::P521>,
