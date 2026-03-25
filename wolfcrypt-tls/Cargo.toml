@@ -1,9 +1,13 @@
 [package]
 name = "wolfcrypt-tls"
+authors = ["WolfSSL Inc"]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+keywords = ["wolfcrypt", "wolfssl", "tls", "fips", "cryptography"]
+categories = ["cryptography"]
 description = "Safe Rust TLS API backed by wolfSSL"
+homepage = "http://wolfssl.com"
 repository = "https://github.com/wolfSSL/wolfssl-rs"
 
 # Export as "wolfssl" so downstream code uses `use wolfssl::...`.
@@ -12,8 +16,16 @@ repository = "https://github.com/wolfSSL/wolfssl-rs"
 [lib]
 name = "wolfssl"
 
+[features]
+default = []
+# Compile wolfSSL from source (requires WOLFSSL_SRC or pkg-config).
+vendored = ["wolfcrypt-sys/vendored"]
+# Enable wolfSSL FIPS 140-3 code path.
+# See the workspace README for FIPS compliance requirements.
+fips = ["wolfcrypt-sys/fips"]
+
 [dependencies]
-wolfcrypt-sys = { path = "../wolfcrypt-sys" }
+wolfcrypt-sys = { version = "0.1.0", path = "../wolfcrypt-sys" }
 zeroize = { workspace = true }
 
 [dev-dependencies]

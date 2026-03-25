@@ -87,6 +87,23 @@ wolfSSL source discovery (in priority order):
 3. `vendored` feature on `wolfcrypt-sys` (default: compile from source)
 4. `pkg-config`
 
+## FIPS 140-3
+
+These crates expose a `fips` feature flag that enables the wolfSSL FIPS 140-3
+code path. **Enabling this feature alone does not give you a FIPS 140-3
+validated build.** FIPS 140-3 validation requires:
+
+1. A wolfSSL commercial FIPS license (contact wolfssl.com/license).
+2. The specific wolfSSL source tree that was submitted for validation — not an
+   arbitrary checkout. The validated source is provided by wolfSSL under the
+   commercial license.
+3. No modifications to the FIPS cryptographic boundary code.
+4. The FIPS self-test (`wc_RunAllCast()`) must pass at startup.
+
+Without a commercial license and the validated source, enabling `fips` builds
+against unvalidated code. The MIT license on these Rust crates does not grant
+any FIPS compliance rights; those come from wolfSSL Inc. exclusively.
+
 ## License
 
 All wolfcrypt crates are licensed under MIT. See individual crate directories
