@@ -13,8 +13,10 @@
 //! println!("include dir: {}", artifacts.include_dir.display());
 //! ```
 //!
-//! The builder discovers wolfSSL sources in order: `source_dir()` override,
-//! `WOLFSSL_SRC` env var, or `../../wolfssl` relative to the workspace.
+//! The builder discovers wolfSSL sources in order:
+//! 1. `source_dir()` programmatic override
+//! 2. `WOLFSSL_SRC` environment variable
+//! 3. `pkg-config` (looks for a `wolfssl` package whose prefix contains source files)
 
 use std::collections::HashSet;
 use std::env;
@@ -50,7 +52,7 @@ impl Build {
     }
 
     /// Set the path to the wolfSSL source tree.
-    /// If not set, defaults to `WOLFSSL_SRC` env var or `../../wolfssl`.
+    /// If not set, defaults to `WOLFSSL_SRC` env var, then `pkg-config`.
     pub fn source_dir(&mut self, dir: PathBuf) -> &mut Self {
         self.source_dir = Some(dir);
         self
@@ -67,8 +69,13 @@ impl Build {
         let wolfssl_dir = self.resolve_source_dir();
         let settings_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
-        // Parse user_settings.h for conditional source selection
-        let user_settings_path = settings_dir.join("user_settings.h");
+        // Select user_settings header based on target
+        let user_settings_name = if cfg!(feature = "riscv-bare-metal") {
+            "user_settings_riscv.h"
+        } else {
+            "user_settings.h"
+        };
+        let user_settings_path = settings_dir.join(user_settings_name);
         let mut defines = parse_defines(&user_settings_path);
         if self.fips {
             let fips_path = settings_dir.join("user_settings_fips.h");
@@ -91,12 +98,43 @@ impl Build {
             wolfcrypt_sources.extend_from_slice(FIPS_WOLFCRYPT_SOURCES);
         }
         append_conditional_wolfcrypt_sources(&defines, &mut wolfcrypt_sources);
-        let ssl_srcs = ssl_sources(&defines);
+        // For riscv-bare-metal, compile ssl.c only (it includes pk.c, pk_ec.c,
+        // ssl_bn.c, etc. internally as one compilation unit).
+        let ssl_srcs: &[&str] = if cfg!(feature = "riscv-bare-metal") {
+            &["ssl.c"]
+        } else {
+            ssl_sources(&defines)
+        };
 
         // Compile
         let mut build = cc::Build::new();
         build.include(&wolfssl_dir);
+
+        // For riscv-bare-metal, place a copy of user_settings_riscv.h as
+        // user_settings.h in OUT_DIR so it shadows the default.
+        if cfg!(feature = "riscv-bare-metal") {
+            let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+            let riscv_src = settings_dir.join("user_settings_riscv.h");
+            let riscv_dst = out_dir.join("user_settings.h");
+            std::fs::copy(&riscv_src, &riscv_dst)
+                .expect("failed to copy user_settings_riscv.h");
+            // OUT_DIR comes first so its user_settings.h takes precedence
+            build.include(&out_dir);
+
+            // Add bare-metal stub headers (stdio.h, etc.) if available
+            if let Ok(stubs) = env::var("WOLFSSL_BARE_METAL_STUBS") {
+                build.include(stubs);
+            }
+
+            // Compile bare-metal helper functions
+            let helpers = settings_dir.join("riscv_bare_metal_helpers.c");
+            if helpers.exists() {
+                build.file(&helpers);
+                println!("cargo:rerun-if-changed={}", helpers.display());
+            }
+        }
         build.include(&settings_dir);
+
         build.define("WOLFSSL_USER_SETTINGS", None);
         if self.fips {
             build.define("HAVE_FIPS", None);
@@ -137,6 +175,7 @@ impl Build {
     }
 
     fn resolve_source_dir(&self) -> PathBuf {
+        // 1. Programmatic override
         if let Some(ref dir) = self.source_dir {
             if !dir.exists() {
                 panic!("wolfssl source dir does not exist: {}", dir.display());
@@ -144,6 +183,7 @@ impl Build {
             return dir.clone();
         }
 
+        // 2. WOLFSSL_SRC env var
         if let Ok(dir) = env::var("WOLFSSL_SRC") {
             let path = PathBuf::from(&dir);
             if !path.exists() {
@@ -152,19 +192,67 @@ impl Build {
             return path;
         }
 
-        // Look for wolfssl adjacent to the workspace root.
-        // CARGO_MANIFEST_DIR is wolfssl-src/; one level up is the workspace root.
-        let workspace_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
-        let candidate = workspace_root.join("..").join("wolfssl");
-        if candidate.exists() {
-            return candidate;
+        // 3. pkg-config
+        if let Some(dir) = Self::find_via_pkg_config() {
+            return dir;
         }
 
         panic!(
-            "wolfSSL source not found. Set WOLFSSL_SRC to the path of your wolfssl checkout, \
-             or clone it adjacent to this workspace:\n  \
-             git clone https://github.com/wolfSSL/wolfssl.git"
+            "wolfSSL source not found. Either:\n  \
+             - Set WOLFSSL_SRC to the path of your wolfssl checkout\n  \
+             - Install wolfssl-dev so that pkg-config can find it\n  \
+             - Clone it: git clone https://github.com/wolfSSL/wolfssl.git"
         );
+    }
+
+    /// Try to locate wolfSSL source via `pkg-config`.
+    ///
+    /// Queries `pkg-config --variable=prefix wolfssl` and checks whether the
+    /// returned prefix contains a wolfSSL source tree (i.e. `wolfcrypt/src/`
+    /// exists under it).  Falls back to the include directory if the prefix
+    /// doesn't contain source files — some installs place the full tree
+    /// under the include root.
+    fn find_via_pkg_config() -> Option<PathBuf> {
+        // Try the prefix first (works for source-tree installs like
+        // ./configure --prefix=/opt/wolfssl && make install)
+        if let Some(prefix) = pkg_config_var("prefix") {
+            let path = PathBuf::from(&prefix);
+            if path.join("wolfcrypt").join("src").exists() {
+                return Some(path);
+            }
+        }
+
+        // Fall back to includedir — strip the trailing /include (or
+        // /include/wolfssl) to get the root.
+        if let Some(incdir) = pkg_config_var("includedir") {
+            let path = PathBuf::from(&incdir);
+            // Try <includedir>/../ (e.g. /usr/local/include → /usr/local)
+            if let Some(parent) = path.parent() {
+                if parent.join("wolfcrypt").join("src").exists() {
+                    return Some(parent.to_path_buf());
+                }
+            }
+        }
+
+        None
+    }
+}
+
+/// Query a pkg-config variable for the `wolfssl` package.
+fn pkg_config_var(var: &str) -> Option<String> {
+    let output = std::process::Command::new("pkg-config")
+        .args(["--variable", var, "wolfssl"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let val = String::from_utf8(output.stdout).ok()?;
+    let val = val.trim();
+    if val.is_empty() {
+        None
+    } else {
+        Some(val.to_string())
     }
 }
 

@@ -3,13 +3,9 @@
 //! This crate does NOT contain any FFI code. All cryptographic operations
 //! are performed through the safe Rust API of the `wolfcrypt` crate.
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 
 extern crate alloc;
-/// Prelude for no_std compatibility.
-///
-/// When `std` is disabled, re-exports core alloc types so that consumer
-/// modules can `use crate::prelude::*` without caring about the feature.
 pub(crate) mod prelude {
     pub use alloc::vec;
     pub use alloc::vec::Vec;

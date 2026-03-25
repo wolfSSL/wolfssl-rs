@@ -7,8 +7,7 @@
 //   2. WOLFSSL_DIR                            → install prefix (lib/ + include/)
 //   3. `vendored` feature / WOLFSSL_SRC       → compile via wolfssl-src
 //   4. pkg-config                             → system library
-//   5. ../../wolfssl exists                   → compile via wolfssl-src
-//   6. panic with instructions
+//   5. panic with instructions
 
 use std::collections::HashSet;
 use std::env;
@@ -208,6 +207,12 @@ fn generate_bindings(
             builder = builder.clang_arg(format!("-I{}", settings_dir.display()));
         }
         builder = builder.clang_arg("-DWOLFSSL_USER_SETTINGS");
+        // For riscv-bare-metal, add stub headers (stdio.h, etc.)
+        if cfg!(feature = "riscv-bare-metal") {
+            if let Ok(stubs) = env::var("WOLFSSL_BARE_METAL_STUBS") {
+                builder = builder.clang_arg(format!("-I{}", stubs));
+            }
+        }
     } else {
         // For system/pkg-config builds, tell settings.h to pull in options.h
         // so that all feature flags (TLS 1.3, SNI, etc.) are visible to bindgen.
@@ -269,8 +274,7 @@ fn main() {
     //   2. WOLFSSL_DIR                           → install prefix
     //   3. vendored feature / WOLFSSL_SRC        → wolfssl-src
     //   4. pkg-config                            → system
-    //   5. ../../wolfssl fallback                → wolfssl-src
-    //   6. panic
+    //   5. panic
 
     if let (Ok(lib_dir), Ok(include_dir)) = (
         env::var("WOLFSSL_LIB_DIR"),
@@ -295,21 +299,15 @@ fn main() {
     } else if let Some((include_dir, lib_dirs, defines)) = try_pkg_config() {
         do_system(&include_dir, &lib_dirs, &manifest_dir, &defines, is_fips);
     } else {
-        // Last resort: try vendored build if source exists
-        let candidate = manifest_dir.join("..").join("..").join("wolfssl");
-        if candidate.exists() {
-            do_vendored(&manifest_dir, is_fips);
-        } else {
-            panic!(
-                "wolfSSL not found. Either:\n  \
-                 - Install wolfssl and ensure pkg-config can find it\n  \
-                 - Set WOLFSSL_DIR to a wolfssl install prefix\n  \
-                 - Set WOLFSSL_LIB_DIR and WOLFSSL_INCLUDE_DIR\n  \
-                 - Enable the `vendored` feature and set WOLFSSL_SRC\n  \
-                 - Clone wolfssl adjacent to this workspace:\n    \
-                   git clone https://github.com/wolfSSL/wolfssl.git"
-            );
-        }
+        panic!(
+            "wolfSSL not found. Either:\n  \
+             - Install wolfssl and ensure pkg-config can find it\n  \
+             - Set WOLFSSL_DIR to a wolfssl install prefix\n  \
+             - Set WOLFSSL_LIB_DIR and WOLFSSL_INCLUDE_DIR\n  \
+             - Enable the `vendored` feature and set WOLFSSL_SRC\n  \
+             - Clone wolfssl: git clone https://github.com/wolfSSL/wolfssl.git\n    \
+               then set WOLFSSL_SRC to the cloned path"
+        );
     }
 
     println!("cargo:rerun-if-changed=build.rs");
@@ -370,12 +368,19 @@ fn do_vendored(manifest_dir: &Path, is_fips: bool) {
     let artifacts = builder.build();
     let active_cfgs = emit_cfg_flags(&artifacts.defines);
 
+    // For riscv-bare-metal, bindgen must see the RISC-V user_settings.h
+    // (copied to OUT_DIR by wolfssl-src) rather than the default.
+    let settings_dir = if cfg!(feature = "riscv-bare-metal") {
+        PathBuf::from(env::var("OUT_DIR").unwrap())
+    } else {
+        artifacts.settings_include_dir.clone()
+    };
     generate_bindings(
         &artifacts.include_dir,
         manifest_dir,
         is_fips,
         true,
-        Some(&artifacts.settings_include_dir),
+        Some(&settings_dir),
     );
 
     emit_metadata(
@@ -412,6 +417,25 @@ fn do_system(
     emit_metadata(&active_cfgs, include_dir, include_dir, "", lib_dirs, false);
 }
 
+/// Parse `LIBWOLFSSL_VERSION_STRING` from `<include_dir>/wolfssl/version.h`.
+fn parse_wolfssl_version(include_dir: &Path) -> String {
+    let version_h = include_dir.join("wolfssl").join("version.h");
+    let content = match std::fs::read_to_string(&version_h) {
+        Ok(s) => s,
+        Err(_) => return "unknown".to_string(),
+    };
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix("#define LIBWOLFSSL_VERSION_STRING") {
+            let rest = rest.trim();
+            if let Some(ver) = rest.strip_prefix('"').and_then(|s| s.strip_suffix('"')) {
+                return ver.to_string();
+            }
+        }
+    }
+    "unknown".to_string()
+}
+
 /// Emit cargo metadata for downstream crates.
 fn emit_metadata(
     active_cfgs: &[String],
@@ -421,6 +445,8 @@ fn emit_metadata(
     lib_dirs: &[PathBuf],
     vendored: bool,
 ) {
+    let version = parse_wolfssl_version(include_dir);
+    println!("cargo:VERSION={version}");
     println!("cargo:CFGS={}", active_cfgs.join(","));
     println!("cargo:ALL_CFGS={}", ALL_WOLFSSL_CFGS.join(","));
     println!("cargo:INCLUDE={}", include_dir.display());

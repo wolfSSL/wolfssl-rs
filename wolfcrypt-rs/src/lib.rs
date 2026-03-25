@@ -48,6 +48,12 @@ pub const CHACHA_ALLOC_SIZE: usize = 128;
 #[cfg(wolfssl_chacha20_poly1305)]
 pub const CHACHA_POLY_AEAD_ALLOC_SIZE: usize = 192;
 
+/// Version string of the linked wolfSSL C library (e.g. `"5.7.4"`).
+///
+/// Set at compile time from `LIBWOLFSSL_VERSION_STRING` in `wolfssl/version.h`.
+/// Returns `"unknown"` if the header was not found during the build.
+pub const WOLFSSL_VERSION: &str = env!("WOLFSSL_VERSION");
+
 // ================================================================
 // Opaque types (used behind pointers)
 // ================================================================

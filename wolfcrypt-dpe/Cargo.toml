@@ -1,41 +1,43 @@
 [package]
 name = "wolfcrypt-dpe"
+authors = ["WolfSSL Inc"]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-keywords = ["wolfcrypt", "wolfssl", "fips"]
+description = "Caliptra DPE Crypto trait implementation backed by wolfCrypt"
+homepage = "http://wolfssl.com"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+keywords = ["wolfcrypt", "wolfssl", "fips", "caliptra", "dpe"]
+categories = ["cryptography"]
 
 [lib]
 name = "wolfcrypt_dpe"
 
-# For no_std targets (e.g. Caliptra), depend with:
-#   wolfcrypt-dpe = { ..., default-features = false }
 [features]
-default = ["std"]
-std = ["wolfcrypt/digest", "wolfcrypt/rand"]
+riscv-bare-metal = ["wolfcrypt/riscv-bare-metal"]
 
 [dependencies]
 # wolfcrypt from the local workspace -- the ONLY crypto dependency
-wolfcrypt = { path = "../wolfcrypt", default-features = false, features = [
+wolfcrypt = { version = "0.1.0", path = "../wolfcrypt", default-features = false, features = [
     "digest", "hkdf", "ecdsa", "rand",
 ] }
 
 # RustCrypto traits used in the public/internal API
-digest_trait = { package = "digest", version = "0.10" }
-signature_trait = { package = "signature", version = "2.2" }
-rand_core = "0.10"
+digest_trait = { package = "digest", version = "0.10", default-features = false }
+signature_trait = { package = "signature", version = "2.2", default-features = false }
+rand_core = { version = "0.10", default-features = false }
 
 # Constant-time comparison
-subtle = "2"
-zeroize = "1"
+subtle = { version = "2", default-features = false }
+zeroize = { version = "1", default-features = false }
 
-# caliptra-dpe crypto trait -- pinned to exact commit
-caliptra-dpe-crypto = { git = "https://github.com/chipsalliance/caliptra-dpe", rev = "6dfc502a30d443e5e054db1344a97eeb823ea5b9", package = "caliptra-dpe-crypto", default-features = false }
+# caliptra-dpe crypto trait -- pinned to exact commit (fw-2.1.0)
+caliptra-dpe-crypto = { git = "https://github.com/chipsalliance/caliptra-dpe", rev = "cfc9a713882ca562a0ae6565198129e6da121a42", package = "crypto", default-features = false }
 
 [dev-dependencies]
 hex = "0.4"
 
 # DPE engine + platform for integration tests (same pinned commit as crypto trait)
-caliptra-dpe = { git = "https://github.com/chipsalliance/caliptra-dpe", rev = "6dfc502a30d443e5e054db1344a97eeb823ea5b9", package = "caliptra-dpe", default-features = false, features = ["p384"] }
-caliptra-dpe-platform = { git = "https://github.com/chipsalliance/caliptra-dpe", rev = "6dfc502a30d443e5e054db1344a97eeb823ea5b9", package = "caliptra-dpe-platform", default-features = false, features = ["rustcrypto"] }
+caliptra-dpe = { git = "https://github.com/chipsalliance/caliptra-dpe", rev = "cfc9a713882ca562a0ae6565198129e6da121a42", package = "dpe", default-features = false, features = ["p384"] }
+caliptra-dpe-platform = { git = "https://github.com/chipsalliance/caliptra-dpe", rev = "cfc9a713882ca562a0ae6565198129e6da121a42", package = "platform", default-features = false, features = ["rustcrypto"] }
 caliptra-cfi-lib = { git = "https://github.com/chipsalliance/caliptra-cfi.git", package = "caliptra-cfi-lib", rev = "767d4ef59a106aea683b883c07bd65456fb3ba6b", default-features = false, features = ["cfi-test"] }
