@@ -1,10 +1,20 @@
 [package]
 name = "wolfssl-src"
+authors = ["WolfSSL Inc"]
 version = "0.1.0"
 edition = "2021"
 description = "Compile wolfSSL from source for use by wolfcrypt-sys"
 license = "MIT"
-keywords = ["wolfcrypt", "wolfssl", "fips"]
+homepage = "http://wolfssl.com"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+keywords = ["wolfcrypt", "wolfssl", "fips", "cryptography"]
+categories = ["cryptography"]
+
+[features]
+default = []
+# Use the minimal bare-metal user_settings_riscv.h instead of the full
+# user_settings.h.  Intended for riscv32imc-unknown-none-elf targets.
+riscv-bare-metal = []
 
 [dependencies]
 cc = { version = "1.2.26", features = ["parallel"] }

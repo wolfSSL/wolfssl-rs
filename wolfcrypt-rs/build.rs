@@ -43,6 +43,21 @@ fn main() {
 
     let mut shim_build = cc::Build::new();
     shim_build.include(&wolfssl_include);
+    // For riscv-bare-metal, put OUT_DIR first so the RISC-V user_settings.h
+    // shadows the default one, and add bare-metal stub headers.
+    if cfg!(feature = "riscv-bare-metal") {
+        let out_dir = env::var("OUT_DIR").unwrap();
+        shim_build.include(&out_dir);
+        if let Ok(stubs) = env::var("WOLFSSL_BARE_METAL_STUBS") {
+            shim_build.include(&stubs);
+        }
+        // Copy RISC-V settings to our OUT_DIR too
+        let src_settings = std::path::Path::new(&settings_include).join("user_settings_riscv.h");
+        let dst = std::path::Path::new(&out_dir).join("user_settings.h");
+        if src_settings.exists() && !dst.exists() {
+            std::fs::copy(&src_settings, &dst).ok();
+        }
+    }
     shim_build.include(&settings_include);
     if vendored {
         shim_build.define("WOLFSSL_USER_SETTINGS", None);
@@ -75,6 +90,9 @@ fn main() {
         .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_LIBCRYPTO not set — is wolfcrypt-sys a dependency?")));
     println!("cargo:VENDORED={}", env::var("DEP_WOLFCRYPT_SYS_VENDORED")
         .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_VENDORED not set — is wolfcrypt-sys a dependency?")));
+    let version = env::var("DEP_WOLFCRYPT_SYS_VERSION").unwrap_or_else(|_| "unknown".to_string());
+    println!("cargo:VERSION={version}");
+    println!("cargo:rustc-env=WOLFSSL_VERSION={version}");
 
     // --- rerun-if-changed ---
     println!("cargo:rerun-if-changed=build.rs");
