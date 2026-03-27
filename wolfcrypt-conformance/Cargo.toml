@@ -1,7 +1,7 @@
 [package]
 name = "wolfcrypt-conformance"
 authors = ["WolfSSL Inc"]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "Cross-validation and trait conformance tests for wolfcrypt"
@@ -21,11 +21,11 @@ path = "src/lib.rs"
 # dev-dependencies) solely so build.rs can read DEP_WOLFSSL_CFGS metadata.
 # Cargo only exposes `links` metadata to build scripts of direct dependents,
 # and dev-dependencies don't qualify.
-wolfcrypt-rs = { version = "0.1.0", path = "../wolfcrypt-rs" }
+wolfcrypt-rs = { version = "0.1.1", path = "../wolfcrypt-rs" }
 
 [dev-dependencies]
 # === Wolf side ===
-wolfcrypt = { version = "0.1.0", path = "../wolfcrypt", features = [
+wolfcrypt = { version = "0.1.1", path = "../wolfcrypt", features = [
     "digest", "hmac", "cmac", "hkdf", "pbkdf2", "aead", "cipher",
     "poly1305", "signature", "ecdsa", "ed25519", "ed448", "rsa",
     "mldsa", "mlkem", "keywrap", "dh", "des3", "ecdh", "rand",
