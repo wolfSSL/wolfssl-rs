@@ -35,7 +35,7 @@ wolfcrypt = { version = "0.1.0", path = "../wolfcrypt", features = [
 # Versions verified compatible with trait crate versions used by
 # wolfcrypt (digest 0.10, cipher 0.4, aead 0.5, signature 2.2).
 sha1 = "0.10"
-sha2 = "0.10"
+sha2 = "0.11"
 sha3 = "0.10"
 hmac = "0.12"
 cmac = "0.7"
