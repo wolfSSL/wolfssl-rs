@@ -1,0 +1,38 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    # Group all RustCrypto trait crates into one PR — a semver bump there
+    # requires updating all implementations at once anyway.
+    groups:
+      rustcrypto-traits:
+        patterns:
+          - "digest"
+          - "aead"
+          - "cipher"
+          - "signature"
+          - "hmac"
+          - "cmac"
+          - "hkdf"
+          - "pbkdf2"
+          - "rand_core"
+          - "rand"
+      rustcrypto-impl:
+        patterns:
+          - "sha2"
+          - "sha3"
+          - "sha1"
+          - "aes"
+          - "aes-gcm"
+          - "chacha20"
+          - "chacha20poly1305"
+          - "p256"
+          - "p384"
+          - "p521"
+          - "elliptic-curve"
+          - "ecdsa"
+          - "ed25519"
+          - "ed25519-dalek"
