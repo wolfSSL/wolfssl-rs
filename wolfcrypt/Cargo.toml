@@ -5,7 +5,7 @@
 [package]
 name = "wolfcrypt"
 authors = ["WolfSSL Inc"]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.71.0"
 license = "MIT"
@@ -50,7 +50,7 @@ fips     = ["wolfcrypt-rs/fips"]
 riscv-bare-metal = ["wolfcrypt-rs/riscv-bare-metal"]
 
 [dependencies]
-wolfcrypt-rs = { version = "0.1.0", path = "../wolfcrypt-rs" }
+wolfcrypt-rs = { version = "0.1.1", path = "../wolfcrypt-rs" }
 
 # RustCrypto trait crates (renamed to avoid module name collision).
 #

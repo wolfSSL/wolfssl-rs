@@ -1,7 +1,7 @@
 [package]
 name = "wolfcrypt-rs"
 description = "Low-level FFI bindings for wolfSSL/wolfCrypt cryptographic library."
-version = "0.1.0"
+version = "0.1.1"
 authors = ["WolfSSL Inc"]
 edition = "2021"
 license = "MIT"
@@ -15,7 +15,7 @@ build = "build.rs"
 links = "wolfssl"
 
 [dependencies]
-wolfcrypt-sys = { version = "0.1.0", path = "../wolfcrypt-sys", default-features = false, features = ["vendored"] }
+wolfcrypt-sys = { version = "0.1.1", path = "../wolfcrypt-sys", default-features = false, features = ["vendored"] }
 
 [features]
 default = []
