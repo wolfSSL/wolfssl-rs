@@ -65,7 +65,7 @@ cipher = "0.4"
 aead = { version = "0.5", features = ["alloc"] }
 signature = "2.2"
 ed25519 = "2.2"
-crypto-common = "0.1"
+crypto-common = "0.2"
 generic-array = "0.14"
 typenum = "1"
 universal-hash = "0.5"

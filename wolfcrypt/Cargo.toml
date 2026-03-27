@@ -79,7 +79,7 @@ cipher_trait    = { package = "cipher",         version = "0.4",  optional = tru
 signature_trait = { package = "signature",      version = "2.2",  optional = true }
 ed25519_trait   = { package = "ed25519",        version = "2.2",  optional = true }
 rand_core       = { version = "0.10", optional = true }
-crypto-common   = { version = "0.1",  optional = true }
+crypto-common   = { version = "0.2",  optional = true }
 generic-array   = "0.14"
 typenum         = "1"
 zeroize         = { version = "1", features = ["zeroize_derive"] }
