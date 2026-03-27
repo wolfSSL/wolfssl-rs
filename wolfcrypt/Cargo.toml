@@ -12,6 +12,7 @@ license = "MIT"
 description = "RustCrypto trait implementations backed by wolfCrypt"
 homepage = "http://wolfssl.com"
 repository = "https://github.com/wolfSSL/wolfssl-rs"
+readme = "README.md"
 keywords = ["wolfcrypt", "wolfssl", "fips", "rustcrypto", "cryptography"]
 categories = ["cryptography"]
 
