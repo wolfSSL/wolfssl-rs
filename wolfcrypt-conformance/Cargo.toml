@@ -61,8 +61,8 @@ x25519-dalek = { version = "2", features = ["static_secrets"] }
 # ml-kem = "0.2"    # Disabled: depends on pre-release kem 0.3.0-pre.0
 
 # === Shared trait crates (must match wolfcrypt's versions) ===
-digest = "0.10"
-cipher = "0.4"
+digest = "0.11"
+cipher = "0.5"
 aead = { version = "0.5", features = ["alloc"] }
 signature = "2.2"
 ed25519 = "2.2"
@@ -73,7 +73,7 @@ universal-hash = "0.5"
 elliptic-curve = "0.13"
 
 # === Test infrastructure ===
-rand = "0.8"
+rand = "0.10"
 rand_core = "0.10"
 hex-literal = "0.4"
 hex = "0.4"
