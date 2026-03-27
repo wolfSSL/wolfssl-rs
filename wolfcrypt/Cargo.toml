@@ -86,7 +86,7 @@ zeroize         = { version = "1", features = ["zeroize_derive"] }
 
 [dev-dependencies]
 hex = "0.4"
-hex-literal = "0.4"
+hex-literal = "1.1"
 rand_core = "0.10"
 aead_trait = { package = "aead", version = "0.5", features = ["alloc"] }
 cipher_trait = { package = "cipher", version = "0.4" }
