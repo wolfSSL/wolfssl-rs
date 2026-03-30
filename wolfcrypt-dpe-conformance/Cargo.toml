@@ -44,6 +44,6 @@ x509-cert = { version = "0.2", features = ["std"] }
 der = { version = "0.7", features = ["alloc", "oid"] }
 
 # === Test infrastructure ===
-rand = "0.8"
+rand = "0.10"
 hex = "0.4"
 zerocopy = "0.8"
