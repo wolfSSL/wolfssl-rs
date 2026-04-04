@@ -171,11 +171,21 @@ impl Build {
             build.define("HAVE_FIPS", None);
         }
 
+        // Patch overlay: prefer files in `patches/` over the upstream source.
+        // This carries local fixes (e.g. sp_521_div_9 quotient-correction) without
+        // modifying the upstream wolfSSL tree.
+        let patches_dir = settings_dir.join("patches");
         for src in &wolfcrypt_sources {
-            let path = wolfcrypt_src.join(src);
-            if !path.exists() {
-                panic!("required wolfcrypt source not found: {}", path.display());
-            }
+            let patched = patches_dir.join(src);
+            let path = if patched.exists() {
+                patched
+            } else {
+                let upstream = wolfcrypt_src.join(src);
+                if !upstream.exists() {
+                    panic!("required wolfcrypt source not found: {}", upstream.display());
+                }
+                upstream
+            };
             build.file(&path);
             println!("cargo:rerun-if-changed={}", path.display());
         }
@@ -193,6 +203,7 @@ impl Build {
         build.compile("wolfssl");
 
         println!("cargo:rerun-if-changed={}", user_settings_path.display());
+        println!("cargo:rerun-if-changed={}", patches_dir.display());
         if self.fips {
             println!("cargo:rerun-if-changed={}", settings_dir.join("user_settings_fips.h").display());
         }
