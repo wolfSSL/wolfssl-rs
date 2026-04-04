@@ -21,6 +21,12 @@ name = "wolfcrypt_dpe"
 
 [features]
 riscv-bare-metal = ["wolfcrypt/riscv-bare-metal"]
+cryptocb-only = ["wolfcrypt/cryptocb-only"]
+cryptocb-pure = ["wolfcrypt/cryptocb-pure"]
+# Propagates wolfcrypt/require-dev-id: removes WolfRng::new() (software DRBG path)
+# so only WolfRng::new_with_dev_id is callable.  When enabled, construct
+# WolfCryptDpeImpl via new_with_rng_dev_id() to supply the CryptoCb device ID.
+require-dev-id = ["wolfcrypt/require-dev-id"]
 
 [dependencies]
 # wolfcrypt from the local workspace -- the ONLY crypto dependency

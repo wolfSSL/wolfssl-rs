@@ -1,5 +1,7 @@
 use crate::error::{check, len_as_u32, WolfCryptError};
-use wolfcrypt_rs::{wc_FreeRng, wc_InitRng, wc_RNG_GenerateBlock, WC_RNG};
+#[cfg(not(feature = "require-dev-id"))]
+use wolfcrypt_rs::wc_InitRng;
+use wolfcrypt_rs::{wc_FreeRng, wc_InitRng_ex, wc_RNG_GenerateBlock, WC_RNG};
 
 /// A wolfCrypt-backed random number generator that implements
 /// [`rand_core::TryRng`] and [`rand_core::TryCryptoRng`] with
@@ -11,6 +13,12 @@ pub struct WolfRng {
 
 impl WolfRng {
     /// Create a new `WolfRng`, initialising the underlying wolfCrypt DRBG.
+    ///
+    /// Uses `INVALID_DEVID` so wolfSSL's software DRBG provides randomness.
+    /// When the `require-dev-id` feature is active this function is removed:
+    /// callers must use [`WolfRng::new_with_dev_id`] and supply a hardware
+    /// CryptoCb device ID so the ITRNG is always used.
+    #[cfg(not(feature = "require-dev-id"))]
     pub fn new() -> Result<Self, WolfCryptError> {
         let mut rng = WC_RNG::zeroed();
         // SAFETY: `rng` is zero-initialised and `wc_InitRng` will fully
@@ -20,12 +28,31 @@ impl WolfRng {
         Ok(Self { rng })
     }
 
+    /// Create a new `WolfRng` bound to a specific CryptoCb device.
+    ///
+    /// Uses `wc_InitRng_ex` so that every `wc_RNG_GenerateBlock` call is
+    /// routed through the CryptoCb registered for `dev_id`.  Required to
+    /// ensure hardware entropy (e.g. Caliptra ITRNG via `wolfcrypt_dpe_hw`)
+    /// is used rather than the software DRBG.
+    ///
+    /// Pass `wolfcrypt_rs::INVALID_DEVID` to get the same behaviour as
+    /// [`WolfRng::new`].
+    pub fn new_with_dev_id(dev_id: core::ffi::c_int) -> Result<Self, WolfCryptError> {
+        let mut rng = WC_RNG::zeroed();
+        // SAFETY: `rng` is zero-initialised and `wc_InitRng_ex` will fully
+        // initialise it.  `null_mut()` is the documented value for the heap
+        // parameter when the default allocator is used.
+        let rc = unsafe { wc_InitRng_ex(&mut rng, core::ptr::null_mut(), dev_id) };
+        check(rc, "wc_InitRng_ex")?;
+        Ok(Self { rng })
+    }
+
 }
 
 impl Drop for WolfRng {
     fn drop(&mut self) {
-        // SAFETY: `self.rng` was successfully initialised by `wc_InitRng`
-        // in `new()`. We free it exactly once here.
+        // SAFETY: `self.rng` was successfully initialised by `wc_InitRng` /
+        // `wc_InitRng_ex` in `new()` / `new_with_dev_id()`. Freed exactly once.
         unsafe {
             wc_FreeRng(&mut self.rng);
         }

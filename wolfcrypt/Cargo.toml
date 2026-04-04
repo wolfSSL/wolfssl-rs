@@ -48,6 +48,13 @@ cryptocb = []
 hpke     = ["rand"]
 fips     = ["wolfcrypt-rs/fips"]
 riscv-bare-metal = ["wolfcrypt-rs/riscv-bare-metal"]
+cryptocb-only = ["wolfcrypt-rs/cryptocb-only"]
+cryptocb-pure = ["wolfcrypt-rs/cryptocb-pure"]
+# When enabled, `WolfRng::new()` (which uses INVALID_DEVID / software DRBG) is
+# removed from the public API.  Code must use `WolfRng::new_with_dev_id` and
+# supply a hardware CryptoCb device ID.  Activating this feature produces a
+# compile error at any call site that still uses the software path.
+require-dev-id = []
 
 [dependencies]
 wolfcrypt-rs = { version = "0.1.1", path = "../wolfcrypt-rs" }

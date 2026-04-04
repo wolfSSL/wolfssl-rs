@@ -1,0 +1,15 @@
+#!/bin/bash
+# Cross-compiler wrapper: riscv32imc-unknown-none-elf via zig cc.
+# Used by the cc crate (via CC_riscv32imc_unknown_none_elf) when building
+# C sources (wolfssl-src) for the Caliptra riscv32 firmware target.
+#
+# cc-rs appends --target=riscv32 (incomplete triple) which zig rejects.
+# Filter it out and let our -target flag take precedence.
+filtered=()
+for arg in "$@"; do
+  case "$arg" in
+    --target=*) ;;
+    *) filtered+=("$arg") ;;
+  esac
+done
+exec zig cc -target riscv32-freestanding-none -mcpu=generic_rv32 -mabi=ilp32 "${filtered[@]}"

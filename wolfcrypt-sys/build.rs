@@ -207,8 +207,13 @@ fn generate_bindings(
             builder = builder.clang_arg(format!("-I{}", settings_dir.display()));
         }
         builder = builder.clang_arg("-DWOLFSSL_USER_SETTINGS");
-        // For riscv-bare-metal, add stub headers (stdio.h, etc.)
-        if cfg!(feature = "riscv-bare-metal") {
+        // For bare-metal features, add stub headers (stdio.h, pthread.h, etc.)
+        // so bindgen can parse wolfSSL headers without host libc headers.
+        if cfg!(any(
+            feature = "riscv-bare-metal",
+            feature = "cryptocb-only",
+            feature = "cryptocb-pure",
+        )) {
             if let Ok(stubs) = env::var("WOLFSSL_BARE_METAL_STUBS") {
                 builder = builder.clang_arg(format!("-I{}", stubs));
             }
@@ -286,6 +291,11 @@ fn main() {
             &manifest_dir,
             is_fips,
         );
+    } else if cfg!(feature = "vendored") {
+        // vendored (and features that imply it: riscv-bare-metal, cryptocb-only)
+        // always compile from source via wolfssl-src, bypassing any pre-built
+        // wolfSSL pointed to by WOLFSSL_DIR.
+        do_vendored(&manifest_dir, is_fips);
     } else if let Ok(prefix) = env::var("WOLFSSL_DIR") {
         let prefix = PathBuf::from(prefix);
         do_prebuilt(
@@ -294,7 +304,7 @@ fn main() {
             &manifest_dir,
             is_fips,
         );
-    } else if cfg!(feature = "vendored") || env::var("WOLFSSL_SRC").is_ok() {
+    } else if env::var("WOLFSSL_SRC").is_ok() {
         do_vendored(&manifest_dir, is_fips);
     } else if let Some((include_dir, lib_dirs, defines)) = try_pkg_config() {
         do_system(&include_dir, &lib_dirs, &manifest_dir, &defines, is_fips);
@@ -368,9 +378,13 @@ fn do_vendored(manifest_dir: &Path, is_fips: bool) {
     let artifacts = builder.build();
     let active_cfgs = emit_cfg_flags(&artifacts.defines);
 
-    // For riscv-bare-metal, bindgen must see the RISC-V user_settings.h
+    // For bare-metal features, bindgen must see the selected user_settings.h
     // (copied to OUT_DIR by wolfssl-src) rather than the default.
-    let settings_dir = if cfg!(feature = "riscv-bare-metal") {
+    let settings_dir = if cfg!(any(
+        feature = "riscv-bare-metal",
+        feature = "cryptocb-only",
+        feature = "cryptocb-pure",
+    )) {
         PathBuf::from(env::var("OUT_DIR").unwrap())
     } else {
         artifacts.settings_include_dir.clone()

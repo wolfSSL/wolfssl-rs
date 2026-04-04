@@ -249,6 +249,46 @@ pub struct RsaSigTestCase {
 }
 
 // ---------------------------------------------------------------------------
+// RSA-OAEP decryption
+// ---------------------------------------------------------------------------
+
+/// Test group for RSA-OAEP decryption vectors (rsa_oaep_*_test.json).
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RsaOaepTestGroup {
+    pub key_size: usize,
+    pub sha: String,
+    pub mgf: String,
+    pub mgf_sha: String,
+    /// Hex-encoded PKCS#8 PrivateKeyInfo DER containing the RSA private key.
+    #[serde(rename = "privateKeyPkcs8")]
+    pub private_key_pkcs8: String,
+    pub tests: Vec<RsaOaepTestCase>,
+}
+
+impl HasTests for RsaOaepTestGroup {
+    fn test_count(&self) -> usize {
+        self.tests.len()
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RsaOaepTestCase {
+    pub tc_id: usize,
+    pub comment: String,
+    /// Expected plaintext (hex).
+    pub msg: String,
+    /// Ciphertext to decrypt (hex).
+    pub ct: String,
+    /// OAEP label (hex; empty string "" means no label).
+    pub label: String,
+    pub result: WycheproofResult,
+    #[serde(default)]
+    pub flags: Vec<String>,
+}
+
+// ---------------------------------------------------------------------------
 // ECDSA P1363 verification
 // ---------------------------------------------------------------------------
 

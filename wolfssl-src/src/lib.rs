@@ -69,8 +69,13 @@ impl Build {
         let wolfssl_dir = self.resolve_source_dir();
         let settings_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
-        // Select user_settings header based on target
-        let user_settings_name = if cfg!(feature = "riscv-bare-metal") {
+        // Select user_settings header based on active feature.
+        // Priority: cryptocb-pure > cryptocb-only > riscv-bare-metal > default.
+        let user_settings_name = if cfg!(feature = "cryptocb-pure") {
+            "user_settings_cryptocb_pure.h"
+        } else if cfg!(feature = "cryptocb-only") {
+            "user_settings_cryptocb_only.h"
+        } else if cfg!(feature = "riscv-bare-metal") {
             "user_settings_riscv.h"
         } else {
             "user_settings.h"
@@ -93,15 +98,32 @@ impl Build {
         let wolfcrypt_src = wolfssl_dir.join("wolfcrypt").join("src");
         let ssl_src = wolfssl_dir.join("src");
 
-        let mut wolfcrypt_sources: Vec<&str> = CORE_WOLFCRYPT_SOURCES.to_vec();
+        let mut wolfcrypt_sources: Vec<&str> = if cfg!(feature = "cryptocb-pure") {
+            CRYPTOCB_PURE_CORE_SOURCES.to_vec()
+        } else if cfg!(feature = "cryptocb-only") {
+            CRYPTOCB_ONLY_CORE_SOURCES.to_vec()
+        } else {
+            CORE_WOLFCRYPT_SOURCES.to_vec()
+        };
         if self.fips {
             wolfcrypt_sources.extend_from_slice(FIPS_WOLFCRYPT_SOURCES);
         }
-        append_conditional_wolfcrypt_sources(&defines, &mut wolfcrypt_sources);
-        // For riscv-bare-metal, compile ssl.c only (it includes pk.c, pk_ec.c,
-        // ssl_bn.c, etc. internally as one compilation unit).
-        let ssl_srcs: &[&str] = if cfg!(feature = "riscv-bare-metal") {
-            &["ssl.c"]
+        if cfg!(feature = "cryptocb-pure") {
+            append_cryptocb_pure_sources(&defines, &mut wolfcrypt_sources);
+        } else if cfg!(feature = "cryptocb-only") {
+            append_cryptocb_only_sources(&defines, &mut wolfcrypt_sources);
+        } else {
+            append_conditional_wolfcrypt_sources(&defines, &mut wolfcrypt_sources);
+        }
+        // cryptocb-only and cryptocb-pure: no SSL layer (no OPENSSL_EXTRA).
+        // riscv-bare-metal: also no SSL layer (bare-metal builds are cryptocb-based).
+        // Full builds: compile all ssl/ sources.
+        let ssl_srcs: &[&str] = if cfg!(any(
+            feature = "cryptocb-pure",
+            feature = "cryptocb-only",
+            feature = "riscv-bare-metal",
+        )) {
+            &[]
         } else {
             ssl_sources(&defines)
         };
@@ -110,23 +132,32 @@ impl Build {
         let mut build = cc::Build::new();
         build.include(&wolfssl_dir);
 
-        // For riscv-bare-metal, place a copy of user_settings_riscv.h as
-        // user_settings.h in OUT_DIR so it shadows the default.
-        if cfg!(feature = "riscv-bare-metal") {
+        // For bare-metal features, shadow the default user_settings.h with the
+        // selected header so wolfSSL picks it up via -I ordering.
+        // Priority: cryptocb-pure > cryptocb-only > riscv-bare-metal.
+        if cfg!(any(feature = "riscv-bare-metal", feature = "cryptocb-only", feature = "cryptocb-pure")) {
             let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-            let riscv_src = settings_dir.join("user_settings_riscv.h");
-            let riscv_dst = out_dir.join("user_settings.h");
-            std::fs::copy(&riscv_src, &riscv_dst)
-                .expect("failed to copy user_settings_riscv.h");
-            // OUT_DIR comes first so its user_settings.h takes precedence
+            let src_name = if cfg!(feature = "cryptocb-pure") {
+                "user_settings_cryptocb_pure.h"
+            } else if cfg!(feature = "cryptocb-only") {
+                "user_settings_cryptocb_only.h"
+            } else {
+                "user_settings_riscv.h"
+            };
+            let src = settings_dir.join(src_name);
+            let dst = out_dir.join("user_settings.h");
+            std::fs::copy(&src, &dst)
+                .unwrap_or_else(|e| panic!("failed to copy {src_name}: {e}"));
+            // OUT_DIR comes first so its user_settings.h takes precedence.
             build.include(&out_dir);
 
-            // Add bare-metal stub headers (stdio.h, etc.) if available
+            // Add bare-metal stub headers (stdio.h, etc.) if available.
             if let Ok(stubs) = env::var("WOLFSSL_BARE_METAL_STUBS") {
                 build.include(stubs);
             }
 
-            // Compile bare-metal helper functions
+            // Compile bare-metal helper functions (string stubs used by both
+            // user_settings_riscv.h and user_settings_cryptocb_only.h).
             let helpers = settings_dir.join("riscv_bare_metal_helpers.c");
             if helpers.exists() {
                 build.file(&helpers);
@@ -342,6 +373,120 @@ const FIPS_WOLFCRYPT_SOURCES: &[&str] = &[
     "wolfcrypt_first.c",
     "wolfcrypt_last.c",
 ];
+
+/// Core source files for a `cryptocb-only` build.
+///
+/// Excludes everything that is not needed when all cryptographic operations
+/// are handled by CryptoCb callbacks:
+///
+/// - `sp_int.c`, `sp_c32.c`, `sp_c64.c` — SP big-integer math (the largest
+///   contributors to code size; only needed for software ECC/RSA/DH).
+/// - `wolfmath.c` — legacy mp_int math (same reason).
+/// - `arc4.c`, `blake2b.c`, `blake2s.c`, `camellia.c`, `cmac.c` — unused
+///   algorithms.
+/// - `dsa.c`, `md4.c`, `md5.c` — disabled by NO_DSA / NO_MD4 / NO_MD5.
+/// - `pkcs7.c`, `pkcs12.c`, `srp.c` — certificate containers not used in
+///   firmware.
+///
+/// Keeps: `cryptocb.c` (mandatory), `wc_port.c` (platform), `error.c`,
+/// `memory.c`, `logging.c`, `random.c` (DRBG structure), `hash.c` (routing),
+/// `sha.c`, `sha256.c`, `aes.c`, `asn.c`, `coding.c`, `signature.c`,
+/// `wc_encrypt.c`, `cpuid.c`.
+const CRYPTOCB_ONLY_CORE_SOURCES: &[&str] = &[
+    "aes.c",
+    "asn.c",
+    "coding.c",
+    "cpuid.c",
+    "cryptocb.c",
+    "error.c",
+    "hash.c",
+    "logging.c",
+    "memory.c",
+    "random.c",
+    "sha.c",
+    "sha256.c",
+    "signature.c",
+    "wc_encrypt.c",
+    "wc_port.c",
+];
+
+/// Core source files for a `cryptocb-pure` build.
+///
+/// Subset of [`CRYPTOCB_ONLY_CORE_SOURCES`] — removes everything not needed
+/// when wolfSSL is used purely as a CryptoCb routing layer with no higher-level
+/// API calls (no OpenSSL compat, no HKDF, no ASN.1 parser, no CPU feature
+/// detection, no high-level encrypt/signature wrappers):
+///
+/// - `asn.c` — ASN.1 parser (absent: no WOLFSSL_ASN_TEMPLATE, no key import/export)
+/// - `coding.c` — base64 encoding (absent: not needed for callback dispatch)
+/// - `cpuid.c` — CPU feature detection (absent: not needed for bare-metal CryptoCb)
+/// - `signature.c` — signature wrappers (absent: NO_SIG_WRAPPER is defined)
+/// - `wc_encrypt.c` — high-level encrypt wrappers (absent: not needed for CryptoCb)
+///
+/// The ssl.c layer is also excluded (no OPENSSL_EXTRA).
+const CRYPTOCB_PURE_CORE_SOURCES: &[&str] = &[
+    "aes.c",
+    "cryptocb.c",
+    "error.c",
+    "hash.c",
+    "logging.c",
+    "memory.c",
+    "random.c",
+    "sha.c",
+    "sha256.c",
+    "wc_port.c",
+];
+
+/// Append the minimal set of conditional wolfcrypt sources for a
+/// `cryptocb-only` build.
+///
+/// Only sources that provide type definitions or CryptoCb dispatch glue
+/// for algorithms used by wolfcrypt-dpe are included.  All heavy algorithm
+/// implementations (RSA, DH, Dilithium, ML-KEM, SHA-3, Ed25519, ChaCha, etc.)
+/// are omitted.
+fn append_cryptocb_only_sources(defines: &HashSet<String>, sources: &mut Vec<&'static str>) {
+    // HMAC: needed for the Hmac struct layout and CryptoCb HMAC dispatch glue.
+    if !defines.contains("NO_HMAC") {
+        sources.push("hmac.c");
+    }
+    // SHA-384/SHA-512: needed for the wc_Sha384/wc_Sha512 struct layouts.
+    if defines.contains("WOLFSSL_SHA512") || defines.contains("WOLFSSL_SHA384") {
+        sources.push("sha512.c");
+    }
+    // ECC: needed for the ecc_key struct layout and CryptoCb ECC dispatch glue.
+    if defines.contains("HAVE_ECC") {
+        sources.push("ecc.c");
+    }
+    // HKDF: pure HMAC-based KDF; HMAC calls go through CryptoCb.
+    if defines.contains("HAVE_HKDF") {
+        sources.push("kdf.c");
+    }
+    // EVP API: required when OPENSSL_EXTRA is set for wolfcrypt-rs Rust bindings.
+    if defines.contains("OPENSSL_EXTRA") || defines.contains("OPENSSL_ALL") {
+        sources.push("evp.c");
+    }
+}
+
+/// Append conditional wolfcrypt sources for a `cryptocb-pure` build.
+///
+/// Same algorithm-type guards as `cryptocb-only` but with OPENSSL_EXTRA and
+/// HAVE_HKDF absent, so `evp.c` and `kdf.c` are never added.
+fn append_cryptocb_pure_sources(defines: &HashSet<String>, sources: &mut Vec<&'static str>) {
+    // HMAC: needed for the Hmac struct layout and CryptoCb HMAC dispatch glue.
+    if !defines.contains("NO_HMAC") {
+        sources.push("hmac.c");
+    }
+    // SHA-384/512: needed for the wc_Sha384/wc_Sha512 struct layouts.
+    if defines.contains("WOLFSSL_SHA512") || defines.contains("WOLFSSL_SHA384") {
+        sources.push("sha512.c");
+    }
+    // ECC: needed for the ecc_key struct layout and CryptoCb ECC dispatch glue.
+    if defines.contains("HAVE_ECC") {
+        sources.push("ecc.c");
+    }
+    // No evp.c: OPENSSL_EXTRA is not defined in user_settings_cryptocb_pure.h.
+    // No kdf.c: HAVE_HKDF is not defined in user_settings_cryptocb_pure.h.
+}
 
 fn append_conditional_wolfcrypt_sources(defines: &HashSet<String>, sources: &mut Vec<&'static str>) {
     if defines.contains("HAVE_CHACHA") {
