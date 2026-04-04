@@ -23,29 +23,6 @@ pub(crate) use typenum::{U1, U16};
 
 pub use cipher_trait;
 
-/// Zero the bytes of an opaque `AES_KEY` struct for defense-in-depth.
-///
-/// `AES_KEY` is a foreign C type that doesn't implement `Zeroize`, so we
-/// treat it as a raw byte slice and use `zeroize` (volatile writes) to
-/// ensure the compiler cannot elide the clearing.
-///
-/// # Safety
-///
-/// Caller must have exclusive access (`&mut`).  The type must be a plain
-/// C struct with no Rust drop glue.
-pub(crate) unsafe fn zeroize_aes_key(key: &mut wolfcrypt_rs::AES_KEY) {
-    use zeroize::Zeroize;
-    // SAFETY: caller guarantees exclusive access and that AES_KEY is a
-    // plain C struct with no Rust drop glue.
-    let bytes = unsafe {
-        core::slice::from_raw_parts_mut(
-            key as *mut wolfcrypt_rs::AES_KEY as *mut u8,
-            core::mem::size_of::<wolfcrypt_rs::AES_KEY>(),
-        )
-    };
-    bytes.zeroize();
-}
-
 // Submodules — one per cipher mode family.
 
 #[cfg(wolfssl_aes_ecb)]
@@ -66,9 +43,9 @@ mod chacha20;
 #[cfg(wolfssl_chacha)]
 pub use chacha20::*;
 
-#[cfg(all(wolfssl_openssl_extra, wolfssl_aes_cfb))]
+#[cfg(wolfssl_aes_cfb)]
 mod cfb;
-#[cfg(all(wolfssl_openssl_extra, wolfssl_aes_cfb))]
+#[cfg(wolfssl_aes_cfb)]
 pub use cfb::*;
 
 #[cfg(wolfssl_aes_ofb)]

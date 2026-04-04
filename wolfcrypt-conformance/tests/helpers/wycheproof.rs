@@ -325,3 +325,41 @@ pub struct EcdsaP1363TestCase {
     #[serde(default)]
     pub flags: Vec<String>,
 }
+
+// ---------------------------------------------------------------------------
+// ECDH ecpoint-format test vectors
+// ---------------------------------------------------------------------------
+//
+// Matches the `ecdh_*_ecpoint_test.json` schema:
+//   group: { curve, encoding, tests }
+//   test:  { tcId, comment, flags, public (hex EC point), private (hex scalar),
+//             shared (hex expected x-coord), result }
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EcdhEcpointTestGroup {
+    pub curve: String,
+    pub tests: Vec<EcdhEcpointTestCase>,
+}
+
+impl HasTests for EcdhEcpointTestGroup {
+    fn test_count(&self) -> usize {
+        self.tests.len()
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EcdhEcpointTestCase {
+    pub tc_id: usize,
+    pub comment: String,
+    /// Hex-encoded uncompressed public point: `04 || x || y`.
+    pub public: String,
+    /// Hex-encoded raw private scalar (big-endian, padded to field size).
+    pub private: String,
+    /// Hex-encoded expected shared secret (x-coordinate of result point).
+    pub shared: String,
+    pub result: WycheproofResult,
+    #[serde(default)]
+    pub flags: Vec<String>,
+}

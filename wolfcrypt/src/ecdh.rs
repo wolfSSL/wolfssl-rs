@@ -510,43 +510,44 @@ impl X448SharedSecret {
         &self.0
     }
 }
-
 // ===========================================================================
-// NIST curve ECDH (P-256, P-384) via OpenSSL compat layer
+// NIST curve ECDH — native wc_ecc_* implementation
 // ===========================================================================
 //
-// Uses wolfSSL's OpenSSL-compatible EC_KEY / ECDH_compute_key API to perform
-// elliptic-curve Diffie-Hellman on NIST prime curves.
+// Uses wolfCrypt's native wc_ecc_* API.  No OPENSSL_EXTRA required.
+// The old EVP-based `nist_ecdh` module is retained below but no longer
+// re-exported; it will be deleted in a follow-up cleanup.
 
-#[cfg(all(wolfssl_openssl_extra, wolfssl_ecc))]
-mod nist_ecdh {
-    use core::ffi::{c_int, c_void};
-    use core::marker::PhantomData;
-    use core::ptr;
-
+#[cfg(wolfssl_ecc)]
+pub(crate) mod nist_ecdh_native {
+    extern crate alloc;
     use alloc::vec;
     use alloc::vec::Vec;
+    use core::cell::UnsafeCell;
+    use core::ffi::c_int;
+    use core::marker::PhantomData;
+    use core::ptr;
 
     use zeroize::ZeroizeOnDrop;
 
     use crate::error::WolfCryptError;
 
     use wolfcrypt_rs::{
-        EC_GROUP_free, EC_GROUP_new_by_curve_name,
-        EC_KEY_free, EC_KEY_generate_key, EC_KEY_get0_public_key, EC_KEY_new,
-        EC_KEY_set_group,
-        EC_POINT_free, EC_POINT_new, EC_POINT_oct2point, EC_POINT_point2oct,
-        ECDH_compute_key,
-        NID_X9_62_prime256v1,
-        EC_GROUP, EC_KEY,
-        point_conversion_form_t,
+        wc_ecc_key, wc_ecc_key_new, wc_ecc_key_free,
+        wc_ecc_make_key_ex,
+        wc_ecc_shared_secret,
+        wc_ecc_import_x963, wc_ecc_export_x963,
+        wc_ecc_import_private_key_ex,
+        wc_ecc_check_key, wc_ecc_set_rng,
+        wc_InitRng, wc_FreeRng, WC_RNG,
+        ECC_SECP256R1,
     };
 
     #[cfg(wolfssl_ecc_p384)]
-    use wolfcrypt_rs::NID_secp384r1;
+    use wolfcrypt_rs::ECC_SECP384R1;
 
     #[cfg(wolfssl_ecc_p521)]
-    use wolfcrypt_rs::NID_secp521r1;
+    use wolfcrypt_rs::ECC_SECP521R1;
 
     // ================================================================
     // Sealed trait pattern
@@ -556,66 +557,69 @@ mod nist_ecdh {
         pub trait Sealed {}
     }
 
-    /// Trait describing a NIST prime curve's ECDH parameters.
+    /// Parameters for a NIST prime curve ECDH operation.
     ///
     /// Sealed so that only [`NistP256`], [`NistP384`], and [`NistP521`]
     /// can implement it.
-    ///
-    /// This is intentionally separate from [`ecdsa::EcdsaCurve`] — ECDSA
-    /// needs hash parameters (`evp_md()`, `HASH_LEN`, `SigSize`) that ECDH
-    /// never uses. Merging would couple the `ecdh` and `ecdsa` feature
-    /// gates and pollute ECDH with unused hash concerns.
     pub trait NistCurve: sealed::Sealed + 'static {
-        /// The OpenSSL NID for this curve.
-        const NID: c_int;
+        /// wolfCrypt curve ID (e.g. `ECC_SECP256R1`).
+        const CURVE_ID: c_int;
         /// Size of one field element in bytes (= shared secret length).
         const FIELD_SIZE: usize;
-        /// Size of the uncompressed public point: `1 + 2 * FIELD_SIZE`.
+        /// Size of an uncompressed public point: `1 + 2 * FIELD_SIZE`.
         const POINT_SIZE: usize;
     }
 
-    /// NIST P-256 (secp256r1 / prime256v1) curve marker for ECDH.
+    /// NIST P-256 curve marker.
     pub struct NistP256;
-
     impl sealed::Sealed for NistP256 {}
-
     impl NistCurve for NistP256 {
-        const NID: c_int = NID_X9_62_prime256v1;
+        const CURVE_ID: c_int = ECC_SECP256R1;
         const FIELD_SIZE: usize = 32;
         const POINT_SIZE: usize = 65; // 1 + 2*32
     }
 
-    /// NIST P-384 (secp384r1) curve marker for ECDH.
+    /// NIST P-384 curve marker.
     #[cfg(wolfssl_ecc_p384)]
     pub struct NistP384;
-
     #[cfg(wolfssl_ecc_p384)]
     impl sealed::Sealed for NistP384 {}
-
     #[cfg(wolfssl_ecc_p384)]
     impl NistCurve for NistP384 {
-        const NID: c_int = NID_secp384r1;
+        const CURVE_ID: c_int = ECC_SECP384R1;
         const FIELD_SIZE: usize = 48;
         const POINT_SIZE: usize = 97; // 1 + 2*48
+    }
+
+    /// NIST P-521 curve marker.
+    #[cfg(wolfssl_ecc_p521)]
+    pub struct NistP521;
+    #[cfg(wolfssl_ecc_p521)]
+    impl sealed::Sealed for NistP521 {}
+    #[cfg(wolfssl_ecc_p521)]
+    impl NistCurve for NistP521 {
+        const CURVE_ID: c_int = ECC_SECP521R1;
+        const FIELD_SIZE: usize = 66;
+        const POINT_SIZE: usize = 133; // 1 + 2*66
     }
 
     // ================================================================
     // NistEcdhPublicKey<C>
     // ================================================================
 
-    /// An uncompressed public point for NIST curve ECDH.
-    ///
-    /// Stored as the standard uncompressed encoding: `0x04 || x || y`.
+    /// An uncompressed NIST curve public key: `0x04 || x || y`.
     pub struct NistEcdhPublicKey<C: NistCurve> {
         bytes: Vec<u8>,
         _curve: PhantomData<C>,
     }
 
     impl<C: NistCurve> NistEcdhPublicKey<C> {
-        /// Import a public key from its uncompressed point encoding.
+        /// Import from uncompressed point bytes (`0x04 || x || y`).
         ///
-        /// The first byte must be `0x04` and the total length must be
-        /// `1 + 2 * FIELD_SIZE`.
+        /// Validates that the bytes encode a point that lies on curve `C`
+        /// by importing into a temporary wolfCrypt key and calling
+        /// `wc_ecc_check_key`.  Returns an error for points that fail
+        /// curve membership (small subgroup, not on curve, etc.).
         pub fn from_bytes(bytes: &[u8]) -> Result<Self, WolfCryptError> {
             if bytes.len() != C::POINT_SIZE {
                 return Err(WolfCryptError::INVALID_INPUT);
@@ -623,10 +627,30 @@ mod nist_ecdh {
             if bytes[0] != 0x04 {
                 return Err(WolfCryptError::INVALID_INPUT);
             }
-            Ok(Self {
-                bytes: bytes.to_vec(),
-                _curve: PhantomData,
-            })
+            // Cryptographically validate the point: import into a temporary
+            // key and check that it lies on the curve.  This matches the
+            // contract of EcdsaVerifyingKey::from_uncompressed_point and
+            // ensures callers get a type that is already validated, not one
+            // that can only fail later inside diffie_hellman.
+            //
+            // SAFETY: wc_ecc_key_new returns a heap-allocated key or null.
+            let tmp = unsafe { wc_ecc_key_new(ptr::null_mut()) };
+            if tmp.is_null() {
+                return Err(WolfCryptError::ALLOC_FAILED);
+            }
+            let rc = unsafe {
+                wc_ecc_import_x963(bytes.as_ptr(), bytes.len() as u32, tmp)
+            };
+            if rc != 0 {
+                unsafe { wc_ecc_key_free(tmp) };
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_import_x963" });
+            }
+            let rc = unsafe { wc_ecc_check_key(tmp) };
+            unsafe { wc_ecc_key_free(tmp) };
+            if rc != 0 {
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_check_key" });
+            }
+            Ok(Self { bytes: bytes.to_vec(), _curve: PhantomData })
         }
 
         /// Return the raw uncompressed point bytes (`0x04 || x || y`).
@@ -643,7 +667,9 @@ mod nist_ecdh {
     // NistEcdhSharedSecret<C>
     // ================================================================
 
-    /// The shared secret resulting from a NIST curve ECDH exchange.
+    /// The shared secret from a NIST curve ECDH exchange.
+    ///
+    /// Zeroized on drop.
     #[derive(ZeroizeOnDrop)]
     pub struct NistEcdhSharedSecret<C: NistCurve> {
         #[zeroize(drop)]
@@ -652,9 +678,7 @@ mod nist_ecdh {
     }
 
     impl<C: NistCurve> NistEcdhSharedSecret<C> {
-        /// Return the raw shared secret bytes.
-        ///
-        /// Length is [`NistCurve::FIELD_SIZE`] (32 for P-256, 48 for P-384).
+        /// Return the raw shared secret bytes (length = `C::FIELD_SIZE`).
         pub fn as_bytes(&self) -> &[u8] {
             &self.bytes
         }
@@ -664,199 +688,205 @@ mod nist_ecdh {
     // NistEcdhSecret<C>
     // ================================================================
 
-    /// A NIST curve ECDH private key.
+    /// A NIST curve ECDH private key backed by native wolfCrypt `wc_ecc_*`.
     ///
-    /// Wraps a wolfSSL `EC_KEY` with the curve's group set. The key
-    /// is freed on drop.
+    /// `UnsafeCell` makes this type `!Sync`, which is correct: wolfCrypt
+    /// contexts are not thread-safe.
     pub struct NistEcdhSecret<C: NistCurve> {
-        /// Owned EC_KEY pointer. Non-null while the struct is alive.
-        ec_key: *mut EC_KEY,
-        /// Owned EC_GROUP pointer. Non-null while the struct is alive.
-        group: *mut EC_GROUP,
+        /// Heap-allocated wc_ecc_key (via wc_ecc_key_new). Non-null while alive.
+        key: UnsafeCell<*mut wc_ecc_key>,
         _curve: PhantomData<C>,
+    }
+
+    // SAFETY: wc_ecc_key owns independent heap state; safe to move across threads.
+    unsafe impl<C: NistCurve> Send for NistEcdhSecret<C> {}
+
+    impl<C: NistCurve> Drop for NistEcdhSecret<C> {
+        fn drop(&mut self) {
+            let key = *self.key.get_mut();
+            if !key.is_null() {
+                // SAFETY: key was allocated by wc_ecc_key_new in all constructors.
+                unsafe { wc_ecc_key_free(key); }
+            }
+        }
     }
 
     impl<C: NistCurve> NistEcdhSecret<C> {
         /// Generate a random ECDH keypair on this curve.
-        #[cfg(feature = "rand")]
         pub fn generate() -> Result<Self, WolfCryptError> {
-            // SAFETY: EC_GROUP_new_by_curve_name returns a heap-allocated
-            // group or null on failure.
-            let group = unsafe { EC_GROUP_new_by_curve_name(C::NID) };
-            if group.is_null() {
+            // SAFETY: wc_ecc_key_new returns a heap-allocated key or null.
+            let key = unsafe { wc_ecc_key_new(ptr::null_mut()) };
+            if key.is_null() {
                 return Err(WolfCryptError::ALLOC_FAILED);
             }
 
-            // SAFETY: EC_KEY_new returns a heap-allocated key or null.
-            let ec_key = unsafe { EC_KEY_new() };
-            if ec_key.is_null() {
-                unsafe { EC_GROUP_free(group) };
-                return Err(WolfCryptError::ALLOC_FAILED);
+            let mut rng = WC_RNG::zeroed();
+            // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
+            let rc = unsafe { wc_InitRng(&mut rng) };
+            if rc != 0 {
+                unsafe { wc_ecc_key_free(key); }
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng" });
             }
 
-            // SAFETY: Both pointers are valid, non-null.
-            let rc = unsafe { EC_KEY_set_group(ec_key, group) };
-            if rc != 1 {
-                unsafe {
-                    EC_KEY_free(ec_key);
-                    EC_GROUP_free(group);
-                }
-                return Err(WolfCryptError::Ffi { code: rc, func: "EC_KEY_set_group" });
+            // SAFETY: key and rng are both initialised; FIELD_SIZE matches CURVE_ID.
+            let rc = unsafe {
+                wc_ecc_make_key_ex(&mut rng, C::FIELD_SIZE as i32, key, C::CURVE_ID)
+            };
+            // Free RNG regardless of outcome.
+            unsafe { wc_FreeRng(&mut rng); }
+            if rc != 0 {
+                unsafe { wc_ecc_key_free(key); }
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_make_key_ex" });
             }
 
-            // SAFETY: ec_key has a group set; generate_key fills in
-            // private scalar and public point.
-            let rc = unsafe { EC_KEY_generate_key(ec_key) };
-            if rc != 1 {
-                unsafe {
-                    EC_KEY_free(ec_key);
-                    EC_GROUP_free(group);
-                }
-                return Err(WolfCryptError::Ffi { code: rc, func: "EC_KEY_generate_key" });
-            }
-
-            Ok(Self {
-                ec_key,
-                group,
-                _curve: PhantomData,
-            })
+            Ok(Self { key: UnsafeCell::new(key), _curve: PhantomData })
         }
 
-        /// Export the public key as an uncompressed point.
-        pub fn public_key(&self) -> NistEcdhPublicKey<C> {
-            // SAFETY: ec_key is valid and has a generated keypair.
-            let point = unsafe { EC_KEY_get0_public_key(self.ec_key) };
-            assert!(!point.is_null(), "EC_KEY_get0_public_key returned null");
-
-            let mut buf = vec![0u8; C::POINT_SIZE];
-
-            // SAFETY: group and point are valid. The buffer is large enough
-            // for the uncompressed encoding. Returns the number of bytes
-            // written, or 0 on failure.
-            let n = unsafe {
-                EC_POINT_point2oct(
-                    self.group,
-                    point,
-                    point_conversion_form_t::POINT_CONVERSION_UNCOMPRESSED,
-                    buf.as_mut_ptr(),
-                    buf.len(),
-                    ptr::null_mut(),
+        /// Import a private key from its raw scalar bytes (big-endian,
+        /// exactly `C::FIELD_SIZE` bytes).
+        ///
+        /// The public key component is **not** set on the resulting key struct;
+        /// `public_key()` will return an error if called on this key.  Use this
+        /// constructor when you only need `diffie_hellman()` (e.g. in tests).
+        pub fn from_private_scalar(scalar: &[u8]) -> Result<Self, WolfCryptError> {
+            if scalar.len() != C::FIELD_SIZE {
+                return Err(WolfCryptError::INVALID_INPUT);
+            }
+            let key = unsafe { wc_ecc_key_new(ptr::null_mut()) };
+            if key.is_null() {
+                return Err(WolfCryptError::ALLOC_FAILED);
+            }
+            // SAFETY: key is initialised; scalar is FIELD_SIZE bytes.
+            // Passing null public key is valid — wolfCrypt accepts private-only import.
+            let rc = unsafe {
+                wc_ecc_import_private_key_ex(
+                    scalar.as_ptr(), scalar.len() as u32,
+                    ptr::null(), 0,
+                    key, C::CURVE_ID,
                 )
             };
-            assert_eq!(
-                n, C::POINT_SIZE,
-                "EC_POINT_point2oct returned unexpected size: {n}"
-            );
-
-            NistEcdhPublicKey {
-                bytes: buf,
-                _curve: PhantomData,
+            if rc != 0 {
+                unsafe { wc_ecc_key_free(key); }
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_import_private_key_ex" });
             }
+            Ok(Self { key: UnsafeCell::new(key), _curve: PhantomData })
+        }
+
+        /// Export the public key as an uncompressed point (`0x04 || x || y`).
+        ///
+        /// Returns an error if the key was created with `from_private_scalar`
+        /// (public component not available without a separate derivation step).
+        pub fn public_key(&self) -> Result<NistEcdhPublicKey<C>, WolfCryptError> {
+            let key = unsafe { *self.key.get() };
+            let mut buf = vec![0u8; C::POINT_SIZE];
+            let mut sz = buf.len() as u32;
+            // SAFETY: key is initialised and has a public component (generate path).
+            let rc = unsafe { wc_ecc_export_x963(key, buf.as_mut_ptr(), &mut sz) };
+            if rc != 0 {
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_export_x963" });
+            }
+            if sz as usize != C::POINT_SIZE {
+                return Err(WolfCryptError::INVALID_INPUT);
+            }
+            NistEcdhPublicKey::from_bytes(&buf)
         }
 
         /// Perform ECDH with the given peer public key.
         ///
-        /// Consumes `self` so the private key is freed after use.
+        /// Validates the peer point before use (`wc_ecc_check_key`).
+        /// Attaches a fresh RNG to the private key for ECC_TIMING_RESISTANT
+        /// scalar-multiplication blinding.
         pub fn diffie_hellman(
             self,
             peer_public: &NistEcdhPublicKey<C>,
-        ) -> NistEcdhSharedSecret<C> {
-            // Parse the peer's uncompressed point into an EC_POINT.
-            //
-            // SAFETY: group is valid; EC_POINT_new returns a heap-allocated
-            // point or null.
-            let peer_point = unsafe { EC_POINT_new(self.group) };
-            assert!(!peer_point.is_null(), "EC_POINT_new failed");
+        ) -> Result<NistEcdhSharedSecret<C>, WolfCryptError> {
+            // ── Import peer public key ──────────────────────────────────────
+            let peer_key = unsafe { wc_ecc_key_new(ptr::null_mut()) };
+            if peer_key.is_null() {
+                return Err(WolfCryptError::ALLOC_FAILED);
+            }
 
-            // SAFETY: group and peer_point are valid, peer bytes encode a
-            // valid uncompressed point for this curve.
             let rc = unsafe {
-                EC_POINT_oct2point(
-                    self.group,
-                    peer_point,
+                wc_ecc_import_x963(
                     peer_public.bytes.as_ptr(),
-                    peer_public.bytes.len(),
-                    ptr::null_mut(),
+                    peer_public.bytes.len() as u32,
+                    peer_key,
                 )
             };
-            assert_eq!(rc, 1, "EC_POINT_oct2point failed (invalid point encoding)");
+            if rc != 0 {
+                unsafe { wc_ecc_key_free(peer_key); }
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_import_x963" });
+            }
 
-            // Compute the shared secret.
+            // ── Paranoid: validate peer point is on the curve ───────────────
+            let rc = unsafe { wc_ecc_check_key(peer_key) };
+            if rc != 0 {
+                unsafe { wc_ecc_key_free(peer_key); }
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_check_key" });
+            }
+
+            // ── Attach RNG to private key for blinding ──────────────────────
+            // Required when ECC_TIMING_RESISTANT is defined (default).
+            // wc_ecc_shared_secret returns MISSING_RNG_E without this.
+            let priv_key = unsafe { *self.key.get() };
+            let mut rng = WC_RNG::zeroed();
+            let rc = unsafe { wc_InitRng(&mut rng) };
+            if rc != 0 {
+                unsafe { wc_ecc_key_free(peer_key); }
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng" });
+            }
+            let rc = unsafe { wc_ecc_set_rng(priv_key, &mut rng) };
+            if rc != 0 {
+                unsafe {
+                    wc_ecc_key_free(peer_key);
+                    wc_FreeRng(&mut rng);
+                }
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_set_rng" });
+            }
+
+            // ── Compute shared secret ───────────────────────────────────────
             let mut out = vec![0u8; C::FIELD_SIZE];
-
-            // SAFETY: ec_key holds a valid private key, peer_point is a
-            // valid point on the same curve. `out` is FIELD_SIZE bytes.
-            // KDF is null → raw x-coordinate is returned.
+            let mut out_len = out.len() as u32;
+            // SAFETY: priv_key has private scalar + RNG; peer_key has public point.
             let rc = unsafe {
-                ECDH_compute_key(
-                    out.as_mut_ptr() as *mut c_void,
-                    C::FIELD_SIZE,
-                    peer_point,
-                    self.ec_key,
-                    ptr::null_mut(),
-                )
+                wc_ecc_shared_secret(priv_key, peer_key, out.as_mut_ptr(), &mut out_len)
             };
-            assert_eq!(
-                rc as usize, C::FIELD_SIZE,
-                "ECDH_compute_key failed (invalid key or point)"
-            );
 
-            // SAFETY: peer_point was allocated above; free it now.
-            unsafe { EC_POINT_free(peer_point) };
-
-            NistEcdhSharedSecret {
-                bytes: out,
-                _curve: PhantomData,
-            }
-        }
-    }
-
-    impl<C: NistCurve> Drop for NistEcdhSecret<C> {
-        fn drop(&mut self) {
-            // SAFETY: ec_key and group were allocated in `generate` and
-            // are non-null. Freed exactly once here.
+            // Always clean up peer key and RNG.
             unsafe {
-                EC_KEY_free(self.ec_key);
-                EC_GROUP_free(self.group);
+                wc_ecc_key_free(peer_key);
+                wc_FreeRng(&mut rng);
             }
+
+            if rc != 0 {
+                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_shared_secret" });
+            }
+            if out_len as usize != C::FIELD_SIZE {
+                return Err(WolfCryptError::INVALID_INPUT);
+            }
+
+            Ok(NistEcdhSharedSecret { bytes: out, _curve: PhantomData })
         }
     }
 
-    // SAFETY: EC_KEY / EC_GROUP are self-contained heap objects with no
-    // shared mutable globals; safe to move between threads.
-    unsafe impl<C: NistCurve> Send for NistEcdhSecret<C> {}
-
-    /// NIST P-521 (secp521r1) curve marker for ECDH.
-    #[cfg(wolfssl_ecc_p521)]
-    pub struct NistP521;
-
-    #[cfg(wolfssl_ecc_p521)]
-    impl sealed::Sealed for NistP521 {}
-
-    #[cfg(wolfssl_ecc_p521)]
-    impl NistCurve for NistP521 {
-        const NID: c_int = NID_secp521r1;
-        const FIELD_SIZE: usize = 66;
-        const POINT_SIZE: usize = 133; // 1 + 2*66
-    }
-
-    /// Type alias: P-256 ECDH secret key.
+    /// P-256 ECDH secret key.
     pub type P256EcdhSecret = NistEcdhSecret<NistP256>;
-    /// Type alias: P-384 ECDH secret key.
+    /// P-384 ECDH secret key.
     #[cfg(wolfssl_ecc_p384)]
     pub type P384EcdhSecret = NistEcdhSecret<NistP384>;
-    /// Type alias: P-521 ECDH secret key.
+    /// P-521 ECDH secret key.
     #[cfg(wolfssl_ecc_p521)]
     pub type P521EcdhSecret = NistEcdhSecret<NistP521>;
 }
 
-// Re-export NIST ECDH types at module level.
-#[cfg(all(wolfssl_openssl_extra, wolfssl_ecc))]
-pub use nist_ecdh::{
+// Re-export native NIST ECDH types at module level.
+// No wolfssl_openssl_extra required — native wc_ecc_* only.
+#[cfg(wolfssl_ecc)]
+pub use nist_ecdh_native::{
     NistCurve, NistEcdhPublicKey, NistEcdhSecret, NistEcdhSharedSecret,
     NistP256, P256EcdhSecret,
 };
-#[cfg(all(wolfssl_openssl_extra, wolfssl_ecc, wolfssl_sha384))]
-pub use nist_ecdh::{NistP384, P384EcdhSecret};
-#[cfg(all(wolfssl_openssl_extra, wolfssl_ecc, wolfssl_sha512))]
-pub use nist_ecdh::{NistP521, P521EcdhSecret};
+#[cfg(all(wolfssl_ecc, wolfssl_ecc_p384))]
+pub use nist_ecdh_native::{NistP384, P384EcdhSecret};
+#[cfg(all(wolfssl_ecc, wolfssl_ecc_p521))]
+pub use nist_ecdh_native::{NistP521, P521EcdhSecret};

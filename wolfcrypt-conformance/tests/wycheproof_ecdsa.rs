@@ -1,4 +1,4 @@
-#![cfg(all(wolfssl_openssl_extra, wolfssl_ecc))]
+#![cfg(wolfssl_ecc)]
 
 mod helpers;
 use helpers::wycheproof::*;
@@ -141,7 +141,7 @@ wycheproof_ecdsa_test!(
     wolfcrypt::EcdsaSignature<wolfcrypt::P256>,
     "secp256r1",
     "SHA-256",
-    [wolfssl_openssl_extra, wolfssl_ecc]
+    [wolfssl_ecc]
 );
 
 wycheproof_ecdsa_test!(
@@ -152,7 +152,7 @@ wycheproof_ecdsa_test!(
     wolfcrypt::EcdsaSignature<wolfcrypt::P384>,
     "secp384r1",
     "SHA-384",
-    [wolfssl_openssl_extra, wolfssl_ecc, wolfssl_ecc_p384]
+    [wolfssl_ecc, wolfssl_ecc_p384]
 );
 
 wycheproof_ecdsa_test!(
@@ -163,5 +163,5 @@ wycheproof_ecdsa_test!(
     wolfcrypt::EcdsaSignature<wolfcrypt::P521>,
     "secp521r1",
     "SHA-512",
-    [wolfssl_openssl_extra, wolfssl_ecc, wolfssl_ecc_p521]
+    [wolfssl_ecc, wolfssl_ecc_p521, wolfssl_sha512]
 );

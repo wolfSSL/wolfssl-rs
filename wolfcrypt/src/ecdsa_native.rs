@@ -23,8 +23,10 @@ use generic_array::GenericArray;
 use crate::error::WolfCryptError;
 
 use wolfcrypt_rs::{
+    WC_RNG, wc_InitRng, wc_FreeRng,
     wc_ecc_key,
     wc_ecc_key_new, wc_ecc_key_free,
+    wc_ecc_make_key_ex, wc_ecc_set_rng,
     wc_ecc_import_private_key_ex, wc_ecc_import_x963, wc_ecc_export_x963,
     wc_ecc_sign_hash, wc_ecc_verify_hash,
     wc_ecc_sig_to_rs, wc_ecc_rs_raw_to_sig,
@@ -33,6 +35,9 @@ use wolfcrypt_rs::{
 
 #[cfg(wolfssl_ecc_p384)]
 use wolfcrypt_rs::ECC_SECP384R1;
+
+#[cfg(all(wolfssl_ecc_p521, wolfssl_sha512))]
+use wolfcrypt_rs::ECC_SECP521R1;
 
 // ============================================================
 // Sealed trait pattern
@@ -54,7 +59,10 @@ pub trait EcdsaCurve: sealed::Sealed + 'static {
     const SIG_SIZE: usize;
     /// Size of the uncompressed public point (1 + 2 * FIELD_SIZE).
     const UNCOMPRESSED_POINT_SIZE: usize;
-    /// Hash output length (same as FIELD_SIZE for ECDSA).
+    /// Hash output length in bytes for this curve's canonical digest.
+    ///
+    /// This is *not* always equal to `FIELD_SIZE`.  For example, P-521 uses
+    /// SHA-512 (64 bytes) while its field size is 66 bytes.
     const HASH_LEN: usize;
     /// Typenum encoding of [`SIG_SIZE`](Self::SIG_SIZE).
     type SigSize: generic_array::ArrayLength<u8>;
@@ -111,6 +119,37 @@ impl EcdsaCurve for P384 {
         };
         if rc != 0 {
             return Err(WolfCryptError::Ffi { code: rc, func: "wc_Sha384Hash" });
+        }
+        Ok(hash)
+    }
+}
+
+/// NIST P-521 (secp521r1) curve marker.
+#[cfg(all(wolfssl_ecc_p521, wolfssl_sha512))]
+pub struct P521;
+
+#[cfg(all(wolfssl_ecc_p521, wolfssl_sha512))]
+impl sealed::Sealed for P521 {}
+
+#[cfg(all(wolfssl_ecc_p521, wolfssl_sha512))]
+impl EcdsaCurve for P521 {
+    const CURVE_ID: c_int = ECC_SECP521R1;
+    /// P-521 field element: ceil(521/8) = 66 bytes.
+    const FIELD_SIZE: usize = 66;
+    /// Fixed-size r || s signature: 2 * 66 = 132 bytes.
+    const SIG_SIZE: usize = 132;
+    /// Uncompressed public point: 1 + 2 * 66 = 133 bytes.
+    const UNCOMPRESSED_POINT_SIZE: usize = 133;
+    const HASH_LEN: usize = 64;
+    type SigSize = typenum::U132;
+
+    fn hash_message(msg: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        let mut hash = vec![0u8; 64];
+        let rc = unsafe {
+            wolfcrypt_rs::wc_Sha512Hash(msg.as_ptr(), msg.len() as u32, hash.as_mut_ptr())
+        };
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_Sha512Hash" });
         }
         Ok(hash)
     }
@@ -224,6 +263,14 @@ fn der_to_fixed_rs<C: EcdsaCurve>(
 
     // wc_ecc_sig_to_rs returns r and s stripped of leading zeros.
     // Zero-pad them to FIELD_SIZE on the left.
+    //
+    // Defensive: we passed FIELD_SIZE as the buffer capacity; wolfCrypt must
+    // never report a length exceeding it.  If it does (C bug, memory
+    // corruption) the subtraction below would wrap in release builds causing
+    // UB.  Return an error instead.
+    if r_len as usize > C::FIELD_SIZE || s_len as usize > C::FIELD_SIZE {
+        return Err(WolfCryptError::INVALID_INPUT);
+    }
     let mut combined = GenericArray::<u8, C::SigSize>::default();
     let r_pad = C::FIELD_SIZE - r_len as usize;
     combined[r_pad..C::FIELD_SIZE].copy_from_slice(&r[..r_len as usize]);
@@ -260,6 +307,35 @@ impl<C: EcdsaCurve> Drop for EcdsaSigningKey<C> {
 }
 
 impl<C: EcdsaCurve> EcdsaSigningKey<C> {
+    /// Generate a fresh random ECDSA signing key on curve `C`.
+    pub fn generate() -> Result<Self, WolfCryptError> {
+        let key = unsafe { wc_ecc_key_new(core::ptr::null_mut()) };
+        if key.is_null() {
+            return Err(WolfCryptError::ALLOC_FAILED);
+        }
+
+        let mut rng = WC_RNG::zeroed();
+        // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
+        let rc = unsafe { wc_InitRng(&mut rng) };
+        if rc != 0 {
+            unsafe { wc_ecc_key_free(key) };
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng" });
+        }
+
+        // SAFETY: key and rng are both initialised; FIELD_SIZE matches CURVE_ID.
+        let rc = unsafe {
+            wc_ecc_make_key_ex(&mut rng, C::FIELD_SIZE as c_int, key, C::CURVE_ID)
+        };
+        // Always free the RNG, success or failure.
+        unsafe { wc_FreeRng(&mut rng) };
+        if rc != 0 {
+            unsafe { wc_ecc_key_free(key) };
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_make_key_ex" });
+        }
+
+        Ok(Self { key: UnsafeCell::new(key), _curve: PhantomData })
+    }
+
     /// Construct a signing key from raw private-key scalar bytes and an
     /// uncompressed public point (0x04 || x || y).
     pub fn from_private_key_and_public_point(
@@ -337,16 +413,38 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         let mut der = vec![0u8; C::FIELD_SIZE * 2 + 16];
         let mut der_len = der.len() as u32;
 
-        // SAFETY: hash is HASH_LEN bytes, key holds private + public key,
-        // rng is null (CryptoCb firmware uses hardware randomness).
+        // Initialise a per-call RNG for ECC_TIMING_RESISTANT scalar-multiplication
+        // blinding.  Required on software builds; harmless on CryptoCb builds where
+        // the dispatch ignores it.
+        let mut rng = WC_RNG::zeroed();
+        let rc = unsafe { wc_InitRng(&mut rng) };
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng (sign)" });
+        }
+
+        // Attach the RNG to the key so internal timing-resistant code can use it.
+        let rc = unsafe { wc_ecc_set_rng(key, &mut rng) };
+        if rc != 0 {
+            unsafe { wc_FreeRng(&mut rng) };
+            return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_set_rng" });
+        }
+
+        // SAFETY: hash is HASH_LEN bytes; key holds the private key; rng is live.
+        //
+        // Note: the same `rng` is passed both as the key-attached RNG (via
+        // `wc_ecc_set_rng` above, used for scalar-multiplication blinding) and
+        // as the explicit RNG argument here (used for nonce generation).
+        // wolfCrypt accepts the same object for both roles; this is intentional.
         let rc = unsafe {
             wc_ecc_sign_hash(
                 hash.as_ptr(), hash.len() as u32,
                 der.as_mut_ptr(), &mut der_len,
-                core::ptr::null_mut(), // RNG — CryptoCb ignores this
+                &mut rng,
                 key,
             )
         };
+        // Always free the RNG regardless of outcome.
+        unsafe { wc_FreeRng(&mut rng) };
         if rc != 0 {
             return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_sign_hash" });
         }
@@ -477,3 +575,13 @@ pub type P384VerifyingKey = EcdsaVerifyingKey<P384>;
 /// P-384 ECDSA signature.
 #[cfg(wolfssl_ecc_p384)]
 pub type P384Signature = EcdsaSignature<P384>;
+
+/// P-521 ECDSA signing key.
+#[cfg(all(wolfssl_ecc_p521, wolfssl_sha512))]
+pub type P521SigningKey = EcdsaSigningKey<P521>;
+/// P-521 ECDSA verifying key.
+#[cfg(all(wolfssl_ecc_p521, wolfssl_sha512))]
+pub type P521VerifyingKey = EcdsaVerifyingKey<P521>;
+/// P-521 ECDSA signature.
+#[cfg(all(wolfssl_ecc_p521, wolfssl_sha512))]
+pub type P521Signature = EcdsaSignature<P521>;

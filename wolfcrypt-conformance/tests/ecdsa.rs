@@ -1,4 +1,4 @@
-#![cfg(all(wolfssl_openssl_extra, wolfssl_ecc))]
+#![cfg(wolfssl_ecc)]
 
 mod helpers;
 
@@ -273,12 +273,21 @@ macro_rules! ecdsa_cross {
                 pure_vk.verify(msg, &pure_sig2)
                     .expect(concat!(stringify!($mod_name), ": pure must verify second wolf sig"));
 
-                if sig1.as_bytes() != sig2.as_bytes() {
-                    // Good: randomized ECDSA produced different signatures.
-                    // This is the expected case.
+                // wolfCrypt's wc_ecc_sign_hash is randomized (not RFC 6979 by
+                // default).  Identical signatures over the same message with
+                // different RNG calls indicate the RNG returned the same nonce
+                // twice — a catastrophic signing failure.  Emit a loud warning
+                // so it is never silently ignored.  (Deterministic RFC-6979
+                // builds will trigger this warning spuriously; that is
+                // acceptable because the alternative is a silent blind spot.)
+                if sig1.as_bytes() == sig2.as_bytes() {
+                    eprintln!(
+                        "WARNING ({}): two ECDSA signatures over the same message \
+                         are identical — this indicates an RNG nonce reuse, which \
+                         is a catastrophic signing failure. Investigate immediately.",
+                        stringify!($mod_name)
+                    );
                 }
-                // We don't assert_ne because deterministic ECDSA (RFC 6979)
-                // would produce the same sig, and that's also valid.
             }
         }
     };
@@ -291,7 +300,7 @@ ecdsa_cross!(
     p256::ecdsa::VerifyingKey,
     p256::ecdsa::Signature,
     32,
-    [wolfssl_openssl_extra, wolfssl_ecc]
+    [wolfssl_ecc]
 );
 
 ecdsa_cross!(
@@ -301,13 +310,13 @@ ecdsa_cross!(
     p384::ecdsa::VerifyingKey,
     p384::ecdsa::Signature,
     48,
-    [wolfssl_openssl_extra, wolfssl_ecc, wolfssl_ecc_p384]
+    [wolfssl_ecc, wolfssl_ecc_p384]
 );
 
 // P-521: the pure-Rust `p521` crate uses newtype wrappers (not type aliases)
 // for SigningKey/VerifyingKey, so the `ecdsa_cross!` macro doesn't fit.
 // Write the cross-validation tests directly.
-#[cfg(all(wolfssl_openssl_extra, wolfssl_ecc, wolfssl_ecc_p521))]
+#[cfg(all(wolfssl_ecc, wolfssl_ecc_p521, wolfssl_sha512))]
 mod p521_cross {
     use wolfcrypt::{EcdsaSigningKey, EcdsaVerifyingKey, EcdsaSignature, P521};
     use signature::{Signer, Verifier};
