@@ -11,15 +11,6 @@
 //! For each valid vector the computed shared secret must equal the expected
 //! x-coordinate exactly.  For each invalid vector the operation must return
 //! an error.  Acceptable vectors are skipped.
-//!
-//! ## Known wolfCrypt limitation — P-521 edge case
-//!
-//! wolfCrypt's SP-math implementation (`sp_c32.c` `sp_521_div_21`) has a bug
-//! in its quotient-correction step that causes `wc_ecc_import_x963` to reject
-//! P-521 public keys whose x-coordinate satisfies x² ≡ -3 (mod p).  This
-//! affects Wycheproof vector tc 55 (flag: `EdgeCaseEphemeralKey`).  When
-//! wolfCrypt rejects a Wycheproof-valid point with `WOLFSSL_VALIDATE_ECC_IMPORT`
-//! set, the test logs a warning and continues rather than panicking.
 
 #![cfg(wolfssl_ecc)]
 
@@ -72,10 +63,6 @@ fn run_wycheproof_ecdh_ecpoint<C>(
     let mut valid_count: usize = 0;
     let mut invalid_count: usize = 0;
     let mut skip_count: usize = 0;
-    // Counts valid Wycheproof vectors that wolfCrypt rejected during key import.
-    // This happens for P-521 edge cases due to a wolfCrypt bug in sp_c32.c
-    // sp_521_div_21 (incorrect quotient correction for x² ≡ -3 mod p).
-    let mut wolfcrypt_reject_count: usize = 0;
 
     for group in &file.test_groups {
         if group.curve != expected_curve {
@@ -93,20 +80,11 @@ fn run_wycheproof_ecdh_ecpoint<C>(
                 Ok(pk) => pk,
                 Err(e) => {
                     match tc.result {
-                        WycheproofResult::Valid => {
-                            // wolfCrypt rejected a point that Wycheproof considers valid.
-                            // Known cause: sp_c32.c sp_521_div_21 rejects P-521 points
-                            // with x² ≡ -3 (mod p) when WOLFSSL_VALIDATE_ECC_IMPORT is
-                            // set (tc 55, flag EdgeCaseEphemeralKey).  Log and skip
-                            // rather than panic so the rest of the vectors are exercised.
-                            eprintln!(
-                                "  WOLFCRYPT LIMIT tc {}: wc_ecc_import_x963 rejected valid vector \
-                                 (flags: {:?}, error: {:?}) — comment: {}",
-                                tc.tc_id, tc.flags, e, tc.comment
-                            );
-                            wolfcrypt_reject_count += 1;
-                            continue;
-                        }
+                        WycheproofResult::Valid => panic!(
+                            "tc {}: key import failed for valid vector \
+                             (flags: {:?}, error: {:?}), comment: {}",
+                            tc.tc_id, tc.flags, e, tc.comment
+                        ),
                         WycheproofResult::Invalid => {
                             invalid_count += 1;
                             continue;
@@ -207,16 +185,9 @@ fn run_wycheproof_ecdh_ecpoint<C>(
              (non-matching curve or acceptable)"
         );
     }
-    if wolfcrypt_reject_count > 0 {
-        eprintln!(
-            "  wycheproof_ecdh ({expected_curve}): WARNING — wolfCrypt rejected \
-             {wolfcrypt_reject_count} Wycheproof-valid vectors during key import. \
-             Known cause: sp_c32.c sp_521_div_21 bug (x² ≡ -3 mod p edge case)."
-        );
-    }
     eprintln!(
         "  wycheproof_ecdh ({expected_curve}): {valid_count} valid, \
-         {invalid_count} invalid passed, {wolfcrypt_reject_count} wolfcrypt-limited"
+         {invalid_count} invalid passed"
     );
 }
 
