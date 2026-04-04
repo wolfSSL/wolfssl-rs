@@ -90,10 +90,9 @@
 //! doesn't require `ZeroizeOnDrop` or any cleanup guarantee.  Each
 //! implementor must remember to add it manually — an easy thing to miss.
 //!
-//! **Workaround:** We manually implement `Drop` with `zeroize` calls on
-//! every type that holds key material (AES key schedules, ChaCha20Poly1305
-//! keys, HKDF PRKs, keywrap temporaries).  The `zeroize_aes_key` helper
-//! centralizes the pattern for opaque C structs.
+//! **Workaround:** We manually implement `Drop` with `wc_AesFree` or
+//! `zeroize` calls on every type that holds key material (AES key schedules,
+//! ChaCha20Poly1305 keys, HKDF PRKs, keywrap temporaries).
 //!
 //! ## 3. `AeadInPlace` is the only AEAD trait
 //!
@@ -163,7 +162,7 @@
 //! `&mut self` to the FFI.
 //!
 //! **Workaround:** Signing and verifying key types wrap their C key handle
-//! in `UnsafeCell` (see `ed25519.rs`, `ed448.rs`, `ecdsa.rs`, `rsa.rs`,
+//! in `UnsafeCell` (see `ed25519.rs`, `ed448.rs`, `ecdsa_native.rs`, `rsa.rs`,
 //! `mldsa.rs`, `lms.rs`, `aead.rs`, `cipher/ccm.rs`).  This lets us
 //! obtain `*mut` from `&self` for FFI calls.  `UnsafeCell` also makes the
 //! type `!Sync`, which is correct — wolfCrypt key handles are not
@@ -308,13 +307,13 @@ pub use cipher::{Aes192CbcEnc, Aes192CbcDec};
 #[cfg(all(feature = "cipher", wolfssl_chacha))]
 pub use cipher::WolfChaCha20;
 
-#[cfg(all(feature = "cipher", wolfssl_openssl_extra, wolfssl_aes_cfb))]
+#[cfg(all(feature = "cipher", wolfssl_aes_cfb))]
 pub use cipher::{
     Aes128CfbEnc, Aes128CfbDec,
     Aes256CfbEnc, Aes256CfbDec,
 };
 
-#[cfg(all(feature = "cipher", wolfssl_openssl_extra, wolfssl_aes_cfb, wolfssl_aes_192))]
+#[cfg(all(feature = "cipher", wolfssl_aes_cfb, wolfssl_aes_192))]
 pub use cipher::{
     Aes192CfbEnc, Aes192CfbDec,
 };
@@ -358,23 +357,19 @@ pub use ecdh::{SharedSecret, X25519PublicKey, X25519StaticSecret};
 #[cfg(all(feature = "ecdh", wolfssl_curve448))]
 pub use ecdh::{X448PublicKey, X448SharedSecret, X448StaticSecret};
 
-#[cfg(all(feature = "ecdh", wolfssl_openssl_extra, wolfssl_ecc))]
+#[cfg(all(feature = "ecdh", wolfssl_ecc))]
 pub use ecdh::{
     NistCurve, NistEcdhPublicKey, NistEcdhSecret, NistEcdhSharedSecret,
     NistP256, P256EcdhSecret,
 };
-#[cfg(all(feature = "ecdh", wolfssl_openssl_extra, wolfssl_ecc, wolfssl_ecc_p384))]
+#[cfg(all(feature = "ecdh", wolfssl_ecc, wolfssl_ecc_p384))]
 pub use ecdh::{NistP384, P384EcdhSecret};
 
-#[cfg(all(feature = "ecdh", wolfssl_openssl_extra, wolfssl_ecc, wolfssl_ecc_p521))]
+#[cfg(all(feature = "ecdh", wolfssl_ecc, wolfssl_ecc_p521))]
 pub use ecdh::{NistP521, P521EcdhSecret};
 
-// EVP-based ECDSA (requires OPENSSL_EXTRA).
-#[cfg(all(feature = "ecdsa", wolfssl_openssl_extra, wolfssl_ecc))]
-pub mod ecdsa;
-
-// Native wc_ecc_*-based ECDSA (no OPENSSL_EXTRA required).
-#[cfg(all(feature = "ecdsa", wolfssl_ecc, not(wolfssl_openssl_extra)))]
+// Native wc_ecc_*-based ECDSA.
+#[cfg(all(feature = "ecdsa", wolfssl_ecc))]
 #[path = "ecdsa_native.rs"]
 pub mod ecdsa;
 
@@ -389,7 +384,7 @@ pub use ecdsa::{
     P384, P384SigningKey, P384VerifyingKey, P384Signature,
 };
 
-#[cfg(all(feature = "ecdsa", wolfssl_openssl_extra, wolfssl_ecc, wolfssl_ecc_p521))]
+#[cfg(all(feature = "ecdsa", wolfssl_ecc, wolfssl_ecc_p521, wolfssl_sha512))]
 pub use ecdsa::{
     P521, P521SigningKey, P521VerifyingKey, P521Signature,
 };
@@ -405,10 +400,10 @@ pub use rsa::{
 #[cfg(all(feature = "rsa-direct", wolfssl_rsa))]
 pub use rsa::{NativeRsaKey, RsaDirectType, RsaRawComponents};
 
-#[cfg(feature = "keywrap")]
+#[cfg(all(feature = "keywrap", wolfssl_aes_keywrap))]
 pub mod keywrap;
 
-#[cfg(all(feature = "keywrap", wolfssl_openssl_extra, wolfssl_aes_keywrap))]
+#[cfg(all(feature = "keywrap", wolfssl_aes_keywrap))]
 pub use keywrap::{aes_wrap_key, aes_unwrap_key};
 
 #[cfg(all(feature = "mldsa", wolfssl_dilithium))]

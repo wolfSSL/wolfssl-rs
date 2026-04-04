@@ -878,6 +878,10 @@ extern "C" {
 
 #[cfg(wolfssl_sha512)]
 extern "C" {
+    /// Hash `len` bytes of `data` into the 64-byte buffer `hash`.
+    #[link_name = "wc_Sha512Hash"]
+    pub fn wc_Sha512Hash(data: *const u8, len: u32, hash: *mut u8) -> c_int;
+
     pub fn wolfcrypt_sha512_ctx_new() -> *mut c_void;
     pub fn wolfcrypt_sha512_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
     pub fn wolfcrypt_sha512_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
@@ -1458,6 +1462,39 @@ extern "C" {
     ) -> c_int;
 }
 
+// Native wc_AesKeyWrap / wc_AesKeyUnWrap (no OPENSSL_EXTRA required).
+// Gated on HAVE_AES_KEYWRAP → wolfssl_aes_keywrap.
+// Signatures: (key, keySz, in, inSz, out, outSz, iv) -> c_int
+// Returns: positive = bytes written (inSz + 8), negative = error.
+// iv = NULL → default IV (0xA6A6A6A6 A6A6A6A6).
+
+#[cfg(wolfssl_aes_keywrap)]
+extern "C" {
+    /// Wrap `inSz` bytes of key data under the `keySz`-byte KEK.
+    /// `iv` may be NULL to use the RFC 3394 default IV.
+    /// Returns the number of bytes written (`inSz + 8`) on success,
+    /// or a negative wolfCrypt error code on failure.
+    #[link_name = "wc_AesKeyWrap"]
+    pub fn wc_AesKeyWrap(
+        key:   *const u8, keySz: u32,
+        in_:   *const u8, inSz:  u32,
+        out:   *mut u8,   outSz: u32,
+        iv:    *const u8,
+    ) -> c_int;
+
+    /// Unwrap `inSz` bytes of wrapped key data under the `keySz`-byte KEK.
+    /// `iv` may be NULL to use the RFC 3394 default IV.
+    /// Returns the number of bytes written (`inSz - 8`) on success,
+    /// or a negative wolfCrypt error code on failure.
+    #[link_name = "wc_AesKeyUnWrap"]
+    pub fn wc_AesKeyUnWrap(
+        key:   *const u8, keySz: u32,
+        in_:   *const u8, inSz:  u32,
+        out:   *mut u8,   outSz: u32,
+        iv:    *const u8,
+    ) -> c_int;
+}
+
 // AES Key Wrap with Padding (RFC 5649) — C shims in compat_shim.c
 // wolfSSL does not provide the padded variants natively.
 
@@ -1661,11 +1698,6 @@ extern "C" {
     pub fn ECDSA_do_sign(dgst: *const u8, dgst_len: c_int, eckey: *mut EC_KEY) -> *mut ECDSA_SIG;
     #[link_name = "wolfSSL_ECDSA_do_verify"]
     pub fn ECDSA_do_verify(dgst: *const u8, dgst_len: c_int, sig: *const ECDSA_SIG, eckey: *mut EC_KEY) -> c_int;
-
-    // ---- ECDH ----
-
-    #[link_name = "wolfSSL_ECDH_compute_key"]
-    pub fn ECDH_compute_key(out: *mut c_void, outlen: usize, pub_key: *const EC_POINT, ecdh: *mut EC_KEY, kdf: *mut c_void) -> c_int;
 
     // ---- EVP_PKEY EC integration ----
 
@@ -2903,6 +2935,28 @@ extern "C" {
 }
 
 // ============================================================
+// AES-CFB (wolfCrypt native, uses existing WcAes struct)
+// CFB-128: IV and partial-block counter are managed inside WcAes.
+// Encrypt and decrypt are separate because CFB feedback differs
+// per direction (unlike OFB/CTR which are symmetric).
+// ============================================================
+
+#[cfg(wolfssl_aes_cfb)]
+extern "C" {
+    /// Encrypt `sz` bytes of `in_` into `out` using AES-CFB-128.
+    /// `aes` must be initialised with `wc_AesInit` + `wc_AesSetKey`
+    /// (direction = `AES_ENCRYPTION`; CFB always uses the encrypt schedule).
+    #[link_name = "wc_AesCfbEncrypt"]
+    pub fn wc_AesCfbEncrypt(aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32) -> c_int;
+
+    /// Decrypt `sz` bytes of `in_` into `out` using AES-CFB-128.
+    /// `aes` must be initialised with `wc_AesInit` + `wc_AesSetKey`
+    /// (direction = `AES_ENCRYPTION`; CFB always uses the encrypt schedule).
+    #[link_name = "wc_AesCfbDecrypt"]
+    pub fn wc_AesCfbDecrypt(aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32) -> c_int;
+}
+
+// ============================================================
 // AES-CTS (wolfCrypt native)
 // One-shot API takes raw key+IV; incremental API uses WcAes.
 // ============================================================
@@ -3036,6 +3090,13 @@ extern "C" {
     pub fn wc_ecc_export_private_only(key: *mut wc_ecc_key, out: *mut u8, outSz: *mut u32) -> c_int;
     #[link_name = "wc_ecc_check_key"]
     pub fn wc_ecc_check_key(key: *mut wc_ecc_key) -> c_int;
+    /// Attach an RNG to an ECC key for use during scalar-multiplication blinding.
+    ///
+    /// Required when `ECC_TIMING_RESISTANT` is defined (the default): calling
+    /// `wc_ecc_shared_secret` without a prior `wc_ecc_set_rng` returns
+    /// `MISSING_RNG_E`.
+    #[link_name = "wc_ecc_set_rng"]
+    pub fn wc_ecc_set_rng(key: *mut wc_ecc_key, rng: *mut WC_RNG) -> c_int;
     #[link_name = "wc_ecc_get_curve_size_from_id"]
     pub fn wc_ecc_get_curve_size_from_id(curveId: c_int) -> c_int;
 

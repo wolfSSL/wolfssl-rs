@@ -1,16 +1,14 @@
 // NIST curve ECDH round-trip tests (P-256, P-384).
 //
-// These tests exercise the wolfCrypt NIST ECDH implementation via the
-// wolfSSL OpenSSL compat layer (EC_KEY / ECDH_compute_key).
-//
-// Since NIST ECDH test vectors (e.g. from CAVP) require importing
-// specific private scalars in DER/raw form, we focus on round-trip
-// tests that validate the DH symmetry property and key format
-// correctness.
+// Exercises the native wc_ecc_* NIST ECDH implementation.
+// Validates DH symmetry, shared-secret length, key export/import, and
+// rejection of malformed public keys.
+
+#![cfg(all(wolfssl_ecc, feature = "ecdh"))]
 
 use wolfcrypt::{NistEcdhPublicKey, NistP256, P256EcdhSecret};
 
-#[cfg(wolfssl_sha384)]
+#[cfg(wolfssl_ecc_p384)]
 use wolfcrypt::{NistP384, P384EcdhSecret};
 
 // ================================================================
@@ -21,14 +19,14 @@ use wolfcrypt::{NistP384, P384EcdhSecret};
 /// the shared secret from both sides, and verify they are equal.
 #[test]
 fn p256_round_trip() {
-    let alice = P256EcdhSecret::generate().unwrap();
-    let alice_pub = alice.public_key();
+    let alice = P256EcdhSecret::generate().expect("P-256 generate alice");
+    let alice_pub = alice.public_key().expect("P-256 export alice pub");
 
-    let bob = P256EcdhSecret::generate().unwrap();
-    let bob_pub = bob.public_key();
+    let bob = P256EcdhSecret::generate().expect("P-256 generate bob");
+    let bob_pub = bob.public_key().expect("P-256 export bob pub");
 
-    let shared_ab = alice.diffie_hellman(&bob_pub);
-    let shared_ba = bob.diffie_hellman(&alice_pub);
+    let shared_ab = alice.diffie_hellman(&bob_pub).expect("P-256 DH alice->bob");
+    let shared_ba = bob.diffie_hellman(&alice_pub).expect("P-256 DH bob->alice");
 
     assert_eq!(
         shared_ab.as_bytes(),
@@ -41,11 +39,11 @@ fn p256_round_trip() {
 /// 32 bytes (the field element size for secp256r1).
 #[test]
 fn p256_shared_secret_length() {
-    let alice = P256EcdhSecret::generate().unwrap();
-    let bob = P256EcdhSecret::generate().unwrap();
-    let bob_pub = bob.public_key();
+    let alice = P256EcdhSecret::generate().expect("P-256 generate alice");
+    let bob = P256EcdhSecret::generate().expect("P-256 generate bob");
+    let bob_pub = bob.public_key().expect("P-256 export bob pub");
 
-    let shared = alice.diffie_hellman(&bob_pub);
+    let shared = alice.diffie_hellman(&bob_pub).expect("P-256 DH");
     assert_eq!(
         shared.as_bytes().len(),
         32,
@@ -57,15 +55,15 @@ fn p256_shared_secret_length() {
 /// independent pairs (A1,B1) and (A2,B2) and verify DH(A1,B1) != DH(A2,B2).
 #[test]
 fn p256_different_keypairs_different_secrets() {
-    let a1 = P256EcdhSecret::generate().unwrap();
-    let b1 = P256EcdhSecret::generate().unwrap();
-    let b1_pub = b1.public_key();
-    let shared1 = a1.diffie_hellman(&b1_pub);
+    let a1 = P256EcdhSecret::generate().expect("generate a1");
+    let b1 = P256EcdhSecret::generate().expect("generate b1");
+    let b1_pub = b1.public_key().expect("export b1 pub");
+    let shared1 = a1.diffie_hellman(&b1_pub).expect("DH a1*b1");
 
-    let a2 = P256EcdhSecret::generate().unwrap();
-    let b2 = P256EcdhSecret::generate().unwrap();
-    let b2_pub = b2.public_key();
-    let shared2 = a2.diffie_hellman(&b2_pub);
+    let a2 = P256EcdhSecret::generate().expect("generate a2");
+    let b2 = P256EcdhSecret::generate().expect("generate b2");
+    let b2_pub = b2.public_key().expect("export b2 pub");
+    let shared2 = a2.diffie_hellman(&b2_pub).expect("DH a2*b2");
 
     // Probability of collision is ~2^{-256}; safe to assert inequality.
     assert_ne!(
@@ -80,8 +78,8 @@ fn p256_different_keypairs_different_secrets() {
 /// compute ECDH with it to verify correctness.
 #[test]
 fn p256_public_key_export_import_round_trip() {
-    let checker = P256EcdhSecret::generate().unwrap();
-    let checker_pub = checker.public_key();
+    let checker = P256EcdhSecret::generate().expect("generate checker");
+    let checker_pub = checker.public_key().expect("export checker pub");
 
     let exported = checker_pub.as_bytes();
 
@@ -94,11 +92,11 @@ fn p256_public_key_export_import_round_trip() {
         NistEcdhPublicKey::from_bytes(exported).expect("valid public key");
 
     // Verify DH works with the reimported key: compute from both sides.
-    let peer = P256EcdhSecret::generate().unwrap();
-    let peer_pub = peer.public_key();
+    let peer = P256EcdhSecret::generate().expect("generate peer");
+    let peer_pub = peer.public_key().expect("export peer pub");
 
-    let shared_a = checker.diffie_hellman(&peer_pub);
-    let shared_b = peer.diffie_hellman(&reimported);
+    let shared_a = checker.diffie_hellman(&peer_pub).expect("DH checker*peer");
+    let shared_b = peer.diffie_hellman(&reimported).expect("DH peer*checker(reimported)");
 
     assert_eq!(
         shared_a.as_bytes(),
@@ -134,17 +132,17 @@ fn p256_reject_invalid_pubkey_prefix() {
 
 /// NIST SP 800-56Ar3, ECC CDH on P-384: generate two keypairs, compute
 /// the shared secret from both sides, and verify they are equal.
-#[cfg(wolfssl_sha384)]
+#[cfg(wolfssl_ecc_p384)]
 #[test]
 fn p384_round_trip() {
-    let alice = P384EcdhSecret::generate().unwrap();
-    let alice_pub = alice.public_key();
+    let alice = P384EcdhSecret::generate().expect("P-384 generate alice");
+    let alice_pub = alice.public_key().expect("P-384 export alice pub");
 
-    let bob = P384EcdhSecret::generate().unwrap();
-    let bob_pub = bob.public_key();
+    let bob = P384EcdhSecret::generate().expect("P-384 generate bob");
+    let bob_pub = bob.public_key().expect("P-384 export bob pub");
 
-    let shared_ab = alice.diffie_hellman(&bob_pub);
-    let shared_ba = bob.diffie_hellman(&alice_pub);
+    let shared_ab = alice.diffie_hellman(&bob_pub).expect("P-384 DH alice->bob");
+    let shared_ba = bob.diffie_hellman(&alice_pub).expect("P-384 DH bob->alice");
 
     assert_eq!(
         shared_ab.as_bytes(),
@@ -155,14 +153,14 @@ fn p384_round_trip() {
 
 /// Shared secret length validation: P-384 ECDH must produce exactly
 /// 48 bytes (the field element size for secp384r1).
-#[cfg(wolfssl_sha384)]
+#[cfg(wolfssl_ecc_p384)]
 #[test]
 fn p384_shared_secret_length() {
-    let alice = P384EcdhSecret::generate().unwrap();
-    let bob = P384EcdhSecret::generate().unwrap();
-    let bob_pub = bob.public_key();
+    let alice = P384EcdhSecret::generate().expect("P-384 generate alice");
+    let bob = P384EcdhSecret::generate().expect("P-384 generate bob");
+    let bob_pub = bob.public_key().expect("P-384 export bob pub");
 
-    let shared = alice.diffie_hellman(&bob_pub);
+    let shared = alice.diffie_hellman(&bob_pub).expect("P-384 DH");
     assert_eq!(
         shared.as_bytes().len(),
         48,
@@ -171,18 +169,18 @@ fn p384_shared_secret_length() {
 }
 
 /// Different keypairs produce different shared secrets on P-384.
-#[cfg(wolfssl_sha384)]
+#[cfg(wolfssl_ecc_p384)]
 #[test]
 fn p384_different_keypairs_different_secrets() {
-    let a1 = P384EcdhSecret::generate().unwrap();
-    let b1 = P384EcdhSecret::generate().unwrap();
-    let b1_pub = b1.public_key();
-    let shared1 = a1.diffie_hellman(&b1_pub);
+    let a1 = P384EcdhSecret::generate().expect("generate a1");
+    let b1 = P384EcdhSecret::generate().expect("generate b1");
+    let b1_pub = b1.public_key().expect("export b1 pub");
+    let shared1 = a1.diffie_hellman(&b1_pub).expect("DH a1*b1");
 
-    let a2 = P384EcdhSecret::generate().unwrap();
-    let b2 = P384EcdhSecret::generate().unwrap();
-    let b2_pub = b2.public_key();
-    let shared2 = a2.diffie_hellman(&b2_pub);
+    let a2 = P384EcdhSecret::generate().expect("generate a2");
+    let b2 = P384EcdhSecret::generate().expect("generate b2");
+    let b2_pub = b2.public_key().expect("export b2 pub");
+    let shared2 = a2.diffie_hellman(&b2_pub).expect("DH a2*b2");
 
     assert_ne!(
         shared1.as_bytes(),
@@ -192,11 +190,11 @@ fn p384_different_keypairs_different_secrets() {
 }
 
 /// Public key export/import round-trip on P-384.
-#[cfg(wolfssl_sha384)]
+#[cfg(wolfssl_ecc_p384)]
 #[test]
 fn p384_public_key_export_import_round_trip() {
-    let checker = P384EcdhSecret::generate().unwrap();
-    let checker_pub = checker.public_key();
+    let checker = P384EcdhSecret::generate().expect("generate checker");
+    let checker_pub = checker.public_key().expect("export checker pub");
 
     let exported = checker_pub.as_bytes();
 
@@ -209,11 +207,11 @@ fn p384_public_key_export_import_round_trip() {
         NistEcdhPublicKey::from_bytes(exported).expect("valid public key");
 
     // Verify DH works with the reimported key.
-    let peer = P384EcdhSecret::generate().unwrap();
-    let peer_pub = peer.public_key();
+    let peer = P384EcdhSecret::generate().expect("generate peer");
+    let peer_pub = peer.public_key().expect("export peer pub");
 
-    let shared_a = checker.diffie_hellman(&peer_pub);
-    let shared_b = peer.diffie_hellman(&reimported);
+    let shared_a = checker.diffie_hellman(&peer_pub).expect("DH checker*peer");
+    let shared_b = peer.diffie_hellman(&reimported).expect("DH peer*checker(reimported)");
 
     assert_eq!(
         shared_a.as_bytes(),

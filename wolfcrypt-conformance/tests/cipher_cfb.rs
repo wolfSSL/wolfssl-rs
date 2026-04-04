@@ -199,7 +199,7 @@ cfb_equiv!(
     cfb_mode::Encryptor<aes::Aes128>,
     cfb_mode::Decryptor<aes::Aes128>,
     16,
-    [wolfssl_openssl_extra, wolfssl_aes_cfb]
+    [wolfssl_aes_cfb]
 );
 
 cfb_equiv!(
@@ -209,7 +209,7 @@ cfb_equiv!(
     cfb_mode::Encryptor<aes::Aes192>,
     cfb_mode::Decryptor<aes::Aes192>,
     24,
-    [wolfssl_openssl_extra, wolfssl_aes_cfb, wolfssl_aes_192]
+    [wolfssl_aes_cfb, wolfssl_aes_192]
 );
 
 cfb_equiv!(
@@ -219,5 +219,5 @@ cfb_equiv!(
     cfb_mode::Encryptor<aes::Aes256>,
     cfb_mode::Decryptor<aes::Aes256>,
     32,
-    [wolfssl_openssl_extra, wolfssl_aes_cfb]
+    [wolfssl_aes_cfb]
 );
