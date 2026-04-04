@@ -21,6 +21,8 @@ wolfcrypt-sys = { version = "0.1.1", path = "../wolfcrypt-sys", default-features
 default = []
 fips = ["wolfcrypt-sys/fips"]
 riscv-bare-metal = ["wolfcrypt-sys/riscv-bare-metal"]
+cryptocb-only = ["wolfcrypt-sys/cryptocb-only"]
+cryptocb-pure = ["wolfcrypt-sys/cryptocb-pure"]
 
 [build-dependencies]
 cc = { workspace = true, features = ["parallel"] }

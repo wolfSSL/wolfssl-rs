@@ -5,16 +5,20 @@
 //! FFDHE4096).
 //!
 //! There is no standard RustCrypto trait for classic DH, so this module
-//! exposes a custom API backed by wolfSSL's OpenSSL-compatible DH functions.
+//! exposes a custom API backed by wolfCrypt's native wc_Dh* functions.
 //!
-//! Gated on `cfg(wolfssl_openssl_extra)` and `cfg(wolfssl_dh)`.
+//! Gated on `cfg(wolfssl_dh)`.
 
 extern crate alloc;
 use alloc::vec;
 use alloc::vec::Vec;
-use core::ffi::c_int;
 
-use crate::error::{len_as_c_int, WolfCryptError};
+use crate::error::WolfCryptError;
+
+// Named-group constants match wolfssl/wolfcrypt/dh.h WC_FFDHE_* enum.
+const WC_FFDHE_2048: i32 = 256;
+const WC_FFDHE_3072: i32 = 257;
+const WC_FFDHE_4096: i32 = 258;
 
 /// Predefined FFDHE group selection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,57 +32,65 @@ pub enum FfdheGroup {
 }
 
 impl FfdheGroup {
-    fn nid(self) -> c_int {
+    fn wc_name(self) -> i32 {
         match self {
-            FfdheGroup::Ffdhe2048 => wolfcrypt_rs::NID_ffdhe2048,
-            FfdheGroup::Ffdhe3072 => wolfcrypt_rs::NID_ffdhe3072,
-            FfdheGroup::Ffdhe4096 => wolfcrypt_rs::NID_ffdhe4096,
+            FfdheGroup::Ffdhe2048 => WC_FFDHE_2048,
+            FfdheGroup::Ffdhe3072 => WC_FFDHE_3072,
+            FfdheGroup::Ffdhe4096 => WC_FFDHE_4096,
+        }
+    }
+
+    fn byte_size(self) -> usize {
+        match self {
+            FfdheGroup::Ffdhe2048 => 256,
+            FfdheGroup::Ffdhe3072 => 384,
+            FfdheGroup::Ffdhe4096 => 512,
         }
     }
 }
 
 /// A DH key pair for classic Diffie-Hellman key exchange.
 ///
-/// Wraps a heap-allocated wolfSSL `DH` structure. The private and public
-/// key components are generated inside wolfSSL.
+/// Wraps a heap-allocated wolfCrypt `DhKey` context managed by C shims in
+/// `compat_shim.c`.  The private and public key components are generated
+/// inside wolfCrypt and never exposed directly.
 pub struct DhSecret {
-    dh: *mut wolfcrypt_rs::DH,
+    ctx: *mut core::ffi::c_void,
+    group_sz: usize,
 }
 
-// SAFETY: The DH struct is heap-allocated and self-contained; it is safe to
-// move ownership to another thread.
+// SAFETY: The DhKey context is heap-allocated and self-contained.
 unsafe impl Send for DhSecret {}
 
 impl Drop for DhSecret {
     fn drop(&mut self) {
-        if !self.dh.is_null() {
-            // SAFETY: `self.dh` was allocated by `DH_new_by_nid` and is non-null.
-            unsafe { wolfcrypt_rs::DH_free(self.dh) };
+        if !self.ctx.is_null() {
+            // SAFETY: ctx was allocated by wolfcrypt_dh_new.
+            unsafe { wolfcrypt_rs::wolfcrypt_dh_free(self.ctx) };
         }
     }
 }
 
 impl DhSecret {
     /// Generate a new DH key pair using the specified FFDHE group.
-    ///
-    /// Calls `DH_new_by_nid` to load the named group parameters, then
-    /// `DH_generate_key` to produce a fresh private/public key pair.
     pub fn generate(group: FfdheGroup) -> Result<Self, WolfCryptError> {
-        // SAFETY: `DH_new_by_nid` returns a heap-allocated DH or NULL on error.
-        let dh = unsafe { wolfcrypt_rs::DH_new_by_nid(group.nid()) };
-        if dh.is_null() {
+        // SAFETY: wolfcrypt_dh_new allocates a DhKey, initialises it with the
+        // named group, and returns NULL on any error.
+        let ctx = unsafe {
+            wolfcrypt_rs::wolfcrypt_dh_new(group.wc_name(), group.byte_size() as u32)
+        };
+        if ctx.is_null() {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
 
-        // SAFETY: `dh` is a valid, fully-parametrized DH structure.
-        // `DH_generate_key` returns 1 on success (OpenSSL convention).
-        let rc = unsafe { wolfcrypt_rs::DH_generate_key(dh) };
-        if rc != 1 {
-            unsafe { wolfcrypt_rs::DH_free(dh) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "DH_generate_key" });
+        // SAFETY: ctx is a valid, fully-parametrised DhKey context.
+        let rc = unsafe { wolfcrypt_rs::wolfcrypt_dh_generate_keypair(ctx) };
+        if rc != 0 {
+            unsafe { wolfcrypt_rs::wolfcrypt_dh_free(ctx) };
+            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_dh_generate_keypair" });
         }
 
-        Ok(Self { dh })
+        Ok(Self { ctx, group_sz: group.byte_size() })
     }
 
     /// Generate a DH key pair using FFDHE2048 (convenience wrapper).
@@ -86,38 +98,22 @@ impl DhSecret {
         Self::generate(FfdheGroup::Ffdhe2048)
     }
 
-    /// Return the public key as big-endian bytes.
-    ///
-    /// Allocates a `Vec` because the internal BIGNUM is owned by the DH
-    /// struct and cannot be borrowed out.  The cost is negligible next to
-    /// the modular exponentiation in `generate`.
+    /// Return the public key as big-endian bytes, zero-padded to the group size.
     pub fn public_key_bytes(&self) -> Vec<u8> {
-        let mut pub_key: *const wolfcrypt_rs::BIGNUM = core::ptr::null();
-        // SAFETY: `self.dh` was successfully generated. `DH_get0_key` writes
-        // internal pointers (not copies) into the out-params. We only read
-        // `pub_key`; `priv_key` is ignored via NULL.
-        unsafe {
-            wolfcrypt_rs::DH_get0_key(
-                self.dh as *const wolfcrypt_rs::DH,
-                &mut pub_key,
-                core::ptr::null_mut(),
-            );
-        }
-        assert!(!pub_key.is_null(), "DH_get0_key returned null pub_key");
-
-        // SAFETY: `pub_key` is a valid BIGNUM owned by the DH struct.
-        let len = unsafe { wolfcrypt_rs::BN_num_bytes(pub_key) } as usize;
-        let mut buf = vec![0u8; len];
-        // SAFETY: `buf` is `len` bytes, which is the correct size for this BIGNUM.
-        unsafe { wolfcrypt_rs::BN_bn2bin(pub_key, buf.as_mut_ptr()) };
+        let mut buf = vec![0u8; self.group_sz];
+        let mut len = self.group_sz as u32;
+        // SAFETY: buf is group_sz bytes, which is the declared output size.
+        let rc = unsafe {
+            wolfcrypt_rs::wolfcrypt_dh_public_key(self.ctx, buf.as_mut_ptr(), &mut len)
+        };
+        assert_eq!(rc, 0, "wolfcrypt_dh_public_key failed");
+        buf.truncate(len as usize);
         buf
     }
 
     /// Return the DH parameter size in bytes (size of the shared secret).
     pub fn size(&self) -> usize {
-        // SAFETY: `self.dh` is a valid DH structure.
-        let s = unsafe { wolfcrypt_rs::DH_size(self.dh) };
-        s as usize
+        self.group_sz
     }
 
     /// Compute the shared secret given the peer's public key bytes (big-endian).
@@ -127,46 +123,31 @@ impl DhSecret {
     /// after a single exchange.
     ///
     /// Returns the shared secret wrapped in `Zeroizing` so the key material
-    /// is automatically zeroized on drop. Uses `DH_compute_key_padded`
-    /// to produce a fixed-length output (padded to the DH size), which avoids
-    /// timing side-channels from variable-length results.
-    pub fn compute_shared_secret(&self, peer_pub_bytes: &[u8]) -> Result<zeroize::Zeroizing<Vec<u8>>, WolfCryptError> {
-        // Convert peer public key bytes to BIGNUM.
-        // SAFETY: `BN_bin2bn` with NULL `ret` allocates a new BIGNUM.
-        let peer_bn = unsafe {
-            wolfcrypt_rs::BN_bin2bn(
-                peer_pub_bytes.as_ptr(),
-                len_as_c_int(peer_pub_bytes.len()),
-                core::ptr::null_mut(),
-            )
-        };
-        if peer_bn.is_null() {
-            return Err(WolfCryptError::ALLOC_FAILED);
-        }
+    /// is automatically zeroized on drop.  The output is always padded to
+    /// the group size to avoid timing side-channels from variable-length results.
+    pub fn compute_shared_secret(
+        &self,
+        peer_pub_bytes: &[u8],
+    ) -> Result<zeroize::Zeroizing<Vec<u8>>, WolfCryptError> {
+        let mut secret = vec![0u8; self.group_sz];
+        let mut sz = self.group_sz as u32;
 
-        let dh_size = self.size();
-        let mut secret = vec![0u8; dh_size];
-
-        // SAFETY: `secret` has `dh_size` bytes, `peer_bn` is a valid BIGNUM,
-        // and `self.dh` holds a generated key pair. `DH_compute_key_padded`
-        // returns the number of bytes written (== dh_size) or -1 on error.
+        // SAFETY: peer_pub_bytes is a valid slice; secret is group_sz bytes.
         let rc = unsafe {
-            wolfcrypt_rs::DH_compute_key_padded(
+            wolfcrypt_rs::wolfcrypt_dh_agree(
+                self.ctx,
+                peer_pub_bytes.as_ptr(),
+                peer_pub_bytes.len() as u32,
                 secret.as_mut_ptr(),
-                peer_bn as *const wolfcrypt_rs::BIGNUM,
-                self.dh,
+                &mut sz,
             )
         };
 
-        // Free the temporary BIGNUM regardless of outcome.
-        unsafe { wolfcrypt_rs::BN_free(peer_bn) };
-
-        if rc < 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "DH_compute_key_padded" });
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_dh_agree" });
         }
 
-        // Truncate to actual length (should equal dh_size for padded variant).
-        secret.truncate(rc as usize);
+        secret.truncate(sz as usize);
         Ok(zeroize::Zeroizing::new(secret))
     }
 }

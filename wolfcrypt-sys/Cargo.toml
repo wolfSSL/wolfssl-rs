@@ -16,7 +16,9 @@ links = "wolfcrypt_sys"
 default = []
 fips = []
 vendored = []
-riscv-bare-metal = ["wolfssl-src/riscv-bare-metal"]
+riscv-bare-metal = ["vendored", "wolfssl-src/riscv-bare-metal"]
+cryptocb-only = ["vendored", "wolfssl-src/cryptocb-only"]
+cryptocb-pure = ["vendored", "wolfssl-src/cryptocb-pure"]
 
 [build-dependencies]
 bindgen = "0.72.0"

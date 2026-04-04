@@ -48,9 +48,9 @@ pub(crate) unsafe fn zeroize_aes_key(key: &mut wolfcrypt_rs::AES_KEY) {
 
 // Submodules — one per cipher mode family.
 
-#[cfg(all(wolfssl_openssl_extra, wolfssl_aes_ecb))]
+#[cfg(wolfssl_aes_ecb)]
 mod ecb;
-#[cfg(all(wolfssl_openssl_extra, wolfssl_aes_ecb))]
+#[cfg(wolfssl_aes_ecb)]
 pub use ecb::*;
 
 #[cfg(wolfssl_aes_ctr)]
@@ -58,9 +58,7 @@ mod ctr;
 #[cfg(wolfssl_aes_ctr)]
 pub use ctr::*;
 
-#[cfg(wolfssl_openssl_extra)]
 mod cbc;
-#[cfg(wolfssl_openssl_extra)]
 pub use cbc::*;
 
 #[cfg(wolfssl_chacha)]

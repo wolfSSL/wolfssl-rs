@@ -1,0 +1,120 @@
+[package]
+name = "wolfcrypt-dpe-hw"
+authors = ["WolfSSL Inc"]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Caliptra hardware backend for wolfcrypt-dpe"
+homepage = "http://wolfssl.com"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+keywords = ["wolfcrypt", "wolfssl", "caliptra", "dpe", "hardware"]
+categories = ["cryptography", "embedded", "no-std"]
+publish = false
+
+[lib]
+name = "wolfcrypt_dpe_hw"
+
+[features]
+default = []
+caliptra-2x = [
+    "dep:caliptra-drivers",
+    "dep:sha2", "dep:hmac",
+    "dep:aes", "dep:ghash", "dep:cbc",
+    "dep:subtle", "dep:zeroize",
+    "dep:p384",
+]
+# Build wolfSSL with only the CryptoCb callback infrastructure.
+# wolfcrypt-dpe-hw does not own the wolfSSL build chain (wolfcrypt-sys is only
+# a non-riscv32 dep here); activate this feature on wolfcrypt-dpe instead,
+# which propagates it through wolfcrypt → wolfcrypt-rs → wolfcrypt-sys →
+# wolfssl-src.  This entry keeps the feature name visible at the top of the
+# crate graph for documentation purposes.
+cryptocb-only = []
+# Absolute-minimum wolfSSL build for wolfcrypt-dpe-hw: CryptoCb routing only,
+# no OPENSSL_EXTRA, no HKDF, no ASN template.  See wolfssl-src/cryptocb-pure.
+# Use this instead of cryptocb-only when wolfcrypt-dpe-hw is the only consumer
+# of wolfcrypt-sys (i.e. wolfcrypt-dpe is not in the dep graph).
+cryptocb-pure = ["wolfcrypt-sys/cryptocb-pure"]
+# ML-DSA-87 hardware dispatch via Adams Bridge.
+# Off by default (even within caliptra-2x) — wire-format compatibility between
+# wolfCrypt ML-DSA-87 and caliptra-drivers Adams Bridge has not been verified.
+# Enable only after the cross-validation tests in phase4_mldsa.rs pass.
+mldsa87-hw = ["caliptra-2x"]
+# Test/development error-injection hooks.
+# MUST NOT be enabled in production builds.  Exposes INJECT_TRNG_ERROR, which
+# disables the entropy source when set — a FIPS 140-3 disqualifying hook if
+# present in a production binary.  Integration tests that exercise fault
+# injection must be compiled with --features testing-hooks.
+testing-hooks = []
+
+# wolfcrypt-sys is only needed on host / non-RISC-V targets (where the wolfSSL
+# library is available).  On riscv32 bare-metal the caliptra-drivers crate
+# provides hardware acceleration directly; there is no system wolfSSL.
+[target.'cfg(not(target_arch = "riscv32"))'.dependencies]
+wolfcrypt-sys = { version = "0.1.1", path = "../wolfcrypt-sys" }
+
+[dependencies]
+# Requires the chipsalliance/caliptra repo checked out at ../caliptra relative
+# to this workspace root (i.e. wolfssl-rs and caliptra are siblings).
+# Only resolved when `caliptra-2x` feature is enabled.
+caliptra-drivers = { path = "../../caliptra/drivers", optional = true }
+
+# no_std-compatible spin mutex for streaming hash/HMAC state.
+spin = { workspace = true }
+
+# Cryptographic primitives used for host-side (non-riscv32) dispatch.
+# On riscv32 firmware, caliptra-drivers hardware registers are used instead.
+# Both crates are no_std-compatible with default-features = false.
+sha2 = { version = "0.10", default-features = false, features = ["force-soft"], optional = true }
+hmac = { version = "0.12", default-features = false, optional = true }
+
+# Phase 3: AES-GCM/CBC hardware dispatch (host path via RustCrypto primitives).
+# On riscv32 firmware the caliptra-drivers crate provides hardware registers
+# directly; these crates are not needed on that target.
+# All are no_std-compatible with default-features = false.
+aes    = { version = "0.8", default-features = false, features = ["zeroize"], optional = true }
+ghash  = { version = "0.5", default-features = false, optional = true }
+cbc    = { version = "0.1", default-features = false, features = ["block-padding"], optional = true }
+subtle = { version = "2",   default-features = false, optional = true }
+zeroize = { workspace = true, optional = true }
+
+# Phase 4: ECC-384 hardware dispatch (host path via RustCrypto p384 primitives).
+# caliptra-drivers Ecc384 hardware dispatch is deferred to a future phase;
+# the host path uses p384 + ecdsa for correctness testing.
+# p384 is no_std-compatible with default-features = false.
+p384   = { version = "0.13", default-features = false, features = ["ecdsa", "ecdh"], optional = true }
+
+[[test]]
+name = "phase2_rng"
+required-features = ["caliptra-2x", "testing-hooks"]
+
+[[test]]
+name = "link_probe_hash"
+harness = false
+
+[[test]]
+name = "link_probe_rng"
+harness = false
+
+[[test]]
+name = "link_probe_aes"
+harness = false
+
+[[test]]
+name = "link_probe_pk"
+harness = false
+
+[[test]]
+name = "link_probe_integration"
+harness = false
+
+[build-dependencies]
+cc = { workspace = true }
+
+[dev-dependencies]
+# sw-emulator for test harness — see caliptra-prompts/caliptra-phase1.md.
+# Tests "instantiate the caliptra sw-emulator" via CaliptraRootBus::new().
+caliptra-emu-periph = { path = "../../caliptra/sw-emulator/lib/periph" }
+hex = { workspace = true }
+sha2 = { version = "0.10", features = ["force-soft"] }
+hmac = { version = "0.12" }

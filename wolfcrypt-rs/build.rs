@@ -43,19 +43,34 @@ fn main() {
 
     let mut shim_build = cc::Build::new();
     shim_build.include(&wolfssl_include);
-    // For riscv-bare-metal, put OUT_DIR first so the RISC-V user_settings.h
-    // shadows the default one, and add bare-metal stub headers.
-    if cfg!(feature = "riscv-bare-metal") {
+    // For bare-metal features, put our OUT_DIR first so the minimal
+    // user_settings.h shadows the default one, and add bare-metal stub headers
+    // (stdio.h etc.) when WOLFSSL_BARE_METAL_STUBS is set.
+    if cfg!(any(
+        feature = "riscv-bare-metal",
+        feature = "cryptocb-only",
+        feature = "cryptocb-pure",
+    )) {
         let out_dir = env::var("OUT_DIR").unwrap();
         shim_build.include(&out_dir);
         if let Ok(stubs) = env::var("WOLFSSL_BARE_METAL_STUBS") {
             shim_build.include(&stubs);
         }
-        // Copy RISC-V settings to our OUT_DIR too
-        let src_settings = std::path::Path::new(&settings_include).join("user_settings_riscv.h");
+        // Copy the feature-appropriate user_settings.h to our OUT_DIR so it
+        // shadows wolfssl-src/user_settings.h in the include search order.
+        let settings_name = if cfg!(feature = "cryptocb-pure") {
+            "user_settings_cryptocb_pure.h"
+        } else if cfg!(feature = "cryptocb-only") {
+            "user_settings_cryptocb_only.h"
+        } else {
+            "user_settings_riscv.h"
+        };
+        let src_settings = std::path::Path::new(&settings_include).join(settings_name);
         let dst = std::path::Path::new(&out_dir).join("user_settings.h");
-        if src_settings.exists() && !dst.exists() {
-            std::fs::copy(&src_settings, &dst).ok();
+        if src_settings.exists() {
+            std::fs::copy(&src_settings, &dst)
+                .unwrap_or_else(|e| panic!("failed to copy {settings_name}: {e}"));
+            println!("cargo:rerun-if-changed={}", src_settings.display());
         }
     }
     shim_build.include(&settings_include);

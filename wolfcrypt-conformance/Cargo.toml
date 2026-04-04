@@ -12,6 +12,13 @@ keywords = ["wolfcrypt", "wolfssl", "fips", "testing", "cryptography"]
 categories = ["cryptography"]
 exclude = ["third_party/**", "vectors/**"]
 
+[features]
+# Activate the Caliptra hardware backend for conformance testing.
+# Enables wolfcrypt-dpe-hw with caliptra-2x so the caliptra_hw_conformance
+# binary can route operations through the hardware dispatch path and assert
+# counters after each suite.
+caliptra-hw = ["wolfcrypt-dpe-hw/caliptra-2x", "dep:caliptra-emu-periph"]
+
 [lib]
 # Test-only crate; lib.rs exists only so integration tests can share helpers
 path = "src/lib.rs"
@@ -22,6 +29,21 @@ path = "src/lib.rs"
 # Cargo only exposes `links` metadata to build scripts of direct dependents,
 # and dev-dependencies don't qualify.
 wolfcrypt-rs = { version = "0.1.1", path = "../wolfcrypt-rs" }
+
+# Hardware backend: optional, activated by the caliptra-hw feature.
+# Provides HW_DEVICE_ID, init(), and dispatch-counter accessors used by
+# caliptra_hw_conformance.
+wolfcrypt-dpe-hw = { path = "../wolfcrypt-dpe-hw", optional = true }
+
+# sw-emulator required by caliptra_hw_conformance to instantiate
+# CaliptraRootBus during hardware conformance testing.
+caliptra-emu-periph = { path = "../../caliptra/sw-emulator/lib/periph", optional = true }
+
+[target.'cfg(not(target_arch = "riscv32"))'.dependencies]
+# wolfcrypt-sys is already transitively present via wolfcrypt-rs but must be
+# declared directly so caliptra_hw_conformance can call wc_Hash_ex,
+# wc_HmacInit, wc_AesGcmEncrypt, wc_ecc_sign_hash, etc.
+wolfcrypt-sys = { version = "0.1.1", path = "../wolfcrypt-sys" }
 
 [dev-dependencies]
 # === Wolf side ===

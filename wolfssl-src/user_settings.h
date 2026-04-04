@@ -105,6 +105,9 @@
 #define WC_RSA_BLINDING
 #define WC_RSA_NO_PADDING
 #define WC_RSA_PSS
+/* Allow wc_RsaPrivateDecrypt_ex to return 0 bytes for valid empty OAEP plaintext
+ * instead of RSA_BUFFER_E. Required for Wycheproof OAEP zero-length test vectors. */
+#define WOLFSSL_RSA_DECRYPT_TO_0_LEN
 
 /* TLS extensions and SNI — required by OPENSSL_ALL for struct layout
  * in ssl.c even though we don't compile the TLS protocol files. */

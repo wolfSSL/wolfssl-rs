@@ -32,8 +32,10 @@ use core::ffi::{c_uint, c_long, c_ulong};
 // All allocation sizes are defined here as named constants.
 
 /// Allocation size for wolfSSL's `WOLFSSL_AES_KEY` (OpenSSL compat).
+/// Sized to accommodate the struct with WOLF_CRYPTO_CB enabled (adds devId,
+/// devCtx, devKey fields): ≈452 bytes on riscv32, ≈400 bytes on x86_64.
 #[cfg(wolfssl_openssl_extra)]
-pub const AES_KEY_ALLOC_SIZE: usize = 352;
+pub const AES_KEY_ALLOC_SIZE: usize = 512;
 /// Allocation size for wolfCrypt's `Aes` struct.
 pub const WC_AES_ALLOC_SIZE: usize = 512;
 /// Allocation size for wolfCrypt's `WC_RNG` struct.
@@ -605,6 +607,7 @@ pub enum point_conversion_form_t {
 extern "C" {
     // wolfCrypt RNG
     pub fn wc_InitRng(rng: *mut WC_RNG) -> c_int;
+    pub fn wc_InitRng_ex(rng: *mut WC_RNG, heap: *mut c_void, devId: c_int) -> c_int;
     pub fn wc_RNG_GenerateBlock(rng: *mut WC_RNG, output: *mut u8, sz: u32) -> c_int;
     pub fn wc_FreeRng(rng: *mut WC_RNG) -> c_int;
 
@@ -621,6 +624,12 @@ extern "C" {
         iv: *const u8,
         dir: c_int,
     ) -> c_int;
+
+    // AES block modes (native)
+    pub fn wc_AesCbcEncrypt(aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32) -> c_int;
+    pub fn wc_AesCbcDecrypt(aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32) -> c_int;
+    pub fn wc_AesEcbEncrypt(aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32) -> c_int;
+    pub fn wc_AesEcbDecrypt(aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32) -> c_int;
 
     // Error strings
     pub fn wc_GetErrorString(error: c_int) -> *const c_char;
@@ -661,6 +670,246 @@ extern "C" {
 extern "C" {
     #[link_name = "wolfSSL_SHA512"]
     pub fn SHA512(data: *const u8, len: usize, md: *mut u8) -> *mut u8;
+}
+
+// ============================================================
+// Native wolfCrypt SHA functions (no OPENSSL_EXTRA required).
+//
+// wc_Sha256Hash / wc_Sha384Hash are one-shot convenience wrappers
+// in sha256.c / sha512.c.  The wolfcrypt_sha256_* / wolfcrypt_sha384_*
+// shims are heap-allocated streaming contexts defined in compat_shim.c.
+// Both sets are available in any build that includes sha256.c/sha512.c
+// (controlled by NO_SHA256 / WOLFSSL_SHA384 in user_settings.h).
+// ============================================================
+
+#[cfg(wolfssl_sha256)]
+extern "C" {
+    /// Hash `len` bytes of `data` into the 32-byte buffer `hash`.
+    #[link_name = "wc_Sha256Hash"]
+    pub fn wc_Sha256Hash(data: *const u8, len: u32, hash: *mut u8) -> c_int;
+
+    /// Allocate and init a heap-managed SHA-256 context.  Returns null on OOM.
+    pub fn wolfcrypt_sha256_ctx_new() -> *mut c_void;
+    pub fn wolfcrypt_sha256_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_sha256_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
+    pub fn wolfcrypt_sha256_free(ctx: *mut c_void);
+    pub fn wolfcrypt_sha256_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+}
+
+#[cfg(wolfssl_sha384)]
+extern "C" {
+    /// Hash `len` bytes of `data` into the 48-byte buffer `hash`.
+    #[link_name = "wc_Sha384Hash"]
+    pub fn wc_Sha384Hash(data: *const u8, len: u32, hash: *mut u8) -> c_int;
+
+    /// Allocate and init a heap-managed SHA-384 context.  Returns null on OOM.
+    pub fn wolfcrypt_sha384_ctx_new() -> *mut c_void;
+    pub fn wolfcrypt_sha384_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_sha384_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
+    pub fn wolfcrypt_sha384_free(ctx: *mut c_void);
+    pub fn wolfcrypt_sha384_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+}
+
+#[cfg(wolfssl_des3)]
+extern "C" {
+    pub fn wolfcrypt_des3_enc_new(key: *const u8, iv: *const u8) -> *mut c_void;
+    pub fn wolfcrypt_des3_dec_new(key: *const u8, iv: *const u8) -> *mut c_void;
+    pub fn wolfcrypt_des3_cbc_encrypt(ctx: *mut c_void, in_: *const u8, out: *mut u8, sz: u32) -> c_int;
+    pub fn wolfcrypt_des3_cbc_decrypt(ctx: *mut c_void, in_: *const u8, out: *mut u8, sz: u32) -> c_int;
+    pub fn wolfcrypt_des3_free(ctx: *mut c_void);
+}
+
+#[cfg(wolfssl_dh)]
+extern "C" {
+    pub fn wolfcrypt_dh_new(name: c_int, group_sz: u32) -> *mut c_void;
+    pub fn wolfcrypt_dh_generate_keypair(handle: *mut c_void) -> c_int;
+    pub fn wolfcrypt_dh_public_key(handle: *mut c_void, out: *mut u8, out_len: *mut u32) -> c_int;
+    pub fn wolfcrypt_dh_agree(handle: *mut c_void, peer_pub: *const u8, peer_pub_sz: u32, secret: *mut u8, secret_sz: *mut u32) -> c_int;
+    pub fn wolfcrypt_dh_free(handle: *mut c_void);
+}
+
+#[cfg(wolfssl_rsa)]
+extern "C" {
+    /// Allocate and initialise a wolfcrypt_rsa_ctx (RsaKey + WC_RNG).
+    /// Returns NULL on allocation or initialisation failure.
+    pub fn wolfcrypt_rsa_new() -> *mut c_void;
+    /// Free a context returned by wolfcrypt_rsa_new.
+    pub fn wolfcrypt_rsa_free(ctx: *mut c_void);
+    /// Generate an RSA key pair of `bits` bits (e.g. 2048, 3072, 4096).
+    /// Requires WOLFSSL_KEY_GEN; returns NOT_COMPILED_IN otherwise.
+    pub fn wolfcrypt_rsa_generate(ctx: *mut c_void, bits: c_int) -> c_int;
+    /// Import a private key from PKCS#1 RSAPrivateKey DER.
+    pub fn wolfcrypt_rsa_import_private_pkcs1(ctx: *mut c_void, der: *const u8, der_len: u32) -> c_int;
+    /// Import a public key from SubjectPublicKeyInfo (SPKI) DER.
+    pub fn wolfcrypt_rsa_import_public_spki(ctx: *mut c_void, der: *const u8, der_len: u32) -> c_int;
+    /// Export private key as PKCS#1 RSAPrivateKey DER.
+    /// Pass out=NULL to query the required buffer size (written to *out_len).
+    pub fn wolfcrypt_rsa_export_private_pkcs1(ctx: *mut c_void, out: *mut u8, out_len: *mut u32) -> c_int;
+    /// Export public key as SubjectPublicKeyInfo (SPKI) DER.
+    /// Pass out=NULL to query the required buffer size (written to *out_len).
+    pub fn wolfcrypt_rsa_export_public_spki(ctx: *mut c_void, out: *mut u8, out_len: *mut u32) -> c_int;
+    /// Return RSA modulus size in bytes (e.g. 256 for a 2048-bit key).
+    pub fn wolfcrypt_rsa_key_size_bytes(ctx: *const c_void) -> c_int;
+    /// OAEP-SHA256/MGF1-SHA256 encrypt. `out` must be at least key-size bytes.
+    /// Returns ciphertext length (== key size) on success, negative on error.
+    pub fn wolfcrypt_rsa_oaep_encrypt_sha256(
+        ctx: *mut c_void,
+        pt: *const u8, pt_len: u32,
+        out: *mut u8, out_buf_len: u32,
+    ) -> c_int;
+    /// OAEP-SHA256/MGF1-SHA256 decrypt.
+    /// Returns plaintext length (>0) on success, negative on error.
+    pub fn wolfcrypt_rsa_oaep_decrypt_sha256(
+        ctx: *mut c_void,
+        ct: *const u8, ct_len: u32,
+        out: *mut u8, out_buf_len: u32,
+    ) -> c_int;
+    /// PKCS#1v1.5 sign. `hash_bits` is 256, 384, or 512.
+    /// On success sets `*sig_len` to the signature length and returns 0.
+    pub fn wolfcrypt_rsa_pkcs1v15_sign(
+        ctx: *mut c_void,
+        hash_bits: c_int,
+        msg: *const u8, msg_len: u32,
+        sig: *mut u8, sig_len: *mut u32,
+    ) -> c_int;
+    /// PKCS#1v1.5 verify. `hash_bits` is 256, 384, or 512.
+    /// Returns 0 if valid, negative (SIG_VERIFY_E = -228) if invalid.
+    pub fn wolfcrypt_rsa_pkcs1v15_verify(
+        ctx: *mut c_void,
+        hash_bits: c_int,
+        msg: *const u8, msg_len: u32,
+        sig: *const u8, sig_len: u32,
+    ) -> c_int;
+    /// PSS sign. `hash_bits` is 256, 384, or 512. Salt = hash length.
+    /// On success sets `*sig_len` to the signature length and returns 0.
+    pub fn wolfcrypt_rsa_pss_sign(
+        ctx: *mut c_void,
+        hash_bits: c_int,
+        msg: *const u8, msg_len: u32,
+        sig: *mut u8, sig_len: *mut u32,
+    ) -> c_int;
+    /// PSS verify. `hash_bits` is 256, 384, or 512.
+    /// Returns 0 if valid, negative on error or invalid signature.
+    pub fn wolfcrypt_rsa_pss_verify(
+        ctx: *mut c_void,
+        hash_bits: c_int,
+        msg: *const u8, msg_len: u32,
+        sig: *const u8, sig_len: u32,
+    ) -> c_int;
+    /// PKCS#1v1.5 encrypt (public-key op). `out` must be at least key-size bytes.
+    /// Returns ciphertext length (== key size) on success, negative on error.
+    pub fn wolfcrypt_rsa_pkcs1v15_encrypt(
+        ctx: *mut c_void,
+        in_: *const u8, in_len: u32,
+        out: *mut u8, out_buf_len: u32,
+    ) -> c_int;
+    /// PKCS#1v1.5 decrypt (private-key op). `out` must be at least key-size bytes.
+    /// Returns plaintext length on success, 0 or negative on error.
+    /// Callers MUST check `rc <= 0` as failure (0 = constant-time padding error).
+    pub fn wolfcrypt_rsa_pkcs1v15_decrypt(
+        ctx: *mut c_void,
+        in_: *const u8, in_len: u32,
+        out: *mut u8, out_buf_len: u32,
+    ) -> c_int;
+    /// OAEP encrypt with explicit hash. `hash_bits` is 256, 384, or 512.
+    /// Returns ciphertext length on success, negative on error.
+    pub fn wolfcrypt_rsa_oaep_encrypt(
+        ctx: *mut c_void,
+        hash_bits: c_int,
+        in_: *const u8, in_len: u32,
+        out: *mut u8, out_buf_len: u32,
+    ) -> c_int;
+    /// OAEP decrypt with explicit hash. `hash_bits` is 256, 384, or 512.
+    /// Returns plaintext length on success, 0 or negative on error.
+    /// Callers MUST check `rc <= 0` as failure.
+    pub fn wolfcrypt_rsa_oaep_decrypt(
+        ctx: *mut c_void,
+        hash_bits: c_int,
+        in_: *const u8, in_len: u32,
+        out: *mut u8, out_buf_len: u32,
+    ) -> c_int;
+}
+
+#[cfg(wolfssl_cmac)]
+extern "C" {
+    pub fn wolfcrypt_cmac_aes128_new(key: *const u8) -> *mut c_void;
+    pub fn wolfcrypt_cmac_aes256_new(key: *const u8) -> *mut c_void;
+    pub fn wolfcrypt_cmac_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_cmac_final(ctx: *mut c_void, out: *mut u8, out_len: *mut u32) -> c_int;
+    pub fn wolfcrypt_cmac_free(ctx: *mut c_void);
+}
+
+#[cfg(wolfssl_hmac)]
+extern "C" {
+    pub fn wolfcrypt_hmac_sha1_new(key: *const u8, keylen: u32) -> *mut c_void;
+    pub fn wolfcrypt_hmac_sha256_new(key: *const u8, keylen: u32) -> *mut c_void;
+    pub fn wolfcrypt_hmac_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_hmac_final(ctx: *mut c_void, out: *mut u8) -> c_int;
+    pub fn wolfcrypt_hmac_free(ctx: *mut c_void);
+}
+
+#[cfg(all(wolfssl_hmac, wolfssl_sha384))]
+extern "C" {
+    pub fn wolfcrypt_hmac_sha384_new(key: *const u8, keylen: u32) -> *mut c_void;
+}
+
+#[cfg(all(wolfssl_hmac, wolfssl_sha512))]
+extern "C" {
+    pub fn wolfcrypt_hmac_sha512_new(key: *const u8, keylen: u32) -> *mut c_void;
+}
+
+#[cfg(wolfssl_sha1)]
+extern "C" {
+    pub fn wolfcrypt_sha1_ctx_new() -> *mut c_void;
+    pub fn wolfcrypt_sha1_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_sha1_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
+    pub fn wolfcrypt_sha1_free(ctx: *mut c_void);
+    pub fn wolfcrypt_sha1_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+}
+
+#[cfg(wolfssl_sha224)]
+extern "C" {
+    pub fn wolfcrypt_sha224_ctx_new() -> *mut c_void;
+    pub fn wolfcrypt_sha224_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_sha224_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
+    pub fn wolfcrypt_sha224_free(ctx: *mut c_void);
+    pub fn wolfcrypt_sha224_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+}
+
+#[cfg(wolfssl_sha512)]
+extern "C" {
+    pub fn wolfcrypt_sha512_ctx_new() -> *mut c_void;
+    pub fn wolfcrypt_sha512_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_sha512_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
+    pub fn wolfcrypt_sha512_free(ctx: *mut c_void);
+    pub fn wolfcrypt_sha512_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+
+    pub fn wolfcrypt_sha512_256_ctx_new() -> *mut c_void;
+    pub fn wolfcrypt_sha512_256_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_sha512_256_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
+    pub fn wolfcrypt_sha512_256_free(ctx: *mut c_void);
+    pub fn wolfcrypt_sha512_256_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+}
+
+#[cfg(wolfssl_sha3)]
+extern "C" {
+    pub fn wolfcrypt_sha3_256_ctx_new() -> *mut c_void;
+    pub fn wolfcrypt_sha3_256_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_sha3_256_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
+    pub fn wolfcrypt_sha3_256_free(ctx: *mut c_void);
+    pub fn wolfcrypt_sha3_256_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+
+    pub fn wolfcrypt_sha3_384_ctx_new() -> *mut c_void;
+    pub fn wolfcrypt_sha3_384_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_sha3_384_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
+    pub fn wolfcrypt_sha3_384_free(ctx: *mut c_void);
+    pub fn wolfcrypt_sha3_384_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+
+    pub fn wolfcrypt_sha3_512_ctx_new() -> *mut c_void;
+    pub fn wolfcrypt_sha3_512_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
+    pub fn wolfcrypt_sha3_512_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
+    pub fn wolfcrypt_sha3_512_free(ctx: *mut c_void);
+    pub fn wolfcrypt_sha3_512_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
 }
 
 // ============================================================
@@ -3213,6 +3462,110 @@ extern "C" {
 
     // PK (public key) accessors
     pub fn wolfcrypt_cryptocb_info_pk_type(info: *const wc_CryptoInfo) -> c_int;
+
+    // PK eccsign accessors
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccsign_in(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccsign_inlen(info: *const wc_CryptoInfo) -> u32;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccsign_out(info: *mut wc_CryptoInfo) -> *mut u8;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccsign_outlen(info: *mut wc_CryptoInfo) -> *mut u32;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccsign_key(info: *const wc_CryptoInfo) -> *mut c_void;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccsign_rng(info: *const wc_CryptoInfo) -> *mut c_void;
+
+    // PK eccverify accessors
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccverify_sig(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccverify_siglen(info: *const wc_CryptoInfo) -> u32;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccverify_hash(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccverify_hashlen(info: *const wc_CryptoInfo) -> u32;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccverify_res(info: *mut wc_CryptoInfo) -> *mut c_int;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eccverify_key(info: *const wc_CryptoInfo) -> *mut c_void;
+
+    // PK ecdh accessors
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_ecdh_private_key(info: *const wc_CryptoInfo) -> *mut c_void;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_ecdh_public_key(info: *const wc_CryptoInfo) -> *mut c_void;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_ecdh_out(info: *mut wc_CryptoInfo) -> *mut u8;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_ecdh_outlen(info: *mut wc_CryptoInfo) -> *mut u32;
+
+    // PK eckg accessors
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eckg_key(info: *const wc_CryptoInfo) -> *mut c_void;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eckg_size(info: *const wc_CryptoInfo) -> c_int;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eckg_curve_id(info: *const wc_CryptoInfo) -> c_int;
+    #[cfg(wolfssl_ecc)]
+    pub fn wolfcrypt_cryptocb_info_pk_eckg_rng(info: *const wc_CryptoInfo) -> *mut c_void;
+
+    // Cipher AES-GCM enc accessors
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_aes(info: *const wc_CryptoInfo) -> *mut c_void;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_out(info: *mut wc_CryptoInfo) -> *mut u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_in(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_sz(info: *const wc_CryptoInfo) -> u32;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_iv(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_iv_sz(info: *const wc_CryptoInfo) -> u32;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag(info: *mut wc_CryptoInfo) -> *mut u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag_sz(info: *const wc_CryptoInfo) -> u32;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in_sz(info: *const wc_CryptoInfo) -> u32;
+
+    // Cipher AES-GCM dec accessors
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_aes(info: *const wc_CryptoInfo) -> *mut c_void;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_out(info: *mut wc_CryptoInfo) -> *mut u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_in(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_sz(info: *const wc_CryptoInfo) -> u32;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_iv(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_iv_sz(info: *const wc_CryptoInfo) -> u32;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag_sz(info: *const wc_CryptoInfo) -> u32;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in(info: *const wc_CryptoInfo) -> *const u8;
+    #[cfg(wolfssl_aes_gcm)]
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in_sz(info: *const wc_CryptoInfo) -> u32;
+
+    // Cipher AES-CBC accessors
+    pub fn wolfcrypt_cryptocb_info_cipher_aescbc_aes(info: *const wc_CryptoInfo) -> *mut c_void;
+    pub fn wolfcrypt_cryptocb_info_cipher_aescbc_out(info: *mut wc_CryptoInfo) -> *mut u8;
+    pub fn wolfcrypt_cryptocb_info_cipher_aescbc_in(info: *const wc_CryptoInfo) -> *const u8;
+    pub fn wolfcrypt_cryptocb_info_cipher_aescbc_sz(info: *const wc_CryptoInfo) -> u32;
+
+    // Aes struct field accessors
+    pub fn wolfcrypt_aes_keylen(aes: *const c_void) -> u32;
+    pub fn wolfcrypt_aes_devkey(aes: *const c_void) -> *const u8;
+    pub fn wolfcrypt_aes_reg(aes: *const c_void) -> *const u8;
+    pub fn wolfcrypt_aes_reg_mut(aes: *mut c_void) -> *mut u8;
 }
 
 // ============================================================
@@ -3460,3 +3813,4 @@ mod tests {
         assert_eq!(wc_oid_sum(&[]), 0);
     }
 }
+

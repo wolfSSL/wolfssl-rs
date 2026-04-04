@@ -16,6 +16,31 @@ default = []
 # Use the minimal bare-metal user_settings_riscv.h instead of the full
 # user_settings.h.  Intended for riscv32imc-unknown-none-elf targets.
 riscv-bare-metal = []
+# Build wolfSSL with only the CryptoCb callback infrastructure.
+# Uses user_settings_cryptocb_only.h: WOLF_CRYPTO_CB +
+# WOLF_CRYPTO_CB_ONLY_ECC + WOLF_CRYPTO_CB_ONLY_RSA (per-algorithm disables
+# available in this wolfSSL version), algorithm type definitions for
+# wc_CryptoInfo struct layouts, bare-metal platform stubs, but NO SP math.
+# sp_int.c / sp_c32.c / sp_c64.c / wolfmath.c excluded from compilation.
+# SHA/AES/HMAC software stubs are compiled but never called at runtime when
+# CryptoCb handles everything.
+# Intended for firmware targets where all crypto is dispatched to hardware.
+# Takes precedence over riscv-bare-metal if both are set.
+cryptocb-only = []
+# Absolute-minimum wolfSSL build: CryptoCb routing layer only.
+# Uses user_settings_cryptocb_pure.h: WOLF_CRYPTO_CB + bare-metal platform
+# stubs + algorithm type definitions for wc_CryptoInfo struct layouts.
+# Removes everything not needed for pure callback dispatch:
+#   - No OPENSSL_EXTRA / EVP compat layer (removes evp.c, ssl.c)
+#   - No HAVE_HKDF / WC_KDF_NIST_SP_800_56C (removes kdf.c)
+#   - No WOLFSSL_ASN_TEMPLATE (removes asn.c)
+#   - No SHA-224, no TLS extensions, no SNI
+# Source reduction vs cryptocb-only: also removes coding.c, cpuid.c,
+# signature.c, wc_encrypt.c.
+# Intended for wolfcrypt-dpe-hw and firmware builds where wolfSSL is used
+# purely as a CryptoCb routing layer with no higher-level API calls.
+# Takes precedence over cryptocb-only and riscv-bare-metal if set.
+cryptocb-pure = []
 
 [dependencies]
 cc = { version = "1.2.26", features = ["parallel"] }

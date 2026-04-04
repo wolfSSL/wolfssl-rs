@@ -2,7 +2,7 @@
 // is provided by wycheproof_rsa.rs (Wycheproof PKCS#1v1.5 and PSS vectors).
 // TODO: add cross-validation against the pure-Rust `rsa` crate when its
 // API stabilises enough for signing interop.
-#![cfg(all(wolfssl_openssl_extra, wolfssl_rsa))]
+#![cfg(wolfssl_rsa)]
 
 mod helpers;
 
@@ -303,4 +303,78 @@ fn pkcs1v15_cross_scheme_rejected() {
         result.is_err(),
         "rsa: PSS signature must not verify as PKCS#1v1.5"
     );
+}
+
+// ---------------------------------------------------------------------------
+// OAEP encrypt/decrypt round-trip diagnostics
+// ---------------------------------------------------------------------------
+
+const PRIV_2048_DER: &[u8] = include_bytes!("../vectors/rsa/priv_2048.der");
+
+/// OAEP round-trip with a freshly generated 2048-bit key.
+///
+/// This establishes that OAEP encrypt + decrypt works at all when both
+/// operations use the same in-memory key object.
+#[test]
+fn oaep_roundtrip_generated_key() {
+    let sk = RsaPrivateKey::generate(2048)
+        .expect("rsa: 2048-bit key generation should succeed");
+    let pk = sk.public_key();
+
+    let plaintext = b"oaep round-trip test with generated key";
+    let ct = pk.encrypt_oaep(plaintext)
+        .expect("rsa: OAEP encrypt with generated key should succeed");
+    assert_ne!(ct, plaintext, "rsa: OAEP ciphertext must differ from plaintext");
+    assert_eq!(ct.len(), 256, "rsa: OAEP ciphertext for 2048-bit key must be 256 bytes");
+
+    let dec = sk.decrypt_oaep(&ct)
+        .expect("rsa: OAEP decrypt with generated key should succeed");
+    assert_eq!(&dec, plaintext as &[u8], "rsa: OAEP round-trip must recover original plaintext");
+}
+
+/// OAEP round-trip with a key imported from PKCS#1 DER.
+///
+/// This tests the specific code path used by the Wycheproof OAEP tests:
+/// load a private key from external DER, then encrypt + decrypt.
+#[test]
+fn oaep_roundtrip_imported_key() {
+    let sk = RsaPrivateKey::from_pkcs1_der(PRIV_2048_DER)
+        .expect("rsa: should import 2048-bit private key from PKCS#1 DER");
+    let pk = sk.public_key();
+
+    let plaintext = b"oaep round-trip test with imported key";
+    let ct = pk.encrypt_oaep(plaintext)
+        .expect("rsa: OAEP encrypt with imported key should succeed");
+    assert_ne!(ct, plaintext, "rsa: OAEP ciphertext must differ from plaintext");
+
+    let dec = sk.decrypt_oaep(&ct)
+        .expect("rsa: OAEP decrypt with imported key should succeed");
+    assert_eq!(&dec, plaintext as &[u8], "rsa: OAEP round-trip with imported key must recover original plaintext");
+}
+
+/// Verify that OAEP decrypt with the wrong key fails.
+#[test]
+fn oaep_wrong_key_rejected() {
+    let sk1 = RsaPrivateKey::generate(2048)
+        .expect("rsa: key1 generation should succeed");
+    let pk1 = sk1.public_key();
+    let sk2 = RsaPrivateKey::generate(2048)
+        .expect("rsa: key2 generation should succeed");
+
+    let plaintext = b"oaep cross-key rejection test";
+    let ct = pk1.encrypt_oaep(plaintext)
+        .expect("rsa: OAEP encrypt should succeed");
+
+    let result = sk2.decrypt_oaep(&ct);
+    assert!(result.is_err(), "rsa: OAEP decrypt with wrong key must fail");
+}
+
+/// Verify that OAEP decrypt of garbage returns an error.
+#[test]
+fn oaep_garbage_ciphertext_rejected() {
+    let sk = RsaPrivateKey::generate(2048)
+        .expect("rsa: key generation should succeed");
+    let garbage = vec![0xAAu8; 256];
+    let result = sk.decrypt_oaep(&garbage);
+    assert!(result.is_err(), "rsa: OAEP decrypt of garbage must fail");
 }

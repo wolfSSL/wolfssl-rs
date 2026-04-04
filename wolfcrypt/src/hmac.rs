@@ -1,4 +1,4 @@
-//! HMAC algorithms backed by wolfCrypt's HMAC_CTX API.
+//! HMAC algorithms backed by wolfCrypt's native wc_Hmac* API.
 //!
 //! Each type implements the RustCrypto [`hmac`](hmac_trait) 0.12 traits
 //! (`OutputSizeUser`, `KeySizeUser`, `KeyInit`, `Update`, `FixedOutput`,
@@ -7,57 +7,39 @@
 //! Callers should `use hmac_trait::Mac` for the full API:
 //! `new_from_slice()`, `update()`, `finalize()`, `verify_slice()`.
 
-use core::ffi::c_void;
 use digest_trait::{FixedOutput, KeyInit, OutputSizeUser, Update};
 use generic_array::GenericArray;
 use typenum::*;
-use crate::error::len_as_c_int;
 
 /// Internal macro that stamps out a complete HMAC wrapper for one algorithm.
 ///
-/// The generated struct holds a heap-allocated `HMAC_CTX` and delegates
-/// all operations to wolfCrypt through the OpenSSL-compat HMAC layer.
+/// The generated struct holds a heap-allocated wolfCrypt `Hmac` context
+/// and delegates all operations through `wolfcrypt_hmac_*` C shims.
 macro_rules! impl_hmac {
     (
         $name:ident,
-        $evp_fn:path,
+        $new_fn:path,
         $output_size:ty,
         $key_size:ty,
         $cfg_gate:meta
     ) => {
         #[$cfg_gate]
         pub struct $name {
-            ctx: *mut wolfcrypt_rs::HMAC_CTX,
+            ctx: *mut core::ffi::c_void,
         }
 
-        // SAFETY: HMAC_CTX is heap-allocated and only accessed through
-        // &self / &mut self.  wolfCrypt's HMAC layer is thread-safe when a
-        // context is used from a single thread, which Rust's ownership
-        // rules enforce.
+        // SAFETY: The Hmac context is heap-allocated and only accessed through
+        // &self / &mut self.  wolfCrypt's HMAC API is thread-safe when a
+        // context is used from a single thread, which Rust's ownership rules enforce.
         #[$cfg_gate]
         unsafe impl Send for $name {}
 
         #[$cfg_gate]
-        impl $name {
-            /// Return the algorithm descriptor pointer for this HMAC's hash.
-            #[inline]
-            fn evp_md() -> *const wolfcrypt_rs::EVP_MD {
-                // SAFETY: EVP_sha* functions return a static const pointer.
-                unsafe { $evp_fn() }
-            }
-        }
-
-        // ------------------------------------------------------------------
-        // core / RustCrypto trait impls
-        // ------------------------------------------------------------------
-
-        #[$cfg_gate]
         impl Drop for $name {
             fn drop(&mut self) {
-                // SAFETY: self.ctx was allocated via HMAC_CTX_new and
-                // is only freed once here.
-                unsafe {
-                    wolfcrypt_rs::HMAC_CTX_free(self.ctx);
+                if !self.ctx.is_null() {
+                    // SAFETY: ctx was allocated by wolfcrypt_hmac_*_new.
+                    unsafe { wolfcrypt_rs::wolfcrypt_hmac_free(self.ctx) };
                 }
             }
         }
@@ -74,39 +56,22 @@ macro_rules! impl_hmac {
 
         #[$cfg_gate]
         impl $name {
-            /// Shared initialisation: allocate an HMAC_CTX and key it.
             fn init_with_key(key: &[u8]) -> Self {
-                // SAFETY: HMAC_CTX_new returns a heap-allocated context
-                // or NULL on OOM.
-                let ctx = unsafe { wolfcrypt_rs::HMAC_CTX_new() };
-                assert!(!ctx.is_null(), "HMAC_CTX_new returned NULL");
-
-                // SAFETY: ctx is non-null and freshly allocated. key pointer
-                // and length are guaranteed correct by the slice reference.
-                // HMAC_Init_ex with a non-null key sets the key and algorithm.
-                unsafe {
-                    let rc = wolfcrypt_rs::HMAC_Init_ex(
-                        ctx,
-                        key.as_ptr() as *const c_void,
-                        len_as_c_int(key.len()),
-                        Self::evp_md(),
-                        core::ptr::null_mut(),
-                    );
-                    assert_eq!(rc, 1, "HMAC_Init_ex failed (OOM or invalid algorithm)");
-                }
+                // SAFETY: key pointer and length are correct from the slice reference.
+                let ctx = unsafe {
+                    $new_fn(key.as_ptr(), key.len() as u32)
+                };
+                assert!(!ctx.is_null(), concat!(stringify!($name), ": wolfcrypt_hmac_*_new returned NULL"));
                 Self { ctx }
             }
         }
 
         #[$cfg_gate]
         impl KeyInit for $name {
-            /// Create from a fixed-size key (KeySize bytes).
             fn new(key: &GenericArray<u8, <Self as crypto_common::KeySizeUser>::KeySize>) -> Self {
                 Self::init_with_key(key.as_slice())
             }
 
-            /// Create from a variable-length key.  HMAC accepts any key size
-            /// per RFC 2104, so this never returns `InvalidLength`.
             fn new_from_slice(key: &[u8]) -> Result<Self, crypto_common::InvalidLength> {
                 Ok(Self::init_with_key(key))
             }
@@ -115,34 +80,30 @@ macro_rules! impl_hmac {
         #[$cfg_gate]
         impl Update for $name {
             fn update(&mut self, data: &[u8]) {
-                // SAFETY: self.ctx is valid. data pointer and length are
-                // guaranteed correct by the slice reference.
-                unsafe {
-                    let rc = wolfcrypt_rs::HMAC_Update(
+                // SAFETY: ctx is valid; data pointer and length are correct.
+                let rc = unsafe {
+                    wolfcrypt_rs::wolfcrypt_hmac_update(
                         self.ctx,
                         data.as_ptr(),
-                        data.len(),
-                    );
-                    assert_eq!(rc, 1, "HMAC_Update failed (context not initialized)");
-                }
+                        data.len() as u32,
+                    )
+                };
+                assert_eq!(rc, 0, concat!(stringify!($name), ": wolfcrypt_hmac_update failed"));
             }
         }
 
         #[$cfg_gate]
         impl FixedOutput for $name {
-            fn finalize_into(self, out: &mut GenericArray<u8, Self::OutputSize>) {
-                let mut len: u32 = 0;
-                // SAFETY: out is exactly OutputSize bytes. self.ctx is
-                // valid. After this call, Drop will free the context.
-                unsafe {
-                    let rc = wolfcrypt_rs::HMAC_Final(
-                        self.ctx,
-                        out.as_mut_ptr(),
-                        &mut len,
-                    );
-                    assert_eq!(rc, 1, "HMAC_Final failed (context not initialized)");
-                }
-                // Drop runs after this and frees self.ctx.
+            fn finalize_into(mut self, out: &mut GenericArray<u8, Self::OutputSize>) {
+                // SAFETY: out is exactly OutputSize bytes; ctx is valid.
+                let rc = unsafe {
+                    wolfcrypt_rs::wolfcrypt_hmac_final(self.ctx, out.as_mut_ptr())
+                };
+                assert_eq!(rc, 0, concat!(stringify!($name), ": wolfcrypt_hmac_final failed"));
+                // Prevent Drop from double-freeing.
+                let ctx = self.ctx;
+                self.ctx = core::ptr::null_mut();
+                unsafe { wolfcrypt_rs::wolfcrypt_hmac_free(ctx) };
             }
         }
 
@@ -151,38 +112,34 @@ macro_rules! impl_hmac {
     };
 }
 
-// ======================================================================
-// Stamp out HMAC types
-// ======================================================================
-
 impl_hmac!(
     WolfHmacSha1,
-    wolfcrypt_rs::EVP_sha1,
+    wolfcrypt_rs::wolfcrypt_hmac_sha1_new,
     U20,
     U20,
-    cfg(all(wolfssl_openssl_extra, wolfssl_hmac))
+    cfg(wolfssl_hmac)
 );
 
 impl_hmac!(
     WolfHmacSha256,
-    wolfcrypt_rs::EVP_sha256,
+    wolfcrypt_rs::wolfcrypt_hmac_sha256_new,
     U32,
     U32,
-    cfg(all(wolfssl_openssl_extra, wolfssl_hmac))
+    cfg(wolfssl_hmac)
 );
 
 impl_hmac!(
     WolfHmacSha384,
-    wolfcrypt_rs::EVP_sha384,
+    wolfcrypt_rs::wolfcrypt_hmac_sha384_new,
     U48,
     U48,
-    cfg(all(wolfssl_openssl_extra, wolfssl_hmac, wolfssl_sha384))
+    cfg(all(wolfssl_hmac, wolfssl_sha384))
 );
 
 impl_hmac!(
     WolfHmacSha512,
-    wolfcrypt_rs::EVP_sha512,
+    wolfcrypt_rs::wolfcrypt_hmac_sha512_new,
     U64,
     U64,
-    cfg(all(wolfssl_openssl_extra, wolfssl_hmac, wolfssl_sha512))
+    cfg(all(wolfssl_hmac, wolfssl_sha512))
 );

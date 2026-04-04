@@ -23,6 +23,7 @@ members = [
     "links-testing",
     "builder-test",
     "wolfcrypt-dpe",
+    "wolfcrypt-dpe-hw",
     "wolfcrypt-sys",
     "wolfssl-src",
     "wolfcrypt-wrapper",

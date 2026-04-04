@@ -157,4 +157,9 @@
 #define WOLFSSL_HAVE_MLKEM
 #define WOLFSSL_WC_MLKEM
 
+/* CryptoCb: hardware crypto callback infrastructure.
+ * Enables wc_CryptoCb_RegisterDevice / wc_CryptoCb_GetDevIdAtIndex and
+ * the wc_CryptoInfo dispatch struct.  Required for wolfcrypt-dpe-hw. */
+#define WOLF_CRYPTO_CB
+
 #endif /* WOLFSSL_USER_SETTINGS_H */

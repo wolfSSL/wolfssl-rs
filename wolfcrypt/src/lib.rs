@@ -200,31 +200,31 @@ pub use error::WolfCryptError;
 pub mod digest;
 
 // Re-export digest types at crate root for ergonomic use.
-#[cfg(all(feature = "digest", wolfssl_openssl_extra))]
+#[cfg(all(feature = "digest", wolfssl_sha1))]
 pub use digest::Sha1;
 
-#[cfg(all(feature = "digest", wolfssl_openssl_extra, wolfssl_sha224))]
+#[cfg(all(feature = "digest", wolfssl_sha224))]
 pub use digest::Sha224;
 
-#[cfg(all(feature = "digest", wolfssl_openssl_extra))]
+#[cfg(all(feature = "digest", wolfssl_sha256))]
 pub use digest::Sha256;
 
-#[cfg(all(feature = "digest", wolfssl_openssl_extra, wolfssl_sha384))]
+#[cfg(all(feature = "digest", wolfssl_sha384))]
 pub use digest::Sha384;
 
-#[cfg(all(feature = "digest", wolfssl_openssl_extra, wolfssl_sha512))]
+#[cfg(all(feature = "digest", wolfssl_sha512))]
 pub use digest::Sha512;
 
-#[cfg(all(feature = "digest", wolfssl_openssl_extra, wolfssl_sha512))]
+#[cfg(all(feature = "digest", wolfssl_sha512))]
 pub use digest::Sha512_256;
 
-#[cfg(all(feature = "digest", wolfssl_openssl_extra, wolfssl_sha3))]
+#[cfg(all(feature = "digest", wolfssl_sha3))]
 pub use digest::Sha3_256;
 
-#[cfg(all(feature = "digest", wolfssl_openssl_extra, wolfssl_sha3))]
+#[cfg(all(feature = "digest", wolfssl_sha3))]
 pub use digest::Sha3_384;
 
-#[cfg(all(feature = "digest", wolfssl_openssl_extra, wolfssl_sha3))]
+#[cfg(all(feature = "digest", wolfssl_sha3))]
 pub use digest::Sha3_512;
 
 #[cfg(feature = "rand")]
@@ -235,21 +235,21 @@ pub use rand::WolfRng;
 #[cfg(feature = "hmac")]
 pub mod hmac;
 
-#[cfg(all(feature = "hmac", wolfssl_openssl_extra, wolfssl_hmac))]
+#[cfg(all(feature = "hmac", wolfssl_hmac))]
 pub use hmac::WolfHmacSha1;
-#[cfg(all(feature = "hmac", wolfssl_openssl_extra, wolfssl_hmac))]
+#[cfg(all(feature = "hmac", wolfssl_hmac))]
 pub use hmac::WolfHmacSha256;
-#[cfg(all(feature = "hmac", wolfssl_openssl_extra, wolfssl_hmac, wolfssl_sha384))]
+#[cfg(all(feature = "hmac", wolfssl_hmac, wolfssl_sha384))]
 pub use hmac::WolfHmacSha384;
-#[cfg(all(feature = "hmac", wolfssl_openssl_extra, wolfssl_hmac, wolfssl_sha512))]
+#[cfg(all(feature = "hmac", wolfssl_hmac, wolfssl_sha512))]
 pub use hmac::WolfHmacSha512;
 
 #[cfg(feature = "cmac")]
 pub mod cmac;
 
-#[cfg(all(feature = "cmac", wolfssl_openssl_extra, wolfssl_cmac))]
+#[cfg(all(feature = "cmac", wolfssl_cmac))]
 pub use cmac::WolfCmacAes128;
-#[cfg(all(feature = "cmac", wolfssl_openssl_extra, wolfssl_cmac))]
+#[cfg(all(feature = "cmac", wolfssl_cmac))]
 pub use cmac::WolfCmacAes256;
 
 #[cfg(feature = "hkdf")]
@@ -287,10 +287,10 @@ pub use aead::ChaCha20Poly1305;
 #[cfg(feature = "cipher")]
 pub mod cipher;
 
-#[cfg(all(feature = "cipher", wolfssl_openssl_extra, wolfssl_aes_ecb))]
+#[cfg(all(feature = "cipher", wolfssl_aes_ecb))]
 pub use cipher::{Aes128EcbDec, Aes128EcbEnc, Aes256EcbDec, Aes256EcbEnc};
 
-#[cfg(all(feature = "cipher", wolfssl_openssl_extra, wolfssl_aes_ecb, wolfssl_aes_192))]
+#[cfg(all(feature = "cipher", wolfssl_aes_ecb, wolfssl_aes_192))]
 pub use cipher::{Aes192EcbDec, Aes192EcbEnc};
 
 #[cfg(all(feature = "cipher", wolfssl_aes_ctr))]
@@ -299,10 +299,10 @@ pub use cipher::{Aes128Ctr, Aes256Ctr};
 #[cfg(all(feature = "cipher", wolfssl_aes_ctr, wolfssl_aes_192))]
 pub use cipher::Aes192Ctr;
 
-#[cfg(all(feature = "cipher", wolfssl_openssl_extra))]
+#[cfg(feature = "cipher")]
 pub use cipher::{Aes128CbcEnc, Aes128CbcDec, Aes256CbcEnc, Aes256CbcDec};
 
-#[cfg(all(feature = "cipher", wolfssl_openssl_extra, wolfssl_aes_192))]
+#[cfg(all(feature = "cipher", wolfssl_aes_192))]
 pub use cipher::{Aes192CbcEnc, Aes192CbcDec};
 
 #[cfg(all(feature = "cipher", wolfssl_chacha))]
@@ -319,16 +319,16 @@ pub use cipher::{
     Aes192CfbEnc, Aes192CfbDec,
 };
 
-#[cfg(all(feature = "des3", wolfssl_openssl_extra, wolfssl_des3))]
+#[cfg(all(feature = "des3", wolfssl_des3))]
 pub mod des3;
 
-#[cfg(all(feature = "des3", wolfssl_openssl_extra, wolfssl_des3))]
+#[cfg(all(feature = "des3", wolfssl_des3))]
 pub use des3::{DesEde3CbcEnc, DesEde3CbcDec};
 
-#[cfg(all(feature = "dh", wolfssl_openssl_extra, wolfssl_dh))]
+#[cfg(all(feature = "dh", wolfssl_dh))]
 pub mod dh;
 
-#[cfg(all(feature = "dh", wolfssl_openssl_extra, wolfssl_dh))]
+#[cfg(all(feature = "dh", wolfssl_dh))]
 pub use dh::{DhSecret, FfdheGroup};
 
 #[cfg(feature = "poly1305")]
@@ -369,16 +369,22 @@ pub use ecdh::{NistP384, P384EcdhSecret};
 #[cfg(all(feature = "ecdh", wolfssl_openssl_extra, wolfssl_ecc, wolfssl_ecc_p521))]
 pub use ecdh::{NistP521, P521EcdhSecret};
 
+// EVP-based ECDSA (requires OPENSSL_EXTRA).
 #[cfg(all(feature = "ecdsa", wolfssl_openssl_extra, wolfssl_ecc))]
 pub mod ecdsa;
 
-#[cfg(all(feature = "ecdsa", wolfssl_openssl_extra, wolfssl_ecc))]
+// Native wc_ecc_*-based ECDSA (no OPENSSL_EXTRA required).
+#[cfg(all(feature = "ecdsa", wolfssl_ecc, not(wolfssl_openssl_extra)))]
+#[path = "ecdsa_native.rs"]
+pub mod ecdsa;
+
+#[cfg(all(feature = "ecdsa", wolfssl_ecc))]
 pub use ecdsa::{
     EcdsaCurve, EcdsaSignature, EcdsaSigningKey, EcdsaVerifyingKey,
     P256, P256SigningKey, P256VerifyingKey, P256Signature,
 };
 
-#[cfg(all(feature = "ecdsa", wolfssl_openssl_extra, wolfssl_ecc, wolfssl_ecc_p384))]
+#[cfg(all(feature = "ecdsa", wolfssl_ecc, wolfssl_ecc_p384))]
 pub use ecdsa::{
     P384, P384SigningKey, P384VerifyingKey, P384Signature,
 };
@@ -391,7 +397,7 @@ pub use ecdsa::{
 #[cfg(feature = "rsa")]
 pub mod rsa;
 
-#[cfg(all(feature = "rsa", wolfssl_openssl_extra, wolfssl_rsa))]
+#[cfg(all(feature = "rsa", wolfssl_rsa))]
 pub use rsa::{
     RsaDigest, RsaPkcs1v15Signature, RsaPssSignature, RsaPrivateKey, RsaPublicKey,
 };

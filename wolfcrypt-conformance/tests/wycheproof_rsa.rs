@@ -1,4 +1,4 @@
-#![cfg(all(wolfssl_openssl_extra, wolfssl_rsa))]
+#![cfg(wolfssl_rsa)]
 
 mod helpers;
 use helpers::wycheproof::*;

@@ -51,6 +51,11 @@ impl Drop for WolfCryptPrivKey {
 /// Maximum number of exported CDI handles stored simultaneously.
 const MAX_CDI_HANDLES: usize = 1;
 
+/// Device ID passed to `wc_InitRng_ex` that selects the software DRBG path.
+/// Mirrors wolfSSL's `INVALID_DEVID (-2)`.  Used as the default in
+/// `WolfCryptDpeImpl::new()` for backward compatibility.
+const SOFTWARE_DRBG_DEV_ID: i32 = -2;
+
 /// wolfSSL-backed implementation of the caliptra-dpe Crypto trait,
 /// parameterized by signature curve and digest algorithm.
 ///
@@ -67,8 +72,13 @@ pub struct WolfCryptDpeImpl<S: SignatureType, D: DigestType> {
     /// Alias public key (set externally; used by sign_with_alias).
     alias_pub_key: Option<PubKey>,
     /// Cached wolfCrypt RNG, lazily initialized on first use.
-    /// Avoids wc_InitRng (DRBG init + OS entropy reseed) on every call.
+    /// Avoids wc_InitRng_ex (DRBG init + entropy reseed) on every call.
     rng: Option<wolfcrypt::WolfRng>,
+    /// Device ID passed to `wc_InitRng_ex` on first RNG use.
+    /// `SOFTWARE_DRBG_DEV_ID` (-2) selects the software DRBG path.
+    /// Set a registered CryptoCb device ID (e.g. from wolfcrypt_dpe_hw)
+    /// via `new_with_rng_dev_id` to route all RNG calls through the ITRNG.
+    rng_dev_id: i32,
     _marker: PhantomData<(S, D)>,
 }
 
@@ -82,13 +92,44 @@ pub type WolfCryptDpe256 = WolfCryptDpeImpl<Curve256, Sha256>;
 pub type WolfCryptDpe = WolfCryptDpe384;
 
 impl<S: SignatureType, D: DigestType> WolfCryptDpeImpl<S, D> {
-    /// Create a new instance.
+    /// Create a new instance using the software DRBG path.
+    ///
+    /// The RNG is initialised with `INVALID_DEVID` so wolfSSL's software
+    /// DRBG provides randomness.  For hardware ITRNG enforcement, use
+    /// [`WolfCryptDpeImpl::new_with_rng_dev_id`].
+    ///
+    /// When the `require-dev-id` feature is active on the `wolfcrypt` crate,
+    /// this constructor compiles but the underlying `WolfRng::new_with_dev_id`
+    /// call passes `SOFTWARE_DRBG_DEV_ID` — a known-safe value.  Code that
+    /// must enforce ITRNG usage should activate that feature and use
+    /// `new_with_rng_dev_id` instead.
     pub fn new() -> Self {
         Self {
             export_cdi_slots: Vec::new(),
             alias_signing_key: None,
             alias_pub_key: None,
             rng: None,
+            rng_dev_id: SOFTWARE_DRBG_DEV_ID,
+            _marker: PhantomData,
+        }
+    }
+
+    /// Create a new instance that routes all RNG calls through the CryptoCb
+    /// device registered under `rng_dev_id`.
+    ///
+    /// Use this when `wolfcrypt_dpe_hw` (or another hardware backend) has
+    /// registered a CryptoCb device and you want every `wc_RNG_GenerateBlock`
+    /// call to go through the ITRNG rather than the software DRBG.
+    ///
+    /// When the `require-dev-id` feature is active, this is the only valid
+    /// constructor that provides hardware entropy.
+    pub fn new_with_rng_dev_id(rng_dev_id: i32) -> Self {
+        Self {
+            export_cdi_slots: Vec::new(),
+            alias_signing_key: None,
+            alias_pub_key: None,
+            rng: None,
+            rng_dev_id,
             _marker: PhantomData,
         }
     }
@@ -155,7 +196,7 @@ impl<S: SignatureType, D: DigestType> Crypto for WolfCryptDpeImpl<S, D> {
     type PrivKey = WolfCryptPrivKey;
 
     fn rand_bytes(&mut self, dst: &mut [u8]) -> Result<(), CryptoError> {
-        rng::rand_bytes(&mut self.rng, dst)
+        rng::rand_bytes(&mut self.rng, self.rng_dev_id, dst)
     }
 
     fn hash_initialize(&mut self) -> Result<Self::Hasher<'_>, CryptoError> {
