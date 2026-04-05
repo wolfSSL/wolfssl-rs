@@ -51,7 +51,7 @@ testing-hooks = []
 # library is available).  On riscv32 bare-metal the caliptra-drivers crate
 # provides hardware acceleration directly; there is no system wolfSSL.
 [target.'cfg(not(target_arch = "riscv32"))'.dependencies]
-wolfcrypt-sys = { version = "0.1.1", path = "../wolfcrypt-sys" }
+wolfcrypt-sys = { version = "0.1.2", path = "../wolfcrypt-sys" }
 
 [dependencies]
 # Requires the chipsalliance/caliptra repo checked out at ../caliptra relative

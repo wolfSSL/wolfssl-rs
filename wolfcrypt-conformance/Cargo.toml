@@ -10,6 +10,8 @@ repository = "https://github.com/wolfSSL/wolfssl-rs"
 readme = "README.md"
 keywords = ["wolfcrypt", "wolfssl", "fips", "testing", "cryptography"]
 categories = ["cryptography"]
+# Test-only crate — not published to crates.io.
+publish = false
 exclude = ["third_party/**", "vectors/**"]
 
 [features]
@@ -28,7 +30,7 @@ path = "src/lib.rs"
 # dev-dependencies) solely so build.rs can read DEP_WOLFSSL_CFGS metadata.
 # Cargo only exposes `links` metadata to build scripts of direct dependents,
 # and dev-dependencies don't qualify.
-wolfcrypt-rs = { version = "0.1.1", path = "../wolfcrypt-rs" }
+wolfcrypt-rs = { version = "0.1.2", path = "../wolfcrypt-rs" }
 
 # Hardware backend: optional, activated by the caliptra-hw feature.
 # Provides HW_DEVICE_ID, init(), and dispatch-counter accessors used by
@@ -43,11 +45,11 @@ caliptra-emu-periph = { path = "../../caliptra/sw-emulator/lib/periph", optional
 # wolfcrypt-sys is already transitively present via wolfcrypt-rs but must be
 # declared directly so caliptra_hw_conformance can call wc_Hash_ex,
 # wc_HmacInit, wc_AesGcmEncrypt, wc_ecc_sign_hash, etc.
-wolfcrypt-sys = { version = "0.1.1", path = "../wolfcrypt-sys" }
+wolfcrypt-sys = { version = "0.1.2", path = "../wolfcrypt-sys" }
 
 [dev-dependencies]
 # === Wolf side ===
-wolfcrypt = { version = "0.1.1", path = "../wolfcrypt", features = [
+wolfcrypt = { version = "0.1.2", path = "../wolfcrypt", features = [
     "digest", "hmac", "cmac", "hkdf", "pbkdf2", "aead", "cipher",
     "poly1305", "signature", "ecdsa", "ed25519", "ed448", "rsa",
     "mldsa", "mlkem", "keywrap", "dh", "des3", "ecdh", "rand",
