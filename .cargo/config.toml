@@ -19,11 +19,11 @@ rustflags = ["-C", "link-arg=-Tmemory.x", "-C", "link-arg=-Tlink.x"]
 # Use the local wolfssl build that has HAVE_DILITHIUM and WOLF_CRYPTO_CB enabled.
 # Built from ~/wolfssl with -DWOLFSSL_CRYPTOCB=yes -DWOLFSSL_DILITHIUM=yes.
 # Overrides the system pkg-config installation at /usr/local (which lacks these flags).
-WOLFSSL_DIR = "/home/mark/wolfssl-rs/wolfssl-repo-install"
+WOLFSSL_DIR = "/home/mark/wolfssl-rs/wolfssl-install"
 # wolfSSL source tree for the vendored build (cryptocb-only / riscv-bare-metal features).
 # When those features are active, wolfcrypt-sys bypasses WOLFSSL_DIR and compiles
 # wolfSSL from source via wolfssl-src using this path.
-WOLFSSL_SRC = "/home/mark/wolfssl-rs/wolfssl-repo"
+WOLFSSL_SRC = "/home/mark/wolfssl-rs/wolfssl-src/wolfssl"
 # riscv32 C cross-compiler via zig cc.
 # Used by the cc crate when compiling wolfssl-src for the riscv32imc-unknown-none-elf target.
 CC_riscv32imc_unknown_none_elf = { value = ".cargo/riscv32-cc", relative = true }
@@ -35,4 +35,4 @@ CC_riscv32imc_unknown_none_elf = { value = ".cargo/riscv32-cc", relative = true 
 # cache entry for /usr/local/lib wins.
 # --disable-new-dtags is required: modern binutils defaults to DT_RUNPATH which loses
 # to the ldconfig cache, while DT_RPATH takes priority before everything.
-rustflags = ["-C", "link-arg=-Wl,--disable-new-dtags,-rpath,/home/mark/wolfssl-rs/wolfssl-repo-install/lib"]
+rustflags = ["-C", "link-arg=-Wl,--disable-new-dtags,-rpath,/home/mark/wolfssl-rs/wolfssl-install/lib"]
