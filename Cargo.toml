@@ -21,7 +21,6 @@ members = [
     "wolfcrypt",
     "wolfcrypt-ring-testing",
     "links-testing",
-    "builder-test",
     "wolfcrypt-dpe",
     "wolfcrypt-dpe-hw",
     "wolfcrypt-sys",
