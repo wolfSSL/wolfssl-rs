@@ -13,7 +13,6 @@ categories = ["cryptography"]
 include = [
     "src/**",
     "patches/**",
-    "wolfssl/**",
     "user_settings*.h",
     "riscv_bare_metal_helpers.c",
     "README.md",
