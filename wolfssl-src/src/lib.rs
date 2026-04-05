@@ -16,7 +16,8 @@
 //! The builder discovers wolfSSL sources in order:
 //! 1. `source_dir()` programmatic override
 //! 2. `WOLFSSL_SRC` environment variable
-//! 3. `pkg-config` (looks for a `wolfssl` package whose prefix contains source files)
+//! 3. Bundled submodule at `wolfssl-src/wolfssl/` (present after `git submodule update --init`)
+//! 4. `pkg-config` (looks for a `wolfssl` package whose prefix contains source files)
 
 use std::collections::HashSet;
 use std::env;
@@ -52,7 +53,7 @@ impl Build {
     }
 
     /// Set the path to the wolfSSL source tree.
-    /// If not set, defaults to `WOLFSSL_SRC` env var, then `pkg-config`.
+    /// If not set, defaults to `WOLFSSL_SRC` env var, then the bundled submodule, then `pkg-config`.
     pub fn source_dir(&mut self, dir: PathBuf) -> &mut Self {
         self.source_dir = Some(dir);
         self
@@ -227,23 +228,31 @@ impl Build {
 
         // 2. WOLFSSL_SRC env var
         if let Ok(dir) = env::var("WOLFSSL_SRC") {
-            let path = PathBuf::from(&dir);
-            if !path.exists() {
-                panic!("WOLFSSL_SRC={dir} does not exist");
+            if !dir.is_empty() {
+                let path = PathBuf::from(&dir);
+                if !path.exists() {
+                    panic!("WOLFSSL_SRC={dir} does not exist");
+                }
+                return path;
             }
-            return path;
         }
 
-        // 3. pkg-config
+        // 3. Bundled submodule (wolfssl-src/wolfssl/ inside this crate)
+        let bundled = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("wolfssl");
+        if bundled.join("wolfcrypt/src").exists() {
+            return bundled;
+        }
+
+        // 4. pkg-config
         if let Some(dir) = Self::find_via_pkg_config() {
             return dir;
         }
 
         panic!(
             "wolfSSL source not found. Either:\n  \
+             - Run: git submodule update --init\n  \
              - Set WOLFSSL_SRC to the path of your wolfssl checkout\n  \
-             - Install wolfssl-dev so that pkg-config can find it\n  \
-             - Clone it: git clone https://github.com/wolfSSL/wolfssl.git"
+             - Install wolfssl-dev so that pkg-config can find it"
         );
     }
 
