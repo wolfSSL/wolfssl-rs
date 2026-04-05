@@ -1,7 +1,7 @@
 [package]
 name = "wolfssl-src"
 authors = ["WolfSSL Inc"]
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Compile wolfSSL from source for use by wolfcrypt-sys"
 license = "MIT"
