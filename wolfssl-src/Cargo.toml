@@ -10,6 +10,15 @@ repository = "https://github.com/wolfSSL/wolfssl-rs"
 readme = "README.md"
 keywords = ["wolfcrypt", "wolfssl", "fips", "cryptography"]
 categories = ["cryptography"]
+include = [
+    "src/**",
+    "patches/**",
+    "wolfssl/**",
+    "user_settings*.h",
+    "riscv_bare_metal_helpers.c",
+    "README.md",
+    "Cargo.toml",
+]
 
 [features]
 default = []

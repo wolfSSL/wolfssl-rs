@@ -109,6 +109,9 @@
  * instead of RSA_BUFFER_E. Required for Wycheproof OAEP zero-length test vectors. */
 #define WOLFSSL_RSA_DECRYPT_TO_0_LEN
 
+/* TLS 1.3 */
+#define WOLFSSL_TLS13
+
 /* TLS extensions and SNI — required by OPENSSL_ALL for struct layout
  * in ssl.c even though we don't compile the TLS protocol files. */
 #define HAVE_TLS_EXTENSIONS
