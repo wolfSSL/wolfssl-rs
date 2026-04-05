@@ -66,7 +66,6 @@ stable 0.3 releases.
 | `wolfcrypt-ring-testing` | Integration tests for the ring-compatible API. |
 | `wolfcrypt-dpe-conformance` | Cross-validates wolfcrypt-dpe against the caliptra-dpe reference implementation. |
 | `links-testing` | Validates the cargo metadata propagation chain. |
-| `builder-test` | Tests build script modules as a library. |
 
 ## Building
 
@@ -86,6 +85,21 @@ wolfSSL source discovery (in priority order):
 2. `WOLFSSL_DIR` env var (install prefix)
 3. `vendored` feature on `wolfcrypt-sys` (default: compile from source)
 4. `pkg-config`
+
+### Pre-built installs with `user_settings.h`
+
+If you built wolfSSL with `--enable-usersettings` (i.e. `-DWOLFSSL_USER_SETTINGS`),
+the installed `wolfssl/options.h` will define `WOLFSSL_USER_SETTINGS`, causing
+`wolfssl/wolfcrypt/settings.h` to `#include "user_settings.h"` at build time.
+When using `WOLFSSL_DIR` to point at such an install, `user_settings.h` must be
+findable on the include path — copy it into the install's `include/` directory:
+
+```sh
+cp /path/to/user_settings.h $WOLFSSL_DIR/include/
+```
+
+wolfSSL installs built with plain `./configure` flags (no `--enable-usersettings`)
+do not have this requirement; their `options.h` is self-contained.
 
 ## FIPS 140-3
 
