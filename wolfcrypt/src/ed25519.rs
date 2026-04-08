@@ -8,7 +8,7 @@ use core::cell::UnsafeCell;
 
 use crate::error::{check, len_as_u32, WolfCryptError};
 use wolfcrypt_rs::{
-    wc_ed25519_export_public, wc_ed25519_free,
+    wc_ed25519_check_key, wc_ed25519_export_public, wc_ed25519_free,
     wc_ed25519_import_private_key, wc_ed25519_import_private_only,
     wc_ed25519_import_public, wc_ed25519_init,
     wc_ed25519_make_key, wc_ed25519_make_public, wc_ed25519_sign_msg,
@@ -237,6 +237,25 @@ impl Ed25519VerifyingKey {
     /// Return a reference to the raw 32-byte public key.
     pub fn as_bytes(&self) -> &[u8; ED25519_KEY_SIZE] {
         &self.pub_bytes
+    }
+
+    /// Validate that the imported public key is a valid point on the Ed25519
+    /// curve.
+    ///
+    /// `from_bytes` imports the raw bytes into wolfCrypt but does not call
+    /// `wc_ed25519_check_key`. Call this method when the bytes come from an
+    /// untrusted source (e.g. a hardware device response) to reject invalid or
+    /// low-order points before using the key for verification.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(WolfCryptError)` if wolfCrypt reports the key is invalid.
+    pub fn check_key(&mut self) -> Result<(), WolfCryptError> {
+        // SAFETY: `self.key` is initialised and has a public key set.
+        // `wc_ed25519_check_key` reads the key but takes `*mut` per the C API
+        // convention; no mutation occurs in practice.
+        let rc = unsafe { wc_ed25519_check_key(self.key.get()) };
+        check(rc, "wc_ed25519_check_key")
     }
 }
 
