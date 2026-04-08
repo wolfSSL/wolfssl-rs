@@ -1882,6 +1882,7 @@ extern "C" {
         out: *mut u8, outLen: *mut u32,
     ) -> c_int;
     pub fn wc_ed25519_make_key(rng: *mut WC_RNG, keysize: c_int, key: *mut wc_ed25519_key) -> c_int;
+    pub fn wc_ed25519_check_key(key: *mut wc_ed25519_key) -> c_int;
 
     // Ed25519 DER encode/decode (PKCS#8 / SubjectPublicKeyInfo)
     // These use wolfCrypt's ASN.1 engine rather than hand-rolled parsing.
@@ -3071,6 +3072,12 @@ extern "C" {
     ) -> c_int;
     #[link_name = "wc_ecc_export_x963"]
     pub fn wc_ecc_export_x963(key: *mut wc_ecc_key, out: *mut u8, outSz: *mut u32) -> c_int;
+    /// Derive the public key point from the private scalar already loaded into
+    /// `key`.  Pass `pubOut = NULL` to update `key` in place.
+    /// Required after [`wc_ecc_import_private_key_ex`] with a NULL public key,
+    /// which leaves the key in `ECC_PRIVATEKEY_ONLY` state.
+    #[link_name = "wc_ecc_make_pub"]
+    pub fn wc_ecc_make_pub(key: *mut wc_ecc_key, pubOut: *mut c_void) -> c_int;
     #[link_name = "wc_ecc_import_x963"]
     pub fn wc_ecc_import_x963(in_: *const u8, inSz: u32, key: *mut wc_ecc_key) -> c_int;
     #[link_name = "wc_ecc_import_private_key"]
