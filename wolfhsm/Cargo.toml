@@ -5,3 +5,7 @@ edition = "2021"
 description = "Rust bindings to wolfHSM"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 repository = "https://github.com/wolfSSL/wolfssl-rs"
+
+[dependencies]
+wolfhsm-sys = { version = "0.1.0", path = "../wolfhsm-sys" }
+wolfcrypt-sys = { version = "0.1.2", path = "../wolfcrypt-sys" }
