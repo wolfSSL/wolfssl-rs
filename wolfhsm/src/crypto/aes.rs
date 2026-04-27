@@ -14,31 +14,25 @@ use crate::key::KeyId;
 /// `wh_Client_*` calls to fail with a "cache full" error.
 pub struct AesKey {
     pub(crate) id: KeyId,
-    /// Key length in bits (128, 192, or 256).
-    pub bits: u32,
 }
 
 impl AesKey {
     /// Cache raw key bytes in the HSM. `key_bytes` must be 16, 24, or 32 bytes.
     pub fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
-        let bits = match key_bytes.len() {
-            16 => 128u32,
-            24 => 192u32,
-            32 => 256u32,
-            _ => {
-                return Err(WolfHsmError::Ffi {
-                    code: -1,
-                    func: "AesKey::cache: key must be 16, 24, or 32 bytes",
-                });
-            }
-        };
+        if !matches!(key_bytes.len(), 16 | 24 | 32) {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "AesKey::cache: key must be 16, 24, or 32 bytes",
+            });
+        }
         let id = client.key_cache(key_bytes, b"aes")?;
-        Ok(AesKey { id, bits })
+        Ok(AesKey { id })
     }
 
     /// Evict this key from the HSM key cache.
-    pub fn evict(self, client: &mut Client) -> Result<(), WolfHsmError> {
-        client.key_evict(self.id)
+    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
+        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
+        client.key_evict(id)
     }
 
     /// AES-GCM encrypt. Returns (ciphertext, 16-byte auth tag).
@@ -125,5 +119,42 @@ impl AesKey {
         };
         WolfHsmError::check(rc, "wolfhsm_aes_gcm_decrypt")?;
         Ok(out)
+    }
+}
+
+impl Drop for AesKey {
+    fn drop(&mut self) {
+        if self.id != KeyId::ERASED {
+            eprintln!(
+                "wolfhsm: AesKey (id={}) dropped without eviction — \
+                 HSM cache slot leaked. Use with_aes_key() or call .evict().",
+                self.id.0
+            );
+        }
+    }
+}
+
+impl Client {
+    /// Cache an AES key, run `f` with it, then always evict it.
+    pub fn with_aes_key<F, R>(&mut self, key_bytes: &[u8], f: F) -> Result<R, WolfHsmError>
+    where
+        F: FnOnce(&AesKey, &mut Client) -> Result<R, WolfHsmError>,
+    {
+        let mut key = AesKey::cache(self, key_bytes)?;
+        let id = key.id;
+        let result = f(&key, self);
+        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
+        let evict = self.key_evict(id);
+        match result {
+            Ok(v) => { evict?; Ok(v) }
+            Err(e) => {
+                if let Err(evict_err) = evict {
+                    eprintln!(
+                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
+                    );
+                }
+                Err(e)
+            }
+        }
     }
 }

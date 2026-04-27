@@ -27,8 +27,19 @@ impl Ed25519Key {
     }
 
     /// Evict this key from the HSM key cache.
-    pub fn evict(self, client: &mut Client) -> Result<(), WolfHsmError> {
-        client.key_evict(self.id)
+    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
+        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
+        client.key_evict(id)
+    }
+
+    /// Export the 32-byte Ed25519 public key.
+    pub fn public_key(&self, client: &mut Client) -> Result<[u8; 32], WolfHsmError> {
+        let mut buf = [0u8; 32];
+        let rc = unsafe {
+            wolfhsm_sys::wolfhsm_ed25519_export_public(client.ctx_ptr(), self.id.0, buf.as_mut_ptr())
+        };
+        WolfHsmError::check(rc, "wolfhsm_ed25519_export_public")?;
+        Ok(buf)
     }
 
     /// Sign a message. Returns a 64-byte Ed25519 signature.
@@ -92,5 +103,47 @@ impl Ed25519Key {
             });
         }
         Ok(())
+    }
+}
+
+impl Drop for Ed25519Key {
+    fn drop(&mut self) {
+        if self.id != KeyId::ERASED {
+            eprintln!(
+                "wolfhsm: Ed25519Key (id={}) dropped without eviction — \
+                 HSM cache slot leaked. Use with_ed25519_key() or call .evict().",
+                self.id.0
+            );
+        }
+    }
+}
+
+impl Client {
+    /// Generate an Ed25519 key, run `f`, then always evict.
+    ///
+    /// Guarantees the HSM cache slot is released even when `f` returns `Err`.
+    pub fn with_ed25519_key<F, R>(&mut self, f: F) -> Result<R, WolfHsmError>
+    where
+        F: FnOnce(&Ed25519Key, &mut Client) -> Result<R, WolfHsmError>,
+    {
+        let mut key = Ed25519Key::generate(self)?;
+        let id = key.id;
+        let result = f(&key, self);
+        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
+        let evict = self.key_evict(id);
+        match result {
+            Ok(v) => {
+                evict?;
+                Ok(v)
+            }
+            Err(e) => {
+                if let Err(evict_err) = evict {
+                    eprintln!(
+                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
+                    );
+                }
+                Err(e)
+            }
+        }
     }
 }

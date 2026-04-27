@@ -33,8 +33,9 @@ impl EccP256Key {
     }
 
     /// Evict this key from the HSM key cache.
-    pub fn evict(self, client: &mut Client) -> Result<(), WolfHsmError> {
-        client.key_evict(self.id)
+    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
+        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
+        client.key_evict(id)
     }
 
     /// Sign a pre-hashed digest (≤ 32 bytes for P-256 SHA-256).
@@ -149,5 +150,47 @@ impl EccP256Key {
         };
         WolfHsmError::check(rc, "wolfhsm_ecc_shared_secret")?;
         Ok(buf[..out_len as usize].to_vec())
+    }
+}
+
+impl Drop for EccP256Key {
+    fn drop(&mut self) {
+        if self.id != KeyId::ERASED {
+            eprintln!(
+                "wolfhsm: EccP256Key (id={}) dropped without eviction — \
+                 HSM cache slot leaked. Use with_ecc_p256_key() or call .evict().",
+                self.id.0
+            );
+        }
+    }
+}
+
+impl Client {
+    /// Generate an ephemeral P-256 key, run `f`, then always evict.
+    ///
+    /// Guarantees the HSM cache slot is released even when `f` returns `Err`.
+    pub fn with_ecc_p256_key<F, R>(&mut self, f: F) -> Result<R, WolfHsmError>
+    where
+        F: FnOnce(&EccP256Key, &mut Client) -> Result<R, WolfHsmError>,
+    {
+        let mut key = EccP256Key::generate(self)?;
+        let id = key.id;
+        let result = f(&key, self);
+        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
+        let evict = self.key_evict(id);
+        match result {
+            Ok(v) => {
+                evict?;
+                Ok(v)
+            }
+            Err(e) => {
+                if let Err(evict_err) = evict {
+                    eprintln!(
+                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
+                    );
+                }
+                Err(e)
+            }
+        }
     }
 }

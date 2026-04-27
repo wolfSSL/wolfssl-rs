@@ -15,7 +15,7 @@ use wolfhsm::crypto::{
     ecc::EccP256Key,
     ed25519::Ed25519Key,
     curve25519::Curve25519Key,
-    rsa::{RsaKey, RsaOperation},
+    rsa::{RsaKey, RsaRawOp},
 };
 use wolfhsm::nvm::NvmId;
 use hex_literal::hex;
@@ -71,7 +71,7 @@ fn server_info() {
 #[test]
 fn rng_nonzero() {
     require_client!(client);
-    let bytes = wolfhsm::crypto::rng::generate(&mut client, 32).expect("rng generate");
+    let bytes = client.rng_generate(32).expect("rng generate");
     assert_eq!(bytes.len(), 32);
     // 32 random bytes that are all-zero indicates a broken RNG.
     assert_ne!(bytes, vec![0u8; 32], "RNG returned 32 zero bytes");
@@ -160,7 +160,7 @@ fn sha256_nist_abc() {
     require_client!(client);
     // NIST FIPS 180-4 SHA-256("abc")
     let expected = hex!("ba7816bf8f01cfea414140de5dae2ec73b00361bbef0469121b9e42a45b6b0d5");
-    let got = wolfhsm::crypto::sha::sha256(&mut client, b"abc").expect("sha256");
+    let got = client.sha256(b"abc").expect("sha256");
     assert_eq!(got, expected);
 }
 
@@ -328,24 +328,47 @@ fn curve25519_x25519_ecdh_cross() {
     );
 }
 
-// ── RSA: encrypt/decrypt round-trip (raw RSA; no independent oracle) ──────────
+// ── RSA: encrypt/decrypt; PublicEncrypt cross-validated against pure Rust ────
 
 #[test]
 fn rsa_round_trip() {
     require_client!(client);
     // RSA-1024 for faster key generation during testing.
     let key = RsaKey::generate(&mut client, 1024, 65537).expect("rsa generate");
-    let key_bytes = (key.bits / 8) as usize;
+    let key_bytes = key.key_size_bytes() as usize;
 
     // Build a valid raw RSA input: zero-padded, small value, guaranteed < n.
     let mut msg = vec![0u8; key_bytes];
     msg[key_bytes - 1] = 0x42;
 
     let ciphertext = key
-        .perform(&mut client, RsaOperation::PublicEncrypt, &msg)
+        .raw_op(&mut client, RsaRawOp::PublicEncrypt, &msg)
         .expect("rsa PublicEncrypt");
+
+    // Cross-validate PublicEncrypt against pure Rust: export the public key
+    // (n, e) and independently compute m^e mod n.  This ensures the HSM
+    // produces a standard RSA result, not merely one it can reverse itself.
+    {
+        use rsa::{pkcs8::DecodePublicKey, traits::PublicKeyParts, BigUint, RsaPublicKey};
+
+        let pub_der = key.public_key_der(&mut client).expect("export public key DER");
+        let pub_key = RsaPublicKey::from_public_key_der(&pub_der)
+            .expect("parse public key DER");
+        let m_big = BigUint::from_bytes_be(&msg);
+        let c_expected = m_big.modpow(pub_key.e(), pub_key.n());
+        // BigUint strips leading zeros; restore to key length.
+        let mut c_expected_bytes = c_expected.to_bytes_be();
+        while c_expected_bytes.len() < key_bytes {
+            c_expected_bytes.insert(0, 0);
+        }
+        assert_eq!(
+            ciphertext, c_expected_bytes,
+            "HSM PublicEncrypt mismatch vs pure-Rust m^e mod n"
+        );
+    }
+
     let plaintext = key
-        .perform(&mut client, RsaOperation::PrivateDecrypt, &ciphertext)
+        .raw_op(&mut client, RsaRawOp::PrivateDecrypt, &ciphertext)
         .expect("rsa PrivateDecrypt");
     key.evict(&mut client).expect("rsa evict");
 

@@ -55,6 +55,19 @@ pub struct NvmMetadata {
     pub label: [u8; 24],
 }
 
+impl NvmMetadata {
+    /// Return the label as a UTF-8 string slice, trimming trailing null bytes.
+    ///
+    /// Returns `None` if the label bytes are not valid UTF-8.
+    pub fn label_str(&self) -> Option<&str> {
+        let trimmed = match self.label.iter().position(|&b| b == 0) {
+            Some(n) => &self.label[..n],
+            None => &self.label[..],
+        };
+        core::str::from_utf8(trimmed).ok()
+    }
+}
+
 impl Client {
     /// Query available and reclaimable NVM space on the server.
     pub fn nvm_available(&mut self) -> Result<NvmAvailability, WolfHsmError> {
@@ -115,9 +128,9 @@ impl Client {
             WolfHsmError::check(out_rc, "wh_Client_NvmList(server)")?;
 
             if out_id == 0 {
-                // Safety guard against an infinite loop: if the server returns
-                // id 0 after a success response, start_id would not advance
-                // and the next iteration would send the same query forever.
+                // WH_NVM_ID_INVALID (0) on a success response is a server
+                // protocol violation; break rather than looping forever on
+                // a start_id that would never advance past zero.
                 break;
             }
             ids.push(NvmId(out_id));
@@ -204,20 +217,55 @@ impl Client {
         Ok(data)
     }
 
+    /// Read exactly `len` bytes from NVM object `id` starting at `offset`,
+    /// without issuing a prior metadata round-trip.
+    ///
+    /// Use this when you already know the object length and want to avoid
+    /// the extra [`nvm_metadata`][Self::nvm_metadata] call that
+    /// [`nvm_read`][Self::nvm_read] issues unconditionally.  The server
+    /// returns an error if `offset + len` exceeds the object length.
+    pub fn nvm_read_raw(
+        &mut self,
+        id: NvmId,
+        offset: u16,
+        len: u16,
+    ) -> Result<Vec<u8>, WolfHsmError> {
+        if len == 0 {
+            return Ok(vec![]);
+        }
+        let mut out_rc: i32 = 0;
+        let mut out_len: u16 = 0;
+        let mut data = vec![0u8; len as usize];
+        // SAFETY: `data` is a valid heap allocation of `len` bytes; ctx_ptr is valid.
+        let rc = unsafe {
+            wh_Client_NvmRead(
+                self.ctx_ptr(),
+                id.0,
+                offset,
+                len,
+                &mut out_rc,
+                &mut out_len,
+                data.as_mut_ptr(),
+            )
+        };
+        WolfHsmError::check(rc, "wh_Client_NvmRead")?;
+        WolfHsmError::check(out_rc, "wh_Client_NvmRead(server)")?;
+        data.truncate(out_len as usize);
+        Ok(data)
+    }
+
     /// Write (or overwrite) an NVM object.
     ///
-    /// If `id` is not [`NvmId::INVALID`], the existing object with that ID is
-    /// deleted first via [`nvm_delete`][Self::nvm_delete], then the new data
-    /// is added.  This delete-then-add sequence is **not atomic**: if the add
-    /// fails after a successful delete, the original object is permanently
-    /// lost and [`WolfHsmError::DataLost`] is returned, carrying the affected
-    /// ID.  The NVM protocol has no rollback facility.
+    /// The `id` must not be [`NvmId::INVALID`] — the server's auto-assign
+    /// path is not supported because it does not return the assigned ID.
+    /// Choose an explicit non-zero ID.
     ///
-    /// If `id` is [`NvmId::INVALID`] (0), the deletion step is skipped and
-    /// `0` is passed directly to `wh_Client_NvmAddObject`.  wolfHSM treats
-    /// `id == 0` as an **auto-assign** request: the server selects a new ID
-    /// and the caller cannot retrieve it from this call.  Use
-    /// [`nvm_list`][Self::nvm_list] to discover the assigned ID afterward.
+    /// The existing object with the given ID is deleted first via
+    /// [`nvm_delete`][Self::nvm_delete], then the new data is added.  This
+    /// delete-then-add sequence is **not atomic**: if the add fails after a
+    /// successful delete, the original object is permanently lost and
+    /// [`WolfHsmError::DataLost`] is returned, carrying the affected ID.  The
+    /// NVM protocol has no rollback facility.
     ///
     /// `label` is truncated to 24 bytes if longer.  `data` must fit in a
     /// `u16` (≤ 65535 bytes).
@@ -229,17 +277,19 @@ impl Client {
         label: &[u8],
         data: &[u8],
     ) -> Result<(), WolfHsmError> {
+        if id == NvmId::INVALID {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "nvm_write: id must not be NvmId::INVALID (0); \
+                       wolfHSM auto-assign does not return the assigned ID",
+            });
+        }
         let data_len = u16::try_from(data.len()).map_err(|_| WolfHsmError::Ffi {
             code: -1,
             func: "nvm_write: data too large for u16",
         })?;
 
-        let deleted = if id != NvmId::INVALID {
-            self.nvm_delete(id)?;
-            true
-        } else {
-            false
-        };
+        self.nvm_delete(id)?;
 
         // Truncate label to 24 bytes; copy into a local mutable buffer as the
         // C API takes *mut u8 even though it does not modify the label.
@@ -264,15 +314,9 @@ impl Client {
             )
         };
 
-        // If the add fails after we already deleted, report data loss so the
-        // caller knows the old object is gone and cannot be recovered.
-        let map_add_err = |e: WolfHsmError| {
-            if deleted {
-                WolfHsmError::DataLost { id: id.0 }
-            } else {
-                e
-            }
-        };
+        // If the add fails the prior delete has already run; report data loss
+        // so the caller knows the old object is gone and cannot be recovered.
+        let map_add_err = |_: WolfHsmError| WolfHsmError::DataLost { id: id.0 };
         WolfHsmError::check(rc, "wh_Client_NvmAddObject").map_err(map_add_err)?;
         WolfHsmError::check(out_rc, "wh_Client_NvmAddObject(server)").map_err(map_add_err)?;
 

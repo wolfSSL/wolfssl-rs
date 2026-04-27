@@ -8,20 +8,24 @@ use crate::client::Client;
 use crate::error::WolfHsmError;
 use crate::key::KeyId;
 
-/// Selects the RSA primitive operation passed to [`RsaKey::perform`].
+/// Raw RSA primitive operation passed to [`RsaKey::raw_op`].
+///
+/// This selects the direction of the raw modular exponentiation — it does NOT
+/// apply any padding (PKCS#1, PSS, OAEP). Callers are responsible for all
+/// padding and unpadding.
 ///
 /// These correspond to wolfCrypt's `RSA_*` constants.  For typical use:
-/// - signing:     [`PrivateEncrypt`][RsaOperation::PrivateEncrypt]
-/// - verification: [`PublicDecrypt`][RsaOperation::PublicDecrypt]
-/// - encryption:  [`PublicEncrypt`][RsaOperation::PublicEncrypt]
-/// - decryption:  [`PrivateDecrypt`][RsaOperation::PrivateDecrypt]
+/// - signing:     [`PrivateEncrypt`][RsaRawOp::PrivateEncrypt]
+/// - verification: [`PublicDecrypt`][RsaRawOp::PublicDecrypt]
+/// - encryption:  [`PublicEncrypt`][RsaRawOp::PublicEncrypt]
+/// - decryption:  [`PrivateDecrypt`][RsaRawOp::PrivateDecrypt]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
-pub enum RsaOperation {
-    PrivateEncrypt = 0,
-    PrivateDecrypt = 1,
-    PublicEncrypt  = 2,
-    PublicDecrypt  = 3,
+pub enum RsaRawOp {
+    PublicEncrypt  = 0,   // RSA_PUBLIC_ENCRYPT
+    PublicDecrypt  = 1,   // RSA_PUBLIC_DECRYPT
+    PrivateEncrypt = 2,   // RSA_PRIVATE_ENCRYPT
+    PrivateDecrypt = 3,   // RSA_PRIVATE_DECRYPT
 }
 
 /// RSA key handle. Private key lives in HSM.
@@ -34,7 +38,7 @@ pub enum RsaOperation {
 /// `wh_Client_*` calls to fail with a "cache full" error.
 pub struct RsaKey {
     pub(crate) id: KeyId,
-    pub bits: u32,
+    key_size_bytes: u32,
 }
 
 impl RsaKey {
@@ -53,31 +57,44 @@ impl RsaKey {
             )
         };
         WolfHsmError::check(rc, "wolfhsm_rsa_make_key")?;
-        Ok(RsaKey { id: KeyId(key_id), bits })
+        if key_id == 0 {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "wolfhsm_rsa_make_key: server returned WH_KEYID_ERASED (0)",
+            });
+        }
+        // Fetch the server-confirmed key size immediately after generation.
+        let mut out_size: c_int = 0;
+        // SAFETY: ctx_ptr is valid for the duration of this call; out_size is a
+        // valid stack allocation.
+        let rc = unsafe { wolfhsm_rsa_get_size(client.ctx_ptr(), key_id, &mut out_size) };
+        WolfHsmError::check(rc, "wolfhsm_rsa_get_size")?;
+        Ok(RsaKey { id: KeyId(key_id), key_size_bytes: out_size as u32 })
     }
 
     /// Evict this key from the HSM key cache.
-    pub fn evict(self, client: &mut Client) -> Result<(), WolfHsmError> {
-        client.key_evict(self.id)
+    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
+        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
+        client.key_evict(id)
     }
 
-    /// Raw RSA primitive. See [`RsaOperation`] for available operations.
+    /// Raw RSA primitive. See [`RsaRawOp`] for available operations.
     ///
-    /// The output buffer is sized from `self.bits` without a server round-trip.
-    /// Call [`key_size_bytes`][RsaKey::key_size_bytes] if you need an authoritative
-    /// server-side size.
-    pub fn perform(
+    /// ⚠ This performs raw modular exponentiation (no PKCS#1 or PSS padding).
+    /// For signature use, wolfHSM's `wh_Client_RsaFunction` applies no padding
+    /// scheme — it is the caller's responsibility to pad the input before calling
+    /// PrivateEncrypt and to verify/strip padding after calling PublicDecrypt.
+    pub fn raw_op(
         &self,
         client: &mut Client,
-        op: RsaOperation,
+        op: RsaRawOp,
         in_buf: &[u8],
     ) -> Result<Vec<u8>, WolfHsmError> {
         let in_len = u32::try_from(in_buf.len()).map_err(|_| WolfHsmError::Ffi {
             code: -1,
             func: "wolfhsm_rsa_sign: input too large",
         })?;
-        // RSA output is always exactly key_bits/8 bytes; avoid a server round-trip.
-        let out_size = (self.bits / 8) as usize;
+        let out_size = self.key_size_bytes as usize;
         let mut out = vec![0u8; out_size];
         let mut out_len: u32 = out_size as u32;
 
@@ -98,23 +115,16 @@ impl RsaKey {
         Ok(out)
     }
 
-    /// Query the key size in bytes from the server.
-    pub fn key_size_bytes(&self, client: &mut Client) -> Result<u32, WolfHsmError> {
-        let mut out_size: c_int = 0;
-        // SAFETY: ctx_ptr is valid for the duration of this call; out_size is a
-        // valid stack allocation.
-        let rc = unsafe {
-            wolfhsm_rsa_get_size(client.ctx_ptr(), self.id.0, &mut out_size)
-        };
-        WolfHsmError::check(rc, "wolfhsm_rsa_get_size")?;
-        Ok(out_size as u32)
+    /// Returns the server-confirmed key size in bytes, fetched at key generation time.
+    pub fn key_size_bytes(&self) -> u32 {
+        self.key_size_bytes
     }
 
     /// Export the public key as DER SubjectPublicKeyInfo.
     pub fn public_key_der(&self, client: &mut Client) -> Result<Vec<u8>, WolfHsmError> {
-        // 512 bytes is sufficient for keys up to 4096-bit SPKI DER.
-        let mut buf = vec![0u8; 512];
-        let mut out_len: u32 = 512;
+        // 600 bytes covers keys up to 4096-bit SPKI DER (~549 bytes for RSA-4096).
+        let mut buf = vec![0u8; 600];
+        let mut out_len: u32 = 600;
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
             wolfhsm_rsa_export_public_der(
@@ -127,5 +137,46 @@ impl RsaKey {
         WolfHsmError::check(rc, "wolfhsm_rsa_export_public_der")?;
         buf.truncate(out_len as usize);
         Ok(buf)
+    }
+}
+
+impl Drop for RsaKey {
+    fn drop(&mut self) {
+        if self.id != KeyId::ERASED {
+            eprintln!(
+                "wolfhsm: RsaKey (id={}) dropped without eviction — \
+                 HSM cache slot leaked. Use with_rsa_key() or call .evict().",
+                self.id.0
+            );
+        }
+    }
+}
+
+impl Client {
+    /// Generate an RSA key, run `f` with it, then always evict it.
+    ///
+    /// Guarantees the HSM cache slot is released even when `f` returns `Err`.
+    /// The eviction error (if any) is surfaced only when `f` returns `Ok`; on
+    /// an error path the eviction is best-effort and the original error is returned.
+    pub fn with_rsa_key<F, R>(&mut self, bits: u32, e: u64, f: F) -> Result<R, WolfHsmError>
+    where
+        F: FnOnce(&RsaKey, &mut Client) -> Result<R, WolfHsmError>,
+    {
+        let mut key = RsaKey::generate(self, bits, e)?;
+        let id = key.id;
+        let result = f(&key, self);
+        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
+        let evict = self.key_evict(id);
+        match result {
+            Ok(v) => { evict?; Ok(v) }
+            Err(e) => {
+                if let Err(evict_err) = evict {
+                    eprintln!(
+                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
+                    );
+                }
+                Err(e)
+            }
+        }
     }
 }

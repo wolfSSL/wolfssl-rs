@@ -367,7 +367,10 @@ impl Client {
     /// The pointer is valid only while `self` is alive and not moved.  Callers
     /// must not store the pointer beyond the lifetime of `self`.
     pub(crate) fn ctx_ptr(&mut self) -> *mut whClientContext {
-        // SAFETY: We only expose a pointer, we never move through it.
+        // SAFETY: `inner` is `Pin<Box<ClientInner>>` so the allocation is
+        // heap-pinned and never moved after `wh_Client_Init` stores a raw
+        // pointer into it.  `get_unchecked_mut` is safe here because we hold
+        // `&mut self`, ensuring exclusive access for the duration of the call.
         unsafe { &mut self.inner.as_mut().get_unchecked_mut().client_ctx }
     }
 }

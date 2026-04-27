@@ -63,6 +63,13 @@ impl Client {
             )
         };
         WolfHsmError::check(rc, "wh_Client_KeyCache")?;
+        if key_id == 0 {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "wh_Client_KeyCache: server returned WH_KEYID_ERASED (0); \
+                       server-side cache may be full or the key was rejected",
+            });
+        }
         Ok(KeyId(key_id))
     }
 

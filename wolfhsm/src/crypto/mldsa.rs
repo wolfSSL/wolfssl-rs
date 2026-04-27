@@ -25,10 +25,15 @@ fn mldsa_sig_len(level: u8) -> usize {
 /// `wh_Client_*` calls to fail with a "cache full" error.
 pub struct MlDsaKey {
     pub(crate) id: KeyId,
-    pub level: u8,
+    level: u8,
 }
 
 impl MlDsaKey {
+    /// Return the ML-DSA level (44, 65, or 87).
+    pub fn level(&self) -> u8 {
+        self.level
+    }
+
     /// Generate an ML-DSA key at the given level (44, 65, or 87).
     pub fn generate(client: &mut Client, level: u8) -> Result<Self, WolfHsmError> {
         if !matches!(level, 44 | 65 | 87) {
@@ -44,12 +49,19 @@ impl MlDsaKey {
             wolfhsm_mldsa_make_key(client.ctx_ptr(), level as c_int, &mut key_id)
         };
         WolfHsmError::check(rc, "wolfhsm_mldsa_make_key")?;
+        if key_id == 0 {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "wolfhsm_mldsa_make_key: server returned WH_KEYID_ERASED (0)",
+            });
+        }
         Ok(MlDsaKey { id: KeyId(key_id), level })
     }
 
     /// Evict this key from the HSM key cache.
-    pub fn evict(self, client: &mut Client) -> Result<(), WolfHsmError> {
-        client.key_evict(self.id)
+    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
+        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
+        client.key_evict(id)
     }
 
     /// Sign a message. Signature size depends on level:
@@ -108,5 +120,42 @@ impl MlDsaKey {
             });
         }
         Ok(())
+    }
+}
+
+impl Drop for MlDsaKey {
+    fn drop(&mut self) {
+        if self.id != KeyId::ERASED {
+            eprintln!(
+                "wolfhsm: MlDsaKey (id={}) dropped without eviction — \
+                 HSM cache slot leaked. Use with_mldsa_key() or call .evict().",
+                self.id.0
+            );
+        }
+    }
+}
+
+impl Client {
+    /// Generate an ML-DSA key, run `f` with it, then always evict it.
+    pub fn with_mldsa_key<F, R>(&mut self, level: u8, f: F) -> Result<R, WolfHsmError>
+    where
+        F: FnOnce(&MlDsaKey, &mut Client) -> Result<R, WolfHsmError>,
+    {
+        let mut key = MlDsaKey::generate(self, level)?;
+        let id = key.id;
+        let result = f(&key, self);
+        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
+        let evict = self.key_evict(id);
+        match result {
+            Ok(v) => { evict?; Ok(v) }
+            Err(e) => {
+                if let Err(evict_err) = evict {
+                    eprintln!(
+                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
+                    );
+                }
+                Err(e)
+            }
+        }
     }
 }

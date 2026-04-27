@@ -19,22 +19,20 @@ pub struct CmacKey {
 impl CmacKey {
     /// Cache raw AES key bytes for CMAC. Key must be 16, 24, or 32 bytes.
     pub fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
-        match key_bytes.len() {
-            16 | 24 | 32 => {}
-            _ => {
-                return Err(WolfHsmError::Ffi {
-                    code: -1,
-                    func: "CmacKey::cache: key must be 16, 24, or 32 bytes",
-                });
-            }
+        if !matches!(key_bytes.len(), 16 | 24 | 32) {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "CmacKey::cache: key must be 16, 24, or 32 bytes",
+            });
         }
         let id = client.key_cache(key_bytes, b"cmac")?;
         Ok(CmacKey { id })
     }
 
     /// Evict this key from the HSM key cache.
-    pub fn evict(self, client: &mut Client) -> Result<(), WolfHsmError> {
-        client.key_evict(self.id)
+    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
+        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
+        client.key_evict(id)
     }
 
     /// Compute a 16-byte CMAC tag over data.
@@ -64,5 +62,47 @@ impl CmacKey {
             });
         }
         Ok(out)
+    }
+}
+
+impl Drop for CmacKey {
+    fn drop(&mut self) {
+        if self.id != KeyId::ERASED {
+            eprintln!(
+                "wolfhsm: CmacKey (id={}) dropped without eviction — \
+                 HSM cache slot leaked. Use with_cmac_key() or call .evict().",
+                self.id.0
+            );
+        }
+    }
+}
+
+impl Client {
+    /// Cache a CMAC-AES key, run `f`, then always evict.
+    ///
+    /// Guarantees the HSM cache slot is released even when `f` returns `Err`.
+    pub fn with_cmac_key<F, R>(&mut self, key_bytes: &[u8], f: F) -> Result<R, WolfHsmError>
+    where
+        F: FnOnce(&CmacKey, &mut Client) -> Result<R, WolfHsmError>,
+    {
+        let mut key = CmacKey::cache(self, key_bytes)?;
+        let id = key.id;
+        let result = f(&key, self);
+        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
+        let evict = self.key_evict(id);
+        match result {
+            Ok(v) => {
+                evict?;
+                Ok(v)
+            }
+            Err(e) => {
+                if let Err(evict_err) = evict {
+                    eprintln!(
+                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
+                    );
+                }
+                Err(e)
+            }
+        }
     }
 }
