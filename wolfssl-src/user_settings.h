@@ -149,11 +149,21 @@
 /* ML-DSA (Dilithium) post-quantum signatures */
 #define HAVE_DILITHIUM
 #define WOLFSSL_WC_DILITHIUM
+/* Enable pre-FIPS-204 API wrappers (wc_dilithium_sign_msg / verify_msg)
+ * that wolfcrypt-rs calls. New code should use wc_dilithium_sign_ctx_msg. */
+#define WOLFSSL_DILITHIUM_NO_CTX
 
 /* ML-KEM (FIPS 203) post-quantum KEM support.
  * WOLFSSL_HAVE_MLKEM enables the overall ML-KEM module.
  * WOLFSSL_WC_MLKEM selects wolfCrypt's native implementation (not liboqs). */
 #define WOLFSSL_HAVE_MLKEM
 #define WOLFSSL_WC_MLKEM
+
+/* CryptoCb dispatch infrastructure.
+ * Required by wolfHSM (wh_Client_Init calls wc_CryptoCb_RegisterDevice) and
+ * by wolfcrypt-rs's cryptocb module. Without this, the CryptoCb symbols are
+ * compiled out and any attempt to use wc_CryptoCb_RegisterDevice at link time
+ * fails with "undefined symbol". */
+#define WOLF_CRYPTO_CB
 
 #endif /* WOLFSSL_USER_SETTINGS_H */

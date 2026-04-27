@@ -4,7 +4,7 @@
  * zero-sized from Rust's perspective), set the HSM key-ID, perform the
  * operation via the wolfHSM client API, free the struct, and return.
  *
- * All key types use shims because wolfhsm-sys bindgen is restricted to wh.*/WH.*
+ * All key types use shims because wolfhsm-sys bindgen covers only wh_/WH_-prefixed
  * types; wolfcrypt structs (ecc_key, ed25519_key, RsaKey, etc.) are zero-sized
  * opaque types from Rust's perspective, so they must be stack-allocated here.
  */
@@ -374,6 +374,40 @@ int wolfhsm_ed25519_verify(whClientContext* ctx, uint16_t key_id,
                                   msg, msg_len,
                                   0, NULL, 0, result);
     wc_ed25519_free(&key);
+    return rc;
+}
+
+/* Export the 32-byte Ed25519 public key. */
+int wolfhsm_ed25519_export_public(whClientContext* ctx, uint16_t key_id, uint8_t* out)
+{
+    ed25519_key key;
+    int rc;
+    word32 outLen = ED25519_PUB_KEY_SIZE;
+    rc = wc_ed25519_init(&key);
+    if (rc != 0) return rc;
+    rc = wh_Client_Ed25519ExportKey(ctx, key_id, &key, 0, NULL);
+    if (rc == 0)
+        rc = wc_ed25519_export_public(&key, out, &outLen);
+    if (rc == 0 && outLen != ED25519_PUB_KEY_SIZE)
+        rc = WH_ERROR_BADARGS;
+    wc_ed25519_free(&key);
+    return rc;
+}
+
+/* Export the 32-byte Curve25519 public key (little-endian). */
+int wolfhsm_curve25519_export_public(whClientContext* ctx, uint16_t key_id, uint8_t* out)
+{
+    curve25519_key key;
+    int rc;
+    word32 outLen = CURVE25519_KEYSIZE;
+    rc = wc_curve25519_init(&key);
+    if (rc != 0) return rc;
+    rc = wh_Client_Curve25519ExportKey(ctx, key_id, &key, 0, NULL);
+    if (rc == 0)
+        rc = wc_curve25519_export_public_ex(&key, out, &outLen, EC25519_LITTLE_ENDIAN);
+    if (rc == 0 && outLen != CURVE25519_KEYSIZE)
+        rc = WH_ERROR_BADARGS;
+    wc_curve25519_free(&key);
     return rc;
 }
 

@@ -167,6 +167,11 @@ fn generate_wolfhsm_cfg(path: &std::path::Path) {
     // Map the wolfHSM time hook to the POSIX implementation.
     writeln!(f, "#define WOLFHSM_CFG_PORT_GETTIME posixGetTime").unwrap();
     writeln!(f).unwrap();
+    // Enable client-side wolfHSM functionality (wh_Client_* APIs).
+    // Without this, wh_client.c and wh_client_crypto.c compile to empty
+    // translation units and all wh_Client_* symbols are absent.
+    writeln!(f, "#define WOLFHSM_CFG_ENABLE_CLIENT").unwrap();
+    writeln!(f).unwrap();
     // wolfHSM requires WOLF_CRYPTO_CB to be visible at compile time.
     // The pre-built libwolfssl.a is compiled with this flag; declare it here
     // so wolfHSM's header checks pass when building against the pre-built lib.
