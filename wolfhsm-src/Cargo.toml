@@ -7,5 +7,10 @@ license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 repository = "https://github.com/wolfSSL/wolfssl-rs"
 links = "wolfhsm_src"
 
+[features]
+## Enable SHE (Secure Hardware Extension) AutoSAR automotive key management.
+## Requires the linked wolfSSL to have AES, CMAC, WOLFSSL_AES_DIRECT, HAVE_AES_ECB.
+she = []
+
 [build-dependencies]
 cc = { workspace = true }

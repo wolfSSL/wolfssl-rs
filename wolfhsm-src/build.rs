@@ -179,6 +179,11 @@ fn generate_wolfhsm_cfg(path: &std::path::Path) {
     writeln!(f, "#define WOLF_CRYPTO_CB").unwrap();
     writeln!(f, "#endif").unwrap();
     writeln!(f).unwrap();
+    // SHE (Secure Hardware Extension) support — enabled by the `she` Cargo feature.
+    if env::var("CARGO_FEATURE_SHE").is_ok() {
+        writeln!(f, "#define WOLFHSM_CFG_SHE_EXTENSION").unwrap();
+        writeln!(f).unwrap();
+    }
     writeln!(f, "#endif /* WOLFHSM_CFG_H_ */").unwrap();
 }
 

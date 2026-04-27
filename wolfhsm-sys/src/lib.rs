@@ -76,6 +76,11 @@ unsafe extern "C" {
         msg_len: u32,
         result: *mut core::ffi::c_int,
     ) -> core::ffi::c_int;
+    pub fn wolfhsm_ed25519_export_public(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        out: *mut u8,
+    ) -> core::ffi::c_int;
 
     // ── Curve25519 ─────────────────────────────────────────────────────────
     pub fn wolfhsm_curve25519_make_key(
@@ -89,6 +94,11 @@ unsafe extern "C" {
         peer_len: u32,
         out: *mut u8,
         out_len: *mut u32,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_curve25519_export_public(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        out: *mut u8,
     ) -> core::ffi::c_int;
 
     // ── RSA ────────────────────────────────────────────────────────────────

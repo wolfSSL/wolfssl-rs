@@ -14,6 +14,10 @@ wolfcrypt-sys = { version = "0.1.2", path = "../wolfcrypt-sys" }
 # lib.rs is empty; the cost is negligible.
 wolfhsm-src = { version = "0.1.0", path = "../wolfhsm-src" }
 
+[features]
+## Enable SHE (Secure Hardware Extension) — propagates to wolfhsm-src.
+she = ["wolfhsm-src/she"]
+
 [build-dependencies]
 bindgen = { workspace = true }
 cc = { workspace = true }

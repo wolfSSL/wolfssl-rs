@@ -19,3 +19,14 @@ pub mod cryptocb;
 pub use cryptocb::{CryptoCbGuard, DEV_ID};
 
 pub mod crypto;
+
+#[cfg(feature = "cert")]
+pub mod cert;
+
+#[cfg(feature = "auth")]
+pub mod auth;
+#[cfg(feature = "auth")]
+pub use auth::{AuthMethod, AuthPermissions, UserId};
+
+#[cfg(feature = "she")]
+pub mod she;

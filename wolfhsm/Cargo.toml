@@ -11,6 +11,16 @@ repository = "https://github.com/wolfSSL/wolfssl-rs"
 ## Requires the linked wolfSSL to be built with HAVE_DILITHIUM.
 mldsa = []
 
+## Enable certificate management (wh_Client_Cert* API).
+cert = []
+
+## Enable authentication and user management (wh_Client_Auth* API).
+auth = []
+
+## Enable SHE (Secure Hardware Extension) AutoSAR automotive key management.
+## Requires AES, CMAC, WOLFSSL_AES_DIRECT, HAVE_AES_ECB in the linked wolfSSL.
+she = ["wolfhsm-sys/she"]
+
 [dependencies]
 wolfhsm-sys = { version = "0.1.0", path = "../wolfhsm-sys" }
 wolfcrypt-sys = { version = "0.1.2", path = "../wolfcrypt-sys" }
