@@ -76,7 +76,10 @@ impl Client {
         if rc != 0 {
             // Registration failed; release the slot so a future call can retry.
             REGISTERED.store(false, Ordering::SeqCst);
-            return Err(WolfHsmError::Ffi { code: rc, func: "wc_CryptoCb_RegisterDevice" });
+            return Err(WolfHsmError::Ffi {
+                code: rc,
+                func: "wc_CryptoCb_RegisterDevice",
+            });
         }
 
         Ok(CryptoCbGuard(PhantomData))

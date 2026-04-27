@@ -25,13 +25,13 @@
 //! released, even on error paths.  Direct `generate()`/`cache()` + manual
 //! `evict()` is also supported but requires care.
 
+pub mod aes;
+pub mod cmac;
+pub mod curve25519;
 pub mod ecc;
 pub mod ed25519;
-pub mod curve25519;
-pub mod rsa;
 #[cfg(feature = "mldsa")]
 pub mod mldsa;
-pub mod aes;
-pub mod sha;
-pub mod cmac;
 pub mod rng;
+pub mod rsa;
+pub mod sha;

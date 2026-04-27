@@ -8,17 +8,17 @@
 //!
 //! Every test silently returns (is skipped) when `WOLFHSM_SERVER` is unset.
 
-use wolfhsm::{Client, Transport, WolfHsmError};
+use hex_literal::hex;
 use wolfhsm::crypto::{
     aes::AesKey,
     cmac::CmacKey,
+    curve25519::Curve25519Key,
     ecc::EccP256Key,
     ed25519::Ed25519Key,
-    curve25519::Curve25519Key,
     rsa::{RsaKey, RsaRawOp},
 };
 use wolfhsm::nvm::NvmId;
-use hex_literal::hex;
+use wolfhsm::{Client, Transport, WolfHsmError};
 
 // ── Server connection helper ──────────────────────────────────────────────────
 
@@ -29,7 +29,10 @@ fn connect_or_skip() -> Option<Client> {
     } else {
         let (ip, port_str) = server.rsplit_once(':')?;
         let port: u16 = port_str.parse().ok()?;
-        Transport::Tcp { ip: ip.to_string(), port }
+        Transport::Tcp {
+            ip: ip.to_string(),
+            port,
+        }
     };
     Client::connect(transport, 1).ok()
 }
@@ -89,8 +92,8 @@ fn key_cache_and_evict() {
 // ── NVM ───────────────────────────────────────────────────────────────────────
 
 // Each test uses a distinct NVM ID to avoid interference when tests run in parallel.
-const NVM_ID_RW: NvmId = NvmId(0x4242);
-const NVM_ID_LIST: NvmId = NvmId(0x4244);
+const NVM_ID_RW: NvmId = NvmId::new(0x4242);
+const NVM_ID_LIST: NvmId = NvmId::new(0x4244);
 
 #[test]
 fn nvm_available_returns_space() {
@@ -104,12 +107,14 @@ fn nvm_available_returns_space() {
 }
 
 #[test]
-fn nvm_write_read_delete() {
+fn nvm_overwrite_read_delete() {
     require_client!(client);
     let data = b"integration test payload";
     // Remove any leftover object from a previous failed run.
     let _ = client.nvm_delete(NVM_ID_RW);
-    client.nvm_write(NVM_ID_RW, 0, 0, b"test", data).expect("nvm_write");
+    client
+        .nvm_overwrite(NVM_ID_RW, 0, 0, b"test", data)
+        .expect("nvm_overwrite");
     let read = client.nvm_read(NVM_ID_RW, 0).expect("nvm_read");
     assert_eq!(read, data);
     client.nvm_delete(NVM_ID_RW).expect("nvm_delete");
@@ -119,7 +124,9 @@ fn nvm_write_read_delete() {
 fn nvm_list_contains_written_object() {
     require_client!(client);
     let _ = client.nvm_delete(NVM_ID_LIST);
-    client.nvm_write(NVM_ID_LIST, 0, 0, b"list-test", b"payload").expect("nvm_write");
+    client
+        .nvm_overwrite(NVM_ID_LIST, 0, 0, b"list-test", b"payload")
+        .expect("nvm_overwrite");
     let ids = client.nvm_list().expect("nvm_list");
     assert!(
         ids.contains(&NVM_ID_LIST),
@@ -130,7 +137,7 @@ fn nvm_list_contains_written_object() {
 
 // ── Counter ───────────────────────────────────────────────────────────────────
 
-const COUNTER_ID: NvmId = NvmId(0x4243);
+const COUNTER_ID: NvmId = NvmId::new(0x4243);
 
 #[test]
 fn counter_lifecycle() {
@@ -141,7 +148,9 @@ fn counter_lifecycle() {
     let v0 = client.counter_init(COUNTER_ID, 5).expect("counter_init");
     assert_eq!(v0, 5);
 
-    let v1 = client.counter_increment(COUNTER_ID).expect("counter_increment");
+    let v1 = client
+        .counter_increment(COUNTER_ID)
+        .expect("counter_increment");
     assert_eq!(v1, 6);
 
     let v2 = client.counter_read(COUNTER_ID).expect("counter_read");
@@ -171,7 +180,7 @@ fn cmac_nist_empty_message() {
     require_client!(client);
     // NIST SP 800-38B AES-128 CMAC, Key1, empty message → Example 1
     let key_bytes = hex!("2b7e151628aed2a6abf7158809cf4f3c");
-    let expected  = hex!("bb1d6929e95937287fa37d129b756746");
+    let expected = hex!("bb1d6929e95937287fa37d129b756746");
     let key = CmacKey::cache(&mut client, &key_bytes).expect("cmac cache");
     let tag = key.compute(&mut client, b"").expect("cmac compute");
     key.evict(&mut client).expect("cmac evict");
@@ -186,12 +195,14 @@ fn aes_gcm_nist_empty_plaintext() {
     // NIST SP 800-38D AES-256-GCM test case 13:
     //   Key = 0x00…00 (32 bytes), IV = 0x00…00 (12 bytes), PT/AAD = empty
     //   Expected AT = 530f8afbc74536b9a963b4f1c4cb738b
-    let key_bytes    = [0u8; 32];
-    let iv           = [0u8; 12];
+    let key_bytes = [0u8; 32];
+    let iv = [0u8; 12];
     let expected_tag = hex!("530f8afbc74536b9a963b4f1c4cb738b");
 
     let key = AesKey::cache(&mut client, &key_bytes).expect("aes cache");
-    let (ct, tag) = key.gcm_encrypt(&mut client, &iv, &[], &[]).expect("gcm_encrypt");
+    let (ct, tag) = key
+        .gcm_encrypt(&mut client, &iv, &[], &[])
+        .expect("gcm_encrypt");
     key.evict(&mut client).expect("aes evict");
 
     assert!(ct.is_empty(), "ciphertext of empty plaintext must be empty");
@@ -205,23 +216,24 @@ fn aes_gcm_nist_empty_plaintext() {
 #[test]
 fn ecc_p256_sign_verify_cross() {
     require_client!(client);
-    use p256::ecdsa::{Signature, VerifyingKey};
     use p256::ecdsa::signature::hazmat::PrehashVerifier;
+    use p256::ecdsa::{Signature, VerifyingKey};
     use p256::pkcs8::DecodePublicKey;
     use sha2::{Digest, Sha256};
 
     let key = EccP256Key::generate(&mut client).expect("ecc generate");
-    let msg    = b"cross-validation: wolfhsm signs, p256 verifies";
+    let msg = b"cross-validation: wolfhsm signs, p256 verifies";
     let digest: [u8; 32] = Sha256::digest(msg).into();
 
-    let sig_der = key.sign_digest(&mut client, &digest).expect("ecc sign_digest");
+    let sig_der = key
+        .sign_digest(&mut client, &digest)
+        .expect("ecc sign_digest");
     let pub_der = key.public_key_der(&mut client).expect("ecc public_key_der");
     key.evict(&mut client).expect("ecc evict");
 
-    let vk  = VerifyingKey::from_public_key_der(&pub_der)
-        .expect("p256: parse SubjectPublicKeyInfo DER");
-    let sig = Signature::from_der(&sig_der)
-        .expect("p256: parse DER-encoded ECDSA signature");
+    let vk =
+        VerifyingKey::from_public_key_der(&pub_der).expect("p256: parse SubjectPublicKeyInfo DER");
+    let sig = Signature::from_der(&sig_der).expect("p256: parse DER-encoded ECDSA signature");
     vk.verify_prehash(&digest, &sig)
         .expect("p256: verify_prehash failed — wolfhsm/p256 cross-validation error");
 }
@@ -234,8 +246,8 @@ fn ecc_p256_sign_verify_cross() {
 #[test]
 fn ecc_p256_ecdh_cross() {
     require_client!(client);
-    use p256::{PublicKey, ecdh::EphemeralSecret};
     use p256::pkcs8::{DecodePublicKey, EncodePublicKey};
+    use p256::{ecdh::EphemeralSecret, PublicKey};
     use rand::rngs::OsRng;
 
     let hsm_key = EccP256Key::generate(&mut client).expect("ecc generate");
@@ -253,7 +265,9 @@ fn ecc_p256_ecdh_cross() {
         .expect("ecc ecdh");
 
     // Export HSM public key for local ECDH computation.
-    let hsm_pub_der = hsm_key.public_key_der(&mut client).expect("ecc public_key_der");
+    let hsm_pub_der = hsm_key
+        .public_key_der(&mut client)
+        .expect("ecc public_key_der");
     hsm_key.evict(&mut client).expect("ecc evict");
 
     // Local side: ECDH with the HSM public key.
@@ -284,8 +298,7 @@ fn ed25519_sign_verify_cross() {
     let pub_bytes = key.public_key(&mut client).expect("ed25519 public_key");
     key.evict(&mut client).expect("ed25519 evict");
 
-    let vk  = VerifyingKey::from_bytes(&pub_bytes)
-        .expect("ed25519-dalek: parse public key bytes");
+    let vk = VerifyingKey::from_bytes(&pub_bytes).expect("ed25519-dalek: parse public key bytes");
     let sig = Signature::from_bytes(&sig_bytes);
     vk.verify(msg, &sig)
         .expect("ed25519-dalek: verify failed — wolfhsm/ed25519-dalek cross-validation error");
@@ -299,8 +312,8 @@ fn ed25519_sign_verify_cross() {
 #[test]
 fn curve25519_x25519_ecdh_cross() {
     require_client!(client);
-    use x25519_dalek::{PublicKey, StaticSecret};
     use rand::rngs::OsRng;
+    use x25519_dalek::{PublicKey, StaticSecret};
 
     let hsm_key = Curve25519Key::generate(&mut client).expect("curve25519 generate");
 
@@ -314,7 +327,9 @@ fn curve25519_x25519_ecdh_cross() {
         .expect("curve25519 diffie_hellman");
 
     // Export HSM public key for local DH computation.
-    let hsm_pub_bytes = hsm_key.public_key(&mut client).expect("curve25519 public_key");
+    let hsm_pub_bytes = hsm_key
+        .public_key(&mut client)
+        .expect("curve25519 public_key");
     hsm_key.evict(&mut client).expect("curve25519 evict");
 
     // Local side: DH with the HSM public key.
@@ -351,9 +366,10 @@ fn rsa_round_trip() {
     {
         use rsa::{pkcs8::DecodePublicKey, traits::PublicKeyParts, BigUint, RsaPublicKey};
 
-        let pub_der = key.public_key_der(&mut client).expect("export public key DER");
-        let pub_key = RsaPublicKey::from_public_key_der(&pub_der)
-            .expect("parse public key DER");
+        let pub_der = key
+            .public_key_der(&mut client)
+            .expect("export public key DER");
+        let pub_key = RsaPublicKey::from_public_key_der(&pub_der).expect("parse public key DER");
         let m_big = BigUint::from_bytes_be(&msg);
         let c_expected = m_big.modpow(pub_key.e(), pub_key.n());
         // BigUint strips leading zeros; restore to key length.
@@ -397,8 +413,14 @@ fn mldsa_round_trip() {
 
 #[test]
 fn cryptocb_register_lifecycle() {
-    let mut client1 = match connect_or_skip() { Some(c) => c, None => return };
-    let mut client2 = match connect_or_skip() { Some(c) => c, None => return };
+    let mut client1 = match connect_or_skip() {
+        Some(c) => c,
+        None => return,
+    };
+    let mut client2 = match connect_or_skip() {
+        Some(c) => c,
+        None => return,
+    };
 
     // First registration succeeds.
     let guard1 = client1.register_cryptocb().expect("first registration");
@@ -412,7 +434,8 @@ fn cryptocb_register_lifecycle() {
 
     // Dropping the guard unregisters; client2 can now register.
     drop(guard1);
-    let guard2 = client2.register_cryptocb()
+    let guard2 = client2
+        .register_cryptocb()
         .expect("re-registration after guard drop");
     drop(guard2);
 }

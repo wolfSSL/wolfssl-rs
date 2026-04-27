@@ -6,7 +6,7 @@ use wolfhsm_sys::{
 
 use crate::client::Client;
 use crate::error::WolfHsmError;
-use crate::key::KeyId;
+use crate::key::{with_key, KeyId};
 
 /// Raw RSA primitive operation passed to [`RsaKey::raw_op`].
 ///
@@ -22,10 +22,10 @@ use crate::key::KeyId;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
 pub enum RsaRawOp {
-    PublicEncrypt  = 0,   // RSA_PUBLIC_ENCRYPT
-    PublicDecrypt  = 1,   // RSA_PUBLIC_DECRYPT
-    PrivateEncrypt = 2,   // RSA_PRIVATE_ENCRYPT
-    PrivateDecrypt = 3,   // RSA_PRIVATE_DECRYPT
+    PublicEncrypt = 0,  // RSA_PUBLIC_ENCRYPT
+    PublicDecrypt = 1,  // RSA_PUBLIC_DECRYPT
+    PrivateEncrypt = 2, // RSA_PRIVATE_ENCRYPT
+    PrivateDecrypt = 3, // RSA_PRIVATE_DECRYPT
 }
 
 /// RSA key handle. Private key lives in HSM.
@@ -49,12 +49,7 @@ impl RsaKey {
         // SAFETY: ctx_ptr is valid for the duration of this call; key_id is a
         // valid stack allocation.
         let rc = unsafe {
-            wolfhsm_rsa_make_key(
-                client.ctx_ptr(),
-                bits as c_int,
-                e as c_long,
-                &mut key_id,
-            )
+            wolfhsm_rsa_make_key(client.ctx_ptr(), bits as c_int, e as c_long, &mut key_id)
         };
         WolfHsmError::check(rc, "wolfhsm_rsa_make_key")?;
         if key_id == 0 {
@@ -69,7 +64,16 @@ impl RsaKey {
         // valid stack allocation.
         let rc = unsafe { wolfhsm_rsa_get_size(client.ctx_ptr(), key_id, &mut out_size) };
         WolfHsmError::check(rc, "wolfhsm_rsa_get_size")?;
-        Ok(RsaKey { id: KeyId(key_id), key_size_bytes: out_size as u32 })
+        if out_size <= 0 {
+            return Err(WolfHsmError::Ffi {
+                code: out_size,
+                func: "wolfhsm_rsa_get_size: returned non-positive key size",
+            });
+        }
+        Ok(RsaKey {
+            id: KeyId(key_id),
+            key_size_bytes: out_size as u32,
+        })
     }
 
     /// Evict this key from the HSM key cache.
@@ -90,14 +94,16 @@ impl RsaKey {
         op: RsaRawOp,
         in_buf: &[u8],
     ) -> Result<Vec<u8>, WolfHsmError> {
-        let in_len = u32::try_from(in_buf.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_rsa_sign: input too large",
+        let in_len = u32::try_from(in_buf.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "input exceeds u32::MAX bytes",
         })?;
         let out_size = self.key_size_bytes as usize;
         let mut out = vec![0u8; out_size];
         let mut out_len: u32 = out_size as u32;
 
+        // wolfhsm_rsa_sign is the wolfHSM shim for the raw RSA modular-exponentiation
+        // primitive — it dispatches all four RsaRawOp variants, not just signing.
+        // The name matches the underlying C shim; no separate decrypt function exists.
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
             wolfhsm_rsa_sign(
@@ -143,7 +149,7 @@ impl RsaKey {
 impl Drop for RsaKey {
     fn drop(&mut self) {
         if self.id != KeyId::ERASED {
-            eprintln!(
+            log::warn!(
                 "wolfhsm: RsaKey (id={}) dropped without eviction — \
                  HSM cache slot leaked. Use with_rsa_key() or call .evict().",
                 self.id.0
@@ -162,21 +168,7 @@ impl Client {
     where
         F: FnOnce(&RsaKey, &mut Client) -> Result<R, WolfHsmError>,
     {
-        let mut key = RsaKey::generate(self, bits, e)?;
-        let id = key.id;
-        let result = f(&key, self);
-        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
-        let evict = self.key_evict(id);
-        match result {
-            Ok(v) => { evict?; Ok(v) }
-            Err(e) => {
-                if let Err(evict_err) = evict {
-                    eprintln!(
-                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
-                    );
-                }
-                Err(e)
-            }
-        }
+        let key = RsaKey::generate(self, bits, e)?;
+        with_key!(key, self, f)
     }
 }

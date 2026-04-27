@@ -2,7 +2,7 @@ use wolfhsm_sys::{wolfhsm_aes_gcm_decrypt, wolfhsm_aes_gcm_encrypt};
 
 use crate::client::Client;
 use crate::error::WolfHsmError;
-use crate::key::KeyId;
+use crate::key::{with_key, KeyId};
 
 /// AES key handle (GCM mode). Key lives in HSM cache.
 ///
@@ -20,9 +20,8 @@ impl AesKey {
     /// Cache raw key bytes in the HSM. `key_bytes` must be 16, 24, or 32 bytes.
     pub fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
         if !matches!(key_bytes.len(), 16 | 24 | 32) {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "AesKey::cache: key must be 16, 24, or 32 bytes",
+            return Err(WolfHsmError::BadArgs {
+                msg: "key must be 16, 24, or 32 bytes",
             });
         }
         let id = client.key_cache(key_bytes, b"aes")?;
@@ -45,17 +44,14 @@ impl AesKey {
         aad: &[u8],
         plaintext: &[u8],
     ) -> Result<(Vec<u8>, [u8; 16]), WolfHsmError> {
-        let iv_len = u32::try_from(iv.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_aes_gcm_encrypt: iv too large",
+        let iv_len = u32::try_from(iv.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "iv exceeds u32::MAX bytes",
         })?;
-        let aad_len = u32::try_from(aad.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_aes_gcm_encrypt: aad too large",
+        let aad_len = u32::try_from(aad.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "aad exceeds u32::MAX bytes",
         })?;
-        let in_len = u32::try_from(plaintext.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_aes_gcm_encrypt: plaintext too large",
+        let in_len = u32::try_from(plaintext.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "plaintext exceeds u32::MAX bytes",
         })?;
         let mut out = vec![0u8; plaintext.len()];
         let mut tag = [0u8; 16];
@@ -88,17 +84,14 @@ impl AesKey {
         ciphertext: &[u8],
         tag: &[u8; 16],
     ) -> Result<Vec<u8>, WolfHsmError> {
-        let iv_len = u32::try_from(iv.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_aes_gcm_decrypt: iv too large",
+        let iv_len = u32::try_from(iv.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "iv exceeds u32::MAX bytes",
         })?;
-        let aad_len = u32::try_from(aad.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_aes_gcm_decrypt: aad too large",
+        let aad_len = u32::try_from(aad.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "aad exceeds u32::MAX bytes",
         })?;
-        let in_len = u32::try_from(ciphertext.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_aes_gcm_decrypt: ciphertext too large",
+        let in_len = u32::try_from(ciphertext.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "ciphertext exceeds u32::MAX bytes",
         })?;
         let mut out = vec![0u8; ciphertext.len()];
         // SAFETY: all pointers are valid heap/stack allocations for this call.
@@ -125,7 +118,7 @@ impl AesKey {
 impl Drop for AesKey {
     fn drop(&mut self) {
         if self.id != KeyId::ERASED {
-            eprintln!(
+            log::warn!(
                 "wolfhsm: AesKey (id={}) dropped without eviction — \
                  HSM cache slot leaked. Use with_aes_key() or call .evict().",
                 self.id.0
@@ -140,21 +133,7 @@ impl Client {
     where
         F: FnOnce(&AesKey, &mut Client) -> Result<R, WolfHsmError>,
     {
-        let mut key = AesKey::cache(self, key_bytes)?;
-        let id = key.id;
-        let result = f(&key, self);
-        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
-        let evict = self.key_evict(id);
-        match result {
-            Ok(v) => { evict?; Ok(v) }
-            Err(e) => {
-                if let Err(evict_err) = evict {
-                    eprintln!(
-                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
-                    );
-                }
-                Err(e)
-            }
-        }
+        let key = AesKey::cache(self, key_bytes)?;
+        with_key!(key, self, f)
     }
 }

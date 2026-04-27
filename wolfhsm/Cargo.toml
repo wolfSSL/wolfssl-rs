@@ -22,6 +22,7 @@ auth = []
 she = ["wolfhsm-sys/she"]
 
 [dependencies]
+log = "0.4"
 wolfhsm-sys = { version = "0.1.0", path = "../wolfhsm-sys" }
 wolfcrypt-sys = { version = "0.1.2", path = "../wolfcrypt-sys" }
 

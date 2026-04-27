@@ -32,6 +32,14 @@ pub enum WolfHsmError {
     /// Only one [`crate::CryptoCbGuard`] can exist at a time.  Drop the
     /// existing guard before registering again.
     AlreadyRegistered,
+    /// A caller-supplied argument failed validation before any FFI call was made.
+    ///
+    /// `msg` is a `'static` description of what the caller passed and what is
+    /// required (e.g. `"key must be 16, 24, or 32 bytes"`).
+    BadArgs {
+        /// Human-readable description of the invalid argument.
+        msg: &'static str,
+    },
     /// An NVM delete succeeded but the subsequent add failed.
     ///
     /// The NVM object with `id` was deleted from the server before the add
@@ -71,10 +79,17 @@ impl fmt::Display for WolfHsmError {
                 write!(f, "{func} failed: wolfSSL FFI error {code}")
             }
             WolfHsmError::AlreadyRegistered => {
-                write!(f, "wolfHSM CryptoCb already registered; drop the existing guard first")
+                write!(
+                    f,
+                    "wolfHSM CryptoCb already registered; drop the existing guard first"
+                )
             }
+            WolfHsmError::BadArgs { msg } => write!(f, "invalid argument: {msg}"),
             WolfHsmError::DataLost { id } => {
-                write!(f, "wolfHSM NVM object {id} deleted but add failed; original data lost")
+                write!(
+                    f,
+                    "wolfHSM NVM object {id} deleted but add failed; original data lost"
+                )
             }
         }
     }

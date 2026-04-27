@@ -26,11 +26,18 @@ pub struct NvmAvailability {
 ///
 /// Used to identify counters and other NVM objects on the wolfHSM server.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct NvmId(pub u16);
+pub struct NvmId(pub(crate) u16);
 
 impl NvmId {
     /// The invalid/unset NVM ID (`WH_NVM_ID_INVALID` = 0).
     pub const INVALID: Self = NvmId(0);
+
+    /// Wrap a raw `whNvmId` value.
+    ///
+    /// Prefer the [`From<u16>`] impl in non-`const` contexts.
+    pub const fn new(id: u16) -> Self {
+        Self(id)
+    }
 }
 
 impl From<u16> for NvmId {
@@ -49,7 +56,11 @@ impl From<NvmId> for u16 {
 #[derive(Debug, Clone)]
 pub struct NvmMetadata {
     pub id: NvmId,
+    /// Access control flags. Corresponds to `WH_NVM_ACCESS_*` constants in
+    /// `wolfhsm/wh_nvm.h`. Pass `0` for unrestricted access.
     pub access: u16,
+    /// Object attribute flags. Corresponds to `WH_NVM_FLAGS_*` constants in
+    /// `wolfhsm/wh_nvm.h`. Pass `0` for default attributes.
     pub flags: u16,
     pub len: u16,
     pub label: [u8; 24],
@@ -91,16 +102,35 @@ impl Client {
         WolfHsmError::check(rc, "wh_Client_NvmGetAvailable")?;
         WolfHsmError::check(out_rc, "wh_Client_NvmGetAvailable(server)")?;
 
-        Ok(NvmAvailability { avail_size, avail_objects, reclaim_size, reclaim_objects })
+        Ok(NvmAvailability {
+            avail_size,
+            avail_objects,
+            reclaim_size,
+            reclaim_objects,
+        })
     }
 
     /// List all NVM object IDs stored on the server.
     ///
-    /// Calls `wh_Client_NvmList` in a loop until the server returns
-    /// `WH_ERROR_NOTFOUND` in `out_rc`, which is the normal end-of-list signal.
+    /// Calls `wh_Client_NvmList` in a loop.  The `start_id` parameter is the
+    /// **cursor**: pass 0 (WH_NVM_ID_INVALID) to start from the beginning, or
+    /// pass the last-seen ID to resume.  The server locates that exact ID in
+    /// its directory and returns the *next* object after it, together with the
+    /// count of remaining objects including the one just returned.  End of
+    /// list is signalled by `out_id == 0` (WH_NVM_ID_INVALID) with
+    /// `out_rc == WH_ERROR_OK`, or by `out_rc == WH_ERROR_NOTFOUND` on some
+    /// backend variants.
+    ///
+    /// Confirmed against wolfHSM C source (`wh_NvmFlash_List`,
+    /// `wh_NvmFlashLog_List`, and the upstream test suite in
+    /// `wh_test_clientserver.c`): the cursor must be the last-seen ID, not
+    /// last-seen + 1.  Passing last-seen + 1 causes a spurious "not found"
+    /// result for non-contiguous ID spaces because the server does an
+    /// exact-match lookup, not a lower-bound search.
     pub fn nvm_list(&mut self) -> Result<Vec<NvmId>, WolfHsmError> {
         let mut ids = Vec::new();
-        let mut start_id: u16 = 0; // WH_NVM_ID_INVALID
+        // 0 == WH_NVM_ID_INVALID: tells the server to start from the first object.
+        let mut start_id: u16 = 0;
 
         loop {
             let mut out_rc: i32 = 0;
@@ -121,24 +151,32 @@ impl Client {
             };
             WolfHsmError::check(rc, "wh_Client_NvmList")?;
 
-            // WH_ERROR_NOTFOUND in out_rc is the normal end-of-list signal.
+            // WH_ERROR_NOTFOUND in out_rc is the end-of-list signal on some
+            // backend variants.
             if out_rc == WH_ERROR_NOTFOUND {
                 break;
             }
             WolfHsmError::check(out_rc, "wh_Client_NvmList(server)")?;
 
+            // out_id == 0 (WH_NVM_ID_INVALID) with WH_ERROR_OK is the
+            // end-of-list signal used by wh_NvmFlash_List and
+            // wh_NvmFlashLog_List.
             if out_id == 0 {
-                // WH_NVM_ID_INVALID (0) on a success response is a server
-                // protocol violation; break rather than looping forever on
-                // a start_id that would never advance past zero.
                 break;
             }
+
+            // out_count is the number of remaining objects including out_id.
+            // Use it as a capacity hint on the first successful call.
+            if ids.is_empty() {
+                ids.reserve(out_count as usize);
+            }
+
             ids.push(NvmId(out_id));
 
-            start_id = match out_id.checked_add(1) {
-                Some(next) => next,
-                None => break, // ID space exhausted; no further objects possible
-            };
+            // Pass the last-seen ID back as the cursor.  The server does an
+            // exact-match on start_id and returns the next object after it, so
+            // the correct advance is start_id = out_id, not out_id + 1.
+            start_id = out_id;
         }
 
         Ok(ids)
@@ -254,22 +292,27 @@ impl Client {
         Ok(data)
     }
 
-    /// Write (or overwrite) an NVM object.
+    /// Overwrite an NVM object with new data. **Not atomic — see warning below.**
+    ///
+    /// **Warning — data loss hazard**: the existing object is deleted first,
+    /// then the new object is added.  If the add fails after a successful
+    /// delete, the original object is **permanently lost** and
+    /// [`WolfHsmError::DataLost`] is returned carrying the affected ID.  The
+    /// NVM protocol has no rollback facility.
     ///
     /// The `id` must not be [`NvmId::INVALID`] — the server's auto-assign
     /// path is not supported because it does not return the assigned ID.
     /// Choose an explicit non-zero ID.
     ///
-    /// The existing object with the given ID is deleted first via
-    /// [`nvm_delete`][Self::nvm_delete], then the new data is added.  This
-    /// delete-then-add sequence is **not atomic**: if the add fails after a
-    /// successful delete, the original object is permanently lost and
-    /// [`WolfHsmError::DataLost`] is returned, carrying the affected ID.  The
-    /// NVM protocol has no rollback facility.
-    ///
     /// `label` is truncated to 24 bytes if longer.  `data` must fit in a
     /// `u16` (≤ 65535 bytes).
-    pub fn nvm_write(
+    ///
+    /// `access` — access control flags; see `WH_NVM_ACCESS_*` constants in
+    /// `wolfhsm/wh_nvm.h`. Pass `0` for unrestricted access.
+    ///
+    /// `flags` — object attribute flags; see `WH_NVM_FLAGS_*` constants in
+    /// `wolfhsm/wh_nvm.h`. Pass `0` for default attributes.
+    pub fn nvm_overwrite(
         &mut self,
         id: NvmId,
         access: u16,
@@ -278,18 +321,20 @@ impl Client {
         data: &[u8],
     ) -> Result<(), WolfHsmError> {
         if id == NvmId::INVALID {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "nvm_write: id must not be NvmId::INVALID (0); \
-                       wolfHSM auto-assign does not return the assigned ID",
+            return Err(WolfHsmError::BadArgs {
+                msg: "id must not be NvmId::INVALID (0); wolfHSM auto-assign does not return the assigned ID",
             });
         }
-        let data_len = u16::try_from(data.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "nvm_write: data too large for u16",
+        let data_len = u16::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "nvm_overwrite data exceeds u16::MAX bytes",
         })?;
 
-        self.nvm_delete(id)?;
+        // Treat NOTFOUND as success: the object may not yet exist (initial write).
+        match self.nvm_delete(id) {
+            Ok(()) => {}
+            Err(WolfHsmError::Wh { code }) if code == WH_ERROR_NOTFOUND => {}
+            Err(e) => return Err(e),
+        }
 
         // Truncate label to 24 bytes; copy into a local mutable buffer as the
         // C API takes *mut u8 even though it does not modify the label.

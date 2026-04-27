@@ -2,7 +2,7 @@ use wolfhsm_sys::wolfhsm_cmac;
 
 use crate::client::Client;
 use crate::error::WolfHsmError;
-use crate::key::KeyId;
+use crate::key::{with_key, KeyId};
 
 /// CMAC-AES key handle. Key lives in HSM cache.
 ///
@@ -20,9 +20,8 @@ impl CmacKey {
     /// Cache raw AES key bytes for CMAC. Key must be 16, 24, or 32 bytes.
     pub fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
         if !matches!(key_bytes.len(), 16 | 24 | 32) {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "CmacKey::cache: key must be 16, 24, or 32 bytes",
+            return Err(WolfHsmError::BadArgs {
+                msg: "key must be 16, 24, or 32 bytes",
             });
         }
         let id = client.key_cache(key_bytes, b"cmac")?;
@@ -37,9 +36,8 @@ impl CmacKey {
 
     /// Compute a 16-byte CMAC tag over data.
     pub fn compute(&self, client: &mut Client, data: &[u8]) -> Result<[u8; 16], WolfHsmError> {
-        let in_len = u32::try_from(data.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_cmac: data too large",
+        let in_len = u32::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "data exceeds u32::MAX bytes",
         })?;
         let mut out = [0u8; 16];
         let mut out_len: u32 = 16;
@@ -68,7 +66,7 @@ impl CmacKey {
 impl Drop for CmacKey {
     fn drop(&mut self) {
         if self.id != KeyId::ERASED {
-            eprintln!(
+            log::warn!(
                 "wolfhsm: CmacKey (id={}) dropped without eviction — \
                  HSM cache slot leaked. Use with_cmac_key() or call .evict().",
                 self.id.0
@@ -85,24 +83,7 @@ impl Client {
     where
         F: FnOnce(&CmacKey, &mut Client) -> Result<R, WolfHsmError>,
     {
-        let mut key = CmacKey::cache(self, key_bytes)?;
-        let id = key.id;
-        let result = f(&key, self);
-        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
-        let evict = self.key_evict(id);
-        match result {
-            Ok(v) => {
-                evict?;
-                Ok(v)
-            }
-            Err(e) => {
-                if let Err(evict_err) = evict {
-                    eprintln!(
-                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
-                    );
-                }
-                Err(e)
-            }
-        }
+        let key = CmacKey::cache(self, key_bytes)?;
+        with_key!(key, self, f)
     }
 }

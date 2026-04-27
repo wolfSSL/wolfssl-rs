@@ -1,9 +1,9 @@
 use wolfhsm_sys::{
     wh_Client_SheDecCbc, wh_Client_SheDecEcb, wh_Client_SheEncCbc, wh_Client_SheEncEcb,
     wh_Client_SheExportRamKey, wh_Client_SheExtendSeed, wh_Client_SheGenerateMac,
-    wh_Client_SheGetStatus, wh_Client_SheInitRnd, wh_Client_SheLoadKey,
-    wh_Client_SheLoadPlainKey, wh_Client_ShePreProgramKey, wh_Client_SheRnd,
-    wh_Client_SheSecureBoot, wh_Client_SheSetUid, wh_Client_SheVerifyMac,
+    wh_Client_SheGetStatus, wh_Client_SheInitRnd, wh_Client_SheLoadKey, wh_Client_SheLoadPlainKey,
+    wh_Client_ShePreProgramKey, wh_Client_SheRnd, wh_Client_SheSecureBoot, wh_Client_SheSetUid,
+    wh_Client_SheVerifyMac,
 };
 
 use crate::client::Client;
@@ -58,23 +58,26 @@ impl Client {
     pub fn she_set_uid(&mut self, uid: &[u8; SHE_UID_SZ]) -> Result<(), WolfHsmError> {
         let mut uid_buf = *uid;
         // SAFETY: uid_buf is a valid 15-byte array; ctx_ptr is valid.
-        let rc = unsafe {
-            wh_Client_SheSetUid(self.ctx_ptr(), uid_buf.as_mut_ptr(), SHE_UID_SZ as u32)
-        };
+        let rc =
+            unsafe { wh_Client_SheSetUid(self.ctx_ptr(), uid_buf.as_mut_ptr(), SHE_UID_SZ as u32) };
         WolfHsmError::check(rc, "wh_Client_SheSetUid")
     }
 
     /// Perform SHE secure boot: compute a CMAC over `bootloader` using the
     /// BOOT_MAC_KEY slot and verify against the stored boot MAC.
     pub fn she_secure_boot(&mut self, bootloader: &[u8]) -> Result<(), WolfHsmError> {
-        let len = u32::try_from(bootloader.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "she_secure_boot: bootloader too large for u32",
+        let len = u32::try_from(bootloader.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "she_secure_boot: bootloader exceeds u32::MAX bytes",
         })?;
-        // C API takes *mut u8 even though it does not modify the data.
-        let mut buf = bootloader.to_vec();
-        // SAFETY: buf is a valid heap allocation; ctx_ptr is valid.
-        let rc = unsafe { wh_Client_SheSecureBoot(self.ctx_ptr(), buf.as_mut_ptr(), len) };
+        // SAFETY: wh_Client_SheSecureBoot reads `bootloader` but does not write
+        // through it; the *mut u8 in the C signature is a historical API wart.
+        let rc = unsafe {
+            wh_Client_SheSecureBoot(
+                self.ctx_ptr(),
+                bootloader.as_ptr() as *mut u8,
+                len,
+            )
+        };
         WolfHsmError::check(rc, "wh_Client_SheSecureBoot")
     }
 
@@ -125,11 +128,7 @@ impl Client {
         let mut key_buf = *key;
         // SAFETY: key_buf is a valid 16-byte stack array; ctx_ptr is valid.
         let rc = unsafe {
-            wh_Client_SheLoadPlainKey(
-                self.ctx_ptr(),
-                key_buf.as_mut_ptr(),
-                SHE_KEY_SZ as u32,
-            )
+            wh_Client_SheLoadPlainKey(self.ctx_ptr(), key_buf.as_mut_ptr(), SHE_KEY_SZ as u32)
         };
         WolfHsmError::check(rc, "wh_Client_SheLoadPlainKey")
     }
@@ -137,8 +136,16 @@ impl Client {
     /// Export the RAM_KEY slot as M1–M5 protocol messages for backup.
     pub fn she_export_ram_key(
         &mut self,
-    ) -> Result<([u8; SHE_M1_SZ], [u8; SHE_M2_SZ], [u8; SHE_M3_SZ], [u8; SHE_M4_SZ], [u8; SHE_M5_SZ]), WolfHsmError>
-    {
+    ) -> Result<
+        (
+            [u8; SHE_M1_SZ],
+            [u8; SHE_M2_SZ],
+            [u8; SHE_M3_SZ],
+            [u8; SHE_M4_SZ],
+            [u8; SHE_M5_SZ],
+        ),
+        WolfHsmError,
+    > {
         let mut m1 = [0u8; SHE_M1_SZ];
         let mut m2 = [0u8; SHE_M2_SZ];
         let mut m3 = [0u8; SHE_M3_SZ];
@@ -186,13 +193,14 @@ impl Client {
 
     /// Mix `entropy` into the SHE PRNG state (extend the seed).
     pub fn she_extend_seed(&mut self, entropy: &[u8]) -> Result<(), WolfHsmError> {
-        let len = u32::try_from(entropy.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "she_extend_seed: entropy too large for u32",
+        let len = u32::try_from(entropy.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "she_extend_seed: entropy exceeds u32::MAX bytes",
         })?;
-        let mut buf = entropy.to_vec();
-        // SAFETY: buf is a valid heap allocation; ctx_ptr is valid.
-        let rc = unsafe { wh_Client_SheExtendSeed(self.ctx_ptr(), buf.as_mut_ptr(), len) };
+        // SAFETY: wh_Client_SheExtendSeed reads `entropy` but does not write
+        // through it; the *mut u8 in the C signature is a historical API wart.
+        let rc = unsafe {
+            wh_Client_SheExtendSeed(self.ctx_ptr(), entropy.as_ptr() as *mut u8, len)
+        };
         WolfHsmError::check(rc, "wh_Client_SheExtendSeed")
     }
 
@@ -201,15 +209,15 @@ impl Client {
     /// `plaintext` length must be a non-zero multiple of 16 bytes.
     /// Returns the ciphertext (same length as `plaintext`).
     pub fn she_enc_ecb(&mut self, key_id: u8, plaintext: &[u8]) -> Result<Vec<u8>, WolfHsmError> {
-        let sz = validate_she_block_size(plaintext.len(), "she_enc_ecb")?;
-        let mut input = plaintext.to_vec();
+        let sz = validate_she_block_size(plaintext.len())?;
         let mut output = vec![0u8; plaintext.len()];
-        // SAFETY: all pointers are valid for the duration of this call.
+        // SAFETY: wh_Client_SheEncEcb reads `plaintext` and writes `output`;
+        // the *mut u8 for the input is a historical API wart — it is not modified.
         let rc = unsafe {
             wh_Client_SheEncEcb(
                 self.ctx_ptr(),
                 key_id,
-                input.as_mut_ptr(),
+                plaintext.as_ptr() as *mut u8,
                 output.as_mut_ptr(),
                 sz,
             )
@@ -222,20 +230,16 @@ impl Client {
     ///
     /// `ciphertext` length must be a non-zero multiple of 16 bytes.
     /// Returns the plaintext (same length as `ciphertext`).
-    pub fn she_dec_ecb(
-        &mut self,
-        key_id: u8,
-        ciphertext: &[u8],
-    ) -> Result<Vec<u8>, WolfHsmError> {
-        let sz = validate_she_block_size(ciphertext.len(), "she_dec_ecb")?;
-        let mut input = ciphertext.to_vec();
+    pub fn she_dec_ecb(&mut self, key_id: u8, ciphertext: &[u8]) -> Result<Vec<u8>, WolfHsmError> {
+        let sz = validate_she_block_size(ciphertext.len())?;
         let mut output = vec![0u8; ciphertext.len()];
-        // SAFETY: all pointers are valid for the duration of this call.
+        // SAFETY: wh_Client_SheDecEcb reads `ciphertext` and writes `output`;
+        // the *mut u8 for the input is a historical API wart — it is not modified.
         let rc = unsafe {
             wh_Client_SheDecEcb(
                 self.ctx_ptr(),
                 key_id,
-                input.as_mut_ptr(),
+                ciphertext.as_ptr() as *mut u8,
                 output.as_mut_ptr(),
                 sz,
             )
@@ -254,18 +258,19 @@ impl Client {
         iv: &[u8; 16],
         plaintext: &[u8],
     ) -> Result<Vec<u8>, WolfHsmError> {
-        let sz = validate_she_block_size(plaintext.len(), "she_enc_cbc")?;
+        let sz = validate_she_block_size(plaintext.len())?;
         let mut iv_buf = *iv;
-        let mut input = plaintext.to_vec();
         let mut output = vec![0u8; plaintext.len()];
-        // SAFETY: all pointers are valid for the duration of this call.
+        // SAFETY: wh_Client_SheEncCbc reads `plaintext` and writes `output`;
+        // `iv_buf` is a mutable local copy (the C function may consume it).
+        // The *mut u8 for `plaintext` is a historical API wart — it is not modified.
         let rc = unsafe {
             wh_Client_SheEncCbc(
                 self.ctx_ptr(),
                 key_id,
                 iv_buf.as_mut_ptr(),
                 16u32,
-                input.as_mut_ptr(),
+                plaintext.as_ptr() as *mut u8,
                 output.as_mut_ptr(),
                 sz,
             )
@@ -284,18 +289,19 @@ impl Client {
         iv: &[u8; 16],
         ciphertext: &[u8],
     ) -> Result<Vec<u8>, WolfHsmError> {
-        let sz = validate_she_block_size(ciphertext.len(), "she_dec_cbc")?;
+        let sz = validate_she_block_size(ciphertext.len())?;
         let mut iv_buf = *iv;
-        let mut input = ciphertext.to_vec();
         let mut output = vec![0u8; ciphertext.len()];
-        // SAFETY: all pointers are valid for the duration of this call.
+        // SAFETY: wh_Client_SheDecCbc reads `ciphertext` and writes `output`;
+        // `iv_buf` is a mutable local copy (the C function may consume it).
+        // The *mut u8 for `ciphertext` is a historical API wart — it is not modified.
         let rc = unsafe {
             wh_Client_SheDecCbc(
                 self.ctx_ptr(),
                 key_id,
                 iv_buf.as_mut_ptr(),
                 16u32,
-                input.as_mut_ptr(),
+                ciphertext.as_ptr() as *mut u8,
                 output.as_mut_ptr(),
                 sz,
             )
@@ -312,22 +318,20 @@ impl Client {
         key_id: u8,
         data: &[u8],
     ) -> Result<[u8; SHE_KEY_SZ], WolfHsmError> {
-        let in_sz = u32::try_from(data.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "she_generate_mac: data too large for u32",
+        let in_sz = u32::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "she_generate_mac: data exceeds u32::MAX bytes",
         })?;
-        let mut input = data.to_vec();
         let mut mac = [0u8; SHE_KEY_SZ];
-        let out_sz: u32 = SHE_KEY_SZ as u32;
-        // SAFETY: all pointers are valid for the duration of this call.
+        // SAFETY: wh_Client_SheGenerateMac reads `data` and writes `mac`;
+        // the *mut u8 for `data` is a historical API wart — it is not modified.
         let rc = unsafe {
             wh_Client_SheGenerateMac(
                 self.ctx_ptr(),
                 key_id,
-                input.as_mut_ptr(),
+                data.as_ptr() as *mut u8,
                 in_sz,
                 mac.as_mut_ptr(),
-                out_sz,
+                SHE_KEY_SZ as u32,
             )
         };
         WolfHsmError::check(rc, "wh_Client_SheGenerateMac")?;
@@ -339,26 +343,27 @@ impl Client {
     /// `mac` must be exactly [`SHE_KEY_SZ`] (16) bytes — the SHE specification
     /// mandates a fixed-size 128-bit CMAC.
     ///
-    /// Returns `true` if the MAC is valid, `false` if it does not match.
+    /// Returns `Ok(())` if the MAC is valid, or `Err` if the MAC does not match
+    /// or a transport/server error occurred.
     pub fn she_verify_mac(
         &mut self,
         key_id: u8,
         message: &[u8],
         mac: &[u8; SHE_KEY_SZ],
-    ) -> Result<bool, WolfHsmError> {
-        let msg_len = u32::try_from(message.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "she_verify_mac: message too large for u32",
+    ) -> Result<(), WolfHsmError> {
+        let msg_len = u32::try_from(message.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "she_verify_mac: message exceeds u32::MAX bytes",
         })?;
-        let mut msg_buf = message.to_vec();
         let mut mac_buf = *mac;
         let mut status: u8 = 1; // non-zero = invalid; server sets to 0 on success
-        // SAFETY: all pointers are valid for the duration of this call.
+        // SAFETY: wh_Client_SheVerifyMac reads `message` and `mac_buf` (the
+        // local copy); it writes only to `status`.  The *mut u8 for `message`
+        // is a historical API wart — it is not modified.
         let rc = unsafe {
             wh_Client_SheVerifyMac(
                 self.ctx_ptr(),
                 key_id,
-                msg_buf.as_mut_ptr(),
+                message.as_ptr() as *mut u8,
                 msg_len,
                 mac_buf.as_mut_ptr(),
                 SHE_KEY_SZ as u32,
@@ -366,20 +371,24 @@ impl Client {
             )
         };
         WolfHsmError::check(rc, "wh_Client_SheVerifyMac")?;
-        Ok(status == 0)
+        if status != 0 {
+            return Err(WolfHsmError::Ffi {
+                code: status as i32,
+                func: "wh_Client_SheVerifyMac: MAC does not match",
+            });
+        }
+        Ok(())
     }
 }
 
 /// Validate that `len` is a non-zero multiple of the AES block size (16).
-fn validate_she_block_size(len: usize, func: &'static str) -> Result<u32, WolfHsmError> {
+fn validate_she_block_size(len: usize) -> Result<u32, WolfHsmError> {
     if len == 0 || len % 16 != 0 {
-        return Err(WolfHsmError::Ffi {
-            code: -1,
-            func,
+        return Err(WolfHsmError::BadArgs {
+            msg: "length must be a non-zero multiple of 16 bytes (AES block size)",
         });
     }
-    u32::try_from(len).map_err(|_| WolfHsmError::Ffi {
-        code: -1,
-        func: "she: data length exceeds u32::MAX",
+    u32::try_from(len).map_err(|_| WolfHsmError::BadArgs {
+        msg: "she: data length exceeds u32::MAX bytes",
     })
 }

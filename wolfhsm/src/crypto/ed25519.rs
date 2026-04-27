@@ -2,7 +2,7 @@ use wolfhsm_sys::{wolfhsm_ed25519_make_key, wolfhsm_ed25519_sign, wolfhsm_ed2551
 
 use crate::client::Client;
 use crate::error::WolfHsmError;
-use crate::key::KeyId;
+use crate::key::{with_key, KeyId};
 
 /// Ed25519 key handle. The private key lives in the HSM key cache.
 ///
@@ -23,6 +23,12 @@ impl Ed25519Key {
         // SAFETY: ctx_ptr is valid for the duration of this call.
         let rc = unsafe { wolfhsm_ed25519_make_key(client.ctx_ptr(), &mut key_id) };
         WolfHsmError::check(rc, "wolfhsm_ed25519_make_key")?;
+        if key_id == KeyId::ERASED.0 {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "wolfhsm_ed25519_make_key: server returned WH_KEYID_ERASED (0)",
+            });
+        }
         Ok(Ed25519Key { id: KeyId(key_id) })
     }
 
@@ -36,7 +42,11 @@ impl Ed25519Key {
     pub fn public_key(&self, client: &mut Client) -> Result<[u8; 32], WolfHsmError> {
         let mut buf = [0u8; 32];
         let rc = unsafe {
-            wolfhsm_sys::wolfhsm_ed25519_export_public(client.ctx_ptr(), self.id.0, buf.as_mut_ptr())
+            wolfhsm_sys::wolfhsm_ed25519_export_public(
+                client.ctx_ptr(),
+                self.id.0,
+                buf.as_mut_ptr(),
+            )
         };
         WolfHsmError::check(rc, "wolfhsm_ed25519_export_public")?;
         Ok(buf)
@@ -44,9 +54,8 @@ impl Ed25519Key {
 
     /// Sign a message. Returns a 64-byte Ed25519 signature.
     pub fn sign(&self, client: &mut Client, msg: &[u8]) -> Result<[u8; 64], WolfHsmError> {
-        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_ed25519_sign: message too large",
+        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "message exceeds u32::MAX bytes",
         })?;
         let mut buf = [0u8; 64];
         let mut sig_len: u32 = 64;
@@ -78,9 +87,8 @@ impl Ed25519Key {
         msg: &[u8],
         sig: &[u8; 64],
     ) -> Result<(), WolfHsmError> {
-        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_ed25519_verify: message too large",
+        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "message exceeds u32::MAX bytes",
         })?;
         let mut result: core::ffi::c_int = 0;
         // SAFETY: all pointers are valid for the duration of this call.
@@ -109,7 +117,7 @@ impl Ed25519Key {
 impl Drop for Ed25519Key {
     fn drop(&mut self) {
         if self.id != KeyId::ERASED {
-            eprintln!(
+            log::warn!(
                 "wolfhsm: Ed25519Key (id={}) dropped without eviction — \
                  HSM cache slot leaked. Use with_ed25519_key() or call .evict().",
                 self.id.0
@@ -126,24 +134,7 @@ impl Client {
     where
         F: FnOnce(&Ed25519Key, &mut Client) -> Result<R, WolfHsmError>,
     {
-        let mut key = Ed25519Key::generate(self)?;
-        let id = key.id;
-        let result = f(&key, self);
-        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
-        let evict = self.key_evict(id);
-        match result {
-            Ok(v) => {
-                evict?;
-                Ok(v)
-            }
-            Err(e) => {
-                if let Err(evict_err) = evict {
-                    eprintln!(
-                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
-                    );
-                }
-                Err(e)
-            }
-        }
+        let key = Ed25519Key::generate(self)?;
+        with_key!(key, self, f)
     }
 }

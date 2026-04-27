@@ -7,11 +7,18 @@ use crate::error::WolfHsmError;
 
 /// A wolfHSM key identifier (wraps `whKeyId` = `u16`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct KeyId(pub u16);
+pub struct KeyId(pub(crate) u16);
 
 impl KeyId {
     /// The erased/invalid key ID (`WH_KEYID_ERASED` = 0).
     pub const ERASED: Self = KeyId(0);
+
+    /// Wrap a raw `whKeyId` value.
+    ///
+    /// Prefer the [`From<u16>`] impl in non-`const` contexts.
+    pub const fn new(id: u16) -> Self {
+        Self(id)
+    }
 }
 
 impl From<u16> for KeyId {
@@ -37,9 +44,8 @@ impl Client {
     /// Returns the server-assigned [`KeyId`].
     pub fn key_cache(&mut self, data: &[u8], label: &[u8]) -> Result<KeyId, WolfHsmError> {
         if data.len() > u16::MAX as usize {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "key_cache: data exceeds u16::MAX bytes",
+            return Err(WolfHsmError::BadArgs {
+                msg: "key data exceeds u16::MAX bytes",
             });
         }
 
@@ -96,3 +102,38 @@ impl Client {
         WolfHsmError::check(rc, "wh_Client_KeyErase")
     }
 }
+
+/// Internal macro: run a closure with a key handle, always evicting afterward.
+///
+/// Usage: `with_key!(key_expr, client_ref, closure)`
+/// - `key_expr`: an expression producing the key (already constructed)
+/// - `client_ref`: `&mut Client`
+/// - `closure`: `FnOnce(&Key, &mut Client) -> Result<R, WolfHsmError>`
+///
+/// The macro silences the drop warning by clearing `key.id` to `KeyId::ERASED`
+/// before eviction. On the success path, an eviction error is propagated. On
+/// the error path, eviction is best-effort (failure is printed but original
+/// error returned).
+macro_rules! with_key {
+    ($key:expr, $client:expr, $f:expr) => {{
+        let mut key = $key;
+        let id = key.id;
+        let result = $f(&key, $client);
+        key.id = $crate::key::KeyId::ERASED; // prevent drop warning
+        let evict = $client.key_evict(id);
+        match result {
+            Ok(v) => {
+                evict?;
+                Ok(v)
+            }
+            Err(e) => {
+                if let Err(evict_err) = evict {
+                    log::warn!("wolfhsm: key eviction failed during error cleanup: {evict_err}");
+                }
+                Err(e)
+            }
+        }
+    }};
+}
+
+pub(crate) use with_key;

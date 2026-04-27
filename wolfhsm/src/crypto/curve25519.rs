@@ -2,7 +2,7 @@ use wolfhsm_sys::{wolfhsm_curve25519_make_key, wolfhsm_curve25519_shared_secret}
 
 use crate::client::Client;
 use crate::error::WolfHsmError;
-use crate::key::KeyId;
+use crate::key::{with_key, KeyId};
 
 /// Curve25519 key handle. The private key lives in the HSM key cache.
 ///
@@ -23,6 +23,12 @@ impl Curve25519Key {
         // SAFETY: ctx_ptr is valid for the duration of this call.
         let rc = unsafe { wolfhsm_curve25519_make_key(client.ctx_ptr(), &mut key_id) };
         WolfHsmError::check(rc, "wolfhsm_curve25519_make_key")?;
+        if key_id == KeyId::ERASED.0 {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "wolfhsm_curve25519_make_key: server returned WH_KEYID_ERASED (0)",
+            });
+        }
         Ok(Curve25519Key { id: KeyId(key_id) })
     }
 
@@ -36,7 +42,11 @@ impl Curve25519Key {
     pub fn public_key(&self, client: &mut Client) -> Result<[u8; 32], WolfHsmError> {
         let mut buf = [0u8; 32];
         let rc = unsafe {
-            wolfhsm_sys::wolfhsm_curve25519_export_public(client.ctx_ptr(), self.id.0, buf.as_mut_ptr())
+            wolfhsm_sys::wolfhsm_curve25519_export_public(
+                client.ctx_ptr(),
+                self.id.0,
+                buf.as_mut_ptr(),
+            )
         };
         WolfHsmError::check(rc, "wolfhsm_curve25519_export_public")?;
         Ok(buf)
@@ -76,7 +86,7 @@ impl Curve25519Key {
 impl Drop for Curve25519Key {
     fn drop(&mut self) {
         if self.id != KeyId::ERASED {
-            eprintln!(
+            log::warn!(
                 "wolfhsm: Curve25519Key (id={}) dropped without eviction — \
                  HSM cache slot leaked. Use with_curve25519_key() or call .evict().",
                 self.id.0
@@ -93,24 +103,7 @@ impl Client {
     where
         F: FnOnce(&Curve25519Key, &mut Client) -> Result<R, WolfHsmError>,
     {
-        let mut key = Curve25519Key::generate(self)?;
-        let id = key.id;
-        let result = f(&key, self);
-        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
-        let evict = self.key_evict(id);
-        match result {
-            Ok(v) => {
-                evict?;
-                Ok(v)
-            }
-            Err(e) => {
-                if let Err(evict_err) = evict {
-                    eprintln!(
-                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
-                    );
-                }
-                Err(e)
-            }
-        }
+        let key = Curve25519Key::generate(self)?;
+        with_key!(key, self, f)
     }
 }

@@ -19,7 +19,10 @@ pub enum Transport {
     Tcp {
         /// Server IP address or hostname (e.g. `"127.0.0.1"`).
         ip: String,
-        /// Server TCP port number.
+        /// Server TCP port number (1–32767).
+        ///
+        /// The underlying POSIX transport stores the port as a C `i16`; ports above
+        /// 32767 are rejected at connection time with [`WolfHsmError::BadArgs`].
         port: u16,
     },
 

@@ -1,9 +1,9 @@
 use std::ffi::CString;
 
 use wolfhsm_sys::{
-    wh_Client_AuthLogin, wh_Client_AuthLogout, wh_Client_AuthUserAdd, wh_Client_AuthUserDelete,
-    wh_Client_AuthUserGet, wh_Client_AuthUserSetCredentials, wh_Client_AuthUserSetPermissions,
-    whAuthPermissions,
+    whAuthPermissions, wh_Client_AuthLogin, wh_Client_AuthLogout, wh_Client_AuthUserAdd,
+    wh_Client_AuthUserDelete, wh_Client_AuthUserGet, wh_Client_AuthUserSetCredentials,
+    wh_Client_AuthUserSetPermissions,
 };
 
 use crate::client::Client;
@@ -13,20 +13,79 @@ use crate::error::WolfHsmError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum AuthMethod {
-    None        = 0, // WH_AUTH_METHOD_NONE
-    Pin         = 1, // WH_AUTH_METHOD_PIN
+    None = 0,        // WH_AUTH_METHOD_NONE
+    Pin = 1,         // WH_AUTH_METHOD_PIN
     Certificate = 2, // WH_AUTH_METHOD_CERTIFICATE
 }
 
 /// A wolfHSM user identifier.
-pub type UserId = u16;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct UserId(pub(crate) u16);
 
-/// wolfHSM user permission set (opaque mirror of `whAuthPermissions`).
+impl UserId {
+    /// Wrap a raw user identifier value.
+    ///
+    /// Prefer the [`From<u16>`] impl in non-`const` contexts.
+    pub const fn new(id: u16) -> Self {
+        Self(id)
+    }
+}
+
+impl From<u16> for UserId {
+    fn from(v: u16) -> Self {
+        UserId(v)
+    }
+}
+
+impl From<UserId> for u16 {
+    fn from(u: UserId) -> Self {
+        u.0
+    }
+}
+
+/// wolfHSM user permission set.
 ///
-/// Construct a zeroed instance with [`AuthPermissions::none`] and pass it to
-/// the admin functions.  The internal layout is an opaque C struct; use the
-/// wolfHSM C macros to inspect or set individual group/action bits.
-pub type AuthPermissions = whAuthPermissions;
+/// Construct a zeroed (no-permissions) instance with [`AuthPermissions::none`].
+/// To set specific permission bits, use the wolfHSM C macros via
+/// [`AuthPermissions::as_raw_mut`] or build from a raw value with
+/// `AuthPermissions::from(raw)` / `.into()`.
+///
+/// The internal layout mirrors `whAuthPermissions` from the wolfHSM C library.
+///
+/// `PartialEq`/`Eq` are not derived because bindgen does not generate them for
+/// `whAuthPermissions` (it only derives `Debug, Copy, Clone`). The fields are
+/// all integer types so there is no soundness obstacle, but we do not implement
+/// them manually to avoid silent breakage if the C struct gains a field that
+/// makes byte-equality wrong. Use [`AuthPermissions::as_raw_mut`] for
+/// field-level comparisons if needed.
+#[derive(Debug, Clone, Copy)]
+pub struct AuthPermissions(whAuthPermissions);
+
+impl AuthPermissions {
+    /// Create an `AuthPermissions` with no permissions granted.
+    pub fn none() -> Self {
+        // SAFETY: zero-initialising a C POD struct is valid.
+        Self(unsafe { core::mem::zeroed() })
+    }
+
+    /// Return a mutable reference to the inner `whAuthPermissions` for use
+    /// with wolfHSM C macros that set individual permission bits.
+    pub fn as_raw_mut(&mut self) -> &mut whAuthPermissions {
+        &mut self.0
+    }
+}
+
+impl From<whAuthPermissions> for AuthPermissions {
+    fn from(raw: whAuthPermissions) -> Self {
+        Self(raw)
+    }
+}
+
+impl From<AuthPermissions> for whAuthPermissions {
+    fn from(p: AuthPermissions) -> Self {
+        p.0
+    }
+}
 
 impl Client {
     /// Authenticate to the server and open a session.
@@ -41,16 +100,14 @@ impl Client {
         username: &str,
         auth_data: &[u8],
     ) -> Result<UserId, WolfHsmError> {
-        let cname = CString::new(username).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "auth_login: username contains interior NUL",
+        let cname = CString::new(username).map_err(|_| WolfHsmError::BadArgs {
+            msg: "username contains an interior NUL byte",
         })?;
-        let auth_len = u16::try_from(auth_data.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "auth_login: auth_data too large for u16",
+        let auth_len = u16::try_from(auth_data.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "auth_data exceeds u16::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
-        let mut out_user_id: UserId = 0;
+        let mut out_user_id: u16 = 0;
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
             wh_Client_AuthLogin(
@@ -65,14 +122,14 @@ impl Client {
         };
         WolfHsmError::check(rc, "wh_Client_AuthLogin")?;
         WolfHsmError::check(out_rc, "wh_Client_AuthLogin(server)")?;
-        Ok(out_user_id)
+        Ok(UserId(out_user_id))
     }
 
     /// Close a session identified by `user_id`.
     pub fn auth_logout(&mut self, user_id: UserId) -> Result<(), WolfHsmError> {
         let mut out_rc: i32 = 0;
         // SAFETY: ctx_ptr is valid; out_rc is a valid stack allocation.
-        let rc = unsafe { wh_Client_AuthLogout(self.ctx_ptr(), user_id, &mut out_rc) };
+        let rc = unsafe { wh_Client_AuthLogout(self.ctx_ptr(), user_id.0, &mut out_rc) };
         WolfHsmError::check(rc, "wh_Client_AuthLogout")?;
         WolfHsmError::check(out_rc, "wh_Client_AuthLogout(server)")?;
         Ok(())
@@ -90,22 +147,20 @@ impl Client {
         method: AuthMethod,
         credentials: &[u8],
     ) -> Result<UserId, WolfHsmError> {
-        let cname = CString::new(username).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "auth_user_add: username contains interior NUL",
+        let cname = CString::new(username).map_err(|_| WolfHsmError::BadArgs {
+            msg: "username contains an interior NUL byte",
         })?;
-        let cred_len = u16::try_from(credentials.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "auth_user_add: credentials too large for u16",
+        let cred_len = u16::try_from(credentials.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "credentials exceed u16::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
-        let mut out_user_id: UserId = 0;
+        let mut out_user_id: u16 = 0;
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
             wh_Client_AuthUserAdd(
                 self.ctx_ptr(),
                 cname.as_ptr(),
-                permissions,
+                permissions.into(),
                 method as u32,
                 credentials.as_ptr() as *const core::ffi::c_void,
                 cred_len,
@@ -115,7 +170,7 @@ impl Client {
         };
         WolfHsmError::check(rc, "wh_Client_AuthUserAdd")?;
         WolfHsmError::check(out_rc, "wh_Client_AuthUserAdd(server)")?;
-        Ok(out_user_id)
+        Ok(UserId(out_user_id))
     }
 
     /// Look up a user by name and return their `(UserId, AuthPermissions)`.
@@ -123,14 +178,12 @@ impl Client {
         &mut self,
         username: &str,
     ) -> Result<(UserId, AuthPermissions), WolfHsmError> {
-        let cname = CString::new(username).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "auth_user_get: username contains interior NUL",
+        let cname = CString::new(username).map_err(|_| WolfHsmError::BadArgs {
+            msg: "username contains an interior NUL byte",
         })?;
         let mut out_rc: i32 = 0;
-        let mut out_user_id: UserId = 0;
-        // SAFETY: zeroed whAuthPermissions is a valid C struct initialisation.
-        let mut out_permissions: AuthPermissions = unsafe { core::mem::zeroed() };
+        let mut out_user_id: u16 = 0;
+        let mut out_permissions = AuthPermissions::none();
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
             wh_Client_AuthUserGet(
@@ -138,19 +191,19 @@ impl Client {
                 cname.as_ptr(),
                 &mut out_rc,
                 &mut out_user_id,
-                &mut out_permissions,
+                &mut out_permissions.0,
             )
         };
         WolfHsmError::check(rc, "wh_Client_AuthUserGet")?;
         WolfHsmError::check(out_rc, "wh_Client_AuthUserGet(server)")?;
-        Ok((out_user_id, out_permissions))
+        Ok((UserId(out_user_id), out_permissions))
     }
 
     /// Delete the user identified by `user_id`.
     pub fn auth_user_delete(&mut self, user_id: UserId) -> Result<(), WolfHsmError> {
         let mut out_rc: i32 = 0;
         // SAFETY: ctx_ptr is valid; out_rc is a valid stack allocation.
-        let rc = unsafe { wh_Client_AuthUserDelete(self.ctx_ptr(), user_id, &mut out_rc) };
+        let rc = unsafe { wh_Client_AuthUserDelete(self.ctx_ptr(), user_id.0, &mut out_rc) };
         WolfHsmError::check(rc, "wh_Client_AuthUserDelete")?;
         WolfHsmError::check(out_rc, "wh_Client_AuthUserDelete(server)")?;
         Ok(())
@@ -167,8 +220,8 @@ impl Client {
         let rc = unsafe {
             wh_Client_AuthUserSetPermissions(
                 self.ctx_ptr(),
-                user_id,
-                permissions,
+                user_id.0,
+                permissions.into(),
                 &mut out_rc,
             )
         };
@@ -188,20 +241,19 @@ impl Client {
         current_credentials: &[u8],
         new_credentials: &[u8],
     ) -> Result<(), WolfHsmError> {
-        let cur_len = u16::try_from(current_credentials.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "auth_user_set_credentials: current_credentials too large for u16",
-        })?;
-        let new_len = u16::try_from(new_credentials.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "auth_user_set_credentials: new_credentials too large for u16",
+        let cur_len =
+            u16::try_from(current_credentials.len()).map_err(|_| WolfHsmError::BadArgs {
+                msg: "current_credentials exceed u16::MAX bytes",
+            })?;
+        let new_len = u16::try_from(new_credentials.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "new_credentials exceed u16::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
             wh_Client_AuthUserSetCredentials(
                 self.ctx_ptr(),
-                user_id,
+                user_id.0,
                 method as u32,
                 current_credentials.as_ptr() as *const core::ffi::c_void,
                 cur_len,

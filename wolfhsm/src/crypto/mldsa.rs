@@ -4,14 +4,14 @@ use wolfhsm_sys::{wolfhsm_mldsa_make_key, wolfhsm_mldsa_sign, wolfhsm_mldsa_veri
 
 use crate::client::Client;
 use crate::error::WolfHsmError;
-use crate::key::KeyId;
+use crate::key::{with_key, KeyId};
 
 /// Exact ML-DSA signature sizes per level (FIPS 204, Table 2).
 fn mldsa_sig_len(level: u8) -> usize {
     match level {
         44 => 2420,
         65 => 3309,
-        _  => 4627, // level 87
+        _ => 4627, // level 87
     }
 }
 
@@ -37,17 +37,14 @@ impl MlDsaKey {
     /// Generate an ML-DSA key at the given level (44, 65, or 87).
     pub fn generate(client: &mut Client, level: u8) -> Result<Self, WolfHsmError> {
         if !matches!(level, 44 | 65 | 87) {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "MlDsaKey::generate: level must be 44, 65, or 87",
+            return Err(WolfHsmError::BadArgs {
+                msg: "MlDsaKey::generate: level must be 44, 65, or 87",
             });
         }
         let mut key_id: u16 = 0;
         // SAFETY: ctx_ptr is valid for the duration of this call; key_id is a
         // valid stack allocation.
-        let rc = unsafe {
-            wolfhsm_mldsa_make_key(client.ctx_ptr(), level as c_int, &mut key_id)
-        };
+        let rc = unsafe { wolfhsm_mldsa_make_key(client.ctx_ptr(), level as c_int, &mut key_id) };
         WolfHsmError::check(rc, "wolfhsm_mldsa_make_key")?;
         if key_id == 0 {
             return Err(WolfHsmError::Ffi {
@@ -55,7 +52,10 @@ impl MlDsaKey {
                 func: "wolfhsm_mldsa_make_key: server returned WH_KEYID_ERASED (0)",
             });
         }
-        Ok(MlDsaKey { id: KeyId(key_id), level })
+        Ok(MlDsaKey {
+            id: KeyId(key_id),
+            level,
+        })
     }
 
     /// Evict this key from the HSM key cache.
@@ -67,9 +67,8 @@ impl MlDsaKey {
     /// Sign a message. Signature size depends on level:
     /// level 44 → 2420 bytes, level 65 → 3309 bytes, level 87 → 4627 bytes.
     pub fn sign(&self, client: &mut Client, msg: &[u8]) -> Result<Vec<u8>, WolfHsmError> {
-        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "wolfhsm_mldsa_sign: message too large",
+        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "mldsa sign: message exceeds u32::MAX bytes",
         })?;
         let cap = mldsa_sig_len(self.level);
         let mut sig = vec![0u8; cap];
@@ -92,12 +91,13 @@ impl MlDsaKey {
     }
 
     /// Verify a signature. Returns `Ok(())` if valid.
-    pub fn verify(
-        &self,
-        client: &mut Client,
-        msg: &[u8],
-        sig: &[u8],
-    ) -> Result<(), WolfHsmError> {
+    pub fn verify(&self, client: &mut Client, msg: &[u8], sig: &[u8]) -> Result<(), WolfHsmError> {
+        let sig_len = u32::try_from(sig.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "mldsa verify: signature exceeds u32::MAX bytes",
+        })?;
+        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "mldsa verify: message exceeds u32::MAX bytes",
+        })?;
         let mut result: c_int = 0;
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
@@ -106,9 +106,9 @@ impl MlDsaKey {
                 self.id.0,
                 self.level as c_int,
                 sig.as_ptr(),
-                sig.len() as u32,
+                sig_len,
                 msg.as_ptr(),
-                msg.len() as u32,
+                msg_len,
                 &mut result,
             )
         };
@@ -126,7 +126,7 @@ impl MlDsaKey {
 impl Drop for MlDsaKey {
     fn drop(&mut self) {
         if self.id != KeyId::ERASED {
-            eprintln!(
+            log::warn!(
                 "wolfhsm: MlDsaKey (id={}) dropped without eviction — \
                  HSM cache slot leaked. Use with_mldsa_key() or call .evict().",
                 self.id.0
@@ -141,21 +141,7 @@ impl Client {
     where
         F: FnOnce(&MlDsaKey, &mut Client) -> Result<R, WolfHsmError>,
     {
-        let mut key = MlDsaKey::generate(self, level)?;
-        let id = key.id;
-        let result = f(&key, self);
-        key.id = KeyId::ERASED; // prevent drop warning; eviction below handles cleanup
-        let evict = self.key_evict(id);
-        match result {
-            Ok(v) => { evict?; Ok(v) }
-            Err(e) => {
-                if let Err(evict_err) = evict {
-                    eprintln!(
-                        "wolfhsm: key eviction failed during error cleanup: {evict_err}"
-                    );
-                }
-                Err(e)
-            }
-        }
+        let key = MlDsaKey::generate(self, level)?;
+        with_key!(key, self, f)
     }
 }

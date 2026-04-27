@@ -34,9 +34,8 @@ impl Client {
         label: &[u8],
         cert: &[u8],
     ) -> Result<(), WolfHsmError> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "cert_add_trusted: cert too large for u32",
+        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "cert_add_trusted: cert exceeds u32::MAX bytes",
         })?;
         let label_len = u16::try_from(label.len().min(24)).unwrap();
         // C API takes *mut u8 for label even though it does not modify it.
@@ -108,14 +107,9 @@ impl Client {
     /// Verify a DER-encoded certificate against a trusted root stored in NVM.
     ///
     /// Returns `Ok(())` if the certificate is valid.
-    pub fn cert_verify(
-        &mut self,
-        cert: &[u8],
-        trusted_root_id: NvmId,
-    ) -> Result<(), WolfHsmError> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "cert_verify: cert too large for u32",
+    pub fn cert_verify(&mut self, cert: &[u8], trusted_root_id: NvmId) -> Result<(), WolfHsmError> {
+        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "cert_verify: cert exceeds u32::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
         // SAFETY: cert pointer is valid for the duration of this call.
@@ -148,9 +142,8 @@ impl Client {
         cached_key_flags: u16,
         key_id: Option<KeyId>,
     ) -> Result<KeyId, WolfHsmError> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "cert_verify_and_cache_leaf_pubkey: cert too large for u32",
+        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "cert_verify_and_cache_leaf_pubkey: cert exceeds u32::MAX bytes",
         })?;
         let mut inout_key_id: u16 = key_id.unwrap_or(KeyId::ERASED).0;
         let mut out_rc: i32 = 0;
@@ -184,9 +177,8 @@ impl Client {
         cert: &[u8],
         trusted_root_id: NvmId,
     ) -> Result<(), WolfHsmError> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::Ffi {
-            code: -1,
-            func: "cert_verify_acert: cert too large for u32",
+        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "cert_verify_acert: cert exceeds u32::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
         // SAFETY: cert pointer is valid for the duration of this call.

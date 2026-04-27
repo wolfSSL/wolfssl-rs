@@ -2,14 +2,14 @@ use std::ffi::CString;
 use std::pin::Pin;
 
 use wolfhsm_sys::{
-    posixTransportShm_Cleanup, posixTransportShm_ClientInit, posixTransportShm_RecvResponse,
-    posixTransportShm_SendRequest, posixTransportShmClientContext, posixTransportShmConfig,
-    posixTransportTcp_CleanupConnect, posixTransportTcp_InitConnect, posixTransportTcp_RecvResponse,
-    posixTransportTcp_SendRequest, posixTransportTcpClientContext, posixTransportTcpConfig,
-    posixTransportUds_CleanupConnect, posixTransportUds_InitConnect, posixTransportUds_RecvResponse,
-    posixTransportUds_SendRequest, posixTransportUdsClientContext, posixTransportUdsConfig,
-    wh_Client_Cleanup, wh_Client_CommInfo, wh_Client_Echo, wh_Client_Init, whClientConfig,
-    whClientContext, whCommClientConfig, whTransportClientCb,
+    posixTransportShmClientContext, posixTransportShmConfig, posixTransportShm_Cleanup,
+    posixTransportShm_ClientInit, posixTransportShm_RecvResponse, posixTransportShm_SendRequest,
+    posixTransportTcpClientContext, posixTransportTcpConfig, posixTransportTcp_CleanupConnect,
+    posixTransportTcp_InitConnect, posixTransportTcp_RecvResponse, posixTransportTcp_SendRequest,
+    posixTransportUdsClientContext, posixTransportUdsConfig, posixTransportUds_CleanupConnect,
+    posixTransportUds_InitConnect, posixTransportUds_RecvResponse, posixTransportUds_SendRequest,
+    whClientConfig, whClientContext, whCommClientConfig, whTransportClientCb, wh_Client_Cleanup,
+    wh_Client_CommInfo, wh_Client_Echo, wh_Client_Init,
 };
 
 use crate::error::WolfHsmError;
@@ -124,13 +124,57 @@ pub struct ServerInfo {
 
 /// A connected wolfHSM client.
 ///
+/// `Client` is `Send` but not `Sync`. Only one request can be in-flight at a
+/// time; the `&mut self` receiver enforces this at the type level.
+///
 /// The internal wolfCrypt CryptoCb registration stores the address of the C
-/// context, so the allocation must not move after `wh_Client_Init`.  This is
+/// context, so the allocation must not move after `wh_Client_Init`. This is
 /// ensured by heap-allocating everything inside a `Pin<Box<ClientInner>>`.
 ///
-/// `Client` is `Send` (can be moved to another thread) but not `Sync`
-/// (whCommClient is not thread-safe).  It deliberately does not implement
-/// `Clone`.
+/// # Method index
+///
+/// Methods are defined in multiple modules via `impl Client` extension blocks.
+/// The full API is:
+///
+/// ## Connection
+/// - [`connect`][Client::connect] — open a connection to a wolfHSM server
+/// - [`echo`][Client::echo] — round-trip connectivity test
+/// - [`info`][Client::info] — query server configuration and state
+///
+/// ## Key cache (RAM keys)
+/// - [`key_cache`][Client::key_cache] — upload raw key bytes to HSM RAM
+/// - [`key_evict`][Client::key_evict] — remove key from RAM cache
+/// - [`key_commit`][Client::key_commit] — persist cached key to NVM
+/// - [`key_erase`][Client::key_erase] — permanently erase key from NVM
+///
+/// ## Cryptographic operations (use `with_*` helpers for safe RAII)
+/// - [`with_aes_key`][Client::with_aes_key] — AES-GCM encrypt/decrypt
+/// - [`with_cmac_key`][Client::with_cmac_key] — CMAC computation
+/// - [`with_ecc_p256_key`][Client::with_ecc_p256_key] — ECDSA sign/verify, ECDH
+/// - [`with_ed25519_key`][Client::with_ed25519_key] — Ed25519 sign/verify
+/// - [`with_curve25519_key`][Client::with_curve25519_key] — X25519 key exchange
+/// - [`with_rsa_key`][Client::with_rsa_key] — RSA raw operation
+/// - [`sha256`][Client::sha256] — one-shot SHA-256 hash
+/// - [`rng_generate`][Client::rng_generate] — generate random bytes
+///
+/// ## CryptoCb routing
+/// - [`register_cryptocb`][Client::register_cryptocb] — register this client as a wolfCrypt CryptoCb device
+///
+/// ## NVM storage
+/// - [`nvm_available`][Client::nvm_available] — query free NVM space
+/// - [`nvm_list`][Client::nvm_list] — list all NVM object IDs
+/// - [`nvm_metadata`][Client::nvm_metadata] — retrieve object metadata
+/// - [`nvm_read`][Client::nvm_read] — read an NVM object
+/// - [`nvm_read_raw`][Client::nvm_read_raw] — read NVM object without metadata round-trip
+/// - [`nvm_overwrite`][Client::nvm_overwrite] — overwrite an NVM object (⚠ not atomic)
+/// - [`nvm_delete`][Client::nvm_delete] — delete an NVM object
+///
+/// ## Monotonic counters
+/// - [`counter_init`][Client::counter_init] — create or reinitialise a counter
+/// - [`counter_increment`][Client::counter_increment] — increment by 1 (saturates)
+/// - [`counter_read`][Client::counter_read] — read current value
+/// - [`counter_reset`][Client::counter_reset] — reset to zero
+/// - [`counter_destroy`][Client::counter_destroy] — permanently destroy a counter
 pub struct Client {
     /// Pinned heap allocation containing all C state.  Never moved after init.
     inner: Pin<Box<ClientInner>>,
@@ -155,8 +199,9 @@ impl Client {
         // Build the transport-specific inner state.
         let transport_inner = match transport {
             Transport::Tcp { ip, port } => {
-                let ip_cstr =
-                    CString::new(ip).map_err(|_| WolfHsmError::Ffi { code: -1, func: "CString::new(ip)" })?;
+                let ip_cstr = CString::new(ip).map_err(|_| WolfHsmError::BadArgs {
+                    msg: "ip contains an interior NUL byte",
+                })?;
 
                 let transport_cb = whTransportClientCb {
                     Init: Some(posixTransportTcp_InitConnect),
@@ -168,14 +213,12 @@ impl Client {
                 // The C struct uses i16 for the port field.  Ports > 32767
                 // cannot be represented; reject them with a clear error rather
                 // than silently truncating to a negative or zero value.
-                let port_i16 = i16::try_from(port).map_err(|_| WolfHsmError::Ffi {
-                    code: -1,
-                    func: "TCP port must be ≤ 32767 (C transport uses i16)",
+                let port_i16 = i16::try_from(port).map_err(|_| WolfHsmError::BadArgs {
+                    msg: "TCP port must be \u{2264} 32767 (C transport uses i16)",
                 })?;
 
                 // SAFETY: zero-initialising a C POD struct is correct.
-                let transport_ctx: posixTransportTcpClientContext =
-                    unsafe { core::mem::zeroed() };
+                let transport_ctx: posixTransportTcpClientContext = unsafe { core::mem::zeroed() };
                 let transport_cfg = posixTransportTcpConfig {
                     server_ip_string: ip_cstr.as_ptr() as *mut _,
                     server_port: port_i16,
@@ -190,8 +233,9 @@ impl Client {
             }
 
             Transport::Uds { path } => {
-                let path_cstr = CString::new(path)
-                    .map_err(|_| WolfHsmError::Ffi { code: -1, func: "CString::new(path)" })?;
+                let path_cstr = CString::new(path).map_err(|_| WolfHsmError::BadArgs {
+                    msg: "path contains an interior NUL byte",
+                })?;
 
                 let transport_cb = whTransportClientCb {
                     Init: Some(posixTransportUds_InitConnect),
@@ -200,8 +244,7 @@ impl Client {
                     Cleanup: Some(posixTransportUds_CleanupConnect),
                 };
 
-                let transport_ctx: posixTransportUdsClientContext =
-                    unsafe { core::mem::zeroed() };
+                let transport_ctx: posixTransportUdsClientContext = unsafe { core::mem::zeroed() };
                 let transport_cfg = posixTransportUdsConfig {
                     server_path: path_cstr.as_ptr(),
                 };
@@ -214,9 +257,14 @@ impl Client {
                 }))
             }
 
-            Transport::Shm { name, req_size, resp_size } => {
-                let name_cstr = CString::new(name)
-                    .map_err(|_| WolfHsmError::Ffi { code: -1, func: "CString::new(name)" })?;
+            Transport::Shm {
+                name,
+                req_size,
+                resp_size,
+            } => {
+                let name_cstr = CString::new(name).map_err(|_| WolfHsmError::BadArgs {
+                    msg: "name contains an interior NUL byte",
+                })?;
 
                 let transport_cb = whTransportClientCb {
                     Init: Some(posixTransportShm_ClientInit),
@@ -225,8 +273,7 @@ impl Client {
                     Cleanup: Some(posixTransportShm_Cleanup),
                 };
 
-                let transport_ctx: posixTransportShmClientContext =
-                    unsafe { core::mem::zeroed() };
+                let transport_ctx: posixTransportShmClientContext = unsafe { core::mem::zeroed() };
                 let transport_cfg = posixTransportShmConfig {
                     name: name_cstr.as_ptr() as *mut _,
                     dma_size: 0,
@@ -283,10 +330,10 @@ impl Client {
     /// The server reflects `data` back.  `buf` must be at least as large as
     /// `data`.  Returns the number of bytes written into `buf`.
     pub fn echo(&mut self, data: &[u8], buf: &mut [u8]) -> Result<usize, WolfHsmError> {
-        let snd_len = u16::try_from(data.len())
-            .map_err(|_| WolfHsmError::Ffi { code: -1, func: "wh_Client_Echo: data too large" })?;
-        let mut rcv_len: u16 = u16::try_from(buf.len())
-            .unwrap_or(u16::MAX);
+        let snd_len = u16::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "echo data exceeds u16::MAX bytes",
+        })?;
+        let mut rcv_len: u16 = u16::try_from(buf.len()).unwrap_or(u16::MAX);
 
         // SAFETY: pointers are valid for the duration of this call.
         let rc = unsafe {
@@ -384,7 +431,7 @@ impl Drop for Client {
         let rc = unsafe { wh_Client_Cleanup(self.ctx_ptr()) };
         // Log but do not panic — panicking in Drop is unsound.
         if rc != 0 {
-            eprintln!("wh_Client_Cleanup failed: {rc}");
+            log::warn!("wh_Client_Cleanup failed: {rc}");
         }
     }
 }
