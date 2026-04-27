@@ -1,13 +1,18 @@
 use core::fmt;
 
+/// Inclusive lower bound of the wolfHSM WH_ERROR_* code range.
+pub(crate) const WH_ERROR_MIN: i32 = -2302;
+/// Inclusive upper bound of the wolfHSM WH_ERROR_* code range (WH_ERROR_BADARGS).
+pub(crate) const WH_ERROR_MAX: i32 = -2000;
+
 /// Error type for wolfHSM operations.
 ///
 /// Distinguishes between errors originating from the wolfHSM C library
-/// (WH_ERROR_* range -2000 to -2302) and errors from lower-level
-/// wolfSSL/wolfCrypt FFI calls.
+/// (WH_ERROR_* range [`WH_ERROR_MIN`]..=[`WH_ERROR_MAX`]) and errors from
+/// lower-level wolfSSL/wolfCrypt FFI calls.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WolfHsmError {
-    /// A wolfHSM error code (WH_ERROR_* range -2000 to -2302).
+    /// A wolfHSM error code (WH_ERROR_* range -2302 to -2000).
     Wh {
         /// The wolfHSM error code (negative integer in the WH_ERROR_* range).
         code: i32,
@@ -22,13 +27,27 @@ pub enum WolfHsmError {
         /// Name of the C function that returned the error.
         func: &'static str,
     },
+    /// A CryptoCb device is already registered for this process.
+    ///
+    /// Only one [`crate::CryptoCbGuard`] can exist at a time.  Drop the
+    /// existing guard before registering again.
+    AlreadyRegistered,
+    /// An NVM delete succeeded but the subsequent add failed.
+    ///
+    /// The NVM object with `id` was deleted from the server before the add
+    /// was attempted, so the original data is permanently lost.  The caller
+    /// should check whether `id` still needs to be recreated.
+    DataLost {
+        /// The NVM object ID that was deleted before the add failed.
+        id: u16,
+    },
 }
 
 impl WolfHsmError {
     /// Map a wolfHSM C return code to a `Result`.
     ///
     /// - `0` → `Ok(())`
-    /// - WH_ERROR_* range (`-2302..=-2000`) → `Err(WolfHsmError::Wh { code })`
+    /// - WH_ERROR_* range (`WH_ERROR_MIN..=WH_ERROR_MAX`) → `Err(WolfHsmError::Wh { code })`
     /// - Any other nonzero value → `Err(WolfHsmError::Ffi { code, func })`
     ///
     /// `func` is the C function name, included in `Ffi` errors for diagnostics.
@@ -36,7 +55,7 @@ impl WolfHsmError {
     pub fn check(rc: i32, func: &'static str) -> Result<(), WolfHsmError> {
         if rc == 0 {
             Ok(())
-        } else if (-2302..=-2000).contains(&rc) {
+        } else if (WH_ERROR_MIN..=WH_ERROR_MAX).contains(&rc) {
             Err(WolfHsmError::Wh { code: rc })
         } else {
             Err(WolfHsmError::Ffi { code: rc, func })
@@ -48,7 +67,15 @@ impl fmt::Display for WolfHsmError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             WolfHsmError::Wh { code } => write!(f, "wolfHSM error {code}"),
-            WolfHsmError::Ffi { code, func } => write!(f, "{func} failed: wolfSSL FFI error {code}"),
+            WolfHsmError::Ffi { code, func } => {
+                write!(f, "{func} failed: wolfSSL FFI error {code}")
+            }
+            WolfHsmError::AlreadyRegistered => {
+                write!(f, "wolfHSM CryptoCb already registered; drop the existing guard first")
+            }
+            WolfHsmError::DataLost { id } => {
+                write!(f, "wolfHSM NVM object {id} deleted but add failed; original data lost")
+            }
         }
     }
 }

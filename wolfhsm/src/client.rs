@@ -143,10 +143,15 @@ unsafe impl Send for Client {}
 impl Client {
     /// Connect to a wolfHSM server using the given transport.
     ///
+    /// `client_id` is the wolfHSM client ID sent to the server on every
+    /// request.  The server uses it for access-control checks; consult the
+    /// server configuration for valid values.  A common development default
+    /// is `1`.
+    ///
     /// Initialises the C client context via `wh_Client_Init`.  The internal C
     /// structs are heap-allocated and pinned so their addresses remain stable
     /// for the lifetime of the `Client`.
-    pub fn connect(transport: Transport) -> Result<Self, WolfHsmError> {
+    pub fn connect(transport: Transport, client_id: u8) -> Result<Self, WolfHsmError> {
         // Build the transport-specific inner state.
         let transport_inner = match transport {
             Transport::Tcp { ip, port } => {
@@ -160,12 +165,20 @@ impl Client {
                     Cleanup: Some(posixTransportTcp_CleanupConnect),
                 };
 
+                // The C struct uses i16 for the port field.  Ports > 32767
+                // cannot be represented; reject them with a clear error rather
+                // than silently truncating to a negative or zero value.
+                let port_i16 = i16::try_from(port).map_err(|_| WolfHsmError::Ffi {
+                    code: -1,
+                    func: "TCP port must be ≤ 32767 (C transport uses i16)",
+                })?;
+
                 // SAFETY: zero-initialising a C POD struct is correct.
                 let transport_ctx: posixTransportTcpClientContext =
                     unsafe { core::mem::zeroed() };
                 let transport_cfg = posixTransportTcpConfig {
                     server_ip_string: ip_cstr.as_ptr() as *mut _,
-                    server_port: port as i16,
+                    server_port: port_i16,
                 };
 
                 TransportInner::Tcp(Box::new(TcpInner {
@@ -250,7 +263,7 @@ impl Client {
         inner_mut.comm_cfg.transport_context = ctx_ptr;
         inner_mut.comm_cfg.transport_config = cfg_ptr;
         inner_mut.comm_cfg.connect_cb = None;
-        inner_mut.comm_cfg.client_id = 1;
+        inner_mut.comm_cfg.client_id = client_id;
 
         // Build the whClientConfig pointing to our stable comm_cfg.
         let client_cfg = whClientConfig {

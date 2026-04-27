@@ -1,3 +1,4 @@
+use core::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use wolfhsm_sys::{wc_CryptoInfo, wh_Client_CryptoCb};
@@ -42,27 +43,32 @@ static REGISTERED: AtomicBool = AtomicBool::new(false);
 /// global table and allows a new registration.  Only one `CryptoCbGuard` can
 /// exist at a time per process; [`Client::register_cryptocb`] returns an error
 /// if one is already live.
-pub struct CryptoCbGuard(());
+///
+/// The `'a` lifetime parameter ties the guard to the [`Client`] that created
+/// it.  The borrow checker prevents the `Client` from being dropped or moved
+/// while the guard is alive, which guarantees that the raw pointer stored in
+/// the wolfCrypt global CryptoCb table is always valid.
+pub struct CryptoCbGuard<'a>(PhantomData<&'a mut Client>);
 
 impl Client {
     /// Register this wolfHSM client as a wolfCrypt CryptoCb device.
     ///
     /// Routes all wolfCrypt operations tagged with [`DEV_ID`] to this wolfHSM
-    /// server.  Only one registration is permitted per process.  Returns an
-    /// error if a registration is already live.
+    /// server.  Only one registration is permitted per process.  Returns
+    /// [`WolfHsmError::AlreadyRegistered`] if a registration is already live.
     ///
     /// Drop the returned [`CryptoCbGuard`] to unregister.
-    pub fn register_cryptocb(&mut self) -> Result<CryptoCbGuard, WolfHsmError> {
+    pub fn register_cryptocb(&mut self) -> Result<CryptoCbGuard<'_>, WolfHsmError> {
         // Claim the global registration slot; fail if already taken.
         REGISTERED
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .map_err(|_| WolfHsmError::Wh { code: -2000 })?;
+            .map_err(|_| WolfHsmError::AlreadyRegistered)?;
 
         // SAFETY: ctx_ptr() returns a valid pointer to the pinned whClientContext
         // for the lifetime of `self`.  wc_CryptoCb_RegisterDevice stores it in
-        // the wolfCrypt global table; it must remain valid until we unregister
-        // (i.e. until CryptoCbGuard is dropped, which must happen before Client
-        // is dropped — the caller is responsible for this ordering).
+        // the wolfCrypt global table.  The `'_` lifetime on CryptoCbGuard
+        // ensures the guard cannot outlive `self`, so the pointer remains valid
+        // for the entire period that the CryptoCb callback might be invoked.
         let rc = unsafe {
             wc_CryptoCb_RegisterDevice(DEV_ID, Some(wh_Client_CryptoCb), self.ctx_ptr().cast())
         };
@@ -73,11 +79,11 @@ impl Client {
             return Err(WolfHsmError::Ffi { code: rc, func: "wc_CryptoCb_RegisterDevice" });
         }
 
-        Ok(CryptoCbGuard(()))
+        Ok(CryptoCbGuard(PhantomData))
     }
 }
 
-impl Drop for CryptoCbGuard {
+impl Drop for CryptoCbGuard<'_> {
     fn drop(&mut self) {
         // SAFETY: DEV_ID was registered in register_cryptocb; unregistering it
         // removes the entry from the wolfCrypt global table.

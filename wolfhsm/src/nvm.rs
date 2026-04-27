@@ -153,13 +153,20 @@ impl Client {
         })
     }
 
-    /// Read the full contents of the NVM object identified by `id`.
+    /// Read the contents of the NVM object identified by `id`.
     ///
-    /// Fetches the object length via `nvm_metadata` first, then reads all bytes
-    /// starting at `offset`.
+    /// Fetches the object length via `nvm_metadata` first, then reads the
+    /// bytes from `offset` to the end of the object.  Returns `Ok(vec![])`
+    /// when `offset >= meta.len` (nothing left to read).
     pub fn nvm_read(&mut self, id: NvmId, offset: u16) -> Result<Vec<u8>, WolfHsmError> {
         let meta = self.nvm_metadata(id)?;
-        let data_len = meta.len;
+        // Request only the bytes that remain after `offset`.  Without this,
+        // `data_len` would exceed the object length, causing the server to
+        // return an error.
+        let data_len = meta.len.saturating_sub(offset);
+        if data_len == 0 {
+            return Ok(vec![]);
+        }
 
         let mut out_rc: i32 = 0;
         let mut out_len: u16 = 0;
@@ -187,9 +194,14 @@ impl Client {
     /// Write (or overwrite) an NVM object.
     ///
     /// If `id` is not [`NvmId::INVALID`], the existing object with that ID is
-    /// deleted first via [`nvm_delete`][Self::nvm_delete].  `label` is
-    /// truncated to 24 bytes if longer.  `data` must fit in a `u16` (≤ 65535
-    /// bytes).
+    /// deleted first via [`nvm_delete`][Self::nvm_delete], then the new data
+    /// is added.  This delete-then-add sequence is **not atomic**: if the add
+    /// fails after a successful delete, the original object is permanently
+    /// lost and [`WolfHsmError::DataLost`] is returned, carrying the affected
+    /// ID.  The NVM protocol has no rollback facility.
+    ///
+    /// `label` is truncated to 24 bytes if longer.  `data` must fit in a
+    /// `u16` (≤ 65535 bytes).
     pub fn nvm_write(
         &mut self,
         id: NvmId,
@@ -203,9 +215,12 @@ impl Client {
             func: "nvm_write: data too large for u16",
         })?;
 
-        if id != NvmId::INVALID {
+        let deleted = if id != NvmId::INVALID {
             self.nvm_delete(id)?;
-        }
+            true
+        } else {
+            false
+        };
 
         // Truncate label to 24 bytes; copy into a local mutable buffer as the
         // C API takes *mut u8 even though it does not modify the label.
@@ -229,8 +244,18 @@ impl Client {
                 &mut out_rc,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_NvmAddObject")?;
-        WolfHsmError::check(out_rc, "wh_Client_NvmAddObject(server)")?;
+
+        // If the add fails after we already deleted, report data loss so the
+        // caller knows the old object is gone and cannot be recovered.
+        let map_add_err = |e: WolfHsmError| {
+            if deleted {
+                WolfHsmError::DataLost { id: id.0 }
+            } else {
+                e
+            }
+        };
+        WolfHsmError::check(rc, "wh_Client_NvmAddObject").map_err(map_add_err)?;
+        WolfHsmError::check(out_rc, "wh_Client_NvmAddObject(server)").map_err(map_add_err)?;
 
         Ok(())
     }
