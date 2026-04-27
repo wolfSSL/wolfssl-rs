@@ -17,12 +17,9 @@ fn mldsa_sig_len(level: u8) -> usize {
 
 /// ML-DSA (Dilithium) key handle. Level is 44, 65, or 87.
 ///
-/// # Resource management
-///
-/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
-/// You **must** call [`evict`][MlDsaKey::evict] when done; dropping the handle
-/// without evicting silently leaks the cache slot and will eventually cause
-/// `wh_Client_*` calls to fail with a "cache full" error.
+/// Keys are accessed exclusively through [`Client::with_mldsa_key`], which
+/// generates a key, runs the provided closure, and always evicts it on exit —
+/// including when the closure returns `Err`.
 pub struct MlDsaKey {
     pub(crate) id: KeyId,
     level: u8,
@@ -35,7 +32,7 @@ impl MlDsaKey {
     }
 
     /// Generate an ML-DSA key at the given level (44, 65, or 87).
-    pub fn generate(client: &mut Client, level: u8) -> Result<Self, WolfHsmError> {
+    pub(crate) fn generate(client: &mut Client, level: u8) -> Result<Self, WolfHsmError> {
         if !matches!(level, 44 | 65 | 87) {
             return Err(WolfHsmError::BadArgs {
                 msg: "MlDsaKey::generate: level must be 44, 65, or 87",
@@ -56,12 +53,6 @@ impl MlDsaKey {
             id: KeyId(key_id),
             level,
         })
-    }
-
-    /// Evict this key from the HSM key cache.
-    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
-        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
-        client.key_evict(id)
     }
 
     /// Sign a message. Signature size depends on level:
@@ -128,7 +119,7 @@ impl Drop for MlDsaKey {
         if self.id != KeyId::ERASED {
             log::warn!(
                 "wolfhsm: MlDsaKey (id={}) dropped without eviction — \
-                 HSM cache slot leaked. Use with_mldsa_key() or call .evict().",
+                 HSM cache slot leaked. Use with_mldsa_key().",
                 self.id.0
             );
         }

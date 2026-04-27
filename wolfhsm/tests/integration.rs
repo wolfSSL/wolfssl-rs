@@ -9,14 +9,7 @@
 //! Every test silently returns (is skipped) when `WOLFHSM_SERVER` is unset.
 
 use hex_literal::hex;
-use wolfhsm::crypto::{
-    aes::AesKey,
-    cmac::CmacKey,
-    curve25519::Curve25519Key,
-    ecc::EccP256Key,
-    ed25519::Ed25519Key,
-    rsa::{RsaKey, RsaRawOp},
-};
+use wolfhsm::crypto::rsa::RsaRawOp;
 use wolfhsm::nvm::NvmId;
 use wolfhsm::{Client, Transport, WolfHsmError};
 
@@ -83,10 +76,11 @@ fn rng_nonzero() {
 // ── Key cache ─────────────────────────────────────────────────────────────────
 
 #[test]
-fn key_cache_and_evict() {
+fn with_key_lifecycle() {
     require_client!(client);
-    let key = AesKey::cache(&mut client, &[0u8; 32]).expect("key_cache");
-    key.evict(&mut client).expect("key_evict");
+    client
+        .with_aes_key(&[0u8; 32], |_, _| Ok(()) as Result<(), WolfHsmError>)
+        .expect("with_aes_key lifecycle");
 }
 
 // ── NVM ───────────────────────────────────────────────────────────────────────
@@ -181,9 +175,9 @@ fn cmac_nist_empty_message() {
     // NIST SP 800-38B AES-128 CMAC, Key1, empty message → Example 1
     let key_bytes = hex!("2b7e151628aed2a6abf7158809cf4f3c");
     let expected = hex!("bb1d6929e95937287fa37d129b756746");
-    let key = CmacKey::cache(&mut client, &key_bytes).expect("cmac cache");
-    let tag = key.compute(&mut client, b"").expect("cmac compute");
-    key.evict(&mut client).expect("cmac evict");
+    let tag = client
+        .with_cmac_key(&key_bytes, |key, client| key.compute(client, b""))
+        .expect("cmac compute");
     assert_eq!(tag, expected);
 }
 
@@ -199,11 +193,9 @@ fn aes_gcm_nist_empty_plaintext() {
     let iv = [0u8; 12];
     let expected_tag = hex!("530f8afbc74536b9a963b4f1c4cb738b");
 
-    let key = AesKey::cache(&mut client, &key_bytes).expect("aes cache");
-    let (ct, tag) = key
-        .gcm_encrypt(&mut client, &iv, &[], &[])
-        .expect("gcm_encrypt");
-    key.evict(&mut client).expect("aes evict");
+    let (ct, tag) = client
+        .with_aes_key(&key_bytes, |key, client| key.gcm_encrypt(client, &iv, &[], &[]))
+        .expect("aes gcm_encrypt");
 
     assert!(ct.is_empty(), "ciphertext of empty plaintext must be empty");
     assert_eq!(tag, expected_tag);
@@ -221,15 +213,16 @@ fn ecc_p256_sign_verify_cross() {
     use p256::pkcs8::DecodePublicKey;
     use sha2::{Digest, Sha256};
 
-    let key = EccP256Key::generate(&mut client).expect("ecc generate");
     let msg = b"cross-validation: wolfhsm signs, p256 verifies";
     let digest: [u8; 32] = Sha256::digest(msg).into();
 
-    let sig_der = key
-        .sign_digest(&mut client, &digest)
-        .expect("ecc sign_digest");
-    let pub_der = key.public_key_der(&mut client).expect("ecc public_key_der");
-    key.evict(&mut client).expect("ecc evict");
+    let (sig_der, pub_der) = client
+        .with_ecc_p256_key(|key, client| {
+            let sig_der = key.sign_digest(client, &digest)?;
+            let pub_der = key.public_key_der(client)?;
+            Ok((sig_der, pub_der))
+        })
+        .expect("ecc sign+export");
 
     let vk =
         VerifyingKey::from_public_key_der(&pub_der).expect("p256: parse SubjectPublicKeyInfo DER");
@@ -250,8 +243,6 @@ fn ecc_p256_ecdh_cross() {
     use p256::{ecdh::EphemeralSecret, PublicKey};
     use rand::rngs::OsRng;
 
-    let hsm_key = EccP256Key::generate(&mut client).expect("ecc generate");
-
     // Local side: generate a p256 ephemeral key pair.
     let local_secret = EphemeralSecret::random(&mut OsRng);
     let local_pub_key = local_secret.public_key();
@@ -259,16 +250,14 @@ fn ecc_p256_ecdh_cross() {
         .to_public_key_der()
         .expect("p256: encode SubjectPublicKeyInfo DER");
 
-    // HSM side: ECDH with the local public key.
-    let hsm_shared = hsm_key
-        .ecdh(&mut client, local_pub_der.as_bytes())
-        .expect("ecc ecdh");
-
-    // Export HSM public key for local ECDH computation.
-    let hsm_pub_der = hsm_key
-        .public_key_der(&mut client)
-        .expect("ecc public_key_der");
-    hsm_key.evict(&mut client).expect("ecc evict");
+    // HSM side: ECDH + export public key inside the closure.
+    let (hsm_shared, hsm_pub_der) = client
+        .with_ecc_p256_key(|key, client| {
+            let hsm_shared = key.ecdh(client, local_pub_der.as_bytes())?;
+            let hsm_pub_der = key.public_key_der(client)?;
+            Ok((hsm_shared, hsm_pub_der))
+        })
+        .expect("ecc ecdh+export");
 
     // Local side: ECDH with the HSM public key.
     let hsm_public = PublicKey::from_public_key_der(&hsm_pub_der)
@@ -291,12 +280,15 @@ fn ed25519_sign_verify_cross() {
     require_client!(client);
     use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 
-    let key = Ed25519Key::generate(&mut client).expect("ed25519 generate");
     let msg = b"cross-validation: wolfhsm signs, ed25519-dalek verifies";
 
-    let sig_bytes = key.sign(&mut client, msg).expect("ed25519 sign");
-    let pub_bytes = key.public_key(&mut client).expect("ed25519 public_key");
-    key.evict(&mut client).expect("ed25519 evict");
+    let (sig_bytes, pub_bytes) = client
+        .with_ed25519_key(|key, client| {
+            let sig_bytes = key.sign(client, msg)?;
+            let pub_bytes = key.public_key(client)?;
+            Ok((sig_bytes, pub_bytes))
+        })
+        .expect("ed25519 sign+export");
 
     let vk = VerifyingKey::from_bytes(&pub_bytes).expect("ed25519-dalek: parse public key bytes");
     let sig = Signature::from_bytes(&sig_bytes);
@@ -315,22 +307,18 @@ fn curve25519_x25519_ecdh_cross() {
     use rand::rngs::OsRng;
     use x25519_dalek::{PublicKey, StaticSecret};
 
-    let hsm_key = Curve25519Key::generate(&mut client).expect("curve25519 generate");
-
     // Local side: generate an x25519 static secret.
     let local_secret = StaticSecret::random_from_rng(OsRng);
     let local_public = PublicKey::from(&local_secret);
 
-    // HSM side: DH with the local public key (little-endian bytes).
-    let hsm_shared = hsm_key
-        .diffie_hellman(&mut client, local_public.as_bytes())
-        .expect("curve25519 diffie_hellman");
-
-    // Export HSM public key for local DH computation.
-    let hsm_pub_bytes = hsm_key
-        .public_key(&mut client)
-        .expect("curve25519 public_key");
-    hsm_key.evict(&mut client).expect("curve25519 evict");
+    // HSM side: DH + export public key inside the closure.
+    let (hsm_shared, hsm_pub_bytes) = client
+        .with_curve25519_key(|key, client| {
+            let hsm_shared = key.diffie_hellman(client, local_public.as_bytes())?;
+            let hsm_pub_bytes = key.public_key(client)?;
+            Ok((hsm_shared, hsm_pub_bytes))
+        })
+        .expect("curve25519 dh+export");
 
     // Local side: DH with the HSM public key.
     let hsm_public = PublicKey::from(hsm_pub_bytes);
@@ -348,45 +336,40 @@ fn curve25519_x25519_ecdh_cross() {
 #[test]
 fn rsa_round_trip() {
     require_client!(client);
+    use rsa::{pkcs8::DecodePublicKey, traits::PublicKeyParts, BigUint, RsaPublicKey};
+
     // RSA-1024 for faster key generation during testing.
-    let key = RsaKey::generate(&mut client, 1024, 65537).expect("rsa generate");
-    let key_bytes = key.key_size_bytes() as usize;
-
-    // Build a valid raw RSA input: zero-padded, small value, guaranteed < n.
-    let mut msg = vec![0u8; key_bytes];
-    msg[key_bytes - 1] = 0x42;
-
-    let ciphertext = key
-        .raw_op(&mut client, RsaRawOp::PublicEncrypt, &msg)
-        .expect("rsa PublicEncrypt");
+    // All operations happen inside the closure; return the values needed for
+    // the pure-Rust cross-validation.
+    let (msg, pub_der, ciphertext, plaintext) = client
+        .with_rsa_key(1024, 65537, |key, client| {
+            let key_size = key.key_size_bytes() as usize;
+            // Build a valid raw RSA input: zero-padded, small value, guaranteed < n.
+            let mut msg = vec![0u8; key_size];
+            msg[key_size - 1] = 0x42;
+            let pub_der = key.public_key_der(client)?;
+            let ciphertext = key.raw_op(client, RsaRawOp::PublicEncrypt, &msg)?;
+            let plaintext = key.raw_op(client, RsaRawOp::PrivateDecrypt, &ciphertext)?;
+            Ok((msg, pub_der, ciphertext, plaintext))
+        })
+        .expect("rsa operations");
 
     // Cross-validate PublicEncrypt against pure Rust: export the public key
     // (n, e) and independently compute m^e mod n.  This ensures the HSM
     // produces a standard RSA result, not merely one it can reverse itself.
-    {
-        use rsa::{pkcs8::DecodePublicKey, traits::PublicKeyParts, BigUint, RsaPublicKey};
-
-        let pub_der = key
-            .public_key_der(&mut client)
-            .expect("export public key DER");
-        let pub_key = RsaPublicKey::from_public_key_der(&pub_der).expect("parse public key DER");
-        let m_big = BigUint::from_bytes_be(&msg);
-        let c_expected = m_big.modpow(pub_key.e(), pub_key.n());
-        // BigUint strips leading zeros; restore to key length.
-        let mut c_expected_bytes = c_expected.to_bytes_be();
-        while c_expected_bytes.len() < key_bytes {
-            c_expected_bytes.insert(0, 0);
-        }
-        assert_eq!(
-            ciphertext, c_expected_bytes,
-            "HSM PublicEncrypt mismatch vs pure-Rust m^e mod n"
-        );
+    let key_size = msg.len();
+    let pub_key = RsaPublicKey::from_public_key_der(&pub_der).expect("parse public key DER");
+    let m_big = BigUint::from_bytes_be(&msg);
+    let c_expected = m_big.modpow(pub_key.e(), pub_key.n());
+    // BigUint strips leading zeros; restore to key length.
+    let mut c_expected_bytes = c_expected.to_bytes_be();
+    while c_expected_bytes.len() < key_size {
+        c_expected_bytes.insert(0, 0);
     }
-
-    let plaintext = key
-        .raw_op(&mut client, RsaRawOp::PrivateDecrypt, &ciphertext)
-        .expect("rsa PrivateDecrypt");
-    key.evict(&mut client).expect("rsa evict");
+    assert_eq!(
+        ciphertext, c_expected_bytes,
+        "HSM PublicEncrypt mismatch vs pure-Rust m^e mod n"
+    );
 
     assert_eq!(plaintext, msg, "RSA round-trip plaintext mismatch");
 }
@@ -397,13 +380,13 @@ fn rsa_round_trip() {
 #[test]
 fn mldsa_round_trip() {
     require_client!(client);
-    use wolfhsm::crypto::mldsa::MlDsaKey;
-
-    let key = MlDsaKey::generate(&mut client, 44).expect("mldsa generate level=44");
     let msg = b"ML-DSA level-44 round-trip test";
-    let sig = key.sign(&mut client, msg).expect("mldsa sign");
-    key.verify(&mut client, msg, &sig).expect("mldsa verify");
-    key.evict(&mut client).expect("mldsa evict");
+    client
+        .with_mldsa_key(44, |key, client| {
+            let sig = key.sign(client, msg)?;
+            key.verify(client, msg, &sig)
+        })
+        .expect("mldsa round-trip");
 }
 
 // ── CryptoCb: registration / guard lifecycle ─────────────────────────────────

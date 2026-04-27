@@ -6,19 +6,16 @@ use crate::key::{with_key, KeyId};
 
 /// CMAC-AES key handle. Key lives in HSM cache.
 ///
-/// # Resource management
-///
-/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
-/// You **must** call [`evict`][CmacKey::evict] when done; dropping the handle
-/// without evicting silently leaks the cache slot and will eventually cause
-/// `wh_Client_*` calls to fail with a "cache full" error.
+/// Keys are accessed exclusively through [`Client::with_cmac_key`], which
+/// caches the key bytes, runs the provided closure, and always evicts it on exit —
+/// including when the closure returns `Err`.
 pub struct CmacKey {
     pub(crate) id: KeyId,
 }
 
 impl CmacKey {
     /// Cache raw AES key bytes for CMAC. Key must be 16, 24, or 32 bytes.
-    pub fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
+    pub(crate) fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
         if !matches!(key_bytes.len(), 16 | 24 | 32) {
             return Err(WolfHsmError::BadArgs {
                 msg: "key must be 16, 24, or 32 bytes",
@@ -26,12 +23,6 @@ impl CmacKey {
         }
         let id = client.key_cache(key_bytes, b"cmac")?;
         Ok(CmacKey { id })
-    }
-
-    /// Evict this key from the HSM key cache.
-    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
-        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
-        client.key_evict(id)
     }
 
     /// Compute a 16-byte CMAC tag over data.
@@ -68,7 +59,7 @@ impl Drop for CmacKey {
         if self.id != KeyId::ERASED {
             log::warn!(
                 "wolfhsm: CmacKey (id={}) dropped without eviction — \
-                 HSM cache slot leaked. Use with_cmac_key() or call .evict().",
+                 HSM cache slot leaked. Use with_cmac_key().",
                 self.id.0
             );
         }

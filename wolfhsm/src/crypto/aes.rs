@@ -6,19 +6,16 @@ use crate::key::{with_key, KeyId};
 
 /// AES key handle (GCM mode). Key lives in HSM cache.
 ///
-/// # Resource management
-///
-/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
-/// You **must** call [`evict`][AesKey::evict] when done; dropping the handle
-/// without evicting silently leaks the cache slot and will eventually cause
-/// `wh_Client_*` calls to fail with a "cache full" error.
+/// Keys are accessed exclusively through [`Client::with_aes_key`], which
+/// caches the key bytes, runs the provided closure, and always evicts it on exit —
+/// including when the closure returns `Err`.
 pub struct AesKey {
     pub(crate) id: KeyId,
 }
 
 impl AesKey {
     /// Cache raw key bytes in the HSM. `key_bytes` must be 16, 24, or 32 bytes.
-    pub fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
+    pub(crate) fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
         if !matches!(key_bytes.len(), 16 | 24 | 32) {
             return Err(WolfHsmError::BadArgs {
                 msg: "key must be 16, 24, or 32 bytes",
@@ -26,12 +23,6 @@ impl AesKey {
         }
         let id = client.key_cache(key_bytes, b"aes")?;
         Ok(AesKey { id })
-    }
-
-    /// Evict this key from the HSM key cache.
-    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
-        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
-        client.key_evict(id)
     }
 
     /// AES-GCM encrypt. Returns (ciphertext, 16-byte auth tag).
@@ -120,7 +111,7 @@ impl Drop for AesKey {
         if self.id != KeyId::ERASED {
             log::warn!(
                 "wolfhsm: AesKey (id={}) dropped without eviction — \
-                 HSM cache slot leaked. Use with_aes_key() or call .evict().",
+                 HSM cache slot leaked. Use with_aes_key().",
                 self.id.0
             );
         }

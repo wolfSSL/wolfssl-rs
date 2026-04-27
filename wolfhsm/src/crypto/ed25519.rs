@@ -6,19 +6,16 @@ use crate::key::{with_key, KeyId};
 
 /// Ed25519 key handle. The private key lives in the HSM key cache.
 ///
-/// # Resource management
-///
-/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
-/// You **must** call [`evict`][Ed25519Key::evict] when done; dropping the handle
-/// without evicting silently leaks the cache slot and will eventually cause
-/// `wh_Client_*` calls to fail with a "cache full" error.
+/// Keys are accessed exclusively through [`Client::with_ed25519_key`], which
+/// generates a key, runs the provided closure, and always evicts it on exit —
+/// including when the closure returns `Err`.
 pub struct Ed25519Key {
     pub(crate) id: KeyId,
 }
 
 impl Ed25519Key {
     /// Generate an ephemeral Ed25519 key on the HSM (cached, not committed to NVM).
-    pub fn generate(client: &mut Client) -> Result<Self, WolfHsmError> {
+    pub(crate) fn generate(client: &mut Client) -> Result<Self, WolfHsmError> {
         let mut key_id: u16 = KeyId::ERASED.0;
         // SAFETY: ctx_ptr is valid for the duration of this call.
         let rc = unsafe { wolfhsm_ed25519_make_key(client.ctx_ptr(), &mut key_id) };
@@ -30,12 +27,6 @@ impl Ed25519Key {
             });
         }
         Ok(Ed25519Key { id: KeyId(key_id) })
-    }
-
-    /// Evict this key from the HSM key cache.
-    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
-        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
-        client.key_evict(id)
     }
 
     /// Export the 32-byte Ed25519 public key.
@@ -119,7 +110,7 @@ impl Drop for Ed25519Key {
         if self.id != KeyId::ERASED {
             log::warn!(
                 "wolfhsm: Ed25519Key (id={}) dropped without eviction — \
-                 HSM cache slot leaked. Use with_ed25519_key() or call .evict().",
+                 HSM cache slot leaked. Use with_ed25519_key().",
                 self.id.0
             );
         }

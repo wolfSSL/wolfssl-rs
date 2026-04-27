@@ -12,19 +12,16 @@ const ECC_SECP256R1: core::ffi::c_int = 1;
 
 /// ECC P-256 key handle. The private key lives in the HSM key cache.
 ///
-/// # Resource management
-///
-/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
-/// You **must** call [`evict`][EccP256Key::evict] when done; dropping the handle
-/// without evicting silently leaks the cache slot and will eventually cause
-/// `wh_Client_*` calls to fail with a "cache full" error.
+/// Keys are accessed exclusively through [`Client::with_ecc_p256_key`], which
+/// generates a key, runs the provided closure, and always evicts it on exit —
+/// including when the closure returns `Err`.
 pub struct EccP256Key {
     pub(crate) id: KeyId,
 }
 
 impl EccP256Key {
     /// Generate an ephemeral P-256 key on the HSM (cached, not committed to NVM).
-    pub fn generate(client: &mut Client) -> Result<Self, WolfHsmError> {
+    pub(crate) fn generate(client: &mut Client) -> Result<Self, WolfHsmError> {
         let mut key_id: u16 = KeyId::ERASED.0;
         // SAFETY: ctx_ptr is valid for the duration of this call.
         let rc = unsafe { wolfhsm_ecc_make_key(client.ctx_ptr(), ECC_SECP256R1, &mut key_id) };
@@ -36,12 +33,6 @@ impl EccP256Key {
             });
         }
         Ok(EccP256Key { id: KeyId(key_id) })
-    }
-
-    /// Evict this key from the HSM key cache.
-    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
-        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
-        client.key_evict(id)
     }
 
     /// Sign a pre-hashed digest (≤ 32 bytes for P-256 SHA-256).
@@ -157,7 +148,7 @@ impl Drop for EccP256Key {
         if self.id != KeyId::ERASED {
             log::warn!(
                 "wolfhsm: EccP256Key (id={}) dropped without eviction — \
-                 HSM cache slot leaked. Use with_ecc_p256_key() or call .evict().",
+                 HSM cache slot leaked. Use with_ecc_p256_key().",
                 self.id.0
             );
         }

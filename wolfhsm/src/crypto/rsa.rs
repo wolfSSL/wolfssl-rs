@@ -30,12 +30,9 @@ pub enum RsaRawOp {
 
 /// RSA key handle. Private key lives in HSM.
 ///
-/// # Resource management
-///
-/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
-/// You **must** call [`evict`][RsaKey::evict] when done; dropping the handle
-/// without evicting silently leaks the cache slot and will eventually cause
-/// `wh_Client_*` calls to fail with a "cache full" error.
+/// Keys are accessed exclusively through [`Client::with_rsa_key`], which
+/// generates a key, runs the provided closure, and always evicts it on exit —
+/// including when the closure returns `Err`.
 pub struct RsaKey {
     pub(crate) id: KeyId,
     key_size_bytes: u32,
@@ -44,7 +41,7 @@ pub struct RsaKey {
 impl RsaKey {
     /// Generate an RSA key. `bits` is key size (1024/2048/3072/4096).
     /// `e` is the public exponent (typically 65537).
-    pub fn generate(client: &mut Client, bits: u32, e: u64) -> Result<Self, WolfHsmError> {
+    pub(crate) fn generate(client: &mut Client, bits: u32, e: u64) -> Result<Self, WolfHsmError> {
         let mut key_id: u16 = 0;
         // SAFETY: ctx_ptr is valid for the duration of this call; key_id is a
         // valid stack allocation.
@@ -74,12 +71,6 @@ impl RsaKey {
             id: KeyId(key_id),
             key_size_bytes: out_size as u32,
         })
-    }
-
-    /// Evict this key from the HSM key cache.
-    pub fn evict(mut self, client: &mut Client) -> Result<(), WolfHsmError> {
-        let id = core::mem::replace(&mut self.id, KeyId::ERASED);
-        client.key_evict(id)
     }
 
     /// Raw RSA primitive. See [`RsaRawOp`] for available operations.
@@ -151,7 +142,7 @@ impl Drop for RsaKey {
         if self.id != KeyId::ERASED {
             log::warn!(
                 "wolfhsm: RsaKey (id={}) dropped without eviction — \
-                 HSM cache slot leaked. Use with_rsa_key() or call .evict().",
+                 HSM cache slot leaked. Use with_rsa_key().",
                 self.id.0
             );
         }
