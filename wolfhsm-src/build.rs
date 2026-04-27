@@ -20,7 +20,7 @@ fn main() {
     // ----------------------------------------------------------------
     // 2. Locate wolfSSL headers.
     // ----------------------------------------------------------------
-    let (wolfssl_include, wolfssl_settings_include, _wolfssl_mode) = locate_wolfssl_headers();
+    let (wolfssl_include, wolfssl_settings_include) = locate_wolfssl_headers();
 
     // ----------------------------------------------------------------
     // 3. Generate wolfhsm_cfg.h in OUT_DIR.
@@ -109,9 +109,10 @@ fn main() {
     ];
     for name in &core_sources {
         let path = src_dir.join(name);
-        if path.exists() {
-            build.file(&path);
-        }
+        // Fail loudly if a listed file is missing — a silent omission would
+        // produce a library that links but is missing functionality at runtime.
+        build.file(&path);
+        println!("cargo:rerun-if-changed={}", path.display());
     }
 
     // POSIX port files.
@@ -127,9 +128,8 @@ fn main() {
     ];
     for name in &posix_sources {
         let path = posix_dir.join(name);
-        if path.exists() {
-            build.file(&path);
-        }
+        build.file(&path);
+        println!("cargo:rerun-if-changed={}", path.display());
     }
 
     build.compile("wolfhsm");
@@ -209,25 +209,18 @@ fn locate_wolfhsm_src() -> PathBuf {
 // wolfSSL header discovery
 // ----------------------------------------------------------------
 
-enum WolfSslMode {
-    /// Pre-built install (WOLFSSL_INCLUDE_DIR or WOLFSSL_DIR).
-    PreBuilt,
-    /// Vendored source tree (WOLFSSL_SRC).
-    Vendored,
-}
-
-/// Returns `(wolfssl_include, wolfssl_settings_include, mode)`.
+/// Returns `(wolfssl_include, wolfssl_settings_include)`.
 ///
 /// `wolfssl_settings_include` is `Some` only in vendored mode, pointing to the
 /// directory that contains `user_settings.h` (the wolfssl-src crate directory,
 /// supplied via `WOLFSSL_SETTINGS_INCLUDE`).
-fn locate_wolfssl_headers() -> (PathBuf, Option<PathBuf>, WolfSslMode) {
+fn locate_wolfssl_headers() -> (PathBuf, Option<PathBuf>) {
     // Priority 1: WOLFSSL_INCLUDE_DIR — explicit include path to pre-built headers.
     if let Ok(val) = env::var("WOLFSSL_INCLUDE_DIR") {
         if !val.is_empty() {
             let path = PathBuf::from(&val);
             if path.exists() {
-                return (path, None, WolfSslMode::PreBuilt);
+                return (path, None);
             }
             panic!("WOLFSSL_INCLUDE_DIR={val} does not exist");
         }
@@ -238,7 +231,7 @@ fn locate_wolfssl_headers() -> (PathBuf, Option<PathBuf>, WolfSslMode) {
         if !val.is_empty() {
             let include = PathBuf::from(&val).join("include");
             if include.exists() {
-                return (include, None, WolfSslMode::PreBuilt);
+                return (include, None);
             }
             panic!("WOLFSSL_DIR={val} exists but {}/include does not", val);
         }
@@ -256,7 +249,7 @@ fn locate_wolfssl_headers() -> (PathBuf, Option<PathBuf>, WolfSslMode) {
             let settings_include = env::var("WOLFSSL_SETTINGS_INCLUDE")
                 .map(PathBuf::from)
                 .ok();
-            return (path, settings_include, WolfSslMode::Vendored);
+            return (path, settings_include);
         }
     }
 

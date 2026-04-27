@@ -20,6 +20,7 @@
 #include "wolfhsm/wh_client.h"
 #include "wolfhsm/wh_client_crypto.h"
 #include "wolfhsm/wh_common.h"
+#include "wolfhsm/wh_error.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -89,9 +90,12 @@ int wolfhsm_ecc_shared_secret(whClientContext* ctx, uint16_t priv_key_id,
     word32 idx = 0;
     rc = wc_EccPublicKeyDecode(peer_der, &idx, &pub_key, peer_der_len);
     if (rc == 0) {
-        uint16_t out_sz = (uint16_t)*out_len;
-        rc = wh_Client_EccSharedSecret(ctx, &priv_key, &pub_key, out, &out_sz);
-        if (rc == 0) *out_len = out_sz;
+        if (*out_len > 0xFFFFu) { rc = WH_ERROR_BADARGS; }
+        else {
+            uint16_t out_sz = (uint16_t)*out_len;
+            rc = wh_Client_EccSharedSecret(ctx, &priv_key, &pub_key, out, &out_sz);
+            if (rc == 0) *out_len = out_sz;
+        }
     }
     wc_ecc_free(&pub_key);
     wc_ecc_free(&priv_key);
@@ -139,11 +143,14 @@ int wolfhsm_curve25519_shared_secret(whClientContext* ctx,
     rc = wc_curve25519_import_public_ex(peer_pub, peer_len, &pub,
                                         EC25519_LITTLE_ENDIAN);
     if (rc == 0) {
-        uint16_t out_sz = (uint16_t)*out_len;
-        rc = wh_Client_Curve25519SharedSecret(ctx, &priv, &pub,
-                                              EC25519_LITTLE_ENDIAN,
-                                              out, &out_sz);
-        if (rc == 0) *out_len = out_sz;
+        if (*out_len > 0xFFFFu) { rc = WH_ERROR_BADARGS; }
+        else {
+            uint16_t out_sz = (uint16_t)*out_len;
+            rc = wh_Client_Curve25519SharedSecret(ctx, &priv, &pub,
+                                                  EC25519_LITTLE_ENDIAN,
+                                                  out, &out_sz);
+            if (rc == 0) *out_len = out_sz;
+        }
     }
     wc_curve25519_free(&pub);
     wc_curve25519_free(&priv);
@@ -161,6 +168,10 @@ int wolfhsm_rsa_sign(whClientContext* ctx, uint16_t keyId, int rsa_type,
     rc = wc_InitRsaKey(&key, NULL);
     if (rc != 0) return rc;
     wh_Client_RsaSetKeyId(&key, keyId);
+    if (in_len > 0xFFFFu || *out_len > 0xFFFFu) {
+        wc_FreeRsaKey(&key);
+        return WH_ERROR_BADARGS;
+    }
     uint16_t out_sz = (uint16_t)*out_len;
     rc = wh_Client_RsaFunction(ctx, &key, rsa_type,
                                in, (uint16_t)in_len, out, &out_sz);
@@ -269,6 +280,8 @@ int wolfhsm_aes_gcm_encrypt(whClientContext* ctx, uint16_t keyId,
 {
     Aes aes;
     int rc;
+    /* AES-GCM without capturing the auth tag silently loses authentication. */
+    if (tag == NULL) return WH_ERROR_BADARGS;
     rc = wc_AesInit(&aes, NULL, INVALID_DEVID);
     if (rc != 0) return rc;
     wh_Client_AesSetKeyId(&aes, keyId);
@@ -335,5 +348,7 @@ int wolfhsm_cmac(whClientContext* ctx, uint16_t keyId,
                         NULL, 0,   /* key/keyLen: 0 because key is cached by ID */
                         in, in_len,
                         out, out_len);
+    /* Zero and release internal AES key schedule from the stack. */
+    wc_CmacFree(&cmac);
     return rc;
 }

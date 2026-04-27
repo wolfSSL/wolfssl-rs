@@ -19,7 +19,39 @@ fn main() {
     let wolfhsm_lib = env::var("DEP_WOLFHSM_SRC_LIB")
         .expect("DEP_WOLFHSM_SRC_LIB not set");
 
-    // ── 3. Link the static libraries ─────────────────────────────────────────
+    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+
+    // ── 3. Compile shims.c ────────────────────────────────────────────────────
+    // Must come before wolfhsm/wolfssl link directives below. GNU ld resolves
+    // static archives left-to-right; wolfhsm_shims calls into wolfhsm which
+    // calls into wolfssl, so the link order must be shims → wolfhsm → wolfssl.
+    // cc::Build::compile() emits cargo:rustc-link-lib and cargo:rustc-link-search
+    // automatically — do NOT add a duplicate println! for wolfhsm_shims.
+    cc::Build::new()
+        .file(manifest_dir.join("src").join("shims.c"))
+        // wolfhsm_lib is the OUT_DIR from wolfhsm-src; it holds wolfhsm_cfg.h
+        .include(&wolfhsm_lib)
+        .include(&wolfhsm_include)
+        .include(format!("{wolfhsm_include}/port/posix"))
+        .include(&wolfssl_include)
+        .include(&wolfssl_settings)
+        .define(
+            if wolfssl_vendored {
+                "WOLFSSL_USER_SETTINGS"
+            } else {
+                "WOLFSSL_USE_OPTIONS_H"
+            },
+            None,
+        )
+        .define("WOLFHSM_CFG", None)
+        .define("WOLF_CRYPTO_CB", None)
+        .define("WOLFHSM_CFG_NO_WOLFCRYPT", Some("0"))
+        .warnings(false)
+        .opt_level(2)
+        .compile("wolfhsm_shims");
+
+    // ── 4. Link wolfhsm and wolfssl ───────────────────────────────────────────
+    // These come after wolfhsm_shims in the linker command (callees after callers).
     println!("cargo:rustc-link-search=native={wolfhsm_lib}");
     println!("cargo:rustc-link-lib=static=wolfhsm");
 
@@ -43,8 +75,8 @@ fn main() {
         println!("cargo:rustc-link-lib={libcrypto}");
     }
 
-    // ── 4. Run bindgen ────────────────────────────────────────────────────────
-    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    // ── 5. Run bindgen ────────────────────────────────────────────────────────
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let bindings = bindgen::Builder::default()
         .header(manifest_dir.join("wrapper.h").to_str().unwrap())
         // wolfHSM include paths (wolfhsm_lib is the OUT_DIR that holds
@@ -81,36 +113,7 @@ fn main() {
         .generate()
         .expect("failed to generate wolfhsm bindings");
 
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
         .write_to_file(out_dir.join("bindings.rs"))
         .expect("failed to write bindings.rs");
-
-    // ── 5. Compile shims.c ────────────────────────────────────────────────────
-    // C shims that stack-allocate wolfcrypt key structs (which are opaque /
-    // zero-sized from Rust's view) and call the wolfHSM client API.
-    cc::Build::new()
-        .file(manifest_dir.join("src").join("shims.c"))
-        // wolfhsm_lib is the OUT_DIR that holds the generated wolfhsm_cfg.h
-        .include(&wolfhsm_lib)
-        .include(&wolfhsm_include)
-        .include(format!("{wolfhsm_include}/port/posix"))
-        .include(&wolfssl_include)
-        .include(&wolfssl_settings)
-        .define(
-            if wolfssl_vendored {
-                "WOLFSSL_USER_SETTINGS"
-            } else {
-                "WOLFSSL_USE_OPTIONS_H"
-            },
-            None,
-        )
-        .define("WOLFHSM_CFG", None)
-        .define("WOLF_CRYPTO_CB", None)
-        .define("WOLFHSM_CFG_NO_WOLFCRYPT", Some("0"))
-        .warnings(false)
-        .opt_level(2)
-        .compile("wolfhsm_shims");
-
-    println!("cargo:rustc-link-lib=static=wolfhsm_shims");
 }
