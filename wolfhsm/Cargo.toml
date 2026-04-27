@@ -6,6 +6,11 @@ description = "Rust bindings to wolfHSM"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 repository = "https://github.com/wolfSSL/wolfssl-rs"
 
+[features]
+## Enable ML-DSA (Dilithium) key support.
+## Requires the linked wolfSSL to be built with HAVE_DILITHIUM.
+mldsa = []
+
 [dependencies]
 wolfhsm-sys = { version = "0.1.0", path = "../wolfhsm-sys" }
 wolfcrypt-sys = { version = "0.1.2", path = "../wolfcrypt-sys" }

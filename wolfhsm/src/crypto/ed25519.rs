@@ -1,0 +1,89 @@
+use wolfhsm_sys::{wolfhsm_ed25519_make_key, wolfhsm_ed25519_sign, wolfhsm_ed25519_verify};
+
+use crate::client::Client;
+use crate::error::WolfHsmError;
+use crate::key::KeyId;
+
+/// Ed25519 key handle. The private key lives in the HSM key cache.
+pub struct Ed25519Key {
+    pub(crate) id: KeyId,
+}
+
+impl Ed25519Key {
+    /// Generate an ephemeral Ed25519 key on the HSM (cached, not committed to NVM).
+    pub fn generate(client: &mut Client) -> Result<Self, WolfHsmError> {
+        let mut key_id: u16 = KeyId::ERASED.0;
+        // SAFETY: ctx_ptr is valid for the duration of this call.
+        let rc = unsafe { wolfhsm_ed25519_make_key(client.ctx_ptr(), &mut key_id) };
+        WolfHsmError::check(rc, "wolfhsm_ed25519_make_key")?;
+        Ok(Ed25519Key { id: KeyId(key_id) })
+    }
+
+    /// Evict this key from the HSM key cache.
+    pub fn evict(self, client: &mut Client) -> Result<(), WolfHsmError> {
+        client.key_evict(self.id)
+    }
+
+    /// Sign a message. Returns a 64-byte Ed25519 signature.
+    pub fn sign(&self, client: &mut Client, msg: &[u8]) -> Result<[u8; 64], WolfHsmError> {
+        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::Ffi {
+            code: -1,
+            func: "wolfhsm_ed25519_sign: message too large",
+        })?;
+        let mut buf = [0u8; 64];
+        let mut sig_len: u32 = 64;
+        // SAFETY: all pointers are valid for the duration of this call.
+        let rc = unsafe {
+            wolfhsm_ed25519_sign(
+                client.ctx_ptr(),
+                self.id.0,
+                msg.as_ptr(),
+                msg_len,
+                buf.as_mut_ptr(),
+                &mut sig_len,
+            )
+        };
+        WolfHsmError::check(rc, "wolfhsm_ed25519_sign")?;
+        if sig_len != 64 {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "wolfhsm_ed25519_sign: unexpected signature length",
+            });
+        }
+        Ok(buf)
+    }
+
+    /// Verify a signature. Returns `Ok(())` if valid.
+    pub fn verify(
+        &self,
+        client: &mut Client,
+        msg: &[u8],
+        sig: &[u8; 64],
+    ) -> Result<(), WolfHsmError> {
+        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::Ffi {
+            code: -1,
+            func: "wolfhsm_ed25519_verify: message too large",
+        })?;
+        let mut result: core::ffi::c_int = 0;
+        // SAFETY: all pointers are valid for the duration of this call.
+        let rc = unsafe {
+            wolfhsm_ed25519_verify(
+                client.ctx_ptr(),
+                self.id.0,
+                sig.as_ptr(),
+                64u32,
+                msg.as_ptr(),
+                msg_len,
+                &mut result,
+            )
+        };
+        WolfHsmError::check(rc, "wolfhsm_ed25519_verify")?;
+        if result != 1 {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "ed25519_verify: invalid signature",
+            });
+        }
+        Ok(())
+    }
+}

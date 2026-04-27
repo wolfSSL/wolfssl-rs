@@ -7,3 +7,187 @@
 )]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+// ── C shim function declarations ──────────────────────────────────────────
+//
+// These functions are implemented in wolfhsm-sys/src/shims.c and compiled
+// into libwolfhsm_shims.a.  They stack-allocate wolfcrypt key structs (which
+// are opaque from Rust's perspective), set the HSM key ID, perform the
+// operation, free the struct, and return.
+
+unsafe extern "C" {
+    // ── ECC P-256 ──────────────────────────────────────────────────────────
+    pub fn wolfhsm_ecc_make_key(
+        ctx: *mut whClientContext,
+        curve_id: core::ffi::c_int,
+        out_key_id: *mut u16,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_ecc_sign(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        hash: *const u8,
+        hash_len: u16,
+        sig: *mut u8,
+        sig_len: *mut u16,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_ecc_verify(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        hash: *const u8,
+        hash_len: u16,
+        sig: *const u8,
+        sig_len: u16,
+        result: *mut core::ffi::c_int,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_ecc_export_public_der(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        out: *mut u8,
+        out_len: *mut u32,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_ecc_shared_secret(
+        ctx: *mut whClientContext,
+        priv_key_id: u16,
+        peer_der: *const u8,
+        peer_der_len: u32,
+        out: *mut u8,
+        out_len: *mut u32,
+    ) -> core::ffi::c_int;
+
+    // ── Ed25519 ────────────────────────────────────────────────────────────
+    pub fn wolfhsm_ed25519_make_key(
+        ctx: *mut whClientContext,
+        out_key_id: *mut u16,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_ed25519_sign(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        msg: *const u8,
+        msg_len: u32,
+        sig: *mut u8,
+        sig_len: *mut u32,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_ed25519_verify(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        sig: *const u8,
+        sig_len: u32,
+        msg: *const u8,
+        msg_len: u32,
+        result: *mut core::ffi::c_int,
+    ) -> core::ffi::c_int;
+
+    // ── Curve25519 ─────────────────────────────────────────────────────────
+    pub fn wolfhsm_curve25519_make_key(
+        ctx: *mut whClientContext,
+        out_key_id: *mut u16,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_curve25519_shared_secret(
+        ctx: *mut whClientContext,
+        priv_key_id: u16,
+        peer_pub: *const u8,
+        peer_len: u32,
+        out: *mut u8,
+        out_len: *mut u32,
+    ) -> core::ffi::c_int;
+
+    // ── RSA ────────────────────────────────────────────────────────────────
+    pub fn wolfhsm_rsa_make_key(
+        ctx: *mut whClientContext,
+        bits: core::ffi::c_int,
+        e: core::ffi::c_long,
+        out_key_id: *mut u16,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_rsa_sign(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        rsa_type: core::ffi::c_int,
+        in_buf: *const u8,
+        in_len: u32,
+        out: *mut u8,
+        out_len: *mut u32,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_rsa_get_size(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        out_size: *mut core::ffi::c_int,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_rsa_export_public_der(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        out: *mut u8,
+        out_len: *mut u32,
+    ) -> core::ffi::c_int;
+
+    // ── ML-DSA (Dilithium) ─────────────────────────────────────────────────
+    pub fn wolfhsm_mldsa_make_key(
+        ctx: *mut whClientContext,
+        level: core::ffi::c_int,
+        out_key_id: *mut u16,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_mldsa_sign(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        level: core::ffi::c_int,
+        msg: *const u8,
+        msg_len: u32,
+        sig: *mut u8,
+        sig_len: *mut u32,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_mldsa_verify(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        level: core::ffi::c_int,
+        sig: *const u8,
+        sig_len: u32,
+        msg: *const u8,
+        msg_len: u32,
+        result: *mut core::ffi::c_int,
+    ) -> core::ffi::c_int;
+
+    // ── AES-GCM ────────────────────────────────────────────────────────────
+    pub fn wolfhsm_aes_gcm_encrypt(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        iv: *const u8,
+        iv_len: u32,
+        aad: *const u8,
+        aad_len: u32,
+        in_buf: *const u8,
+        in_len: u32,
+        out: *mut u8,
+        tag: *mut u8,
+        tag_len: u32,
+    ) -> core::ffi::c_int;
+    pub fn wolfhsm_aes_gcm_decrypt(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        iv: *const u8,
+        iv_len: u32,
+        aad: *const u8,
+        aad_len: u32,
+        in_buf: *const u8,
+        in_len: u32,
+        out: *mut u8,
+        tag: *const u8,
+        tag_len: u32,
+    ) -> core::ffi::c_int;
+
+    // ── SHA-256 (one-shot) ─────────────────────────────────────────────────
+    pub fn wolfhsm_sha256(
+        ctx: *mut whClientContext,
+        in_buf: *const u8,
+        in_len: u32,
+        out: *mut u8,
+    ) -> core::ffi::c_int;
+
+    // ── CMAC ───────────────────────────────────────────────────────────────
+    pub fn wolfhsm_cmac(
+        ctx: *mut whClientContext,
+        key_id: u16,
+        in_buf: *const u8,
+        in_len: u32,
+        out: *mut u8,
+        out_len: *mut u32,
+    ) -> core::ffi::c_int;
+}

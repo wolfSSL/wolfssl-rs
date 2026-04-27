@@ -17,3 +17,5 @@ pub mod counter;
 
 pub mod cryptocb;
 pub use cryptocb::{CryptoCbGuard, DEV_ID};
+
+pub mod crypto;

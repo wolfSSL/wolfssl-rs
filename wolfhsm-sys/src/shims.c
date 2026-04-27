@@ -11,6 +11,7 @@
 #include "wolfssl/wolfcrypt/settings.h"
 #include "wolfssl/wolfcrypt/ecc.h"
 #include "wolfssl/wolfcrypt/curve25519.h"
+#include "wolfssl/wolfcrypt/ed25519.h"
 #include "wolfssl/wolfcrypt/rsa.h"
 #include "wolfssl/wolfcrypt/dilithium.h"
 #include "wolfssl/wolfcrypt/aes.h"
@@ -328,6 +329,50 @@ int wolfhsm_sha256(whClientContext* ctx,
     if (rc != 0) return rc;
     rc = wh_Client_Sha256(ctx, &sha, in, in_len, out);
     wc_Sha256Free(&sha);
+    return rc;
+}
+
+/* ── Ed25519 shims ───────────────────────────────────────────────────────── */
+
+int wolfhsm_ed25519_make_key(whClientContext* ctx, uint16_t* out_key_id)
+{
+    whKeyId key_id = WH_KEYID_ERASED;
+    whNvmFlags flags = 0;
+    int rc = wh_Client_Ed25519MakeCacheKey(ctx, &key_id, flags, 0, NULL);
+    if (rc == 0) *out_key_id = (uint16_t)key_id;
+    return rc;
+}
+
+int wolfhsm_ed25519_sign(whClientContext* ctx, uint16_t key_id,
+                          const uint8_t* msg, uint32_t msg_len,
+                          uint8_t* sig, uint32_t* sig_len)
+{
+    ed25519_key key;
+    int rc;
+    rc = wc_ed25519_init(&key);
+    if (rc != 0) return rc;
+    wh_Client_Ed25519SetKeyId(&key, key_id);
+    rc = wh_Client_Ed25519Sign(ctx, &key, msg, msg_len,
+                                0, NULL, 0,
+                                sig, sig_len);
+    wc_ed25519_free(&key);
+    return rc;
+}
+
+int wolfhsm_ed25519_verify(whClientContext* ctx, uint16_t key_id,
+                            const uint8_t* sig, uint32_t sig_len,
+                            const uint8_t* msg, uint32_t msg_len, int* result)
+{
+    ed25519_key key;
+    int rc;
+    rc = wc_ed25519_init(&key);
+    if (rc != 0) return rc;
+    wh_Client_Ed25519SetKeyId(&key, key_id);
+    rc = wh_Client_Ed25519Verify(ctx, &key,
+                                  sig, sig_len,
+                                  msg, msg_len,
+                                  0, NULL, 0, result);
+    wc_ed25519_free(&key);
     return rc;
 }
 
