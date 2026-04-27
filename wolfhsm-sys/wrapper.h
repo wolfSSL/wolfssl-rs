@@ -1,0 +1,13 @@
+/* wolfhsm-sys bindgen wrapper — includes all wolfHSM client API headers */
+#include "wolfhsm/wh_common.h"
+#include "wolfhsm/wh_error.h"
+#include "wolfhsm/wh_comm.h"
+#include "wolfhsm/wh_client.h"
+#include "wolfhsm/wh_client_crypto.h"
+#include "wolfhsm/wh_client_cryptocb.h"
+#include "wolfhsm/wh_client_she.h"
+#include "wolfhsm/wh_auth.h"
+#include "port/posix/posix_transport_tcp.h"
+#include "port/posix/posix_transport_shm.h"
+#include "port/posix/posix_transport_uds.h"
+#include "port/posix/posix_transport_tls.h"

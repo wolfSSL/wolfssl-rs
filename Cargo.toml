@@ -30,6 +30,9 @@ members = [
     "wolfcrypt-dpe-conformance",
     "ssh-key-wolfcrypt",
     "wolfcrypt-tls",
+    "wolfhsm-src",
+    "wolfhsm-sys",
+    "wolfhsm",
 ]
 exclude = [
     "scripts/tools/cargo-dig.rs",
