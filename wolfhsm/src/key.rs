@@ -37,7 +37,10 @@ impl Client {
     /// Returns the server-assigned [`KeyId`].
     pub fn key_cache(&mut self, data: &[u8], label: &[u8]) -> Result<KeyId, WolfHsmError> {
         if data.len() > u16::MAX as usize {
-            return Err(WolfHsmError::Wh { code: -2000 });
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "key_cache: data exceeds u16::MAX bytes",
+            });
         }
 
         // Truncate label to WH_NVM_LABEL_LEN; pad remainder with zeros.

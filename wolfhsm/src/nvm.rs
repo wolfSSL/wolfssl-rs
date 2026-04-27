@@ -9,6 +9,19 @@ use crate::error::WolfHsmError;
 // WH_ERROR_NOTFOUND — signals end-of-list in NvmList, not a real error.
 const WH_ERROR_NOTFOUND: i32 = -2104;
 
+/// Available and reclaimable NVM space reported by the wolfHSM server.
+#[derive(Debug, Clone, Copy)]
+pub struct NvmAvailability {
+    /// Bytes available for new objects.
+    pub avail_size: u32,
+    /// Number of object slots available.
+    pub avail_objects: u16,
+    /// Bytes that can be recovered by compaction.
+    pub reclaim_size: u32,
+    /// Object slots that can be recovered by compaction.
+    pub reclaim_objects: u16,
+}
+
 /// A wolfHSM NVM object identifier (wraps `whNvmId` = `u16`).
 ///
 /// Used to identify counters and other NVM objects on the wolfHSM server.
@@ -44,9 +57,7 @@ pub struct NvmMetadata {
 
 impl Client {
     /// Query available and reclaimable NVM space on the server.
-    ///
-    /// Returns `(avail_size, avail_objects, reclaim_size, reclaim_objects)`.
-    pub fn nvm_available(&mut self) -> Result<(u32, u16, u32, u16), WolfHsmError> {
+    pub fn nvm_available(&mut self) -> Result<NvmAvailability, WolfHsmError> {
         let mut out_rc: i32 = 0;
         let mut avail_size: u32 = 0;
         let mut avail_objects: u16 = 0;
@@ -67,7 +78,7 @@ impl Client {
         WolfHsmError::check(rc, "wh_Client_NvmGetAvailable")?;
         WolfHsmError::check(out_rc, "wh_Client_NvmGetAvailable(server)")?;
 
-        Ok((avail_size, avail_objects, reclaim_size, reclaim_objects))
+        Ok(NvmAvailability { avail_size, avail_objects, reclaim_size, reclaim_objects })
     }
 
     /// List all NVM object IDs stored on the server.
@@ -104,7 +115,9 @@ impl Client {
             WolfHsmError::check(out_rc, "wh_Client_NvmList(server)")?;
 
             if out_id == 0 {
-                // Safety guard: should not occur after a successful response.
+                // Safety guard against an infinite loop: if the server returns
+                // id 0 after a success response, start_id would not advance
+                // and the next iteration would send the same query forever.
                 break;
             }
             ids.push(NvmId(out_id));
@@ -199,6 +212,12 @@ impl Client {
     /// fails after a successful delete, the original object is permanently
     /// lost and [`WolfHsmError::DataLost`] is returned, carrying the affected
     /// ID.  The NVM protocol has no rollback facility.
+    ///
+    /// If `id` is [`NvmId::INVALID`] (0), the deletion step is skipped and
+    /// `0` is passed directly to `wh_Client_NvmAddObject`.  wolfHSM treats
+    /// `id == 0` as an **auto-assign** request: the server selects a new ID
+    /// and the caller cannot retrieve it from this call.  Use
+    /// [`nvm_list`][Self::nvm_list] to discover the assigned ID afterward.
     ///
     /// `label` is truncated to 24 bytes if longer.  `data` must fit in a
     /// `u16` (≤ 65535 bytes).

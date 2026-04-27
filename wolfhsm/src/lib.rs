@@ -11,7 +11,7 @@ pub mod key;
 pub use key::KeyId;
 
 pub mod nvm;
-pub use nvm::{NvmId, NvmMetadata};
+pub use nvm::{NvmAvailability, NvmId, NvmMetadata};
 
 pub mod counter;
 
