@@ -8,7 +8,30 @@ use crate::client::Client;
 use crate::error::WolfHsmError;
 use crate::key::KeyId;
 
+/// Selects the RSA primitive operation passed to [`RsaKey::perform`].
+///
+/// These correspond to wolfCrypt's `RSA_*` constants.  For typical use:
+/// - signing:     [`PrivateEncrypt`][RsaOperation::PrivateEncrypt]
+/// - verification: [`PublicDecrypt`][RsaOperation::PublicDecrypt]
+/// - encryption:  [`PublicEncrypt`][RsaOperation::PublicEncrypt]
+/// - decryption:  [`PrivateDecrypt`][RsaOperation::PrivateDecrypt]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum RsaOperation {
+    PrivateEncrypt = 0,
+    PrivateDecrypt = 1,
+    PublicEncrypt  = 2,
+    PublicDecrypt  = 3,
+}
+
 /// RSA key handle. Private key lives in HSM.
+///
+/// # Resource management
+///
+/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
+/// You **must** call [`evict`][RsaKey::evict] when done; dropping the handle
+/// without evicting silently leaks the cache slot and will eventually cause
+/// `wh_Client_*` calls to fail with a "cache full" error.
 pub struct RsaKey {
     pub(crate) id: KeyId,
     pub bits: u32,
@@ -38,29 +61,34 @@ impl RsaKey {
         client.key_evict(self.id)
     }
 
-    /// Raw RSA operation. `rsa_type` selects the operation:
-    /// RSA_PRIVATE_ENCRYPT=0, RSA_PRIVATE_DECRYPT=1, RSA_PUBLIC_ENCRYPT=2,
-    /// RSA_PUBLIC_DECRYPT=3.
+    /// Raw RSA primitive. See [`RsaOperation`] for available operations.
     ///
-    /// The output buffer is sized to `key_size_bytes()`.
-    pub fn function(
+    /// The output buffer is sized from `self.bits` without a server round-trip.
+    /// Call [`key_size_bytes`][RsaKey::key_size_bytes] if you need an authoritative
+    /// server-side size.
+    pub fn perform(
         &self,
         client: &mut Client,
-        rsa_type: i32,
+        op: RsaOperation,
         in_buf: &[u8],
     ) -> Result<Vec<u8>, WolfHsmError> {
-        let out_size = self.key_size_bytes(client)?;
-        let mut out = vec![0u8; out_size as usize];
-        let mut out_len: u32 = out_size;
+        let in_len = u32::try_from(in_buf.len()).map_err(|_| WolfHsmError::Ffi {
+            code: -1,
+            func: "wolfhsm_rsa_sign: input too large",
+        })?;
+        // RSA output is always exactly key_bits/8 bytes; avoid a server round-trip.
+        let out_size = (self.bits / 8) as usize;
+        let mut out = vec![0u8; out_size];
+        let mut out_len: u32 = out_size as u32;
 
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
             wolfhsm_rsa_sign(
                 client.ctx_ptr(),
                 self.id.0,
-                rsa_type as c_int,
+                op as c_int,
                 in_buf.as_ptr(),
-                in_buf.len() as u32,
+                in_len,
                 out.as_mut_ptr(),
                 &mut out_len,
             )

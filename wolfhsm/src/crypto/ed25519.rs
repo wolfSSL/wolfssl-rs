@@ -5,6 +5,13 @@ use crate::error::WolfHsmError;
 use crate::key::KeyId;
 
 /// Ed25519 key handle. The private key lives in the HSM key cache.
+///
+/// # Resource management
+///
+/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
+/// You **must** call [`evict`][Ed25519Key::evict] when done; dropping the handle
+/// without evicting silently leaks the cache slot and will eventually cause
+/// `wh_Client_*` calls to fail with a "cache full" error.
 pub struct Ed25519Key {
     pub(crate) id: KeyId,
 }

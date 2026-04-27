@@ -6,10 +6,23 @@ use crate::client::Client;
 use crate::error::WolfHsmError;
 use crate::key::KeyId;
 
-/// Maximum ML-DSA signature size (level 87).
-const MLDSA_MAX_SIG_LEN: usize = 4627;
+/// Exact ML-DSA signature sizes per level (FIPS 204, Table 2).
+fn mldsa_sig_len(level: u8) -> usize {
+    match level {
+        44 => 2420,
+        65 => 3309,
+        _  => 4627, // level 87
+    }
+}
 
 /// ML-DSA (Dilithium) key handle. Level is 44, 65, or 87.
+///
+/// # Resource management
+///
+/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
+/// You **must** call [`evict`][MlDsaKey::evict] when done; dropping the handle
+/// without evicting silently leaks the cache slot and will eventually cause
+/// `wh_Client_*` calls to fail with a "cache full" error.
 pub struct MlDsaKey {
     pub(crate) id: KeyId,
     pub level: u8,
@@ -18,6 +31,12 @@ pub struct MlDsaKey {
 impl MlDsaKey {
     /// Generate an ML-DSA key at the given level (44, 65, or 87).
     pub fn generate(client: &mut Client, level: u8) -> Result<Self, WolfHsmError> {
+        if !matches!(level, 44 | 65 | 87) {
+            return Err(WolfHsmError::Ffi {
+                code: -1,
+                func: "MlDsaKey::generate: level must be 44, 65, or 87",
+            });
+        }
         let mut key_id: u16 = 0;
         // SAFETY: ctx_ptr is valid for the duration of this call; key_id is a
         // valid stack allocation.
@@ -36,8 +55,13 @@ impl MlDsaKey {
     /// Sign a message. Signature size depends on level:
     /// level 44 → 2420 bytes, level 65 → 3309 bytes, level 87 → 4627 bytes.
     pub fn sign(&self, client: &mut Client, msg: &[u8]) -> Result<Vec<u8>, WolfHsmError> {
-        let mut sig = vec![0u8; MLDSA_MAX_SIG_LEN];
-        let mut sig_len: u32 = MLDSA_MAX_SIG_LEN as u32;
+        let msg_len = u32::try_from(msg.len()).map_err(|_| WolfHsmError::Ffi {
+            code: -1,
+            func: "wolfhsm_mldsa_sign: message too large",
+        })?;
+        let cap = mldsa_sig_len(self.level);
+        let mut sig = vec![0u8; cap];
+        let mut sig_len: u32 = cap as u32;
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
             wolfhsm_mldsa_sign(
@@ -45,7 +69,7 @@ impl MlDsaKey {
                 self.id.0,
                 self.level as c_int,
                 msg.as_ptr(),
-                msg.len() as u32,
+                msg_len,
                 sig.as_mut_ptr(),
                 &mut sig_len,
             )

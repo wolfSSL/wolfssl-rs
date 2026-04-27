@@ -5,6 +5,13 @@ use crate::error::WolfHsmError;
 use crate::key::KeyId;
 
 /// AES key handle (GCM mode). Key lives in HSM cache.
+///
+/// # Resource management
+///
+/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
+/// You **must** call [`evict`][AesKey::evict] when done; dropping the handle
+/// without evicting silently leaks the cache slot and will eventually cause
+/// `wh_Client_*` calls to fail with a "cache full" error.
 pub struct AesKey {
     pub(crate) id: KeyId,
     /// Key length in bits (128, 192, or 256).
@@ -35,7 +42,8 @@ impl AesKey {
     }
 
     /// AES-GCM encrypt. Returns (ciphertext, 16-byte auth tag).
-    /// `iv` should be 12 bytes for GCM.
+    /// `iv` must be exactly 12 bytes (96-bit GCM IV); other lengths will cause
+    /// the server to return an error.
     pub fn gcm_encrypt(
         &self,
         client: &mut Client,

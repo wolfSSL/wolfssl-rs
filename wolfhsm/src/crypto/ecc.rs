@@ -11,6 +11,13 @@ use crate::key::KeyId;
 const ECC_SECP256R1: core::ffi::c_int = 1;
 
 /// ECC P-256 key handle. The private key lives in the HSM key cache.
+///
+/// # Resource management
+///
+/// The key occupies a slot in the HSM RAM key cache for its entire lifetime.
+/// You **must** call [`evict`][EccP256Key::evict] when done; dropping the handle
+/// without evicting silently leaks the cache slot and will eventually cause
+/// `wh_Client_*` calls to fail with a "cache full" error.
 pub struct EccP256Key {
     pub(crate) id: KeyId,
 }
@@ -114,6 +121,10 @@ impl EccP256Key {
     }
 
     /// ECDH: compute shared secret with a peer DER SubjectPublicKeyInfo.
+    ///
+    /// `peer_public_der` must be the 91-byte DER `SubjectPublicKeyInfo` for a
+    /// P-256 public key — the same format returned by [`public_key_der`][EccP256Key::public_key_der].
+    /// Raw uncompressed EC points (65-byte `04||x||y`) are not accepted.
     pub fn ecdh(
         &self,
         client: &mut Client,

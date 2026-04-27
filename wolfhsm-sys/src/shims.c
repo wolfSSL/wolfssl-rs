@@ -4,8 +4,9 @@
  * zero-sized from Rust's perspective), set the HSM key-ID, perform the
  * operation via the wolfHSM client API, free the struct, and return.
  *
- * Ed25519 does NOT need a shim: ed25519_key is a concrete 256-byte type in
- * wolfcrypt-rs, so Rust can allocate it directly.
+ * All key types use shims because wolfhsm-sys bindgen is restricted to wh.*/WH.*
+ * types; wolfcrypt structs (ecc_key, ed25519_key, RsaKey, etc.) are zero-sized
+ * opaque types from Rust's perspective, so they must be stack-allocated here.
  */
 
 #include "wolfssl/wolfcrypt/settings.h"
