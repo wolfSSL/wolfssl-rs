@@ -44,9 +44,8 @@ impl MlDsaKey {
         let rc = unsafe { wolfhsm_mldsa_make_key(client.ctx_ptr(), level as c_int, &mut key_id) };
         WolfHsmError::check(rc, "wolfhsm_mldsa_make_key")?;
         if key_id == 0 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wolfhsm_mldsa_make_key: server returned WH_KEYID_ERASED (0)",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wolfhsm_mldsa_make_key: server returned WH_KEYID_ERASED (0)",
             });
         }
         Ok(MlDsaKey {
@@ -105,10 +104,7 @@ impl MlDsaKey {
         };
         WolfHsmError::check(rc, "wolfhsm_mldsa_verify")?;
         if result != 1 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "mldsa_verify: invalid signature",
-            });
+            return Err(WolfHsmError::InvalidSignature);
         }
         Ok(())
     }

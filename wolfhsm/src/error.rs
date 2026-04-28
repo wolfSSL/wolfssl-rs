@@ -49,6 +49,24 @@ pub enum WolfHsmError {
         /// The NVM object ID that was deleted before the add failed.
         id: u16,
     },
+    /// The server returned a well-formed response that is logically impossible.
+    ///
+    /// Examples: a key ID of zero after successful key generation, or a
+    /// negative key size after a successful `get_size` call.  The FFI call
+    /// returned `0` (success), but the response payload is invalid.
+    ///
+    /// `msg` describes the specific anomaly.
+    ProtocolError {
+        /// Human-readable description of the impossible server response.
+        msg: &'static str,
+    },
+    /// A cryptographic verification completed but the signature or MAC was invalid.
+    ///
+    /// Distinct from [`Ffi`][WolfHsmError::Ffi] (transport/FFI failure) and
+    /// [`ProtocolError`][WolfHsmError::ProtocolError] (impossible response).
+    /// Here the HSM ran the check to completion and determined the material
+    /// does not match.
+    InvalidSignature,
 }
 
 impl WolfHsmError {
@@ -90,6 +108,12 @@ impl fmt::Display for WolfHsmError {
                     f,
                     "wolfHSM NVM object {id} deleted but add failed; original data lost"
                 )
+            }
+            WolfHsmError::ProtocolError { msg } => {
+                write!(f, "wolfHSM protocol error: {msg}")
+            }
+            WolfHsmError::InvalidSignature => {
+                write!(f, "wolfHSM: signature or MAC verification failed")
             }
         }
     }

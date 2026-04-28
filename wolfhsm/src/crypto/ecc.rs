@@ -27,9 +27,8 @@ impl EccP256Key {
         let rc = unsafe { wolfhsm_ecc_make_key(client.ctx_ptr(), ECC_SECP256R1, &mut key_id) };
         WolfHsmError::check(rc, "wolfhsm_ecc_make_key")?;
         if key_id == KeyId::ERASED.0 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wolfhsm_ecc_make_key: server returned WH_KEYID_ERASED (0)",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wolfhsm_ecc_make_key: server returned WH_KEYID_ERASED (0)",
             });
         }
         Ok(EccP256Key { id: KeyId(key_id) })
@@ -86,10 +85,7 @@ impl EccP256Key {
         };
         WolfHsmError::check(rc, "wolfhsm_ecc_verify")?;
         if result != 1 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "ecc_verify: invalid signature",
-            });
+            return Err(WolfHsmError::InvalidSignature);
         }
         Ok(())
     }

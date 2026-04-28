@@ -50,9 +50,8 @@ impl RsaKey {
         };
         WolfHsmError::check(rc, "wolfhsm_rsa_make_key")?;
         if key_id == 0 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wolfhsm_rsa_make_key: server returned WH_KEYID_ERASED (0)",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wolfhsm_rsa_make_key: server returned WH_KEYID_ERASED (0)",
             });
         }
         // Fetch the server-confirmed key size immediately after generation.
@@ -62,9 +61,8 @@ impl RsaKey {
         let rc = unsafe { wolfhsm_rsa_get_size(client.ctx_ptr(), key_id, &mut out_size) };
         WolfHsmError::check(rc, "wolfhsm_rsa_get_size")?;
         if out_size <= 0 {
-            return Err(WolfHsmError::Ffi {
-                code: out_size,
-                func: "wolfhsm_rsa_get_size: returned non-positive key size",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wolfhsm_rsa_get_size: returned non-positive key size",
             });
         }
         Ok(RsaKey {

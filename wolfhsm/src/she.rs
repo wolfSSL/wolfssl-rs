@@ -183,9 +183,8 @@ impl Client {
         // Verify the server produced exactly 16 bytes; any other length means
         // the tail of `out` is uninitialized zeros, not random data.
         if out_sz != SHE_KEY_SZ as u32 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wh_Client_SheRnd: unexpected output length",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wh_Client_SheRnd: unexpected output length",
             });
         }
         Ok(out)
@@ -372,10 +371,7 @@ impl Client {
         };
         WolfHsmError::check(rc, "wh_Client_SheVerifyMac")?;
         if status != 0 {
-            return Err(WolfHsmError::Ffi {
-                code: status as i32,
-                func: "wh_Client_SheVerifyMac: MAC does not match",
-            });
+            return Err(WolfHsmError::InvalidSignature);
         }
         Ok(())
     }

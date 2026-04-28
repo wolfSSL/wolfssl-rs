@@ -21,9 +21,8 @@ impl Ed25519Key {
         let rc = unsafe { wolfhsm_ed25519_make_key(client.ctx_ptr(), &mut key_id) };
         WolfHsmError::check(rc, "wolfhsm_ed25519_make_key")?;
         if key_id == KeyId::ERASED.0 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wolfhsm_ed25519_make_key: server returned WH_KEYID_ERASED (0)",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wolfhsm_ed25519_make_key: server returned WH_KEYID_ERASED (0)",
             });
         }
         Ok(Ed25519Key { id: KeyId(key_id) })
@@ -63,9 +62,8 @@ impl Ed25519Key {
         };
         WolfHsmError::check(rc, "wolfhsm_ed25519_sign")?;
         if sig_len != 64 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wolfhsm_ed25519_sign: unexpected signature length",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wolfhsm_ed25519_sign: unexpected signature length",
             });
         }
         Ok(buf)
@@ -96,10 +94,7 @@ impl Ed25519Key {
         };
         WolfHsmError::check(rc, "wolfhsm_ed25519_verify")?;
         if result != 1 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "ed25519_verify: invalid signature",
-            });
+            return Err(WolfHsmError::InvalidSignature);
         }
         Ok(())
     }

@@ -21,9 +21,8 @@ impl Curve25519Key {
         let rc = unsafe { wolfhsm_curve25519_make_key(client.ctx_ptr(), &mut key_id) };
         WolfHsmError::check(rc, "wolfhsm_curve25519_make_key")?;
         if key_id == KeyId::ERASED.0 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wolfhsm_curve25519_make_key: server returned WH_KEYID_ERASED (0)",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wolfhsm_curve25519_make_key: server returned WH_KEYID_ERASED (0)",
             });
         }
         Ok(Curve25519Key { id: KeyId(key_id) })
@@ -65,9 +64,8 @@ impl Curve25519Key {
         };
         WolfHsmError::check(rc, "wolfhsm_curve25519_shared_secret")?;
         if out_len != 32 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wolfhsm_curve25519_shared_secret: unexpected output length",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wolfhsm_curve25519_shared_secret: unexpected output length",
             });
         }
         Ok(buf)

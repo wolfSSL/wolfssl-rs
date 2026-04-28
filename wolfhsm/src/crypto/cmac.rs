@@ -45,9 +45,8 @@ impl CmacKey {
         };
         WolfHsmError::check(rc, "wolfhsm_cmac")?;
         if out_len != 16 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wolfhsm_cmac: unexpected output length",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wolfhsm_cmac: unexpected output length",
             });
         }
         Ok(out)

@@ -162,9 +162,8 @@ impl Client {
         WolfHsmError::check(rc, "wh_Client_CertVerifyAndCacheLeafPubKey")?;
         WolfHsmError::check(out_rc, "wh_Client_CertVerifyAndCacheLeafPubKey(server)")?;
         if inout_key_id == KeyId::ERASED.0 {
-            return Err(WolfHsmError::Ffi {
-                code: -1,
-                func: "wh_Client_CertVerifyAndCacheLeafPubKey: server returned ERASED key ID",
+            return Err(WolfHsmError::ProtocolError {
+                msg: "wh_Client_CertVerifyAndCacheLeafPubKey: server returned ERASED key ID",
             });
         }
         Ok(KeyId(inout_key_id))
