@@ -292,6 +292,59 @@ impl Client {
         Ok(data)
     }
 
+    /// Create a new NVM object.
+    ///
+    /// Fails if an object with `id` already exists (the server returns an
+    /// error in that case).  Use [`nvm_overwrite`][Self::nvm_overwrite] when
+    /// you need to replace an existing object.
+    ///
+    /// `id` must not be [`NvmId::INVALID`].  `label` is truncated to 24
+    /// bytes.  `data` must fit in a `u16` (≤ 65535 bytes).
+    ///
+    /// `access` — access control flags; see `WH_NVM_ACCESS_*` constants in
+    /// `wolfhsm/wh_nvm.h`. Pass `0` for unrestricted access.
+    ///
+    /// `flags` — object attribute flags; see `WH_NVM_FLAGS_*` constants in
+    /// `wolfhsm/wh_nvm.h`. Pass `0` for default attributes.
+    pub fn nvm_add(
+        &mut self,
+        id: NvmId,
+        access: u16,
+        flags: u16,
+        label: &[u8],
+        data: &[u8],
+    ) -> Result<(), WolfHsmError> {
+        if id == NvmId::INVALID {
+            return Err(WolfHsmError::BadArgs {
+                msg: "id must not be NvmId::INVALID (0)",
+            });
+        }
+        let data_len = u16::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+            msg: "nvm_add data exceeds u16::MAX bytes",
+        })?;
+        let label_len = label.len().min(24);
+        let mut label_buf = [0u8; 24];
+        label_buf[..label_len].copy_from_slice(&label[..label_len]);
+        let mut out_rc: i32 = 0;
+        // SAFETY: all pointers are valid for the duration of this call; ctx_ptr is valid.
+        let rc = unsafe {
+            wh_Client_NvmAddObject(
+                self.ctx_ptr(),
+                id.0,
+                access,
+                flags,
+                label_len as u16,
+                label_buf.as_mut_ptr(),
+                data_len,
+                data.as_ptr(),
+                &mut out_rc,
+            )
+        };
+        WolfHsmError::check(rc, "wh_Client_NvmAddObject")?;
+        WolfHsmError::check(out_rc, "wh_Client_NvmAddObject(server)")?;
+        Ok(())
+    }
+
     /// Overwrite an NVM object with new data. **Not atomic — see warning below.**
     ///
     /// **Warning — data loss hazard**: the existing object is deleted first,

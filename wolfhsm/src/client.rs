@@ -166,6 +166,7 @@ pub struct ServerInfo {
 /// - [`nvm_metadata`][Client::nvm_metadata] — retrieve object metadata
 /// - [`nvm_read`][Client::nvm_read] — read an NVM object
 /// - [`nvm_read_raw`][Client::nvm_read_raw] — read NVM object without metadata round-trip
+/// - [`nvm_add`][Client::nvm_add] — create a new NVM object (fails if ID exists)
 /// - [`nvm_overwrite`][Client::nvm_overwrite] — overwrite an NVM object (⚠ not atomic)
 /// - [`nvm_delete`][Client::nvm_delete] — delete an NVM object
 ///
