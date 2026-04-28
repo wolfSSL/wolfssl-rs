@@ -116,9 +116,17 @@ pub struct ServerInfo {
     pub keycache_bigbufsize: u32,
     pub customcb_count: u32,
     pub dmaaddr_count: u32,
+    /// Implementation-defined. The current wolfHSM server returns a fixed
+    /// placeholder value; no named constants are defined in this wolfHSM version.
     pub debug_state: u32,
+    /// Implementation-defined. The current wolfHSM server returns a fixed
+    /// placeholder value; no named constants are defined in this wolfHSM version.
     pub boot_state: u32,
+    /// Implementation-defined. The current wolfHSM server returns a fixed
+    /// placeholder value; no named constants are defined in this wolfHSM version.
     pub lifecycle_state: u32,
+    /// Implementation-defined. The current wolfHSM server returns a fixed
+    /// placeholder value; no named constants are defined in this wolfHSM version.
     pub nvm_state: u32,
 }
 
