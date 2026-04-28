@@ -70,6 +70,10 @@ impl AuthPermissions {
 
     /// Return a mutable reference to the inner `whAuthPermissions` for use
     /// with wolfHSM C macros that set individual permission bits.
+    /// Key macros from `wolfhsm/wh_auth.h`:
+    /// `WH_AUTH_SET_ALLOWED_GROUP`, `WH_AUTH_SET_ALLOWED_ACTION`,
+    /// `WH_AUTH_CLEAR_ALLOWED_GROUP`, `WH_AUTH_CLEAR_ALLOWED_ACTION`,
+    /// `WH_AUTH_SET_IS_ADMIN`.
     pub fn as_raw_mut(&mut self) -> &mut whAuthPermissions {
         &mut self.0
     }

@@ -26,6 +26,12 @@ impl Client {
     ///
     /// `id` identifies the certificate slot; it must not be [`NvmId::INVALID`].
     /// `label` is truncated to 24 bytes.  `cert` is the DER-encoded certificate.
+    ///
+    /// `access` — access control flags; see `WH_NVM_ACCESS_*` constants in
+    /// `wolfhsm/wh_nvm.h`. Pass `0` for unrestricted access.
+    ///
+    /// `flags` — object attribute flags; see `WH_NVM_FLAGS_*` constants in
+    /// `wolfhsm/wh_nvm.h`. Pass `0` for default attributes.
     pub fn cert_add_trusted(
         &mut self,
         id: NvmId,
