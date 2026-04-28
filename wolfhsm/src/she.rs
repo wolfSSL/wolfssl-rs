@@ -10,6 +10,9 @@ use crate::client::Client;
 use crate::error::Error;
 use crate::nvm::NvmId;
 
+/// AES block size in bytes (128 bits, fixed by the AES specification).
+const AES_BLOCK_SZ: usize = 16;
+
 /// A SHE (Secure Hardware Extension) key slot identifier.
 ///
 /// Corresponds to the `KEY_ID` field in the SHE AutoSAR specification
@@ -463,7 +466,7 @@ impl Client {
 
 /// Validate that `len` is a non-zero multiple of the AES block size (16).
 fn validate_she_block_size(len: usize) -> Result<u32, Error> {
-    if len == 0 || len % 16 != 0 {
+    if len == 0 || len % AES_BLOCK_SZ != 0 {
         return Err(Error::BadArgs {
             msg: "length must be a non-zero multiple of 16 bytes (AES block size)",
         });

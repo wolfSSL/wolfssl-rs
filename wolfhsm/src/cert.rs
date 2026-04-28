@@ -44,10 +44,10 @@ impl Client {
         let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
             msg: "cert_add_trusted: cert exceeds u32::MAX bytes",
         })?;
-        let label_len = label.len().min(24) as u16; // min(24) <= u16::MAX, always safe
+        let label_len = label.len().min(24); // fits in [0, 24], always < u16::MAX
         // C API takes *mut u8 for label even though it does not modify it.
         let mut label_buf = [0u8; 24];
-        label_buf[..label_len as usize].copy_from_slice(&label[..label_len as usize]);
+        label_buf[..label_len].copy_from_slice(&label[..label_len]);
 
         let mut out_rc: i32 = 0;
         // SAFETY: all pointers are valid for the duration of this call.
@@ -58,7 +58,7 @@ impl Client {
                 access,
                 flags,
                 label_buf.as_mut_ptr(),
-                label_len,
+                label_len as u16,
                 cert.as_ptr(),
                 cert_len,
                 &mut out_rc,

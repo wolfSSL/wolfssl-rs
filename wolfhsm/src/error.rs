@@ -92,26 +92,46 @@ impl Error {
 
 /// Return the symbolic name for a WH_ERROR_* code, or `None` if unknown.
 ///
-/// Covers the most common codes from `wolfhsm/wh_error.h`.  For the full
-/// list, consult that header directly.
+/// Covers all codes from `wolfhsm/wh_error.h`.
 fn wh_error_name(code: i32) -> Option<&'static str> {
     match code {
+        // General errors
         -2000 => Some("WH_ERROR_BADARGS"),
-        -2001 => Some("WH_ERROR_ABORTED"),
-        -2002 => Some("WH_ERROR_NOTREADY"),
-        -2003 => Some("WH_ERROR_CANCEL"),
-        -2004 => Some("WH_ERROR_ACCESS"),
-        -2005 => Some("WH_ERROR_NOTVERIFIED"),
-        -2006 => Some("WH_ERROR_NOTIMPL"),
-        -2007 => Some("WH_ERROR_LOCKED"),
-        -2008 => Some("WH_ERROR_SEQUENCE"),
-        -2009 => Some("WH_ERROR_MEMORY"),
-        -2010 => Some("WH_ERROR_NOSPC"),
-        -2011 => Some("WH_ERROR_SIZE"),
-        -2012 => Some("WH_ERROR_NOHANDLER"),
-        -2013 => Some("WH_ERROR_NOTFOUND"),
-        -2014 => Some("WH_ERROR_TIMEOUT"),
-        -2015 => Some("WH_ERROR_BUSY"),
+        -2001 => Some("WH_ERROR_NOTREADY"),
+        -2002 => Some("WH_ERROR_ABORTED"),
+        -2003 => Some("WH_ERROR_RESERVED1"),
+        -2004 => Some("WH_ERROR_RESERVED2"),
+        -2005 => Some("WH_ERROR_CERT_VERIFY"),
+        -2006 => Some("WH_ERROR_BUFFER_SIZE"),
+        -2007 => Some("WH_ERROR_NOHANDLER"),
+        -2008 => Some("WH_ERROR_NOTIMPL"),
+        -2009 => Some("WH_ERROR_USAGE"),
+        -2010 => Some("WH_ERROR_TIMEOUT"),
+        -2011 => Some("WH_ERROR_REQUEST_PENDING"),
+        // NVM and keystore errors
+        -2100 => Some("WH_ERROR_LOCKED"),
+        -2101 => Some("WH_ERROR_ACCESS"),
+        -2102 => Some("WH_ERROR_NOTVERIFIED"),
+        -2103 => Some("WH_ERROR_NOTBLANK"),
+        -2104 => Some("WH_ERROR_NOTFOUND"),
+        -2105 => Some("WH_ERROR_NOSPACE"),
+        // SHE errors
+        -2200 => Some("WH_SHE_ERC_SEQUENCE_ERROR"),
+        -2201 => Some("WH_SHE_ERC_KEY_NOT_AVAILABLE"),
+        -2202 => Some("WH_SHE_ERC_KEY_INVALID"),
+        -2203 => Some("WH_SHE_ERC_KEY_EMPTY"),
+        -2204 => Some("WH_SHE_ERC_NO_SECURE_BOOT"),
+        -2205 => Some("WH_SHE_ERC_WRITE_PROTECTED"),
+        -2206 => Some("WH_SHE_ERC_KEY_UPDATE_ERROR"),
+        -2207 => Some("WH_SHE_ERC_RNG_SEED"),
+        -2208 => Some("WH_SHE_ERC_NO_DEBUGGING"),
+        -2209 => Some("WH_SHE_ERC_BUSY"),
+        -2210 => Some("WH_SHE_ERC_MEMORY_FAILURE"),
+        -2211 => Some("WH_SHE_ERC_GENERAL_ERROR"),
+        // Auth errors
+        -2300 => Some("WH_AUTH_LOGIN_FAILED"),
+        -2301 => Some("WH_AUTH_PERMISSION_ERROR"),
+        -2302 => Some("WH_AUTH_NOT_ENABLED"),
         _ => None,
     }
 }

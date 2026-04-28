@@ -5,10 +5,10 @@ use crate::error::Error;
 use crate::key::{with_key, KeyId};
 
 /// AES-GCM authentication tag length in bytes (fixed at 128 bits per GCM spec).
-const AES_GCM_TAG_LEN: u32 = 16;
+const AES_GCM_TAG_LEN: usize = 16;
 
 /// AES-GCM IV length in bytes (fixed at 96 bits, the only size wolfHSM accepts).
-const AES_GCM_IV_LEN: u32 = 12;
+const AES_GCM_IV_LEN: usize = 12;
 
 /// AES key handle (GCM mode). Key lives in HSM cache.
 ///
@@ -39,8 +39,8 @@ impl AesKey {
         iv: &[u8],
         aad: &[u8],
         plaintext: &[u8],
-    ) -> Result<(Vec<u8>, [u8; 16]), Error> {
-        if iv.len() != AES_GCM_IV_LEN as usize {
+    ) -> Result<(Vec<u8>, [u8; AES_GCM_TAG_LEN]), Error> {
+        if iv.len() != AES_GCM_IV_LEN {
             return Err(Error::BadArgs {
                 msg: "iv must be exactly 12 bytes",
             });
@@ -52,21 +52,21 @@ impl AesKey {
             msg: "plaintext exceeds u32::MAX bytes",
         })?;
         let mut out = vec![0u8; plaintext.len()];
-        let mut tag = [0u8; AES_GCM_TAG_LEN as usize];
+        let mut tag = [0u8; AES_GCM_TAG_LEN];
         // SAFETY: all pointers are valid heap/stack allocations for this call.
         let rc = unsafe {
             wolfhsm_aes_gcm_encrypt(
                 client.ctx_ptr(),
                 self.id.0,
                 iv.as_ptr(),
-                AES_GCM_IV_LEN,
+                AES_GCM_IV_LEN as u32,
                 aad.as_ptr(),
                 aad_len,
                 plaintext.as_ptr(),
                 in_len,
                 out.as_mut_ptr(),
                 tag.as_mut_ptr(),
-                AES_GCM_TAG_LEN,
+                AES_GCM_TAG_LEN as u32,
             )
         };
         Error::check(rc, "wolfhsm_aes_gcm_encrypt")?;
@@ -81,9 +81,9 @@ impl AesKey {
         iv: &[u8],
         aad: &[u8],
         ciphertext: &[u8],
-        tag: &[u8; 16],
+        tag: &[u8; AES_GCM_TAG_LEN],
     ) -> Result<Vec<u8>, Error> {
-        if iv.len() != AES_GCM_IV_LEN as usize {
+        if iv.len() != AES_GCM_IV_LEN {
             return Err(Error::BadArgs {
                 msg: "iv must be exactly 12 bytes",
             });
@@ -101,14 +101,14 @@ impl AesKey {
                 client.ctx_ptr(),
                 self.id.0,
                 iv.as_ptr(),
-                AES_GCM_IV_LEN,
+                AES_GCM_IV_LEN as u32,
                 aad.as_ptr(),
                 aad_len,
                 ciphertext.as_ptr(),
                 in_len,
                 out.as_mut_ptr(),
                 tag.as_ptr(),
-                AES_GCM_TAG_LEN,
+                AES_GCM_TAG_LEN as u32,
             )
         };
         Error::check(rc, "wolfhsm_aes_gcm_decrypt")?;
