@@ -352,7 +352,9 @@ impl Client {
         let snd_len = u16::try_from(data.len()).map_err(|_| Error::BadArgs {
             msg: "echo data exceeds u16::MAX bytes",
         })?;
-        let mut rcv_len: u16 = u16::try_from(buf.len()).unwrap_or(u16::MAX);
+        let mut rcv_len: u16 = u16::try_from(buf.len()).map_err(|_| Error::BadArgs {
+            msg: "echo: buf exceeds u16::MAX bytes",
+        })?;
 
         // SAFETY: pointers are valid for the duration of this call.
         let rc = unsafe {

@@ -122,9 +122,9 @@ impl RsaKey {
     pub fn public_key_der(&self, client: &mut Client) -> Result<Vec<u8>, Error> {
         // DER SPKI overhead is ~30 bytes; +64 gives margin for any key size.
         let cap = self.key_size_bytes as usize + 64;
-        let mut buf = Vec::<u8>::with_capacity(cap);
+        let mut buf = vec![0u8; cap];
         let mut out_len: u32 = cap as u32;
-        // SAFETY: buf has capacity cap; wolfhsm_rsa_export_public_der writes at most out_len bytes.
+        // SAFETY: buf has cap initialized bytes; wolfhsm_rsa_export_public_der writes at most out_len bytes.
         let rc = unsafe {
             wolfhsm_rsa_export_public_der(
                 client.ctx_ptr(),
@@ -134,13 +134,12 @@ impl RsaKey {
             )
         };
         Error::check(rc, "wolfhsm_rsa_export_public_der")?;
-        if out_len as usize > buf.capacity() {
+        if out_len as usize > buf.len() {
             return Err(Error::ProtocolError {
-                msg: "wolfhsm_rsa_export_public_der: server returned out_len > buffer capacity",
+                msg: "wolfhsm_rsa_export_public_der: server returned out_len > buffer length",
             });
         }
-        // SAFETY: wolfhsm_rsa_export_public_der succeeded and out_len <= capacity (checked above).
-        unsafe { buf.set_len(out_len as usize) };
+        buf.truncate(out_len as usize);
         Ok(buf)
     }
 }

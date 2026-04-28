@@ -7,7 +7,7 @@ use wolfhsm_sys::{
 use crate::client::Client;
 use crate::error::Error;
 use crate::key::KeyId;
-use crate::nvm::NvmId;
+use crate::nvm::{truncate_label, NvmId};
 
 impl Client {
     /// Initialize the server's certificate subsystem.
@@ -44,10 +44,7 @@ impl Client {
         let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
             msg: "cert_add_trusted: cert exceeds u32::MAX bytes",
         })?;
-        let label_len = label.len().min(24); // fits in [0, 24], always < u16::MAX
-        // C API takes *mut u8 for label even though it does not modify it.
-        let mut label_buf = [0u8; 24];
-        label_buf[..label_len].copy_from_slice(&label[..label_len]);
+        let (mut label_buf, label_len) = truncate_label(label);
 
         let mut out_rc: i32 = 0;
         // SAFETY: all pointers are valid for the duration of this call.

@@ -1,8 +1,15 @@
 use core::fmt;
 
 /// Inclusive lower bound of the wolfHSM WH_ERROR_* code range.
+///
+/// Currently `WH_AUTH_NOT_ENABLED` (-2302). Update this constant when new
+/// codes are added to `WH_ERROR_ENUM` in `wolfhsm/wh_error.h`.
 pub(crate) const WH_ERROR_MIN: i32 = -2302;
-/// Inclusive upper bound of the wolfHSM WH_ERROR_* code range (WH_ERROR_BADARGS).
+/// Inclusive upper bound of the wolfHSM WH_ERROR_* code range.
+///
+/// Currently `WH_ERROR_BADARGS` (-2000), the highest-numbered error in the
+/// enum. Update this constant when new codes are added to `WH_ERROR_ENUM`
+/// in `wolfhsm/wh_error.h`.
 pub(crate) const WH_ERROR_MAX: i32 = -2000;
 
 /// Error type for wolfHSM operations.

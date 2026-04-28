@@ -9,6 +9,21 @@ use crate::error::Error;
 // WH_ERROR_NOTFOUND — signals end-of-list in NvmList, not a real error.
 const WH_ERROR_NOTFOUND: i32 = -2104;
 
+/// Maximum NVM label length in bytes (wolfHSM `whNvmMetadata.label` field).
+const NVM_LABEL_LEN: usize = 24;
+
+/// Truncate `label` to [`NVM_LABEL_LEN`] bytes and copy into a fixed-size
+/// mutable buffer.  Returns the buffer and the number of bytes copied.
+///
+/// Used by `nvm_add`, `nvm_overwrite`, and `cert_add_trusted`, which all
+/// share the same label-truncation requirement.
+pub(crate) fn truncate_label(label: &[u8]) -> ([u8; NVM_LABEL_LEN], usize) {
+    let len = label.len().min(NVM_LABEL_LEN);
+    let mut buf = [0u8; NVM_LABEL_LEN];
+    buf[..len].copy_from_slice(&label[..len]);
+    (buf, len)
+}
+
 /// Available and reclaimable NVM space reported by the wolfHSM server.
 #[derive(Debug, Clone, Copy)]
 pub struct NvmAvailability {
@@ -342,9 +357,7 @@ impl Client {
         let data_len = u16::try_from(data.len()).map_err(|_| Error::BadArgs {
             msg: "nvm_add data exceeds u16::MAX bytes",
         })?;
-        let label_len = label.len().min(24);
-        let mut label_buf = [0u8; 24];
-        label_buf[..label_len].copy_from_slice(&label[..label_len]);
+        let (mut label_buf, label_len) = truncate_label(label);
         let mut out_rc: i32 = 0;
         // SAFETY: all pointers are valid for the duration of this call; ctx_ptr is valid.
         let rc = unsafe {
@@ -410,11 +423,7 @@ impl Client {
             Err(e) => return Err(e),
         }
 
-        // Truncate label to 24 bytes; copy into a local mutable buffer as the
-        // C API takes *mut u8 even though it does not modify the label.
-        let label_len = label.len().min(24);
-        let mut label_buf = [0u8; 24];
-        label_buf[..label_len].copy_from_slice(&label[..label_len]);
+        let (mut label_buf, label_len) = truncate_label(label);
 
         let mut out_rc: i32 = 0;
 
