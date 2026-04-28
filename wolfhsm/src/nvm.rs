@@ -62,7 +62,9 @@ pub struct NvmMetadata {
     /// Object attribute flags. Corresponds to `WH_NVM_FLAGS_*` constants in
     /// `wolfhsm/wh_nvm.h`. Pass `0` for default attributes.
     pub flags: u16,
+    /// Data length in bytes as reported by the wolfHSM server.
     pub len: u16,
+    /// Raw label bytes (NUL-padded to 24 bytes). Use [`label_str`][NvmMetadata::label_str] for a `&str` view.
     pub label: [u8; 24],
 }
 

@@ -103,18 +103,28 @@ struct ClientInner {
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
-/// Information returned by the wolfHSM server in response to a CommInfo request.
+/// Information returned by the wolfHSM server in response to a `wh_Client_CommInfo` request.
 #[derive(Debug, Clone)]
 pub struct ServerInfo {
+    /// First byte of the server version identifier.
     pub version: u8,
+    /// First byte of the server build identifier.
     pub build: u8,
+    /// Maximum data length (bytes) for any single request or response.
     pub comm_data_len: u32,
+    /// Maximum number of NVM objects the server supports.
     pub nvm_object_count: u32,
+    /// Number of RAM key-cache slots.
     pub keycache_count: u32,
+    /// Maximum size (bytes) of each key in the RAM cache.
     pub keycache_bufsize: u32,
+    /// Number of large-key RAM cache slots.
     pub keycache_bigcount: u32,
+    /// Maximum size (bytes) of each large key in the RAM cache.
     pub keycache_bigbufsize: u32,
+    /// Number of custom CryptoCb callback slots.
     pub customcb_count: u32,
+    /// Number of DMA address regions.
     pub dmaaddr_count: u32,
     /// Implementation-defined. The current wolfHSM server returns a fixed
     /// placeholder value; no named constants are defined in this wolfHSM version.
