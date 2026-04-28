@@ -100,11 +100,12 @@ impl Client {
         };
         Error::check(rc, "wh_Client_CertReadTrusted")?;
         Error::check(out_rc, "wh_Client_CertReadTrusted(server)")?;
-        // Guard against a misbehaving server reporting more bytes than the
-        // allocated buffer: clamp to meta.len so truncate is always a
-        // genuine shortening (never a no-op that hides an overrun).
-        let safe_len = (out_len as usize).min(meta.len as usize);
-        buf.truncate(safe_len);
+        if out_len as usize > buf.len() {
+            return Err(Error::ProtocolError {
+                msg: "wh_Client_CertReadTrusted: server reported more bytes than requested",
+            });
+        }
+        buf.truncate(out_len as usize);
         Ok(buf)
     }
 
