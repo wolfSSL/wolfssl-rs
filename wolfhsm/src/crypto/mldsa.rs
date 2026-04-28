@@ -76,6 +76,11 @@ impl MlDsaKey {
             )
         };
         Error::check(rc, "wolfhsm_mldsa_sign")?;
+        if sig_len as usize > sig.len() {
+            return Err(Error::ProtocolError {
+                msg: "wolfhsm_mldsa_sign: server returned sig_len > buffer size",
+            });
+        }
         sig.truncate(sig_len as usize);
         Ok(sig)
     }

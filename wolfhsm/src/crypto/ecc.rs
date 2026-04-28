@@ -10,6 +10,12 @@ use crate::key::{with_key, KeyId};
 // ECC_SECP256R1 = 1 (wolfcrypt ecc.h enum ecc_curve_id)
 const ECC_SECP256R1: core::ffi::c_int = 1;
 
+/// DER SubjectPublicKeyInfo length for a P-256 public key (always exactly 91 bytes).
+///
+/// Layout: SEQUENCE (89 bytes) { AlgorithmIdentifier (19 bytes) + BIT STRING (72 bytes) }.
+/// 72 = 1 (padding byte) + 1 (0x04 uncompressed prefix) + 32 (x) + 32 (y) + 4 (headers).
+const ECC_P256_SPKI_DER_LEN: usize = 91;
+
 /// ECC P-256 key handle. The private key lives in the HSM key cache.
 ///
 /// Keys are accessed exclusively through [`Client::with_ecc_p256_key`], which
@@ -99,9 +105,9 @@ impl EccP256Key {
 
     /// Export the public key as DER SubjectPublicKeyInfo.
     pub fn public_key_der(&self, client: &mut Client) -> Result<Vec<u8>, Error> {
-        let mut buf = Vec::<u8>::with_capacity(91);
-        let mut out_len: u32 = 91;
-        // SAFETY: buf has capacity 91; wolfhsm_ecc_export_public_der writes at most out_len bytes.
+        let mut buf = Vec::<u8>::with_capacity(ECC_P256_SPKI_DER_LEN);
+        let mut out_len: u32 = ECC_P256_SPKI_DER_LEN as u32;
+        // SAFETY: buf has capacity ECC_P256_SPKI_DER_LEN; wolfhsm_ecc_export_public_der writes at most out_len bytes.
         let rc = unsafe {
             wolfhsm_ecc_export_public_der(
                 client.ctx_ptr(),
@@ -123,8 +129,9 @@ impl EccP256Key {
 
     /// ECDH: compute shared secret with a peer DER SubjectPublicKeyInfo.
     ///
-    /// `peer_public_der` must be the 91-byte DER `SubjectPublicKeyInfo` for a
-    /// P-256 public key — the same format returned by [`public_key_der`][EccP256Key::public_key_der].
+    /// `peer_public_der` must be the [`ECC_P256_SPKI_DER_LEN`]-byte DER
+    /// `SubjectPublicKeyInfo` for a P-256 public key — the same format returned
+    /// by [`public_key_der`][EccP256Key::public_key_der].
     /// Raw uncompressed EC points (65-byte `04||x||y`) are not accepted.
     pub fn ecdh(
         &self,

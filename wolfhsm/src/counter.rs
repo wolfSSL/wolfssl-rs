@@ -14,6 +14,11 @@ impl Client {
     /// server's confirmed value.  Counters saturate at `u32::MAX` — they never
     /// wrap.
     pub fn counter_init(&mut self, id: NvmId, value: u32) -> Result<u32, Error> {
+        if id == NvmId::INVALID {
+            return Err(Error::BadArgs {
+                msg: "id must not be NvmId::INVALID (0)",
+            });
+        }
         let mut counter: u32 = value;
         // SAFETY: ctx_ptr is valid for the duration of this call; counter is a
         // valid stack location for the IN/OUT parameter.

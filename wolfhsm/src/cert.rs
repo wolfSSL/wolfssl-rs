@@ -44,7 +44,7 @@ impl Client {
         let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
             msg: "cert_add_trusted: cert exceeds u32::MAX bytes",
         })?;
-        let label_len = u16::try_from(label.len().min(24)).unwrap();
+        let label_len = label.len().min(24) as u16; // min(24) <= u16::MAX, always safe
         // C API takes *mut u8 for label even though it does not modify it.
         let mut label_buf = [0u8; 24];
         label_buf[..label_len as usize].copy_from_slice(&label[..label_len as usize]);
@@ -141,7 +141,13 @@ impl Client {
     /// assigned [`KeyId`].  Pass `key_id: None` to let the server assign a new
     /// ID, or `Some(id)` to request a specific cache slot.
     ///
+    /// `cached_key_flags` — NVM attribute flags for the cached key; see
+    /// `WH_NVM_FLAGS_*` constants in `wolfhsm/wh_nvm.h`.  Pass `0` for
+    /// default (no special attributes).
+    ///
     /// The caller is responsible for evicting the cached key when done.
+    /// Prefer [`with_cert_verified_pubkey`][Self::with_cert_verified_pubkey]
+    /// to ensure the key is always evicted.
     pub fn cert_verify_and_cache_leaf_pubkey(
         &mut self,
         cert: &[u8],
@@ -174,6 +180,51 @@ impl Client {
             });
         }
         Ok(KeyId(inout_key_id))
+    }
+
+    /// Verify a certificate, cache its leaf public key, run `f`, then always
+    /// evict the cached key — even when `f` returns `Err`.
+    ///
+    /// This is the safe RAII counterpart to
+    /// [`cert_verify_and_cache_leaf_pubkey`][Self::cert_verify_and_cache_leaf_pubkey].
+    /// The cached key slot is guaranteed to be released on both success and
+    /// error paths.
+    ///
+    /// `cached_key_flags` — NVM attribute flags for the cached key; see
+    /// `WH_NVM_FLAGS_*` in `wolfhsm/wh_nvm.h`.  Pass `0` for defaults.
+    pub fn with_cert_verified_pubkey<F, R>(
+        &mut self,
+        cert: &[u8],
+        trusted_root_id: NvmId,
+        cached_key_flags: u16,
+        key_id: Option<KeyId>,
+        f: F,
+    ) -> Result<R, Error>
+    where
+        F: FnOnce(KeyId, &mut Client) -> Result<R, Error>,
+    {
+        let id = self.cert_verify_and_cache_leaf_pubkey(
+            cert,
+            trusted_root_id,
+            cached_key_flags,
+            key_id,
+        )?;
+        let result = f(id, self);
+        let evict = self.key_evict(id);
+        match result {
+            Ok(v) => {
+                evict?;
+                Ok(v)
+            }
+            Err(e) => {
+                if let Err(evict_err) = evict {
+                    log::warn!(
+                        "wolfhsm: cert pubkey eviction failed during error cleanup: {evict_err}"
+                    );
+                }
+                Err(e)
+            }
+        }
     }
 
     /// Verify a DER-encoded attribute certificate against a trusted root

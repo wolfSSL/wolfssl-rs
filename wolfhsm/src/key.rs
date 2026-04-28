@@ -114,6 +114,18 @@ impl Client {
 /// before eviction. On the success path, an eviction error is propagated. On
 /// the error path, eviction is best-effort (failure is printed but original
 /// error returned).
+///
+/// # Contributor invariant
+///
+/// This macro works only because every key type satisfies three implicit
+/// requirements:
+/// 1. It has a field named `id` of type `KeyId`.
+/// 2. Its `Drop` impl emits a `log::warn!` if and only if `self.id != KeyId::ERASED`.
+/// 3. Clearing `id` to `KeyId::ERASED` before the `Drop` runs suppresses the warning.
+///
+/// **Any new key type added to this crate must maintain all three invariants.**
+/// Failing invariant 2 causes cache slot leaks to go undetected; failing
+/// invariant 3 causes spurious log warnings on the normal eviction path.
 macro_rules! with_key {
     ($key:expr, $client:expr, $f:expr) => {{
         let mut key = $key;

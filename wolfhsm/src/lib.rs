@@ -109,3 +109,5 @@ pub use auth::{AuthMethod, AuthPermissions, UserId};
 
 #[cfg(feature = "she")]
 pub mod she;
+#[cfg(feature = "she")]
+pub use she::SheKeyId;

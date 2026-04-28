@@ -260,7 +260,11 @@ impl Client {
         };
         Error::check(rc, "wh_Client_NvmRead")?;
         Error::check(out_rc, "wh_Client_NvmRead(server)")?;
-
+        if out_len as usize > data.len() {
+            return Err(Error::ProtocolError {
+                msg: "wh_Client_NvmRead: server reported out_len > requested length",
+            });
+        }
         data.truncate(out_len as usize);
         Ok(data)
     }
@@ -298,6 +302,11 @@ impl Client {
         };
         Error::check(rc, "wh_Client_NvmRead")?;
         Error::check(out_rc, "wh_Client_NvmRead(server)")?;
+        if out_len as usize > data.len() {
+            return Err(Error::ProtocolError {
+                msg: "wh_Client_NvmRead: server reported out_len > requested length",
+            });
+        }
         data.truncate(out_len as usize);
         Ok(data)
     }

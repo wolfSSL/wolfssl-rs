@@ -90,10 +90,42 @@ impl Error {
     }
 }
 
+/// Return the symbolic name for a WH_ERROR_* code, or `None` if unknown.
+///
+/// Covers the most common codes from `wolfhsm/wh_error.h`.  For the full
+/// list, consult that header directly.
+fn wh_error_name(code: i32) -> Option<&'static str> {
+    match code {
+        -2000 => Some("WH_ERROR_BADARGS"),
+        -2001 => Some("WH_ERROR_ABORTED"),
+        -2002 => Some("WH_ERROR_NOTREADY"),
+        -2003 => Some("WH_ERROR_CANCEL"),
+        -2004 => Some("WH_ERROR_ACCESS"),
+        -2005 => Some("WH_ERROR_NOTVERIFIED"),
+        -2006 => Some("WH_ERROR_NOTIMPL"),
+        -2007 => Some("WH_ERROR_LOCKED"),
+        -2008 => Some("WH_ERROR_SEQUENCE"),
+        -2009 => Some("WH_ERROR_MEMORY"),
+        -2010 => Some("WH_ERROR_NOSPC"),
+        -2011 => Some("WH_ERROR_SIZE"),
+        -2012 => Some("WH_ERROR_NOHANDLER"),
+        -2013 => Some("WH_ERROR_NOTFOUND"),
+        -2014 => Some("WH_ERROR_TIMEOUT"),
+        -2015 => Some("WH_ERROR_BUSY"),
+        _ => None,
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::Wh { code } => write!(f, "wolfHSM error {code}"),
+            Error::Wh { code } => {
+                if let Some(name) = wh_error_name(*code) {
+                    write!(f, "wolfHSM error {code} ({name})")
+                } else {
+                    write!(f, "wolfHSM error {code} (see wolfhsm/wh_error.h)")
+                }
+            }
             Error::Ffi { code, func } => {
                 write!(f, "{func} failed: wolfSSL FFI error {code}")
             }
