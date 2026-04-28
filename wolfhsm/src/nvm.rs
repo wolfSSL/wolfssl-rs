@@ -4,7 +4,7 @@ use wolfhsm_sys::{
 };
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 
 // WH_ERROR_NOTFOUND — signals end-of-list in NvmList, not a real error.
 const WH_ERROR_NOTFOUND: i32 = -2104;
@@ -83,7 +83,7 @@ impl NvmMetadata {
 
 impl Client {
     /// Query available and reclaimable NVM space on the server.
-    pub fn nvm_available(&mut self) -> Result<NvmAvailability, WolfHsmError> {
+    pub fn nvm_available(&mut self) -> Result<NvmAvailability, Error> {
         let mut out_rc: i32 = 0;
         let mut avail_size: u32 = 0;
         let mut avail_objects: u16 = 0;
@@ -101,8 +101,8 @@ impl Client {
                 &mut reclaim_objects,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_NvmGetAvailable")?;
-        WolfHsmError::check(out_rc, "wh_Client_NvmGetAvailable(server)")?;
+        Error::check(rc, "wh_Client_NvmGetAvailable")?;
+        Error::check(out_rc, "wh_Client_NvmGetAvailable(server)")?;
 
         Ok(NvmAvailability {
             avail_size,
@@ -129,7 +129,7 @@ impl Client {
     /// last-seen + 1.  Passing last-seen + 1 causes a spurious "not found"
     /// result for non-contiguous ID spaces because the server does an
     /// exact-match lookup, not a lower-bound search.
-    pub fn nvm_list(&mut self) -> Result<Vec<NvmId>, WolfHsmError> {
+    pub fn nvm_list(&mut self) -> Result<Vec<NvmId>, Error> {
         let mut ids = Vec::new();
         // 0 == WH_NVM_ID_INVALID: tells the server to start from the first object.
         let mut start_id: u16 = 0;
@@ -151,14 +151,14 @@ impl Client {
                     &mut out_id,
                 )
             };
-            WolfHsmError::check(rc, "wh_Client_NvmList")?;
+            Error::check(rc, "wh_Client_NvmList")?;
 
             // WH_ERROR_NOTFOUND in out_rc is the end-of-list signal on some
             // backend variants.
             if out_rc == WH_ERROR_NOTFOUND {
                 break;
             }
-            WolfHsmError::check(out_rc, "wh_Client_NvmList(server)")?;
+            Error::check(out_rc, "wh_Client_NvmList(server)")?;
 
             // out_id == 0 (WH_NVM_ID_INVALID) with WH_ERROR_OK is the
             // end-of-list signal used by wh_NvmFlash_List and
@@ -173,6 +173,14 @@ impl Client {
                 ids.reserve(out_count as usize);
             }
 
+            // Guard against a misbehaving server that returns the same ID as
+            // the cursor without advancing (would otherwise loop forever).
+            if out_id == start_id && start_id != 0 {
+                return Err(Error::ProtocolError {
+                    msg: "wh_Client_NvmList: server returned out_id == start_id; cursor stuck",
+                });
+            }
+
             ids.push(NvmId(out_id));
 
             // Pass the last-seen ID back as the cursor.  The server does an
@@ -185,7 +193,7 @@ impl Client {
     }
 
     /// Retrieve metadata for the NVM object identified by `id`.
-    pub fn nvm_metadata(&mut self, id: NvmId) -> Result<NvmMetadata, WolfHsmError> {
+    pub fn nvm_metadata(&mut self, id: NvmId) -> Result<NvmMetadata, Error> {
         let mut out_rc: i32 = 0;
         let mut out_id: u16 = 0;
         let mut out_access: u16 = 0;
@@ -207,8 +215,8 @@ impl Client {
                 label.as_mut_ptr(),
             )
         };
-        WolfHsmError::check(rc, "wh_Client_NvmGetMetadata")?;
-        WolfHsmError::check(out_rc, "wh_Client_NvmGetMetadata(server)")?;
+        Error::check(rc, "wh_Client_NvmGetMetadata")?;
+        Error::check(out_rc, "wh_Client_NvmGetMetadata(server)")?;
 
         Ok(NvmMetadata {
             id: NvmId(out_id),
@@ -224,7 +232,7 @@ impl Client {
     /// Fetches the object length via `nvm_metadata` first, then reads the
     /// bytes from `offset` to the end of the object.  Returns `Ok(vec![])`
     /// when `offset >= meta.len` (nothing left to read).
-    pub fn nvm_read(&mut self, id: NvmId, offset: u16) -> Result<Vec<u8>, WolfHsmError> {
+    pub fn nvm_read(&mut self, id: NvmId, offset: u16) -> Result<Vec<u8>, Error> {
         let meta = self.nvm_metadata(id)?;
         // Request only the bytes that remain after `offset`.  Without this,
         // `data_len` would exceed the object length, causing the server to
@@ -250,8 +258,8 @@ impl Client {
                 data.as_mut_ptr(),
             )
         };
-        WolfHsmError::check(rc, "wh_Client_NvmRead")?;
-        WolfHsmError::check(out_rc, "wh_Client_NvmRead(server)")?;
+        Error::check(rc, "wh_Client_NvmRead")?;
+        Error::check(out_rc, "wh_Client_NvmRead(server)")?;
 
         data.truncate(out_len as usize);
         Ok(data)
@@ -269,7 +277,7 @@ impl Client {
         id: NvmId,
         offset: u16,
         len: u16,
-    ) -> Result<Vec<u8>, WolfHsmError> {
+    ) -> Result<Vec<u8>, Error> {
         if len == 0 {
             return Ok(vec![]);
         }
@@ -288,8 +296,8 @@ impl Client {
                 data.as_mut_ptr(),
             )
         };
-        WolfHsmError::check(rc, "wh_Client_NvmRead")?;
-        WolfHsmError::check(out_rc, "wh_Client_NvmRead(server)")?;
+        Error::check(rc, "wh_Client_NvmRead")?;
+        Error::check(out_rc, "wh_Client_NvmRead(server)")?;
         data.truncate(out_len as usize);
         Ok(data)
     }
@@ -313,15 +321,16 @@ impl Client {
         id: NvmId,
         access: u16,
         flags: u16,
-        label: &[u8],
+        label: impl AsRef<[u8]>,
         data: &[u8],
-    ) -> Result<(), WolfHsmError> {
+    ) -> Result<(), Error> {
+        let label = label.as_ref();
         if id == NvmId::INVALID {
-            return Err(WolfHsmError::BadArgs {
+            return Err(Error::BadArgs {
                 msg: "id must not be NvmId::INVALID (0)",
             });
         }
-        let data_len = u16::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+        let data_len = u16::try_from(data.len()).map_err(|_| Error::BadArgs {
             msg: "nvm_add data exceeds u16::MAX bytes",
         })?;
         let label_len = label.len().min(24);
@@ -342,8 +351,8 @@ impl Client {
                 &mut out_rc,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_NvmAddObject")?;
-        WolfHsmError::check(out_rc, "wh_Client_NvmAddObject(server)")?;
+        Error::check(rc, "wh_Client_NvmAddObject")?;
+        Error::check(out_rc, "wh_Client_NvmAddObject(server)")?;
         Ok(())
     }
 
@@ -352,7 +361,7 @@ impl Client {
     /// **Warning — data loss hazard**: the existing object is deleted first,
     /// then the new object is added.  If the add fails after a successful
     /// delete, the original object is **permanently lost** and
-    /// [`WolfHsmError::DataLost`] is returned carrying the affected ID.  The
+    /// [`Error::DataLost`] is returned carrying the affected ID.  The
     /// NVM protocol has no rollback facility.
     ///
     /// The `id` must not be [`NvmId::INVALID`] — the server's auto-assign
@@ -372,22 +381,23 @@ impl Client {
         id: NvmId,
         access: u16,
         flags: u16,
-        label: &[u8],
+        label: impl AsRef<[u8]>,
         data: &[u8],
-    ) -> Result<(), WolfHsmError> {
+    ) -> Result<(), Error> {
+        let label = label.as_ref();
         if id == NvmId::INVALID {
-            return Err(WolfHsmError::BadArgs {
+            return Err(Error::BadArgs {
                 msg: "id must not be NvmId::INVALID (0); wolfHSM auto-assign does not return the assigned ID",
             });
         }
-        let data_len = u16::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+        let data_len = u16::try_from(data.len()).map_err(|_| Error::BadArgs {
             msg: "nvm_overwrite data exceeds u16::MAX bytes",
         })?;
 
         // Treat NOTFOUND as success: the object may not yet exist (initial write).
         match self.nvm_delete(id) {
             Ok(()) => {}
-            Err(WolfHsmError::Wh { code }) if code == WH_ERROR_NOTFOUND => {}
+            Err(Error::Wh { code }) if code == WH_ERROR_NOTFOUND => {}
             Err(e) => return Err(e),
         }
 
@@ -416,15 +426,15 @@ impl Client {
 
         // If the add fails the prior delete has already run; report data loss
         // so the caller knows the old object is gone and cannot be recovered.
-        let map_add_err = |_: WolfHsmError| WolfHsmError::DataLost { id: id.0 };
-        WolfHsmError::check(rc, "wh_Client_NvmAddObject").map_err(map_add_err)?;
-        WolfHsmError::check(out_rc, "wh_Client_NvmAddObject(server)").map_err(map_add_err)?;
+        let map_add_err = |_: Error| Error::DataLost { id: id.0 };
+        Error::check(rc, "wh_Client_NvmAddObject").map_err(map_add_err)?;
+        Error::check(out_rc, "wh_Client_NvmAddObject(server)").map_err(map_add_err)?;
 
         Ok(())
     }
 
     /// Delete the NVM object identified by `id`.
-    pub fn nvm_delete(&mut self, id: NvmId) -> Result<(), WolfHsmError> {
+    pub fn nvm_delete(&mut self, id: NvmId) -> Result<(), Error> {
         let id_list = [id.0];
         let mut out_rc: i32 = 0;
 
@@ -432,8 +442,8 @@ impl Client {
         let rc = unsafe {
             wh_Client_NvmDestroyObjects(self.ctx_ptr(), 1, id_list.as_ptr(), &mut out_rc)
         };
-        WolfHsmError::check(rc, "wh_Client_NvmDestroyObjects")?;
-        WolfHsmError::check(out_rc, "wh_Client_NvmDestroyObjects(server)")?;
+        Error::check(rc, "wh_Client_NvmDestroyObjects")?;
+        Error::check(out_rc, "wh_Client_NvmDestroyObjects(server)")?;
 
         Ok(())
     }

@@ -5,7 +5,7 @@ use wolfhsm_sys::{
 };
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 use crate::key::KeyId;
 use crate::nvm::NvmId;
 
@@ -13,12 +13,12 @@ impl Client {
     /// Initialize the server's certificate subsystem.
     ///
     /// Must be called once before any other `cert_*` operations.
-    pub fn cert_init(&mut self) -> Result<(), WolfHsmError> {
+    pub fn cert_init(&mut self) -> Result<(), Error> {
         let mut out_rc: i32 = 0;
         // SAFETY: ctx_ptr is valid; out_rc is a valid stack allocation.
         let rc = unsafe { wh_Client_CertInit(self.ctx_ptr(), &mut out_rc) };
-        WolfHsmError::check(rc, "wh_Client_CertInit")?;
-        WolfHsmError::check(out_rc, "wh_Client_CertInit(server)")?;
+        Error::check(rc, "wh_Client_CertInit")?;
+        Error::check(out_rc, "wh_Client_CertInit(server)")?;
         Ok(())
     }
 
@@ -37,10 +37,11 @@ impl Client {
         id: NvmId,
         access: u16,
         flags: u16,
-        label: &[u8],
+        label: impl AsRef<[u8]>,
         cert: &[u8],
-    ) -> Result<(), WolfHsmError> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<(), Error> {
+        let label = label.as_ref();
+        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
             msg: "cert_add_trusted: cert exceeds u32::MAX bytes",
         })?;
         let label_len = u16::try_from(label.len().min(24)).unwrap();
@@ -63,18 +64,18 @@ impl Client {
                 &mut out_rc,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_CertAddTrusted")?;
-        WolfHsmError::check(out_rc, "wh_Client_CertAddTrusted(server)")?;
+        Error::check(rc, "wh_Client_CertAddTrusted")?;
+        Error::check(out_rc, "wh_Client_CertAddTrusted(server)")?;
         Ok(())
     }
 
     /// Remove a trusted CA certificate from the server's NVM.
-    pub fn cert_erase_trusted(&mut self, id: NvmId) -> Result<(), WolfHsmError> {
+    pub fn cert_erase_trusted(&mut self, id: NvmId) -> Result<(), Error> {
         let mut out_rc: i32 = 0;
         // SAFETY: ctx_ptr is valid; out_rc is a valid stack allocation.
         let rc = unsafe { wh_Client_CertEraseTrusted(self.ctx_ptr(), id.0, &mut out_rc) };
-        WolfHsmError::check(rc, "wh_Client_CertEraseTrusted")?;
-        WolfHsmError::check(out_rc, "wh_Client_CertEraseTrusted(server)")?;
+        Error::check(rc, "wh_Client_CertEraseTrusted")?;
+        Error::check(out_rc, "wh_Client_CertEraseTrusted(server)")?;
         Ok(())
     }
 
@@ -82,7 +83,7 @@ impl Client {
     ///
     /// Queries the object length via [`nvm_metadata`][Self::nvm_metadata] first
     /// to size the receive buffer exactly.
-    pub fn cert_read_trusted(&mut self, id: NvmId) -> Result<Vec<u8>, WolfHsmError> {
+    pub fn cert_read_trusted(&mut self, id: NvmId) -> Result<Vec<u8>, Error> {
         let meta = self.nvm_metadata(id)?;
         if meta.len == 0 {
             return Ok(vec![]);
@@ -100,8 +101,8 @@ impl Client {
                 &mut out_rc,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_CertReadTrusted")?;
-        WolfHsmError::check(out_rc, "wh_Client_CertReadTrusted(server)")?;
+        Error::check(rc, "wh_Client_CertReadTrusted")?;
+        Error::check(out_rc, "wh_Client_CertReadTrusted(server)")?;
         // Guard against a misbehaving server reporting more bytes than the
         // allocated buffer: clamp to meta.len so truncate is always a
         // genuine shortening (never a no-op that hides an overrun).
@@ -113,8 +114,8 @@ impl Client {
     /// Verify a DER-encoded certificate against a trusted root stored in NVM.
     ///
     /// Returns `Ok(())` if the certificate is valid.
-    pub fn cert_verify(&mut self, cert: &[u8], trusted_root_id: NvmId) -> Result<(), WolfHsmError> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::BadArgs {
+    pub fn cert_verify(&mut self, cert: &[u8], trusted_root_id: NvmId) -> Result<(), Error> {
+        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
             msg: "cert_verify: cert exceeds u32::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
@@ -128,8 +129,8 @@ impl Client {
                 &mut out_rc,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_CertVerify")?;
-        WolfHsmError::check(out_rc, "wh_Client_CertVerify(server)")?;
+        Error::check(rc, "wh_Client_CertVerify")?;
+        Error::check(out_rc, "wh_Client_CertVerify(server)")?;
         Ok(())
     }
 
@@ -147,8 +148,8 @@ impl Client {
         trusted_root_id: NvmId,
         cached_key_flags: u16,
         key_id: Option<KeyId>,
-    ) -> Result<KeyId, WolfHsmError> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<KeyId, Error> {
+        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
             msg: "cert_verify_and_cache_leaf_pubkey: cert exceeds u32::MAX bytes",
         })?;
         let mut inout_key_id: u16 = key_id.unwrap_or(KeyId::ERASED).0;
@@ -165,10 +166,10 @@ impl Client {
                 &mut out_rc,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_CertVerifyAndCacheLeafPubKey")?;
-        WolfHsmError::check(out_rc, "wh_Client_CertVerifyAndCacheLeafPubKey(server)")?;
+        Error::check(rc, "wh_Client_CertVerifyAndCacheLeafPubKey")?;
+        Error::check(out_rc, "wh_Client_CertVerifyAndCacheLeafPubKey(server)")?;
         if inout_key_id == KeyId::ERASED.0 {
-            return Err(WolfHsmError::ProtocolError {
+            return Err(Error::ProtocolError {
                 msg: "wh_Client_CertVerifyAndCacheLeafPubKey: server returned ERASED key ID",
             });
         }
@@ -181,8 +182,8 @@ impl Client {
         &mut self,
         cert: &[u8],
         trusted_root_id: NvmId,
-    ) -> Result<(), WolfHsmError> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<(), Error> {
+        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
             msg: "cert_verify_acert: cert exceeds u32::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
@@ -196,8 +197,8 @@ impl Client {
                 &mut out_rc,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_CertVerifyAcert")?;
-        WolfHsmError::check(out_rc, "wh_Client_CertVerifyAcert(server)")?;
+        Error::check(rc, "wh_Client_CertVerifyAcert")?;
+        Error::check(out_rc, "wh_Client_CertVerifyAcert(server)")?;
         Ok(())
     }
 }

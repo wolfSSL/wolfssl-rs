@@ -1,7 +1,7 @@
 use wolfhsm_sys::wolfhsm_cmac;
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 use crate::key::{with_key, KeyId};
 
 /// CMAC-AES key handle. Key lives in HSM cache.
@@ -15,9 +15,9 @@ pub struct CmacKey {
 
 impl CmacKey {
     /// Cache raw AES key bytes for CMAC. Key must be 16, 24, or 32 bytes.
-    pub(crate) fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
+    pub(crate) fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, Error> {
         if !matches!(key_bytes.len(), 16 | 24 | 32) {
-            return Err(WolfHsmError::BadArgs {
+            return Err(Error::BadArgs {
                 msg: "key must be 16, 24, or 32 bytes",
             });
         }
@@ -26,8 +26,8 @@ impl CmacKey {
     }
 
     /// Compute a 16-byte CMAC tag over data.
-    pub fn compute(&self, client: &mut Client, data: &[u8]) -> Result<[u8; 16], WolfHsmError> {
-        let in_len = u32::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+    pub fn compute(&self, client: &mut Client, data: &[u8]) -> Result<[u8; 16], Error> {
+        let in_len = u32::try_from(data.len()).map_err(|_| Error::BadArgs {
             msg: "data exceeds u32::MAX bytes",
         })?;
         let mut out = [0u8; 16];
@@ -43,9 +43,9 @@ impl CmacKey {
                 &mut out_len,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_cmac")?;
+        Error::check(rc, "wolfhsm_cmac")?;
         if out_len != 16 {
-            return Err(WolfHsmError::ProtocolError {
+            return Err(Error::ProtocolError {
                 msg: "wolfhsm_cmac: unexpected output length",
             });
         }
@@ -69,9 +69,9 @@ impl Client {
     /// Cache a CMAC-AES key, run `f`, then always evict.
     ///
     /// Guarantees the HSM cache slot is released even when `f` returns `Err`.
-    pub fn with_cmac_key<F, R>(&mut self, key_bytes: &[u8], f: F) -> Result<R, WolfHsmError>
+    pub fn with_cmac_key<F, R>(&mut self, key_bytes: &[u8], f: F) -> Result<R, Error>
     where
-        F: FnOnce(&CmacKey, &mut Client) -> Result<R, WolfHsmError>,
+        F: FnOnce(&CmacKey, &mut Client) -> Result<R, Error>,
     {
         let key = CmacKey::cache(self, key_bytes)?;
         with_key!(key, self, f)

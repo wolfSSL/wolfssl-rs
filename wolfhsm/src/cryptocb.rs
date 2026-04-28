@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use wolfhsm_sys::{wc_CryptoInfo, wh_Client_CryptoCb};
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 
 /// wolfHSM CryptoCb device ID ("WHSM" = 0x5748534D).
 ///
@@ -55,14 +55,14 @@ impl Client {
     ///
     /// Routes all wolfCrypt operations tagged with [`DEV_ID`] to this wolfHSM
     /// server.  Only one registration is permitted per process.  Returns
-    /// [`WolfHsmError::AlreadyRegistered`] if a registration is already live.
+    /// [`Error::AlreadyRegistered`] if a registration is already live.
     ///
     /// Drop the returned [`CryptoCbGuard`] to unregister.
-    pub fn register_cryptocb(&mut self) -> Result<CryptoCbGuard<'_>, WolfHsmError> {
+    pub fn register_cryptocb(&mut self) -> Result<CryptoCbGuard<'_>, Error> {
         // Claim the global registration slot; fail if already taken.
         REGISTERED
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .map_err(|_| WolfHsmError::AlreadyRegistered)?;
+            .map_err(|_| Error::AlreadyRegistered)?;
 
         // SAFETY: ctx_ptr() returns a valid pointer to the pinned whClientContext
         // for the lifetime of `self`.  wc_CryptoCb_RegisterDevice stores it in
@@ -76,7 +76,7 @@ impl Client {
         if rc != 0 {
             // Registration failed; release the slot so a future call can retry.
             REGISTERED.store(false, Ordering::SeqCst);
-            return Err(WolfHsmError::Ffi {
+            return Err(Error::Ffi {
                 code: rc,
                 func: "wc_CryptoCb_RegisterDevice",
             });

@@ -5,7 +5,7 @@ use wolfhsm_sys::{
 };
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 use crate::key::{with_key, KeyId};
 
 /// Raw RSA primitive operation passed to [`RsaKey::raw_op`].
@@ -41,16 +41,16 @@ pub struct RsaKey {
 impl RsaKey {
     /// Generate an RSA key. `bits` is key size (1024/2048/3072/4096).
     /// `e` is the public exponent (typically 65537).
-    pub(crate) fn generate(client: &mut Client, bits: u32, e: u64) -> Result<Self, WolfHsmError> {
+    pub(crate) fn generate(client: &mut Client, bits: u32, e: u64) -> Result<Self, Error> {
         let mut key_id: u16 = 0;
         // SAFETY: ctx_ptr is valid for the duration of this call; key_id is a
         // valid stack allocation.
         let rc = unsafe {
             wolfhsm_rsa_make_key(client.ctx_ptr(), bits as c_int, e as c_long, &mut key_id)
         };
-        WolfHsmError::check(rc, "wolfhsm_rsa_make_key")?;
+        Error::check(rc, "wolfhsm_rsa_make_key")?;
         if key_id == 0 {
-            return Err(WolfHsmError::ProtocolError {
+            return Err(Error::ProtocolError {
                 msg: "wolfhsm_rsa_make_key: server returned WH_KEYID_ERASED (0)",
             });
         }
@@ -59,9 +59,9 @@ impl RsaKey {
         // SAFETY: ctx_ptr is valid for the duration of this call; out_size is a
         // valid stack allocation.
         let rc = unsafe { wolfhsm_rsa_get_size(client.ctx_ptr(), key_id, &mut out_size) };
-        WolfHsmError::check(rc, "wolfhsm_rsa_get_size")?;
+        Error::check(rc, "wolfhsm_rsa_get_size")?;
         if out_size <= 0 {
-            return Err(WolfHsmError::ProtocolError {
+            return Err(Error::ProtocolError {
                 msg: "wolfhsm_rsa_get_size: returned non-positive key size",
             });
         }
@@ -82,8 +82,8 @@ impl RsaKey {
         client: &mut Client,
         op: RsaRawOp,
         in_buf: &[u8],
-    ) -> Result<Vec<u8>, WolfHsmError> {
-        let in_len = u32::try_from(in_buf.len()).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<Vec<u8>, Error> {
+        let in_len = u32::try_from(in_buf.len()).map_err(|_| Error::BadArgs {
             msg: "input exceeds u32::MAX bytes",
         })?;
         let out_size = self.key_size_bytes as usize;
@@ -103,7 +103,12 @@ impl RsaKey {
                 &mut out_len,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_rsa_function")?;
+        Error::check(rc, "wolfhsm_rsa_function")?;
+        if out_len as usize > out.len() {
+            return Err(Error::ProtocolError {
+                msg: "wolfhsm_rsa_function: server returned out_len > buffer size",
+            });
+        }
         out.truncate(out_len as usize);
         Ok(out)
     }
@@ -114,7 +119,7 @@ impl RsaKey {
     }
 
     /// Export the public key as DER SubjectPublicKeyInfo.
-    pub fn public_key_der(&self, client: &mut Client) -> Result<Vec<u8>, WolfHsmError> {
+    pub fn public_key_der(&self, client: &mut Client) -> Result<Vec<u8>, Error> {
         // DER SPKI overhead is ~30 bytes; +64 gives margin for any key size.
         let cap = self.key_size_bytes as usize + 64;
         let mut buf = Vec::<u8>::with_capacity(cap);
@@ -128,9 +133,13 @@ impl RsaKey {
                 &mut out_len,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_rsa_export_public_der")?;
-        // SAFETY: wolfhsm_rsa_export_public_der succeeded and initialized exactly out_len bytes.
-        // out_len <= cap (the value we passed as the buffer capacity).
+        Error::check(rc, "wolfhsm_rsa_export_public_der")?;
+        if out_len as usize > buf.capacity() {
+            return Err(Error::ProtocolError {
+                msg: "wolfhsm_rsa_export_public_der: server returned out_len > buffer capacity",
+            });
+        }
+        // SAFETY: wolfhsm_rsa_export_public_der succeeded and out_len <= capacity (checked above).
         unsafe { buf.set_len(out_len as usize) };
         Ok(buf)
     }
@@ -154,9 +163,9 @@ impl Client {
     /// Guarantees the HSM cache slot is released even when `f` returns `Err`.
     /// The eviction error (if any) is surfaced only when `f` returns `Ok`; on
     /// an error path the eviction is best-effort and the original error is returned.
-    pub fn with_rsa_key<F, R>(&mut self, bits: u32, e: u64, f: F) -> Result<R, WolfHsmError>
+    pub fn with_rsa_key<F, R>(&mut self, bits: u32, e: u64, f: F) -> Result<R, Error>
     where
-        F: FnOnce(&RsaKey, &mut Client) -> Result<R, WolfHsmError>,
+        F: FnOnce(&RsaKey, &mut Client) -> Result<R, Error>,
     {
         let key = RsaKey::generate(self, bits, e)?;
         with_key!(key, self, f)

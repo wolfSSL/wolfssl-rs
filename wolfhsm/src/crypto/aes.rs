@@ -1,7 +1,7 @@
 use wolfhsm_sys::{wolfhsm_aes_gcm_decrypt, wolfhsm_aes_gcm_encrypt};
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 use crate::key::{with_key, KeyId};
 
 /// AES key handle (GCM mode). Key lives in HSM cache.
@@ -15,9 +15,9 @@ pub struct AesKey {
 
 impl AesKey {
     /// Cache raw key bytes in the HSM. `key_bytes` must be 16, 24, or 32 bytes.
-    pub(crate) fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, WolfHsmError> {
+    pub(crate) fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, Error> {
         if !matches!(key_bytes.len(), 16 | 24 | 32) {
-            return Err(WolfHsmError::BadArgs {
+            return Err(Error::BadArgs {
                 msg: "key must be 16, 24, or 32 bytes",
             });
         }
@@ -26,22 +26,26 @@ impl AesKey {
     }
 
     /// AES-GCM encrypt. Returns (ciphertext, 16-byte auth tag).
-    /// `iv` must be exactly 12 bytes (96-bit GCM IV); other lengths will cause
-    /// the server to return an error.
+    /// `iv` must be exactly 12 bytes (96-bit GCM IV).
     pub fn gcm_encrypt(
         &self,
         client: &mut Client,
         iv: &[u8],
         aad: &[u8],
         plaintext: &[u8],
-    ) -> Result<(Vec<u8>, [u8; 16]), WolfHsmError> {
-        let iv_len = u32::try_from(iv.len()).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<(Vec<u8>, [u8; 16]), Error> {
+        if iv.len() != 12 {
+            return Err(Error::BadArgs {
+                msg: "iv must be exactly 12 bytes",
+            });
+        }
+        let iv_len = u32::try_from(iv.len()).map_err(|_| Error::BadArgs {
             msg: "iv exceeds u32::MAX bytes",
         })?;
-        let aad_len = u32::try_from(aad.len()).map_err(|_| WolfHsmError::BadArgs {
+        let aad_len = u32::try_from(aad.len()).map_err(|_| Error::BadArgs {
             msg: "aad exceeds u32::MAX bytes",
         })?;
-        let in_len = u32::try_from(plaintext.len()).map_err(|_| WolfHsmError::BadArgs {
+        let in_len = u32::try_from(plaintext.len()).map_err(|_| Error::BadArgs {
             msg: "plaintext exceeds u32::MAX bytes",
         })?;
         let mut out = vec![0u8; plaintext.len()];
@@ -62,11 +66,12 @@ impl AesKey {
                 16,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_aes_gcm_encrypt")?;
+        Error::check(rc, "wolfhsm_aes_gcm_encrypt")?;
         Ok((out, tag))
     }
 
     /// AES-GCM decrypt. Verifies the auth tag. Returns plaintext.
+    /// `iv` must be exactly 12 bytes (96-bit GCM IV).
     pub fn gcm_decrypt(
         &self,
         client: &mut Client,
@@ -74,14 +79,19 @@ impl AesKey {
         aad: &[u8],
         ciphertext: &[u8],
         tag: &[u8; 16],
-    ) -> Result<Vec<u8>, WolfHsmError> {
-        let iv_len = u32::try_from(iv.len()).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<Vec<u8>, Error> {
+        if iv.len() != 12 {
+            return Err(Error::BadArgs {
+                msg: "iv must be exactly 12 bytes",
+            });
+        }
+        let iv_len = u32::try_from(iv.len()).map_err(|_| Error::BadArgs {
             msg: "iv exceeds u32::MAX bytes",
         })?;
-        let aad_len = u32::try_from(aad.len()).map_err(|_| WolfHsmError::BadArgs {
+        let aad_len = u32::try_from(aad.len()).map_err(|_| Error::BadArgs {
             msg: "aad exceeds u32::MAX bytes",
         })?;
-        let in_len = u32::try_from(ciphertext.len()).map_err(|_| WolfHsmError::BadArgs {
+        let in_len = u32::try_from(ciphertext.len()).map_err(|_| Error::BadArgs {
             msg: "ciphertext exceeds u32::MAX bytes",
         })?;
         let mut out = vec![0u8; ciphertext.len()];
@@ -101,7 +111,7 @@ impl AesKey {
                 16,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_aes_gcm_decrypt")?;
+        Error::check(rc, "wolfhsm_aes_gcm_decrypt")?;
         Ok(out)
     }
 }
@@ -120,9 +130,9 @@ impl Drop for AesKey {
 
 impl Client {
     /// Cache an AES key, run `f` with it, then always evict it.
-    pub fn with_aes_key<F, R>(&mut self, key_bytes: &[u8], f: F) -> Result<R, WolfHsmError>
+    pub fn with_aes_key<F, R>(&mut self, key_bytes: &[u8], f: F) -> Result<R, Error>
     where
-        F: FnOnce(&AesKey, &mut Client) -> Result<R, WolfHsmError>,
+        F: FnOnce(&AesKey, &mut Client) -> Result<R, Error>,
     {
         let key = AesKey::cache(self, key_bytes)?;
         with_key!(key, self, f)

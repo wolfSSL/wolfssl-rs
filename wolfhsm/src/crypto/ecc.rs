@@ -4,7 +4,7 @@ use wolfhsm_sys::{
 };
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 use crate::key::{with_key, KeyId};
 
 // ECC_SECP256R1 = 1 (wolfcrypt ecc.h enum ecc_curve_id)
@@ -21,13 +21,13 @@ pub struct EccP256Key {
 
 impl EccP256Key {
     /// Generate an ephemeral P-256 key on the HSM (cached, not committed to NVM).
-    pub(crate) fn generate(client: &mut Client) -> Result<Self, WolfHsmError> {
+    pub(crate) fn generate(client: &mut Client) -> Result<Self, Error> {
         let mut key_id: u16 = KeyId::ERASED.0;
         // SAFETY: ctx_ptr is valid for the duration of this call.
         let rc = unsafe { wolfhsm_ecc_make_key(client.ctx_ptr(), ECC_SECP256R1, &mut key_id) };
-        WolfHsmError::check(rc, "wolfhsm_ecc_make_key")?;
+        Error::check(rc, "wolfhsm_ecc_make_key")?;
         if key_id == KeyId::ERASED.0 {
-            return Err(WolfHsmError::ProtocolError {
+            return Err(Error::ProtocolError {
                 msg: "wolfhsm_ecc_make_key: server returned WH_KEYID_ERASED (0)",
             });
         }
@@ -36,8 +36,8 @@ impl EccP256Key {
 
     /// Sign a pre-hashed digest (≤ 32 bytes for P-256 SHA-256).
     /// Returns DER-encoded ECDSA signature (up to 72 bytes for P-256).
-    pub fn sign_digest(&self, client: &mut Client, digest: &[u8]) -> Result<Vec<u8>, WolfHsmError> {
-        let hash_len = u16::try_from(digest.len()).map_err(|_| WolfHsmError::BadArgs {
+    pub fn sign_digest(&self, client: &mut Client, digest: &[u8]) -> Result<Vec<u8>, Error> {
+        let hash_len = u16::try_from(digest.len()).map_err(|_| Error::BadArgs {
             msg: "digest exceeds u16::MAX bytes",
         })?;
         let mut buf = Vec::<u8>::with_capacity(128);
@@ -53,9 +53,13 @@ impl EccP256Key {
                 &mut sig_len,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_ecc_sign")?;
-        // SAFETY: wolfhsm_ecc_sign succeeded and initialized exactly sig_len bytes.
-        // sig_len <= 128 (the value we passed as the buffer capacity).
+        Error::check(rc, "wolfhsm_ecc_sign")?;
+        if sig_len as usize > buf.capacity() {
+            return Err(Error::ProtocolError {
+                msg: "wolfhsm_ecc_sign: server returned sig_len > buffer capacity",
+            });
+        }
+        // SAFETY: wolfhsm_ecc_sign succeeded and sig_len <= capacity (checked above).
         unsafe { buf.set_len(sig_len as usize) };
         Ok(buf)
     }
@@ -66,11 +70,11 @@ impl EccP256Key {
         client: &mut Client,
         digest: &[u8],
         sig: &[u8],
-    ) -> Result<(), WolfHsmError> {
-        let hash_len = u16::try_from(digest.len()).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<(), Error> {
+        let hash_len = u16::try_from(digest.len()).map_err(|_| Error::BadArgs {
             msg: "digest exceeds u16::MAX bytes",
         })?;
-        let sig_len = u16::try_from(sig.len()).map_err(|_| WolfHsmError::BadArgs {
+        let sig_len = u16::try_from(sig.len()).map_err(|_| Error::BadArgs {
             msg: "signature exceeds u16::MAX bytes",
         })?;
         let mut result: core::ffi::c_int = 0;
@@ -86,15 +90,15 @@ impl EccP256Key {
                 &mut result,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_ecc_verify")?;
+        Error::check(rc, "wolfhsm_ecc_verify")?;
         if result != 1 {
-            return Err(WolfHsmError::InvalidSignature);
+            return Err(Error::InvalidSignature);
         }
         Ok(())
     }
 
     /// Export the public key as DER SubjectPublicKeyInfo.
-    pub fn public_key_der(&self, client: &mut Client) -> Result<Vec<u8>, WolfHsmError> {
+    pub fn public_key_der(&self, client: &mut Client) -> Result<Vec<u8>, Error> {
         let mut buf = Vec::<u8>::with_capacity(91);
         let mut out_len: u32 = 91;
         // SAFETY: buf has capacity 91; wolfhsm_ecc_export_public_der writes at most out_len bytes.
@@ -106,9 +110,13 @@ impl EccP256Key {
                 &mut out_len,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_ecc_export_public_der")?;
-        // SAFETY: wolfhsm_ecc_export_public_der succeeded and initialized exactly out_len bytes.
-        // out_len <= 91 (the value we passed as the buffer capacity).
+        Error::check(rc, "wolfhsm_ecc_export_public_der")?;
+        if out_len as usize > buf.capacity() {
+            return Err(Error::ProtocolError {
+                msg: "wolfhsm_ecc_export_public_der: server returned out_len > buffer capacity",
+            });
+        }
+        // SAFETY: wolfhsm_ecc_export_public_der succeeded and out_len <= capacity (checked above).
         unsafe { buf.set_len(out_len as usize) };
         Ok(buf)
     }
@@ -122,9 +130,9 @@ impl EccP256Key {
         &self,
         client: &mut Client,
         peer_public_der: &[u8],
-    ) -> Result<Vec<u8>, WolfHsmError> {
+    ) -> Result<Vec<u8>, Error> {
         let peer_der_len =
-            u32::try_from(peer_public_der.len()).map_err(|_| WolfHsmError::BadArgs {
+            u32::try_from(peer_public_der.len()).map_err(|_| Error::BadArgs {
                 msg: "peer public key exceeds u32::MAX bytes",
             })?;
         let mut buf = Vec::<u8>::with_capacity(32);
@@ -140,9 +148,13 @@ impl EccP256Key {
                 &mut out_len,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_ecc_shared_secret")?;
-        // SAFETY: wolfhsm_ecc_shared_secret succeeded and initialized exactly out_len bytes.
-        // out_len <= 32 (the value we passed as the buffer capacity).
+        Error::check(rc, "wolfhsm_ecc_shared_secret")?;
+        if out_len as usize > buf.capacity() {
+            return Err(Error::ProtocolError {
+                msg: "wolfhsm_ecc_shared_secret: server returned out_len > buffer capacity",
+            });
+        }
+        // SAFETY: wolfhsm_ecc_shared_secret succeeded and out_len <= capacity (checked above).
         unsafe { buf.set_len(out_len as usize) };
         Ok(buf)
     }
@@ -164,11 +176,57 @@ impl Client {
     /// Generate an ephemeral P-256 key, run `f`, then always evict.
     ///
     /// Guarantees the HSM cache slot is released even when `f` returns `Err`.
-    pub fn with_ecc_p256_key<F, R>(&mut self, f: F) -> Result<R, WolfHsmError>
+    pub fn with_ecc_p256_key<F, R>(&mut self, f: F) -> Result<R, Error>
     where
-        F: FnOnce(&EccP256Key, &mut Client) -> Result<R, WolfHsmError>,
+        F: FnOnce(&EccP256Key, &mut Client) -> Result<R, Error>,
     {
         let key = EccP256Key::generate(self)?;
         with_key!(key, self, f)
+    }
+}
+
+/// A [`signature::Signer`] adapter for [`EccP256Key`].
+///
+/// Borrows both the key handle and the HSM client for its lifetime `'a`.
+/// Hashes the input message with SHA-256, then delegates to the HSM for
+/// the ECDSA signing operation.
+///
+/// # Interior mutability
+///
+/// `signature::Signer::try_sign` only receives `&self`, but HSM operations
+/// require `&mut Client`.  This wrapper uses `RefCell<&'a mut Client>` to
+/// provide interior mutability safely within a single-threaded context.
+/// `EccP256Signer` is deliberately `!Sync` so it cannot be shared across
+/// threads.
+///
+/// Create via [`EccP256Key::signer`].
+pub struct EccP256Signer<'a> {
+    key: &'a EccP256Key,
+    client: std::cell::RefCell<&'a mut Client>,
+}
+
+impl EccP256Key {
+    /// Wrap this key and a mutable client reference in an [`EccP256Signer`].
+    ///
+    /// The returned signer implements [`signature::Signer<p256::ecdsa::DerSignature>`]
+    /// and can be passed to any API that accepts that trait.
+    pub fn signer<'a>(&'a self, client: &'a mut Client) -> EccP256Signer<'a> {
+        EccP256Signer {
+            key: self,
+            client: std::cell::RefCell::new(client),
+        }
+    }
+}
+
+impl<'a> signature::Signer<p256::ecdsa::DerSignature> for EccP256Signer<'a> {
+    fn try_sign(&self, msg: &[u8]) -> Result<p256::ecdsa::DerSignature, signature::Error> {
+        use sha2::Digest as _;
+        let digest = sha2::Sha256::digest(msg);
+        let mut client = self.client.borrow_mut();
+        let sig_bytes = self
+            .key
+            .sign_digest(&mut **client, &digest)
+            .map_err(|_| signature::Error::new())?;
+        p256::ecdsa::DerSignature::from_bytes(&sig_bytes).map_err(|_| signature::Error::new())
     }
 }

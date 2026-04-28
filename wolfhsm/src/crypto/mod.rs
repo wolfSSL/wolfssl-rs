@@ -35,3 +35,7 @@ pub mod mldsa;
 pub mod rng;
 pub mod rsa;
 pub mod sha;
+
+pub use ecc::EccP256Signer;
+pub use ed25519::Ed25519Signer;
+pub use sha::{HsmSha256, HsmSha384, HsmSha512};

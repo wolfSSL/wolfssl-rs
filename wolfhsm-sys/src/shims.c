@@ -333,6 +333,34 @@ int wolfhsm_sha256(whClientContext* ctx,
     return rc;
 }
 
+/* ── SHA-384 one-shot shim ───────────────────────────────────────────────── */
+
+int wolfhsm_sha384(whClientContext* ctx,
+                   const uint8_t* in, uint32_t in_len, uint8_t* out)
+{
+    wc_Sha384 sha;
+    int rc;
+    rc = wc_InitSha384(&sha);
+    if (rc != 0) return rc;
+    rc = wh_Client_Sha384(ctx, &sha, in, in_len, out);
+    wc_Sha384Free(&sha);
+    return rc;
+}
+
+/* ── SHA-512 one-shot shim ───────────────────────────────────────────────── */
+
+int wolfhsm_sha512(whClientContext* ctx,
+                   const uint8_t* in, uint32_t in_len, uint8_t* out)
+{
+    wc_Sha512 sha;
+    int rc;
+    rc = wc_InitSha512(&sha);
+    if (rc != 0) return rc;
+    rc = wh_Client_Sha512(ctx, &sha, in, in_len, out);
+    wc_Sha512Free(&sha);
+    return rc;
+}
+
 /* ── Ed25519 shims ───────────────────────────────────────────────────────── */
 
 int wolfhsm_ed25519_make_key(whClientContext* ctx, uint16_t* out_key_id)

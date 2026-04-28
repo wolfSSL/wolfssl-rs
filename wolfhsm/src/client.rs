@@ -12,7 +12,7 @@ use wolfhsm_sys::{
     wh_Client_CommInfo, wh_Client_Echo, wh_Client_Init,
 };
 
-use crate::error::WolfHsmError;
+use crate::error::Error;
 use crate::transport::Transport;
 
 // ── Per-transport heap allocation ─────────────────────────────────────────────
@@ -214,11 +214,11 @@ impl Client {
     /// Initialises the C client context via `wh_Client_Init`.  The internal C
     /// structs are heap-allocated and pinned so their addresses remain stable
     /// for the lifetime of the `Client`.
-    pub fn connect(transport: Transport, client_id: u8) -> Result<Self, WolfHsmError> {
+    pub fn connect(transport: Transport, client_id: u8) -> Result<Self, Error> {
         // Build the transport-specific inner state.
         let transport_inner = match transport {
             Transport::Tcp { ip, port } => {
-                let ip_cstr = CString::new(ip).map_err(|_| WolfHsmError::BadArgs {
+                let ip_cstr = CString::new(ip).map_err(|_| Error::BadArgs {
                     msg: "ip contains an interior NUL byte",
                 })?;
 
@@ -232,7 +232,7 @@ impl Client {
                 // The C struct uses i16 for the port field.  Ports > 32767
                 // cannot be represented; reject them with a clear error rather
                 // than silently truncating to a negative or zero value.
-                let port_i16 = i16::try_from(port).map_err(|_| WolfHsmError::BadArgs {
+                let port_i16 = i16::try_from(port).map_err(|_| Error::BadArgs {
                     msg: "TCP port must be \u{2264} 32767 (C transport uses i16)",
                 })?;
 
@@ -252,7 +252,7 @@ impl Client {
             }
 
             Transport::Uds { path } => {
-                let path_cstr = CString::new(path).map_err(|_| WolfHsmError::BadArgs {
+                let path_cstr = CString::new(path).map_err(|_| Error::BadArgs {
                     msg: "path contains an interior NUL byte",
                 })?;
 
@@ -281,7 +281,7 @@ impl Client {
                 req_size,
                 resp_size,
             } => {
-                let name_cstr = CString::new(name).map_err(|_| WolfHsmError::BadArgs {
+                let name_cstr = CString::new(name).map_err(|_| Error::BadArgs {
                     msg: "name contains an interior NUL byte",
                 })?;
 
@@ -339,7 +339,7 @@ impl Client {
         // Call wh_Client_Init.
         // SAFETY: client_ctx and client_cfg are valid C structs at stable addresses.
         let rc = unsafe { wh_Client_Init(&mut inner_mut.client_ctx, &client_cfg) };
-        WolfHsmError::check(rc, "wh_Client_Init")?;
+        Error::check(rc, "wh_Client_Init")?;
 
         Ok(Client { inner })
     }
@@ -348,8 +348,8 @@ impl Client {
     ///
     /// The server reflects `data` back.  `buf` must be at least as large as
     /// `data`.  Returns the number of bytes written into `buf`.
-    pub fn echo(&mut self, data: &[u8], buf: &mut [u8]) -> Result<usize, WolfHsmError> {
-        let snd_len = u16::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+    pub fn echo(&mut self, data: &[u8], buf: &mut [u8]) -> Result<usize, Error> {
+        let snd_len = u16::try_from(data.len()).map_err(|_| Error::BadArgs {
             msg: "echo data exceeds u16::MAX bytes",
         })?;
         let mut rcv_len: u16 = u16::try_from(buf.len()).unwrap_or(u16::MAX);
@@ -364,12 +364,12 @@ impl Client {
                 buf.as_mut_ptr() as *mut core::ffi::c_void,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_Echo")?;
+        Error::check(rc, "wh_Client_Echo")?;
         Ok(rcv_len as usize)
     }
 
     /// Query the server for its configuration and state information.
-    pub fn info(&mut self) -> Result<ServerInfo, WolfHsmError> {
+    pub fn info(&mut self) -> Result<ServerInfo, Error> {
         let mut version: u8 = 0;
         let mut build: u8 = 0;
         let mut comm_data_len: u32 = 0;
@@ -405,7 +405,7 @@ impl Client {
                 &mut nvm_state,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_CommInfo")?;
+        Error::check(rc, "wh_Client_CommInfo")?;
 
         Ok(ServerInfo {
             version,

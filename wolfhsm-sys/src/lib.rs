@@ -191,6 +191,22 @@ unsafe extern "C" {
         out: *mut u8,
     ) -> core::ffi::c_int;
 
+    // ── SHA-384 (one-shot) ─────────────────────────────────────────────────
+    pub fn wolfhsm_sha384(
+        ctx: *mut whClientContext,
+        in_buf: *const u8,
+        in_len: u32,
+        out: *mut u8,
+    ) -> core::ffi::c_int;
+
+    // ── SHA-512 (one-shot) ─────────────────────────────────────────────────
+    pub fn wolfhsm_sha512(
+        ctx: *mut whClientContext,
+        in_buf: *const u8,
+        in_len: u32,
+        out: *mut u8,
+    ) -> core::ffi::c_int;
+
     // ── CMAC ───────────────────────────────────────────────────────────────
     pub fn wolfhsm_cmac(
         ctx: *mut whClientContext,

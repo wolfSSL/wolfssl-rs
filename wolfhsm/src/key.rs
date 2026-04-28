@@ -3,7 +3,7 @@ use wolfhsm_sys::{
 };
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 
 /// A wolfHSM key identifier (wraps `whKeyId` = `u16`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -42,9 +42,10 @@ impl Client {
     /// `label` is truncated to `WH_NVM_LABEL_LEN` (24) bytes.
     /// `flags` is 0 (default).
     /// Returns the server-assigned [`KeyId`].
-    pub fn key_cache(&mut self, data: &[u8], label: &[u8]) -> Result<KeyId, WolfHsmError> {
+    pub fn key_cache(&mut self, data: &[u8], label: impl AsRef<[u8]>) -> Result<KeyId, Error> {
+        let label = label.as_ref();
         if data.len() > u16::MAX as usize {
-            return Err(WolfHsmError::BadArgs {
+            return Err(Error::BadArgs {
                 msg: "key data exceeds u16::MAX bytes",
             });
         }
@@ -68,9 +69,9 @@ impl Client {
                 &mut key_id,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_KeyCache")?;
+        Error::check(rc, "wh_Client_KeyCache")?;
         if key_id == 0 {
-            return Err(WolfHsmError::ProtocolError {
+            return Err(Error::ProtocolError {
                 msg: "wh_Client_KeyCache: server returned WH_KEYID_ERASED (0); \
                       server-side cache may be full or the key was rejected",
             });
@@ -81,24 +82,24 @@ impl Client {
     /// Remove a key from the server's RAM cache.
     ///
     /// This does NOT erase the key from NVM if it has been committed.
-    pub fn key_evict(&mut self, id: KeyId) -> Result<(), WolfHsmError> {
+    pub fn key_evict(&mut self, id: KeyId) -> Result<(), Error> {
         // SAFETY: ctx_ptr is valid for the duration of this call.
         let rc = unsafe { wh_Client_KeyEvict(self.ctx_ptr(), id.0) };
-        WolfHsmError::check(rc, "wh_Client_KeyEvict")
+        Error::check(rc, "wh_Client_KeyEvict")
     }
 
     /// Write a cached key from RAM to persistent NVM storage.
-    pub fn key_commit(&mut self, id: KeyId) -> Result<(), WolfHsmError> {
+    pub fn key_commit(&mut self, id: KeyId) -> Result<(), Error> {
         // SAFETY: ctx_ptr is valid for the duration of this call.
         let rc = unsafe { wh_Client_KeyCommit(self.ctx_ptr(), id.0) };
-        WolfHsmError::check(rc, "wh_Client_KeyCommit")
+        Error::check(rc, "wh_Client_KeyCommit")
     }
 
     /// Permanently erase a key from NVM.
-    pub fn key_erase(&mut self, id: KeyId) -> Result<(), WolfHsmError> {
+    pub fn key_erase(&mut self, id: KeyId) -> Result<(), Error> {
         // SAFETY: ctx_ptr is valid for the duration of this call.
         let rc = unsafe { wh_Client_KeyErase(self.ctx_ptr(), id.0) };
-        WolfHsmError::check(rc, "wh_Client_KeyErase")
+        Error::check(rc, "wh_Client_KeyErase")
     }
 }
 
@@ -107,7 +108,7 @@ impl Client {
 /// Usage: `with_key!(key_expr, client_ref, closure)`
 /// - `key_expr`: an expression producing the key (already constructed)
 /// - `client_ref`: `&mut Client`
-/// - `closure`: `FnOnce(&Key, &mut Client) -> Result<R, WolfHsmError>`
+/// - `closure`: `FnOnce(&Key, &mut Client) -> Result<R, Error>`
 ///
 /// The macro silences the drop warning by clearing `key.id` to `KeyId::ERASED`
 /// before eviction. On the success path, an eviction error is propagated. On

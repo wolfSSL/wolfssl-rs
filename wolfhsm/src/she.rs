@@ -7,7 +7,7 @@ use wolfhsm_sys::{
 };
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 use crate::nvm::NvmId;
 
 // Fixed sizes from the SHE AutoSAR specification (wh_she_common.h).
@@ -36,7 +36,7 @@ impl Client {
         key_nvm_id: NvmId,
         flags: u16,
         key: &[u8; SHE_KEY_SZ],
-    ) -> Result<(), WolfHsmError> {
+    ) -> Result<(), Error> {
         // C API takes *mut u8 even though it does not modify the key.
         let mut key_buf = *key;
         // SAFETY: all pointers are valid for the duration of this call.
@@ -49,24 +49,24 @@ impl Client {
                 SHE_KEY_SZ as u16,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_ShePreProgramKey")
+        Error::check(rc, "wh_Client_ShePreProgramKey")
     }
 
     /// Set the SHE unique identifier on the server.
     ///
     /// `uid` must be exactly [`SHE_UID_SZ`] (15) bytes.
-    pub fn she_set_uid(&mut self, uid: &[u8; SHE_UID_SZ]) -> Result<(), WolfHsmError> {
+    pub fn she_set_uid(&mut self, uid: &[u8; SHE_UID_SZ]) -> Result<(), Error> {
         let mut uid_buf = *uid;
         // SAFETY: uid_buf is a valid 15-byte array; ctx_ptr is valid.
         let rc =
             unsafe { wh_Client_SheSetUid(self.ctx_ptr(), uid_buf.as_mut_ptr(), SHE_UID_SZ as u32) };
-        WolfHsmError::check(rc, "wh_Client_SheSetUid")
+        Error::check(rc, "wh_Client_SheSetUid")
     }
 
     /// Perform SHE secure boot: compute a CMAC over `bootloader` using the
     /// BOOT_MAC_KEY slot and verify against the stored boot MAC.
-    pub fn she_secure_boot(&mut self, bootloader: &[u8]) -> Result<(), WolfHsmError> {
-        let len = u32::try_from(bootloader.len()).map_err(|_| WolfHsmError::BadArgs {
+    pub fn she_secure_boot(&mut self, bootloader: &[u8]) -> Result<(), Error> {
+        let len = u32::try_from(bootloader.len()).map_err(|_| Error::BadArgs {
             msg: "she_secure_boot: bootloader exceeds u32::MAX bytes",
         })?;
         // SAFETY: wh_Client_SheSecureBoot reads `bootloader` but does not write
@@ -78,15 +78,15 @@ impl Client {
                 len,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_SheSecureBoot")
+        Error::check(rc, "wh_Client_SheSecureBoot")
     }
 
     /// Read the SHE status register byte.
-    pub fn she_get_status(&mut self) -> Result<u8, WolfHsmError> {
+    pub fn she_get_status(&mut self) -> Result<u8, Error> {
         let mut sreg: u8 = 0;
         // SAFETY: ctx_ptr is valid; sreg is a valid stack allocation.
         let rc = unsafe { wh_Client_SheGetStatus(self.ctx_ptr(), &mut sreg) };
-        WolfHsmError::check(rc, "wh_Client_SheGetStatus")?;
+        Error::check(rc, "wh_Client_SheGetStatus")?;
         Ok(sreg)
     }
 
@@ -100,7 +100,7 @@ impl Client {
         m1: &[u8; SHE_M1_SZ],
         m2: &[u8; SHE_M2_SZ],
         m3: &[u8; SHE_M3_SZ],
-    ) -> Result<([u8; SHE_M4_SZ], [u8; SHE_M5_SZ]), WolfHsmError> {
+    ) -> Result<([u8; SHE_M4_SZ], [u8; SHE_M5_SZ]), Error> {
         let mut m1_buf = *m1;
         let mut m2_buf = *m2;
         let mut m3_buf = *m3;
@@ -117,20 +117,20 @@ impl Client {
                 m5.as_mut_ptr(),
             )
         };
-        WolfHsmError::check(rc, "wh_Client_SheLoadKey")?;
+        Error::check(rc, "wh_Client_SheLoadKey")?;
         Ok((m4, m5))
     }
 
     /// Load a plaintext AES-128 key into the RAM_KEY slot.
     ///
     /// `key` must be exactly [`SHE_KEY_SZ`] (16) bytes.
-    pub fn she_load_plain_key(&mut self, key: &[u8; SHE_KEY_SZ]) -> Result<(), WolfHsmError> {
+    pub fn she_load_plain_key(&mut self, key: &[u8; SHE_KEY_SZ]) -> Result<(), Error> {
         let mut key_buf = *key;
         // SAFETY: key_buf is a valid 16-byte stack array; ctx_ptr is valid.
         let rc = unsafe {
             wh_Client_SheLoadPlainKey(self.ctx_ptr(), key_buf.as_mut_ptr(), SHE_KEY_SZ as u32)
         };
-        WolfHsmError::check(rc, "wh_Client_SheLoadPlainKey")
+        Error::check(rc, "wh_Client_SheLoadPlainKey")
     }
 
     /// Export the RAM_KEY slot as M1–M5 protocol messages for backup.
@@ -144,7 +144,7 @@ impl Client {
             [u8; SHE_M4_SZ],
             [u8; SHE_M5_SZ],
         ),
-        WolfHsmError,
+        Error,
     > {
         let mut m1 = [0u8; SHE_M1_SZ];
         let mut m2 = [0u8; SHE_M2_SZ];
@@ -162,28 +162,28 @@ impl Client {
                 m5.as_mut_ptr(),
             )
         };
-        WolfHsmError::check(rc, "wh_Client_SheExportRamKey")?;
+        Error::check(rc, "wh_Client_SheExportRamKey")?;
         Ok((m1, m2, m3, m4, m5))
     }
 
     /// Initialize the SHE PRNG (seed it from the PRNG_SEED NVM slot).
-    pub fn she_init_rnd(&mut self) -> Result<(), WolfHsmError> {
+    pub fn she_init_rnd(&mut self) -> Result<(), Error> {
         // SAFETY: ctx_ptr is valid.
         let rc = unsafe { wh_Client_SheInitRnd(self.ctx_ptr()) };
-        WolfHsmError::check(rc, "wh_Client_SheInitRnd")
+        Error::check(rc, "wh_Client_SheInitRnd")
     }
 
     /// Generate 16 bytes of pseudo-random data using the SHE PRNG.
-    pub fn she_rnd(&mut self) -> Result<[u8; SHE_KEY_SZ], WolfHsmError> {
+    pub fn she_rnd(&mut self) -> Result<[u8; SHE_KEY_SZ], Error> {
         let mut out = [0u8; SHE_KEY_SZ];
         let mut out_sz: u32 = SHE_KEY_SZ as u32;
         // SAFETY: out is a valid 16-byte stack array; ctx_ptr is valid.
         let rc = unsafe { wh_Client_SheRnd(self.ctx_ptr(), out.as_mut_ptr(), &mut out_sz) };
-        WolfHsmError::check(rc, "wh_Client_SheRnd")?;
+        Error::check(rc, "wh_Client_SheRnd")?;
         // Verify the server produced exactly 16 bytes; any other length means
         // the tail of `out` is uninitialized zeros, not random data.
         if out_sz != SHE_KEY_SZ as u32 {
-            return Err(WolfHsmError::ProtocolError {
+            return Err(Error::ProtocolError {
                 msg: "wh_Client_SheRnd: unexpected output length",
             });
         }
@@ -191,8 +191,8 @@ impl Client {
     }
 
     /// Mix `entropy` into the SHE PRNG state (extend the seed).
-    pub fn she_extend_seed(&mut self, entropy: &[u8]) -> Result<(), WolfHsmError> {
-        let len = u32::try_from(entropy.len()).map_err(|_| WolfHsmError::BadArgs {
+    pub fn she_extend_seed(&mut self, entropy: &[u8]) -> Result<(), Error> {
+        let len = u32::try_from(entropy.len()).map_err(|_| Error::BadArgs {
             msg: "she_extend_seed: entropy exceeds u32::MAX bytes",
         })?;
         // SAFETY: wh_Client_SheExtendSeed reads `entropy` but does not write
@@ -200,14 +200,14 @@ impl Client {
         let rc = unsafe {
             wh_Client_SheExtendSeed(self.ctx_ptr(), entropy.as_ptr() as *mut u8, len)
         };
-        WolfHsmError::check(rc, "wh_Client_SheExtendSeed")
+        Error::check(rc, "wh_Client_SheExtendSeed")
     }
 
     /// AES-128 ECB encryption using SHE key slot `key_id`.
     ///
     /// `plaintext` length must be a non-zero multiple of 16 bytes.
     /// Returns the ciphertext (same length as `plaintext`).
-    pub fn she_enc_ecb(&mut self, key_id: u8, plaintext: &[u8]) -> Result<Vec<u8>, WolfHsmError> {
+    pub fn she_enc_ecb(&mut self, key_id: u8, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
         let sz = validate_she_block_size(plaintext.len())?;
         let mut output = vec![0u8; plaintext.len()];
         // SAFETY: wh_Client_SheEncEcb reads `plaintext` and writes `output`;
@@ -221,7 +221,7 @@ impl Client {
                 sz,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_SheEncEcb")?;
+        Error::check(rc, "wh_Client_SheEncEcb")?;
         Ok(output)
     }
 
@@ -229,7 +229,7 @@ impl Client {
     ///
     /// `ciphertext` length must be a non-zero multiple of 16 bytes.
     /// Returns the plaintext (same length as `ciphertext`).
-    pub fn she_dec_ecb(&mut self, key_id: u8, ciphertext: &[u8]) -> Result<Vec<u8>, WolfHsmError> {
+    pub fn she_dec_ecb(&mut self, key_id: u8, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
         let sz = validate_she_block_size(ciphertext.len())?;
         let mut output = vec![0u8; ciphertext.len()];
         // SAFETY: wh_Client_SheDecEcb reads `ciphertext` and writes `output`;
@@ -243,7 +243,7 @@ impl Client {
                 sz,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_SheDecEcb")?;
+        Error::check(rc, "wh_Client_SheDecEcb")?;
         Ok(output)
     }
 
@@ -256,7 +256,7 @@ impl Client {
         key_id: u8,
         iv: &[u8; 16],
         plaintext: &[u8],
-    ) -> Result<Vec<u8>, WolfHsmError> {
+    ) -> Result<Vec<u8>, Error> {
         let sz = validate_she_block_size(plaintext.len())?;
         let mut iv_buf = *iv;
         let mut output = vec![0u8; plaintext.len()];
@@ -274,7 +274,7 @@ impl Client {
                 sz,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_SheEncCbc")?;
+        Error::check(rc, "wh_Client_SheEncCbc")?;
         Ok(output)
     }
 
@@ -287,7 +287,7 @@ impl Client {
         key_id: u8,
         iv: &[u8; 16],
         ciphertext: &[u8],
-    ) -> Result<Vec<u8>, WolfHsmError> {
+    ) -> Result<Vec<u8>, Error> {
         let sz = validate_she_block_size(ciphertext.len())?;
         let mut iv_buf = *iv;
         let mut output = vec![0u8; ciphertext.len()];
@@ -305,7 +305,7 @@ impl Client {
                 sz,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_SheDecCbc")?;
+        Error::check(rc, "wh_Client_SheDecCbc")?;
         Ok(output)
     }
 
@@ -316,8 +316,8 @@ impl Client {
         &mut self,
         key_id: u8,
         data: &[u8],
-    ) -> Result<[u8; SHE_KEY_SZ], WolfHsmError> {
-        let in_sz = u32::try_from(data.len()).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<[u8; SHE_KEY_SZ], Error> {
+        let in_sz = u32::try_from(data.len()).map_err(|_| Error::BadArgs {
             msg: "she_generate_mac: data exceeds u32::MAX bytes",
         })?;
         let mut mac = [0u8; SHE_KEY_SZ];
@@ -333,7 +333,7 @@ impl Client {
                 SHE_KEY_SZ as u32,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_SheGenerateMac")?;
+        Error::check(rc, "wh_Client_SheGenerateMac")?;
         Ok(mac)
     }
 
@@ -349,8 +349,8 @@ impl Client {
         key_id: u8,
         message: &[u8],
         mac: &[u8; SHE_KEY_SZ],
-    ) -> Result<(), WolfHsmError> {
-        let msg_len = u32::try_from(message.len()).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<(), Error> {
+        let msg_len = u32::try_from(message.len()).map_err(|_| Error::BadArgs {
             msg: "she_verify_mac: message exceeds u32::MAX bytes",
         })?;
         let mut mac_buf = *mac;
@@ -369,22 +369,22 @@ impl Client {
                 &mut status,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_SheVerifyMac")?;
+        Error::check(rc, "wh_Client_SheVerifyMac")?;
         if status != 0 {
-            return Err(WolfHsmError::InvalidSignature);
+            return Err(Error::InvalidSignature);
         }
         Ok(())
     }
 }
 
 /// Validate that `len` is a non-zero multiple of the AES block size (16).
-fn validate_she_block_size(len: usize) -> Result<u32, WolfHsmError> {
+fn validate_she_block_size(len: usize) -> Result<u32, Error> {
     if len == 0 || len % 16 != 0 {
-        return Err(WolfHsmError::BadArgs {
+        return Err(Error::BadArgs {
             msg: "length must be a non-zero multiple of 16 bytes (AES block size)",
         });
     }
-    u32::try_from(len).map_err(|_| WolfHsmError::BadArgs {
+    u32::try_from(len).map_err(|_| Error::BadArgs {
         msg: "she: data length exceeds u32::MAX bytes",
     })
 }

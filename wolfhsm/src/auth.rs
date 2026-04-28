@@ -7,7 +7,7 @@ use wolfhsm_sys::{
 };
 
 use crate::client::Client;
-use crate::error::WolfHsmError;
+use crate::error::Error;
 
 /// wolfHSM authentication method.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -103,11 +103,11 @@ impl Client {
         method: AuthMethod,
         username: &str,
         auth_data: &[u8],
-    ) -> Result<UserId, WolfHsmError> {
-        let cname = CString::new(username).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<UserId, Error> {
+        let cname = CString::new(username).map_err(|_| Error::BadArgs {
             msg: "username contains an interior NUL byte",
         })?;
-        let auth_len = u16::try_from(auth_data.len()).map_err(|_| WolfHsmError::BadArgs {
+        let auth_len = u16::try_from(auth_data.len()).map_err(|_| Error::BadArgs {
             msg: "auth_data exceeds u16::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
@@ -124,18 +124,18 @@ impl Client {
                 &mut out_user_id,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_AuthLogin")?;
-        WolfHsmError::check(out_rc, "wh_Client_AuthLogin(server)")?;
+        Error::check(rc, "wh_Client_AuthLogin")?;
+        Error::check(out_rc, "wh_Client_AuthLogin(server)")?;
         Ok(UserId(out_user_id))
     }
 
     /// Close a session identified by `user_id`.
-    pub fn auth_logout(&mut self, user_id: UserId) -> Result<(), WolfHsmError> {
+    pub fn auth_logout(&mut self, user_id: UserId) -> Result<(), Error> {
         let mut out_rc: i32 = 0;
         // SAFETY: ctx_ptr is valid; out_rc is a valid stack allocation.
         let rc = unsafe { wh_Client_AuthLogout(self.ctx_ptr(), user_id.0, &mut out_rc) };
-        WolfHsmError::check(rc, "wh_Client_AuthLogout")?;
-        WolfHsmError::check(out_rc, "wh_Client_AuthLogout(server)")?;
+        Error::check(rc, "wh_Client_AuthLogout")?;
+        Error::check(out_rc, "wh_Client_AuthLogout(server)")?;
         Ok(())
     }
 
@@ -150,11 +150,11 @@ impl Client {
         permissions: AuthPermissions,
         method: AuthMethod,
         credentials: &[u8],
-    ) -> Result<UserId, WolfHsmError> {
-        let cname = CString::new(username).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<UserId, Error> {
+        let cname = CString::new(username).map_err(|_| Error::BadArgs {
             msg: "username contains an interior NUL byte",
         })?;
-        let cred_len = u16::try_from(credentials.len()).map_err(|_| WolfHsmError::BadArgs {
+        let cred_len = u16::try_from(credentials.len()).map_err(|_| Error::BadArgs {
             msg: "credentials exceed u16::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
@@ -172,8 +172,8 @@ impl Client {
                 &mut out_user_id,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_AuthUserAdd")?;
-        WolfHsmError::check(out_rc, "wh_Client_AuthUserAdd(server)")?;
+        Error::check(rc, "wh_Client_AuthUserAdd")?;
+        Error::check(out_rc, "wh_Client_AuthUserAdd(server)")?;
         Ok(UserId(out_user_id))
     }
 
@@ -181,8 +181,8 @@ impl Client {
     pub fn auth_user_get(
         &mut self,
         username: &str,
-    ) -> Result<(UserId, AuthPermissions), WolfHsmError> {
-        let cname = CString::new(username).map_err(|_| WolfHsmError::BadArgs {
+    ) -> Result<(UserId, AuthPermissions), Error> {
+        let cname = CString::new(username).map_err(|_| Error::BadArgs {
             msg: "username contains an interior NUL byte",
         })?;
         let mut out_rc: i32 = 0;
@@ -198,18 +198,18 @@ impl Client {
                 &mut out_permissions.0,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_AuthUserGet")?;
-        WolfHsmError::check(out_rc, "wh_Client_AuthUserGet(server)")?;
+        Error::check(rc, "wh_Client_AuthUserGet")?;
+        Error::check(out_rc, "wh_Client_AuthUserGet(server)")?;
         Ok((UserId(out_user_id), out_permissions))
     }
 
     /// Delete the user identified by `user_id`.
-    pub fn auth_user_delete(&mut self, user_id: UserId) -> Result<(), WolfHsmError> {
+    pub fn auth_user_delete(&mut self, user_id: UserId) -> Result<(), Error> {
         let mut out_rc: i32 = 0;
         // SAFETY: ctx_ptr is valid; out_rc is a valid stack allocation.
         let rc = unsafe { wh_Client_AuthUserDelete(self.ctx_ptr(), user_id.0, &mut out_rc) };
-        WolfHsmError::check(rc, "wh_Client_AuthUserDelete")?;
-        WolfHsmError::check(out_rc, "wh_Client_AuthUserDelete(server)")?;
+        Error::check(rc, "wh_Client_AuthUserDelete")?;
+        Error::check(out_rc, "wh_Client_AuthUserDelete(server)")?;
         Ok(())
     }
 
@@ -218,7 +218,7 @@ impl Client {
         &mut self,
         user_id: UserId,
         permissions: AuthPermissions,
-    ) -> Result<(), WolfHsmError> {
+    ) -> Result<(), Error> {
         let mut out_rc: i32 = 0;
         // SAFETY: ctx_ptr is valid; all other args are by-value or stack allocations.
         let rc = unsafe {
@@ -229,8 +229,8 @@ impl Client {
                 &mut out_rc,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_AuthUserSetPermissions")?;
-        WolfHsmError::check(out_rc, "wh_Client_AuthUserSetPermissions(server)")?;
+        Error::check(rc, "wh_Client_AuthUserSetPermissions")?;
+        Error::check(out_rc, "wh_Client_AuthUserSetPermissions(server)")?;
         Ok(())
     }
 
@@ -244,12 +244,12 @@ impl Client {
         method: AuthMethod,
         current_credentials: &[u8],
         new_credentials: &[u8],
-    ) -> Result<(), WolfHsmError> {
+    ) -> Result<(), Error> {
         let cur_len =
-            u16::try_from(current_credentials.len()).map_err(|_| WolfHsmError::BadArgs {
+            u16::try_from(current_credentials.len()).map_err(|_| Error::BadArgs {
                 msg: "current_credentials exceed u16::MAX bytes",
             })?;
-        let new_len = u16::try_from(new_credentials.len()).map_err(|_| WolfHsmError::BadArgs {
+        let new_len = u16::try_from(new_credentials.len()).map_err(|_| Error::BadArgs {
             msg: "new_credentials exceed u16::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
@@ -266,8 +266,8 @@ impl Client {
                 &mut out_rc,
             )
         };
-        WolfHsmError::check(rc, "wh_Client_AuthUserSetCredentials")?;
-        WolfHsmError::check(out_rc, "wh_Client_AuthUserSetCredentials(server)")?;
+        Error::check(rc, "wh_Client_AuthUserSetCredentials")?;
+        Error::check(out_rc, "wh_Client_AuthUserSetCredentials(server)")?;
         Ok(())
     }
 }

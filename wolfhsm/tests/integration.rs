@@ -11,7 +11,7 @@
 use hex_literal::hex;
 use wolfhsm::crypto::rsa::RsaRawOp;
 use wolfhsm::nvm::NvmId;
-use wolfhsm::{Client, Transport, WolfHsmError};
+use wolfhsm::{Client, Transport, Error};
 
 // ── Server connection helper ──────────────────────────────────────────────────
 
@@ -79,7 +79,7 @@ fn rng_nonzero() {
 fn with_key_lifecycle() {
     require_client!(client);
     client
-        .with_aes_key(&[0u8; 32], |_, _| Ok(()) as Result<(), WolfHsmError>)
+        .with_aes_key(&[0u8; 32], |_, _| Ok(()) as Result<(), Error>)
         .expect("with_aes_key lifecycle");
 }
 
@@ -410,7 +410,7 @@ fn cryptocb_register_lifecycle() {
 
     // While guard1 is alive, a second registration must be rejected.
     match client2.register_cryptocb() {
-        Err(WolfHsmError::AlreadyRegistered) => {}
+        Err(Error::AlreadyRegistered) => {}
         Err(e) => panic!("expected AlreadyRegistered, got Err: {e}"),
         Ok(_) => panic!("expected Err(AlreadyRegistered), got Ok"),
     }

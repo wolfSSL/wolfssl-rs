@@ -8,10 +8,11 @@ pub(crate) const WH_ERROR_MAX: i32 = -2000;
 /// Error type for wolfHSM operations.
 ///
 /// Distinguishes between errors originating from the wolfHSM C library
-/// (WH_ERROR_* range [`WH_ERROR_MIN`]..=[`WH_ERROR_MAX`]) and errors from
+/// (WH_ERROR_* range `WH_ERROR_MIN`..=`WH_ERROR_MAX`) and errors from
 /// lower-level wolfSSL/wolfCrypt FFI calls.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WolfHsmError {
+pub enum Error {
     /// A wolfHSM error code (WH_ERROR_* range -2302 to -2000).
     Wh {
         /// The wolfHSM error code (negative integer in the WH_ERROR_* range).
@@ -62,61 +63,61 @@ pub enum WolfHsmError {
     },
     /// A cryptographic verification completed but the signature or MAC was invalid.
     ///
-    /// Distinct from [`Ffi`][WolfHsmError::Ffi] (transport/FFI failure) and
-    /// [`ProtocolError`][WolfHsmError::ProtocolError] (impossible response).
+    /// Distinct from [`Ffi`][Error::Ffi] (transport/FFI failure) and
+    /// [`ProtocolError`][Error::ProtocolError] (impossible response).
     /// Here the HSM ran the check to completion and determined the material
     /// does not match.
     InvalidSignature,
 }
 
-impl WolfHsmError {
+impl Error {
     /// Map a wolfHSM C return code to a `Result`.
     ///
     /// - `0` → `Ok(())`
-    /// - WH_ERROR_* range (`WH_ERROR_MIN..=WH_ERROR_MAX`) → `Err(WolfHsmError::Wh { code })`
-    /// - Any other nonzero value → `Err(WolfHsmError::Ffi { code, func })`
+    /// - WH_ERROR_* range (`WH_ERROR_MIN..=WH_ERROR_MAX`) → `Err(Error::Wh { code })`
+    /// - Any other nonzero value → `Err(Error::Ffi { code, func })`
     ///
     /// `func` is the C function name, included in `Ffi` errors for diagnostics.
     #[inline]
-    pub fn check(rc: i32, func: &'static str) -> Result<(), WolfHsmError> {
+    pub fn check(rc: i32, func: &'static str) -> Result<(), Error> {
         if rc == 0 {
             Ok(())
         } else if (WH_ERROR_MIN..=WH_ERROR_MAX).contains(&rc) {
-            Err(WolfHsmError::Wh { code: rc })
+            Err(Error::Wh { code: rc })
         } else {
-            Err(WolfHsmError::Ffi { code: rc, func })
+            Err(Error::Ffi { code: rc, func })
         }
     }
 }
 
-impl fmt::Display for WolfHsmError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            WolfHsmError::Wh { code } => write!(f, "wolfHSM error {code}"),
-            WolfHsmError::Ffi { code, func } => {
+            Error::Wh { code } => write!(f, "wolfHSM error {code}"),
+            Error::Ffi { code, func } => {
                 write!(f, "{func} failed: wolfSSL FFI error {code}")
             }
-            WolfHsmError::AlreadyRegistered => {
+            Error::AlreadyRegistered => {
                 write!(
                     f,
                     "wolfHSM CryptoCb already registered; drop the existing guard first"
                 )
             }
-            WolfHsmError::BadArgs { msg } => write!(f, "invalid argument: {msg}"),
-            WolfHsmError::DataLost { id } => {
+            Error::BadArgs { msg } => write!(f, "invalid argument: {msg}"),
+            Error::DataLost { id } => {
                 write!(
                     f,
                     "wolfHSM NVM object {id} deleted but add failed; original data lost"
                 )
             }
-            WolfHsmError::ProtocolError { msg } => {
+            Error::ProtocolError { msg } => {
                 write!(f, "wolfHSM protocol error: {msg}")
             }
-            WolfHsmError::InvalidSignature => {
+            Error::InvalidSignature => {
                 write!(f, "wolfHSM: signature or MAC verification failed")
             }
         }
     }
 }
 
-impl core::error::Error for WolfHsmError {}
+impl core::error::Error for Error {}
