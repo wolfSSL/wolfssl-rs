@@ -108,7 +108,7 @@ unsafe extern "C" {
         e: core::ffi::c_long,
         out_key_id: *mut u16,
     ) -> core::ffi::c_int;
-    pub fn wolfhsm_rsa_sign(
+    pub fn wolfhsm_rsa_function(
         ctx: *mut whClientContext,
         key_id: u16,
         rsa_type: core::ffi::c_int,

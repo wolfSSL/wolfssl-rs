@@ -40,9 +40,9 @@ impl EccP256Key {
         let hash_len = u16::try_from(digest.len()).map_err(|_| WolfHsmError::BadArgs {
             msg: "digest exceeds u16::MAX bytes",
         })?;
-        let mut buf = [0u8; 128];
+        let mut buf = Vec::<u8>::with_capacity(128);
         let mut sig_len: u16 = 128;
-        // SAFETY: all pointers are valid stack/heap allocations for this call.
+        // SAFETY: buf has capacity 128; wolfhsm_ecc_sign writes at most sig_len bytes.
         let rc = unsafe {
             wolfhsm_ecc_sign(
                 client.ctx_ptr(),
@@ -54,7 +54,10 @@ impl EccP256Key {
             )
         };
         WolfHsmError::check(rc, "wolfhsm_ecc_sign")?;
-        Ok(buf[..sig_len as usize].to_vec())
+        // SAFETY: wolfhsm_ecc_sign succeeded and initialized exactly sig_len bytes.
+        // sig_len <= 128 (the value we passed as the buffer capacity).
+        unsafe { buf.set_len(sig_len as usize) };
+        Ok(buf)
     }
 
     /// Verify a DER-encoded ECDSA signature against a pre-hashed digest.
@@ -92,9 +95,9 @@ impl EccP256Key {
 
     /// Export the public key as DER SubjectPublicKeyInfo.
     pub fn public_key_der(&self, client: &mut Client) -> Result<Vec<u8>, WolfHsmError> {
-        let mut buf = [0u8; 91];
+        let mut buf = Vec::<u8>::with_capacity(91);
         let mut out_len: u32 = 91;
-        // SAFETY: all pointers are valid for the duration of this call.
+        // SAFETY: buf has capacity 91; wolfhsm_ecc_export_public_der writes at most out_len bytes.
         let rc = unsafe {
             wolfhsm_ecc_export_public_der(
                 client.ctx_ptr(),
@@ -104,7 +107,10 @@ impl EccP256Key {
             )
         };
         WolfHsmError::check(rc, "wolfhsm_ecc_export_public_der")?;
-        Ok(buf[..out_len as usize].to_vec())
+        // SAFETY: wolfhsm_ecc_export_public_der succeeded and initialized exactly out_len bytes.
+        // out_len <= 91 (the value we passed as the buffer capacity).
+        unsafe { buf.set_len(out_len as usize) };
+        Ok(buf)
     }
 
     /// ECDH: compute shared secret with a peer DER SubjectPublicKeyInfo.
@@ -121,9 +127,9 @@ impl EccP256Key {
             u32::try_from(peer_public_der.len()).map_err(|_| WolfHsmError::BadArgs {
                 msg: "peer public key exceeds u32::MAX bytes",
             })?;
-        let mut buf = [0u8; 32];
+        let mut buf = Vec::<u8>::with_capacity(32);
         let mut out_len: u32 = 32;
-        // SAFETY: all pointers are valid for the duration of this call.
+        // SAFETY: buf has capacity 32; wolfhsm_ecc_shared_secret writes at most out_len bytes.
         let rc = unsafe {
             wolfhsm_ecc_shared_secret(
                 client.ctx_ptr(),
@@ -135,7 +141,10 @@ impl EccP256Key {
             )
         };
         WolfHsmError::check(rc, "wolfhsm_ecc_shared_secret")?;
-        Ok(buf[..out_len as usize].to_vec())
+        // SAFETY: wolfhsm_ecc_shared_secret succeeded and initialized exactly out_len bytes.
+        // out_len <= 32 (the value we passed as the buffer capacity).
+        unsafe { buf.set_len(out_len as usize) };
+        Ok(buf)
     }
 }
 

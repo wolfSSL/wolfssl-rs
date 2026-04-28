@@ -1,7 +1,7 @@
 use core::ffi::{c_int, c_long};
 
 use wolfhsm_sys::{
-    wolfhsm_rsa_export_public_der, wolfhsm_rsa_get_size, wolfhsm_rsa_make_key, wolfhsm_rsa_sign,
+    wolfhsm_rsa_export_public_der, wolfhsm_rsa_function, wolfhsm_rsa_get_size, wolfhsm_rsa_make_key,
 };
 
 use crate::client::Client;
@@ -90,12 +90,10 @@ impl RsaKey {
         let mut out = vec![0u8; out_size];
         let mut out_len: u32 = out_size as u32;
 
-        // wolfhsm_rsa_sign is the wolfHSM shim for the raw RSA modular-exponentiation
-        // primitive — it dispatches all four RsaRawOp variants, not just signing.
-        // The name matches the underlying C shim; no separate decrypt function exists.
+        // wolfhsm_rsa_function dispatches all four RsaRawOp variants via wh_Client_RsaFunction.
         // SAFETY: all pointers are valid for the duration of this call.
         let rc = unsafe {
-            wolfhsm_rsa_sign(
+            wolfhsm_rsa_function(
                 client.ctx_ptr(),
                 self.id.0,
                 op as c_int,
@@ -105,7 +103,7 @@ impl RsaKey {
                 &mut out_len,
             )
         };
-        WolfHsmError::check(rc, "wolfhsm_rsa_sign")?;
+        WolfHsmError::check(rc, "wolfhsm_rsa_function")?;
         out.truncate(out_len as usize);
         Ok(out)
     }
@@ -117,10 +115,11 @@ impl RsaKey {
 
     /// Export the public key as DER SubjectPublicKeyInfo.
     pub fn public_key_der(&self, client: &mut Client) -> Result<Vec<u8>, WolfHsmError> {
-        // 600 bytes covers keys up to 4096-bit SPKI DER (~549 bytes for RSA-4096).
-        let mut buf = vec![0u8; 600];
-        let mut out_len: u32 = 600;
-        // SAFETY: all pointers are valid for the duration of this call.
+        // DER SPKI overhead is ~30 bytes; +64 gives margin for any key size.
+        let cap = self.key_size_bytes as usize + 64;
+        let mut buf = Vec::<u8>::with_capacity(cap);
+        let mut out_len: u32 = cap as u32;
+        // SAFETY: buf has capacity cap; wolfhsm_rsa_export_public_der writes at most out_len bytes.
         let rc = unsafe {
             wolfhsm_rsa_export_public_der(
                 client.ctx_ptr(),
@@ -130,7 +129,9 @@ impl RsaKey {
             )
         };
         WolfHsmError::check(rc, "wolfhsm_rsa_export_public_der")?;
-        buf.truncate(out_len as usize);
+        // SAFETY: wolfhsm_rsa_export_public_der succeeded and initialized exactly out_len bytes.
+        // out_len <= cap (the value we passed as the buffer capacity).
+        unsafe { buf.set_len(out_len as usize) };
         Ok(buf)
     }
 }

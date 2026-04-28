@@ -161,7 +161,7 @@ int wolfhsm_curve25519_shared_secret(whClientContext* ctx,
 
 /* ── RSA shims ───────────────────────────────────────────────────────────── */
 
-int wolfhsm_rsa_sign(whClientContext* ctx, uint16_t keyId, int rsa_type,
+int wolfhsm_rsa_function(whClientContext* ctx, uint16_t keyId, int rsa_type,
                      const uint8_t* in, uint32_t in_len,
                      uint8_t* out, uint32_t* out_len)
 {
