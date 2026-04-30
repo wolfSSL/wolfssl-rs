@@ -4,3 +4,6 @@
 [submodule "wolfhsm-src/wolfhsm"]
 	path = wolfhsm-src/wolfhsm
 	url = https://github.com/wolfSSL/wolfHSM.git
+[submodule "wolftpm-src/wolftpm"]
+	path = wolftpm-src/wolftpm
+	url = https://github.com/wolfSSL/wolfTPM.git

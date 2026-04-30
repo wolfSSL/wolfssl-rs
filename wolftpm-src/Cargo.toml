@@ -1,0 +1,25 @@
+[package]
+name = "wolftpm-src"
+version = "0.1.0"
+edition = "2021"
+description = "Compile wolfTPM from source for use by wolftpm-sys"
+license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+readme = "README.md"
+links = "wolftpm_src"
+include = [
+    "src/**",
+    "build.rs",
+    "README.md",
+    "Cargo.toml",
+]
+
+[features]
+## Enable Linux /dev/tpm0 kernel driver transport.
+linux-dev = []
+
+## Enable software TPM socket transport (for swtpm / IBM TPM2 simulator).
+swtpm = []
+
+[build-dependencies]
+cc = { workspace = true }

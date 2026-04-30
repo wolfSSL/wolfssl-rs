@@ -29,6 +29,11 @@ WOLFSSL_SRC = "/home/mark/WORK/wolfssl-rs/wolfssl-src/wolfssl"
 # If absent, wolfhsm-src falls back to the bundled submodule at
 # wolfhsm-src/wolfhsm/ (upstream main, limited feature set).
 WOLFHSM_SRC = "/home/mark/GIT/wolfHSM"
+# wolfTPM source tree for local development.
+# Used by wolftpm-src/build.rs when building wolftpm-sys/wolftpm.
+# If absent, wolftpm-src falls back to the bundled submodule at
+# wolftpm-src/wolftpm/ (upstream main).
+WOLFTPM_SRC = "/home/mark/GIT/wolfTPM"
 # riscv32 C cross-compiler via zig cc.
 # Used by the cc crate when compiling wolfssl-src for the riscv32imc-unknown-none-elf target.
 CC_riscv32imc_unknown_none_elf = { value = ".cargo/riscv32-cc", relative = true }

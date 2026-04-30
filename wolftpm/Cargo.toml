@@ -1,0 +1,20 @@
+[package]
+name = "wolftpm"
+version = "0.1.0"
+edition = "2021"
+description = "Rust bindings to wolfTPM"
+license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+readme = "README.md"
+
+[features]
+## Enable Linux /dev/tpm0 kernel driver transport.
+linux-dev = ["wolftpm-sys/linux-dev"]
+
+## Enable software TPM socket transport (for swtpm / IBM TPM2 simulator).
+swtpm = ["wolftpm-sys/swtpm"]
+
+[dependencies]
+log = "0.4"
+wolftpm-sys = { version = "0.1.0", path = "../wolftpm-sys" }
+wolfcrypt-sys = { version = "0.1.3", path = "../wolfcrypt-sys" }
