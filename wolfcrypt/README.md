@@ -1,6 +1,20 @@
 # wolfcrypt
 
-RustCrypto trait implementations backed by wolfCrypt. Swap the backend under your existing RustCrypto code without changing call sites.
+RustCrypto trait implementations backed by wolfCrypt.  Swap the backend under
+your existing RustCrypto code without changing call sites.
+
+## Why
+
+wolfCrypt is a FIPS 140-3 validated cryptographic library used in billions of
+devices across aerospace, automotive, and government products.  Choosing
+`wolfcrypt` over pure-Rust alternatives gives you:
+
+- **FIPS 140-3** — the same validated implementation used in production
+  (commercial license required; [contact wolfSSL](https://www.wolfssl.com/license/))
+- **Minimal footprint** — compiles to bare-metal RISC-V for embedded hardware
+  security targets (Caliptra, secure elements, automotive MCUs)
+- **No API changes** — your existing `digest::Digest`, `aead::Aead`,
+  `signature::Signer` code keeps working; only the backend changes
 
 ## Usage
 
@@ -29,14 +43,45 @@ wolfcrypt = { version = "0.1", features = ["digest", "aead", "signature"] }
 | `dh` / `ecdh` | DH, ECDH |
 | `rand` | CSPRNG (included by default) |
 
-## FIPS
+## How it works
+
+```text
+wolfssl-src     Compiles wolfSSL/wolfCrypt C source via the cc crate
+      │
+wolfcrypt-sys   bindgen FFI; emits cargo cfg flags per compiled algorithm
+      │         (wolfssl_aes_gcm, wolfssl_ecc_p384, …)
+      │
+wolfcrypt-rs    Typed Rust wrapper + C shim for struct field access
+      │
+wolfcrypt       RustCrypto trait impls (this crate)
+```
+
+Each algorithm is gated behind a Cargo feature and a corresponding cfg flag
+emitted by `wolfcrypt-sys`, so unused algorithms are dead-stripped.
+
+## FIPS 140-3
 
 ```toml
 wolfcrypt = { version = "0.1", features = ["aead", "fips"] }
 ```
 
-Threads through to `wolfcrypt-sys`. Requires a wolfSSL commercial FIPS license and the validated source tree. See the [workspace README](https://github.com/wolfSSL/wolfssl-rs) for details.
+Need FIPS 140-3 validation in your Rust application?  wolfCrypt is FIPS 140-3
+validated — the same library, the same code path.  Enabling the `fips` feature
+alone is not sufficient: FIPS 140-3 validation requires the specific wolfSSL
+source tree submitted for validation and a commercial license.
+[Contact wolfSSL](https://www.wolfssl.com/license/) for a commercial FIPS
+license and the validated source tree.  See the
+[workspace README](https://github.com/wolfSSL/wolfssl-rs) for full details.
+
+## Copyright
+
+Copyright (C) 2006-2026 wolfSSL Inc.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
+
+The [MIT License](https://opensource.org/licenses/MIT) applies to the Rust
+source code in this crate.  The underlying wolfSSL/wolfCrypt C library is
+licensed under GPL-2.0-or-later with a commercial option available from
+[wolfSSL Inc.](https://www.wolfssl.com/license/)

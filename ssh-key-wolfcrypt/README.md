@@ -109,6 +109,21 @@ chart above (e.g. `p256`, `rsa`) in order to use cryptographic functionality.
 
 This crate requires **Rust 1.85** at a minimum.
 
+## FIPS 140-3
+
+Need FIPS 140-3 validation in your Rust application?  wolfCrypt — the
+cryptographic backend used by this crate — is FIPS 140-3 validated.
+[Contact wolfSSL](https://www.wolfssl.com/license/) for a commercial FIPS
+license and the validated source tree.
+
+## Copyright
+
+Copyright (C) 2006-2026 wolfSSL Inc.
+
+The non-cryptographic portions of this crate are derived from the
+[RustCrypto ssh-key](https://github.com/RustCrypto/SSH/tree/master/ssh-key)
+crate, copyright RustCrypto developers.
+
 ## License
 
 Licensed under either of:
@@ -117,6 +132,10 @@ Licensed under either of:
  * [MIT license](http://opensource.org/licenses/MIT)
 
 at your option.
+
+The underlying wolfSSL/wolfCrypt C library is licensed under GPL-2.0-or-later
+with a commercial option available from
+[wolfSSL Inc.](https://www.wolfssl.com/license/)
 
 ### Contribution
 

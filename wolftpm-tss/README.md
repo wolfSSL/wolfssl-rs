@@ -118,6 +118,15 @@ wolfTPM source and wolfSSL headers — see
 
 Copyright (C) 2006-2026 wolfSSL Inc.
 
+wolfTPM is copyright wolfSSL Inc. and its contributors.
+
 ## License
 
 `GPL-3.0-only OR LicenseRef-wolfSSL-commercial`
+
+This crate is available under the
+[GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html).
+For proprietary or commercial use where the GPL is not acceptable, a commercial
+license is available from [wolfSSL Inc.](https://www.wolfssl.com/license/)
+
+wolfTPM itself is licensed under GPL-2.0-or-later or a commercial wolfSSL license.
