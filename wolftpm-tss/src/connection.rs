@@ -19,6 +19,14 @@ static SWTPM_INIT_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 ///
 /// Returns a sub-slice of `rsp` containing exactly the response bytes on
 /// success, or an appropriate `Error` on failure.
+///
+/// # Single-buffer design
+///
+/// The wolfTPM shim (`wolftpm_rs_shim.c`) copies `cmd` into `WOLFTPM2_DEV::cmdBuf`,
+/// dispatches the command, and then wolfTPM overwrites `cmdBuf` with the response.
+/// Because `dev` is owned exclusively by `WolfTpmLinuxDev` / `WolfTpmSwtpm` and
+/// those types are not `Sync`, this function is never called concurrently on the
+/// same `dev`.  The single-buffer design is therefore safe through the Rust API.
 #[cfg(feature = "tss")]
 fn do_transact<'a>(
     dev: &mut wolftpm_sys::WOLFTPM2_DEV,
@@ -27,9 +35,9 @@ fn do_transact<'a>(
 ) -> Result<&'a mut [u8], Error> {
     use std::os::raw::c_int;
 
-    // cmd.len() not fitting in c_int means the command exceeds the transport's
-    // maximum message size — treated as the same category as ResponseBufferTooSmall.
-    let cmd_sz = c_int::try_from(cmd.len()).map_err(|_| Error::ResponseBufferTooSmall)?;
+    // cmd.len() not fitting in c_int means the command exceeds the maximum
+    // message size the transport can express.
+    let cmd_sz = c_int::try_from(cmd.len()).map_err(|_| Error::CommandTooLarge)?;
     let rsp_buf_sz = c_int::try_from(rsp.len()).map_err(|_| Error::ResponseBufferTooSmall)?;
     let mut rsp_sz: c_int = 0;
 
@@ -67,6 +75,16 @@ struct WolfTpmDev {
     dev: Box<wolftpm_sys::WOLFTPM2_DEV>,
 }
 
+impl core::fmt::Debug for WolfTpmDev {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        // WOLFTPM2_DEV is an opaque C struct; only the pointer address is
+        // meaningful from the Rust side.
+        f.debug_struct("WolfTpmDev")
+            .field("dev", &format_args!("{:p}", self.dev.as_ref()))
+            .finish()
+    }
+}
+
 impl WolfTpmDev {
     fn new(dev: Box<wolftpm_sys::WOLFTPM2_DEV>) -> Self {
         Self { dev }
@@ -87,8 +105,12 @@ impl Drop for WolfTpmDev {
 /// wolfTPM transport using the Linux kernel TPM driver (`/dev/tpm0` or
 /// `/dev/tpmrm0`).
 ///
-/// Implements [`Connection`] so that any tpm-rs client code can use a
-/// hardware TPM via wolfTPM on Linux without any additional dependencies.
+/// Implements [`Connection`] (from tpm2-rs-client) when the **`tss`** feature
+/// is enabled, allowing any tpm-rs client code to use a hardware TPM via
+/// wolfTPM on Linux.
+///
+/// Without the `tss` feature this struct can be constructed but cannot be
+/// passed to any tpm-rs function.  Enable `tss` to get the `Connection` impl.
 ///
 /// # Construction
 ///
@@ -100,6 +122,16 @@ pub struct WolfTpmLinuxDev {
     // Accessed by the `tss` feature's Connection impl and by Drop propagation.
     #[allow(dead_code)]
     inner: WolfTpmDev,
+}
+
+impl core::fmt::Debug for WolfTpmLinuxDev {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        // WOLFTPM2_DEV is an opaque C struct; delegate to the inner wrapper
+        // which shows the pointer address.
+        f.debug_struct("WolfTpmLinuxDev")
+            .field("inner", &self.inner)
+            .finish()
+    }
 }
 
 impl WolfTpmLinuxDev {
@@ -156,6 +188,17 @@ pub struct WolfTpmSwtpm {
 }
 
 #[cfg(feature = "swtpm")]
+impl core::fmt::Debug for WolfTpmSwtpm {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        // WOLFTPM2_DEV is an opaque C struct; delegate to the inner wrapper
+        // which shows the pointer address.
+        f.debug_struct("WolfTpmSwtpm")
+            .field("inner", &self.inner)
+            .finish()
+    }
+}
+
+#[cfg(feature = "swtpm")]
 impl WolfTpmSwtpm {
     /// Connect to a software TPM at `host:port`.
     ///
@@ -174,19 +217,35 @@ impl WolfTpmSwtpm {
     ///
     /// # Thread safety
     ///
-    /// A process-wide mutex serialises concurrent swtpm initialisations so that
-    /// two threads do not corrupt each other's environment variables. This does
-    /// **not** protect against unrelated threads calling `std::env::var()` or
-    /// other `setenv`/`unsetenv` calls concurrently.
+    /// A process-wide mutex serialises concurrent calls to this function so
+    /// that two threads do not corrupt each other's `SWTPM_SERVER_NAME` /
+    /// `SWTPM_SERVER_PORT` environment variables.
+    ///
+    /// **This mutex does not protect against unrelated threads that read or
+    /// write `SWTPM_SERVER_NAME`/`SWTPM_SERVER_PORT` outside this API.**  If
+    /// your process sets those variables for other purposes, or runs parallel
+    /// test cases that each call `connect`, those other paths must not touch
+    /// the two variables while this function may be executing.  The safest
+    /// approach is to set `SWTPM_SERVER_*` exclusively through this API and
+    /// never read them from the environment directly.
     pub fn connect(host: &str, port: u16) -> Result<Self, Error> {
         use std::ffi::CString;
 
         // wolfTPM swtpm reads SWTPM_SERVER_NAME / SWTPM_SERVER_PORT from
         // the environment.  Set them for the duration of Init, then clear.
-        let host_c = CString::new(host).map_err(|_| Error::MalformedResponse)?;
-        let port_str = port.to_string();
-        let port_c = CString::new(port_str.as_str()).map_err(|_| Error::MalformedResponse)?;
+        // A null byte in `host` is a programmer error (the argument is invalid),
+        // not a malformed TPM response.  Use Transport { code: -1 } as the
+        // closest available variant; wolftpm-tss has no InvalidArg variant.
+        let host_c =
+            CString::new(host).map_err(|_| Error::Transport { code: -1 })?;
+        // port.to_string() is always a valid ASCII digit string; this branch
+        // is unreachable in practice but kept for exhaustiveness.
+        let port_c =
+            CString::new(port.to_string()).map_err(|_| Error::Transport { code: -1 })?;
 
+        // unwrap: if the mutex is poisoned a previous thread panicked mid-init,
+        // leaving the process env in an unknown state.  Panic here is correct —
+        // there is no safe recovery path.
         let _guard = SWTPM_INIT_LOCK.lock().unwrap();
 
         // SAFETY: setenv/unsetenv are POSIX; the strings are valid C strings.
@@ -197,7 +256,10 @@ impl WolfTpmSwtpm {
         }
         let rc = unsafe { libc_setenv(b"SWTPM_SERVER_PORT\0".as_ptr(), port_c.as_ptr()) };
         if rc != 0 {
-            unsafe { libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr()) };
+            // Best-effort rollback; if unsetenv fails (EINVAL), SWTPM_SERVER_NAME
+            // is left in the environment but that is a benign stale value —
+            // wolfTPM2_Init will not be called, so no incorrect connection is made.
+            let _ = unsafe { libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr()) };
             return Err(Error::Transport { code: rc });
         }
 
@@ -206,10 +268,11 @@ impl WolfTpmSwtpm {
             wolftpm_sys::wolfTPM2_Init(dev.as_mut() as *mut _, None, std::ptr::null_mut())
         };
 
-        // Clean up env vars regardless of success/failure.
+        // Clean up env vars regardless of success/failure.  EINVAL is impossible
+        // here because the names are hard-coded valid ASCII strings.
         unsafe {
-            libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr());
-            libc_unsetenv(b"SWTPM_SERVER_PORT\0".as_ptr());
+            let _ = libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr());
+            let _ = libc_unsetenv(b"SWTPM_SERVER_PORT\0".as_ptr());
         }
 
         Error::check(rc)?;
@@ -227,8 +290,10 @@ impl Connection for WolfTpmSwtpm {
 }
 
 // ── POSIX env helpers (avoids a libc dep just for two calls) ─────────────────
-// NOTE: identical helpers exist in wolftpm/src/device.rs.
-// Kept separate to avoid a shared internal crate dependency.
+// NOTE: These helpers are intentionally duplicated from wolftpm/src/device.rs.
+// Kept separate to avoid introducing a shared internal crate dependency between
+// wolftpm and wolftpm-tss.  If a bug is found here, fix it in both files.
+// The two copies are kept byte-for-byte identical in logic; review diffs carefully.
 
 #[cfg(feature = "swtpm")]
 unsafe fn libc_setenv(name: *const u8, value: *const std::ffi::c_char) -> std::ffi::c_int {
@@ -243,11 +308,13 @@ unsafe fn libc_setenv(name: *const u8, value: *const std::ffi::c_char) -> std::f
 }
 
 #[cfg(feature = "swtpm")]
-unsafe fn libc_unsetenv(name: *const u8) {
+unsafe fn libc_unsetenv(name: *const u8) -> std::ffi::c_int {
     extern "C" {
         fn unsetenv(name: *const std::ffi::c_char) -> std::ffi::c_int;
     }
-    unsetenv(name as *const _);
+    // POSIX unsetenv returns 0 on success, -1 on error (EINVAL = invalid name).
+    // The caller decides whether to propagate or ignore the error.
+    unsetenv(name as *const _)
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -262,6 +329,7 @@ mod tests {
     fn error_display_non_empty() {
         let cases = [
             Error::ResponseBufferTooSmall,
+            Error::CommandTooLarge,
             Error::MalformedResponse,
             Error::Transport { code: -1 },
         ];

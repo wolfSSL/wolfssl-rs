@@ -13,7 +13,7 @@
 //! use wolftpm::Device;
 //!
 //! # fn main() -> Result<(), wolftpm::Error> {
-//! let mut dev = Device::open()?;           // opens /dev/tpm0 or swtpm socket
+//! let mut dev = Device::open()?;           // opens /dev/tpm0 or /dev/tpmrm0 via kernel driver
 //! let rand = dev.get_random(32)?;          // TPM-sourced random bytes
 //! # let _ = rand;
 //! # Ok(())
@@ -24,17 +24,18 @@
 //!
 //! | Feature | What it enables |
 //! |---------|----------------|
-//! | `linux-dev` | Linux `/dev/tpm0` kernel driver transport |
-//! | `swtpm` | Software TPM socket transport (swtpm / IBM TPM2 simulator) |
+//! | `linux-dev` | Compile wolfTPM with explicit Linux kernel driver transport; without this, wolfTPM autodetects at runtime |
+//! | `swtpm` | Software TPM socket transport (`Device::open_swtpm`; swtpm / IBM TPM2 simulator) |
 //!
-//! If neither feature is enabled, wolfTPM autodetects the available transport
-//! at runtime on Linux.
+//! `Device::open()` (kernel driver) is always available regardless of feature flags;
+//! `Device::open_swtpm()` requires the `swtpm` feature.
 
 pub mod device;
 pub use device::Device;
 
 pub mod error;
 pub use error::Error;
+pub use error::TpmRc;
 
 pub mod key;
 pub use key::EccKey;

@@ -73,14 +73,14 @@ impl<'dev> EccKey<'dev> {
                 wolftpm_sys::TPM_ALG_ID_T_TPM_ALG_ECDSA as wolftpm_sys::TPM_ALG_ID,
             )
         };
-        if let Err(e) = Error::check(rc) {
-            // SAFETY: srk was successfully created above; flush it before
-            // propagating the error so no transient slot is leaked.
+        // SAFETY: srk was successfully created above; flush it before
+        // propagating any error so no transient slot is leaked.
+        Error::check(rc).map_err(|e| {
             unsafe {
                 wolftpm_sys::wolfTPM2_UnloadHandle(dev_ptr, &mut srk.handle as *mut _);
             }
-            return Err(e);
-        }
+            e
+        })?;
 
         // ── Step 3: Create and load the signing key under the SRK ────────────
         // SAFETY: zeroing WOLFTPM2_KEY is the correct initial state.
@@ -98,13 +98,13 @@ impl<'dev> EccKey<'dev> {
                 0,
             )
         };
-        if let Err(e) = Error::check(rc) {
-            // SAFETY: srk was successfully created; flush it before returning.
+        // SAFETY: srk was successfully created; flush it before returning.
+        Error::check(rc).map_err(|e| {
             unsafe {
                 wolftpm_sys::wolfTPM2_UnloadHandle(dev_ptr, &mut srk.handle as *mut _);
             }
-            return Err(e);
-        }
+            e
+        })?;
 
         Ok(Self { key, srk, dev: device })
     }
@@ -142,12 +142,16 @@ impl<'dev> EccKey<'dev> {
         // SAFETY: dev_ptr is alive for 'dev; self.key is a loaded TPM key;
         // hash is 32 bytes (validated above); sig is 128 bytes and sig_sz
         // reflects that size on entry.
+        // hash is validated to be 32 bytes above; 32 fits in c_int on all targets.
+        let hash_sz = std::ffi::c_int::try_from(hash.len())
+            .map_err(|_| Error::InvalidArg("hash length overflows c_int"))?;
+
         let rc = unsafe {
             wolftpm_sys::wolfTPM2_SignHashScheme(
                 self.dev.dev_ptr_mut(),
                 &mut self.key as *mut _,
                 hash.as_ptr(),
-                hash.len() as std::ffi::c_int,
+                hash_sz,
                 sig.as_mut_ptr(),
                 &mut sig_sz as *mut _,
                 wolftpm_sys::TPM_ALG_ID_T_TPM_ALG_ECDSA as wolftpm_sys::TPMI_ALG_SIG_SCHEME,
@@ -177,9 +181,12 @@ impl<'dev> EccKey<'dev> {
 
         let sig_sz =
             i32::try_from(sig.len()).map_err(|_| Error::InvalidArg("sig too large"))?;
+        // hash is validated to be 32 bytes above; 32 fits in c_int on all targets.
+        let hash_sz = std::ffi::c_int::try_from(hash.len())
+            .map_err(|_| Error::InvalidArg("hash length overflows c_int"))?;
 
         // SAFETY: dev_ptr is alive for 'dev; self.key is a loaded TPM key;
-        // hash is 32 bytes and sig is sig_sz bytes (both validated above).
+        // hash is 32 bytes (hash_sz) and sig is sig_sz bytes (both validated above).
         let rc = unsafe {
             wolftpm_sys::wolfTPM2_VerifyHashScheme(
                 self.dev.dev_ptr_mut(),
@@ -187,7 +194,7 @@ impl<'dev> EccKey<'dev> {
                 sig.as_ptr(),
                 sig_sz,
                 hash.as_ptr(),
-                hash.len() as std::ffi::c_int,
+                hash_sz,
                 wolftpm_sys::TPM_ALG_ID_T_TPM_ALG_ECDSA as wolftpm_sys::TPMI_ALG_SIG_SCHEME,
                 wolftpm_sys::TPM_ALG_ID_T_TPM_ALG_SHA256 as wolftpm_sys::TPMI_ALG_HASH,
             )
@@ -212,9 +219,20 @@ impl<'dev> EccKey<'dev> {
             // well-formed but does not verify — not a fatal error.
             r if r == wolftpm_sys::TPM_RC_T_TPM_RC_SIGNATURE as i32 => Ok(false),
             _ => Err(Error::Tpm {
-                rc: crate::error::TpmRc(rc as u32),
+                rc: crate::error::TpmRc::from_raw(rc as u32),
             }),
         }
+    }
+}
+
+impl core::fmt::Debug for EccKey<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        // WOLFTPM2_KEY is an opaque C struct; expose only the TPM object
+        // handles so callers can correlate with TPM2 tool output.
+        f.debug_struct("EccKey")
+            .field("key_handle", &format_args!("0x{:08x}", self.key.handle.hndl))
+            .field("srk_handle", &format_args!("0x{:08x}", self.srk.handle.hndl))
+            .finish()
     }
 }
 

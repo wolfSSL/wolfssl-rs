@@ -9,7 +9,8 @@
 //!
 //! # Quick start
 //!
-//! ```no_run
+//! ```no_run,ignore
+//! // Requires: features = ["tss"] and tpm2-rs git deps (see Cargo.toml)
 //! use wolftpm_tss::connection::WolfTpmLinuxDev;
 //! use tpm2_rs_client::run_command;
 //! use tpm2_rs_base::commands::GetRandomCmd;
