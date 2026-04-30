@@ -8,6 +8,7 @@
 //! code can be written and type-checked against them.
 
 use crate::error::Error;
+#[cfg(feature = "tss")]
 use tpm2_rs_client::connection::Connection;
 
 // ── Linux /dev/tpm0 ──────────────────────────────────────────────────────────
@@ -42,6 +43,7 @@ impl WolfTpmLinuxDev {
     }
 }
 
+#[cfg(feature = "tss")]
 impl Connection for WolfTpmLinuxDev {
     type Error = Error;
 
@@ -85,6 +87,7 @@ impl WolfTpmSwtpm {
     }
 }
 
+#[cfg(feature = "tss")]
 impl Connection for WolfTpmSwtpm {
     type Error = Error;
 

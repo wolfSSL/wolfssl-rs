@@ -47,6 +47,7 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 // tpm2-rs-client requires Connection::Error: From<tpm2_rs_base::errors::TssError>.
+#[cfg(feature = "tss")]
 impl From<tpm2_rs_base::errors::TssError> for Error {
     fn from(e: tpm2_rs_base::errors::TssError) -> Self {
         // TssError is a TPM-layer error, not a transport error.

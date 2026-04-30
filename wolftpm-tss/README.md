@@ -107,6 +107,7 @@ wolfTPM source and wolfSSL headers — see
 |---|---|
 | `linux-dev` | Linux `/dev/tpm0` kernel driver transport |
 | `swtpm` | Software TPM socket transport |
+| `tss` | Enable `Connection` trait impls (requires tpm2-rs-client / tpm2-rs-base git deps) |
 
 ## References
 
