@@ -1,6 +1,6 @@
 [package]
 name = "wolfhsm-sys"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Auto-generated Rust FFI bindings to wolfHSM"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
@@ -13,7 +13,7 @@ wolfcrypt-sys = { version = "0.1.3", path = "../wolfcrypt-sys" }
 # wolfhsm-src must be a direct [dependency] (not build-dep) so that Cargo
 # propagates DEP_WOLFHSM_SRC_* metadata to our build script.  The crate's
 # lib.rs is empty; the cost is negligible.
-wolfhsm-src = { version = "0.1.1", path = "../wolfhsm-src" }
+wolfhsm-src = { version = "0.1.2", path = "../wolfhsm-src" }
 
 [features]
 ## Enable SHE (Secure Hardware Extension) — propagates to wolfhsm-src.
