@@ -54,7 +54,10 @@ macro_rules! impl_digest_native {
         impl Default for $name {
             fn default() -> Self {
                 let ctx = unsafe { $new_fn() };
-                assert!(!ctx.is_null(), concat!(stringify!($name), ": context allocation failed"));
+                assert!(
+                    !ctx.is_null(),
+                    concat!(stringify!($name), ": context allocation failed")
+                );
                 Self { ctx }
             }
         }
@@ -91,9 +94,7 @@ macro_rules! impl_digest_native {
         #[$cfg_gate]
         impl digest_trait::Update for $name {
             fn update(&mut self, data: &[u8]) {
-                let rc = unsafe {
-                    $update_fn(self.ctx, data.as_ptr(), data.len() as u32)
-                };
+                let rc = unsafe { $update_fn(self.ctx, data.as_ptr(), data.len() as u32) };
                 assert_eq!(rc, 0, concat!(stringify!($name), ": update failed"));
             }
         }
@@ -112,16 +113,19 @@ macro_rules! impl_digest_native {
 
         #[$cfg_gate]
         impl digest_trait::FixedOutputReset for $name {
-            fn finalize_into_reset(
-                &mut self,
-                out: &mut GenericArray<u8, Self::OutputSize>,
-            ) {
+            fn finalize_into_reset(&mut self, out: &mut GenericArray<u8, Self::OutputSize>) {
                 let rc = unsafe { $final_fn(self.ctx, out.as_mut_ptr()) };
-                assert_eq!(rc, 0, concat!(stringify!($name), ": finalize_into_reset failed"));
+                assert_eq!(
+                    rc, 0,
+                    concat!(stringify!($name), ": finalize_into_reset failed")
+                );
                 // Re-init: free old context, allocate a fresh one.
                 unsafe { $free_fn(self.ctx) };
                 self.ctx = unsafe { $new_fn() };
-                assert!(!self.ctx.is_null(), concat!(stringify!($name), ": re-init after reset failed"));
+                assert!(
+                    !self.ctx.is_null(),
+                    concat!(stringify!($name), ": re-init after reset failed")
+                );
             }
         }
 
@@ -130,7 +134,10 @@ macro_rules! impl_digest_native {
             fn reset(&mut self) {
                 unsafe { $free_fn(self.ctx) };
                 self.ctx = unsafe { $new_fn() };
-                assert!(!self.ctx.is_null(), concat!(stringify!($name), ": reset failed"));
+                assert!(
+                    !self.ctx.is_null(),
+                    concat!(stringify!($name), ": reset failed")
+                );
             }
         }
 
@@ -146,7 +153,8 @@ impl_digest_native!(
     wolfcrypt_rs::wolfcrypt_sha256_final,
     wolfcrypt_rs::wolfcrypt_sha256_free,
     wolfcrypt_rs::wolfcrypt_sha256_copy,
-    U32, U64,
+    U32,
+    U64,
     cfg(wolfssl_sha256)
 );
 
@@ -157,7 +165,8 @@ impl_digest_native!(
     wolfcrypt_rs::wolfcrypt_sha384_final,
     wolfcrypt_rs::wolfcrypt_sha384_free,
     wolfcrypt_rs::wolfcrypt_sha384_copy,
-    U48, U128,
+    U48,
+    U128,
     cfg(wolfssl_sha384)
 );
 
@@ -168,7 +177,8 @@ impl_digest_native!(
     wolfcrypt_rs::wolfcrypt_sha1_final,
     wolfcrypt_rs::wolfcrypt_sha1_free,
     wolfcrypt_rs::wolfcrypt_sha1_copy,
-    U20, U64,
+    U20,
+    U64,
     cfg(wolfssl_sha1)
 );
 
@@ -179,7 +189,8 @@ impl_digest_native!(
     wolfcrypt_rs::wolfcrypt_sha224_final,
     wolfcrypt_rs::wolfcrypt_sha224_free,
     wolfcrypt_rs::wolfcrypt_sha224_copy,
-    U28, U64,
+    U28,
+    U64,
     cfg(wolfssl_sha224)
 );
 
@@ -190,7 +201,8 @@ impl_digest_native!(
     wolfcrypt_rs::wolfcrypt_sha512_final,
     wolfcrypt_rs::wolfcrypt_sha512_free,
     wolfcrypt_rs::wolfcrypt_sha512_copy,
-    U64, U128,
+    U64,
+    U128,
     cfg(wolfssl_sha512)
 );
 
@@ -201,7 +213,8 @@ impl_digest_native!(
     wolfcrypt_rs::wolfcrypt_sha512_256_final,
     wolfcrypt_rs::wolfcrypt_sha512_256_free,
     wolfcrypt_rs::wolfcrypt_sha512_256_copy,
-    U32, U128,
+    U32,
+    U128,
     cfg(wolfssl_sha512)
 );
 
@@ -212,7 +225,8 @@ impl_digest_native!(
     wolfcrypt_rs::wolfcrypt_sha3_256_final,
     wolfcrypt_rs::wolfcrypt_sha3_256_free,
     wolfcrypt_rs::wolfcrypt_sha3_256_copy,
-    U32, U136,
+    U32,
+    U136,
     cfg(wolfssl_sha3)
 );
 
@@ -223,7 +237,8 @@ impl_digest_native!(
     wolfcrypt_rs::wolfcrypt_sha3_384_final,
     wolfcrypt_rs::wolfcrypt_sha3_384_free,
     wolfcrypt_rs::wolfcrypt_sha3_384_copy,
-    U48, U104,
+    U48,
+    U104,
     cfg(wolfssl_sha3)
 );
 
@@ -234,6 +249,7 @@ impl_digest_native!(
     wolfcrypt_rs::wolfcrypt_sha3_512_final,
     wolfcrypt_rs::wolfcrypt_sha3_512_free,
     wolfcrypt_rs::wolfcrypt_sha3_512_copy,
-    U64, U72,
+    U64,
+    U72,
     cfg(wolfssl_sha3)
 );

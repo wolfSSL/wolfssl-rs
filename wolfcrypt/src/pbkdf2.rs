@@ -14,8 +14,8 @@
 //! `pbkdf2` crate API, use it with a pure-Rust digest (e.g. `sha2::Sha256`)
 //! instead.
 
-use core::ffi::c_int;
 use crate::error::{check, len_as_c_int, WolfCryptError};
+use core::ffi::c_int;
 
 /// Internal macro that stamps out a PBKDF2-HMAC function for one hash algorithm.
 macro_rules! impl_pbkdf2 {

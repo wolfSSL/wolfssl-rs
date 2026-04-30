@@ -16,14 +16,10 @@ use caliptra_dpe_crypto::{
 };
 use signature_trait::Signer;
 
-use wolfcrypt::{
-    EcdsaSigningKey, EcdsaSignature,
-    P256, P384,
-};
+use wolfcrypt::{EcdsaSignature, EcdsaSigningKey, P256, P384};
 
 use crate::error::{
-    from_wolfcrypt, ERR_INVALID_PUBKEY, ERR_INVALID_SIGNATURE,
-    ERR_UNSUPPORTED_CURVE,
+    from_wolfcrypt, ERR_INVALID_PUBKEY, ERR_INVALID_SIGNATURE, ERR_UNSUPPORTED_CURVE,
 };
 use crate::hkdf::hkdf_get_priv_key;
 
@@ -49,13 +45,15 @@ impl CachedSigningKey {
             SignatureAlgorithm::Ecdsa(EcdsaAlgorithm::Bit256) => {
                 let sk = EcdsaSigningKey::<P256>::from_private_key_and_public_point(
                     priv_key, &pub_bytes,
-                ).map_err(from_wolfcrypt)?;
+                )
+                .map_err(from_wolfcrypt)?;
                 Ok(Self::P256(sk))
             }
             SignatureAlgorithm::Ecdsa(EcdsaAlgorithm::Bit384) => {
                 let sk = EcdsaSigningKey::<P384>::from_private_key_and_public_point(
                     priv_key, &pub_bytes,
-                ).map_err(from_wolfcrypt)?;
+                )
+                .map_err(from_wolfcrypt)?;
                 Ok(Self::P384(sk))
             }
             #[allow(unreachable_patterns)]
@@ -83,10 +81,7 @@ fn curve_size(alg: SignatureAlgorithm) -> Result<usize, CryptoError> {
 }
 
 /// Extract (x, y) from an uncompressed public key point (04 || x || y).
-fn parse_uncompressed_pubkey(
-    pub_bytes: &[u8],
-    size: usize,
-) -> Result<PubKey, CryptoError> {
+fn parse_uncompressed_pubkey(pub_bytes: &[u8], size: usize) -> Result<PubKey, CryptoError> {
     let expected_len = 1 + 2 * size;
     if pub_bytes.len() != expected_len || pub_bytes[0] != 0x04 {
         return Err(CryptoError::CryptoLibError(ERR_INVALID_PUBKEY));
@@ -165,10 +160,7 @@ fn parse_fixed_signature(sig_bytes: &[u8], size: usize) -> Result<Signature, Cry
 }
 
 /// Sign with a P-256 key, handling SignData variants.
-fn sign_p256(
-    sk: &EcdsaSigningKey<P256>,
-    data: &SignData,
-) -> Result<Signature, CryptoError> {
+fn sign_p256(sk: &EcdsaSigningKey<P256>, data: &SignData) -> Result<Signature, CryptoError> {
     match data {
         SignData::Digest(dig) => {
             let sig = sk.sign_prehash(dig.as_slice()).map_err(from_wolfcrypt)?;
@@ -183,10 +175,7 @@ fn sign_p256(
 }
 
 /// Sign with a P-384 key, handling SignData variants.
-fn sign_p384(
-    sk: &EcdsaSigningKey<P384>,
-    data: &SignData,
-) -> Result<Signature, CryptoError> {
+fn sign_p384(sk: &EcdsaSigningKey<P384>, data: &SignData) -> Result<Signature, CryptoError> {
     match data {
         SignData::Digest(dig) => {
             let sig = sk.sign_prehash(dig.as_slice()).map_err(from_wolfcrypt)?;
@@ -247,15 +236,15 @@ pub(crate) fn sign_with_key(
 
     match alg {
         SignatureAlgorithm::Ecdsa(EcdsaAlgorithm::Bit256) => {
-            let sk = EcdsaSigningKey::<P256>::from_private_key_and_public_point(
-                priv_key, &pub_bytes,
-            ).map_err(from_wolfcrypt)?;
+            let sk =
+                EcdsaSigningKey::<P256>::from_private_key_and_public_point(priv_key, &pub_bytes)
+                    .map_err(from_wolfcrypt)?;
             sign_p256(&sk, data)
         }
         SignatureAlgorithm::Ecdsa(EcdsaAlgorithm::Bit384) => {
-            let sk = EcdsaSigningKey::<P384>::from_private_key_and_public_point(
-                priv_key, &pub_bytes,
-            ).map_err(from_wolfcrypt)?;
+            let sk =
+                EcdsaSigningKey::<P384>::from_private_key_and_public_point(priv_key, &pub_bytes)
+                    .map_err(from_wolfcrypt)?;
             sign_p384(&sk, data)
         }
         #[allow(unreachable_patterns)]

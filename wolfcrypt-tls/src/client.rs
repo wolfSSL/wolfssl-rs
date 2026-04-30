@@ -32,9 +32,7 @@ pub struct TlsClient<S> {
 
 impl<S> std::fmt::Debug for TlsClient<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TlsClient")
-            .field("ssl", &self.ssl)
-            .finish()
+        f.debug_struct("TlsClient").field("ssl", &self.ssl).finish()
     }
 }
 

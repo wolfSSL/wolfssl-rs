@@ -236,7 +236,11 @@ fn run_sha_suite(
             let rc = unsafe {
                 wolfcrypt_sys::wc_Hash_ex(
                     hash_type,
-                    if msg.is_empty() { core::ptr::null() } else { msg.as_ptr() },
+                    if msg.is_empty() {
+                        core::ptr::null()
+                    } else {
+                        msg.as_ptr()
+                    },
                     msg.len() as u32,
                     digest.as_mut_ptr(),
                     digest.len() as u32,
@@ -389,12 +393,26 @@ fn run_aes256gcm_suite(dev_id: core::ffi::c_int) -> usize {
             wolfcrypt_sys::wc_AesGcmSetKey(&mut aes, key.as_ptr(), 32);
             let rc = wolfcrypt_sys::wc_AesGcmEncrypt(
                 &mut aes,
-                if ct.is_empty() { core::ptr::null_mut() } else { ct.as_mut_ptr() },
-                if pt_bytes.is_empty() { core::ptr::null() } else { pt_bytes.as_ptr() },
+                if ct.is_empty() {
+                    core::ptr::null_mut()
+                } else {
+                    ct.as_mut_ptr()
+                },
+                if pt_bytes.is_empty() {
+                    core::ptr::null()
+                } else {
+                    pt_bytes.as_ptr()
+                },
                 pt_bytes.len() as u32,
-                iv.as_ptr(), 12,
-                tag_out.as_mut_ptr(), 16,
-                if aad_bytes.is_empty() { core::ptr::null() } else { aad_bytes.as_ptr() },
+                iv.as_ptr(),
+                12,
+                tag_out.as_mut_ptr(),
+                16,
+                if aad_bytes.is_empty() {
+                    core::ptr::null()
+                } else {
+                    aad_bytes.as_ptr()
+                },
                 aad_bytes.len() as u32,
             );
             wolfcrypt_sys::wc_AesFree(&mut aes);
@@ -402,7 +420,11 @@ fn run_aes256gcm_suite(dev_id: core::ffi::c_int) -> usize {
         };
         assert_eq!(rc, 0, "aes256gcm: encrypt failed: {rc}");
         assert_eq!(ct, expected_ct, "aes256gcm: ciphertext mismatch");
-        assert_eq!(&tag_out[..], expected_tag.as_slice(), "aes256gcm: tag mismatch");
+        assert_eq!(
+            &tag_out[..],
+            expected_tag.as_slice(),
+            "aes256gcm: tag mismatch"
+        );
         total += 1;
 
         // Decrypt and verify round-trip
@@ -413,12 +435,26 @@ fn run_aes256gcm_suite(dev_id: core::ffi::c_int) -> usize {
             wolfcrypt_sys::wc_AesGcmSetKey(&mut aes, key.as_ptr(), 32);
             let rc = wolfcrypt_sys::wc_AesGcmDecrypt(
                 &mut aes,
-                if pt_dec.is_empty() { core::ptr::null_mut() } else { pt_dec.as_mut_ptr() },
-                if ct.is_empty() { core::ptr::null() } else { ct.as_ptr() },
+                if pt_dec.is_empty() {
+                    core::ptr::null_mut()
+                } else {
+                    pt_dec.as_mut_ptr()
+                },
+                if ct.is_empty() {
+                    core::ptr::null()
+                } else {
+                    ct.as_ptr()
+                },
                 ct.len() as u32,
-                iv.as_ptr(), 12,
-                tag_out.as_ptr(), 16,
-                if aad_bytes.is_empty() { core::ptr::null() } else { aad_bytes.as_ptr() },
+                iv.as_ptr(),
+                12,
+                tag_out.as_ptr(),
+                16,
+                if aad_bytes.is_empty() {
+                    core::ptr::null()
+                } else {
+                    aad_bytes.as_ptr()
+                },
                 aad_bytes.len() as u32,
             );
             wolfcrypt_sys::wc_AesFree(&mut aes);
@@ -457,7 +493,10 @@ fn run_ecdsa384_suite(dev_id: core::ffi::c_int) -> usize {
                 &mut key,
                 wolfcrypt_sys::ecc_curve_ids_ECC_SECP384R1 as core::ffi::c_int,
             );
-            assert_eq!(rc, 0, "ecdsa384: wc_ecc_make_key_ex failed on round {round}: {rc}");
+            assert_eq!(
+                rc, 0,
+                "ecdsa384: wc_ecc_make_key_ex failed on round {round}: {rc}"
+            );
 
             // Sign a 48-byte hash (use round index to vary the input)
             let mut hash = [0x5au8; 48];
@@ -465,23 +504,38 @@ fn run_ecdsa384_suite(dev_id: core::ffi::c_int) -> usize {
             let mut sig = vec![0u8; 128];
             let mut sig_len: wolfcrypt_sys::word32 = 128;
             let rc = wolfcrypt_sys::wc_ecc_sign_hash(
-                hash.as_ptr(), 48,
-                sig.as_mut_ptr(), &mut sig_len,
-                &mut rng, &mut key,
+                hash.as_ptr(),
+                48,
+                sig.as_mut_ptr(),
+                &mut sig_len,
+                &mut rng,
+                &mut key,
             );
-            assert_eq!(rc, 0, "ecdsa384: wc_ecc_sign_hash failed on round {round}: {rc}");
+            assert_eq!(
+                rc, 0,
+                "ecdsa384: wc_ecc_sign_hash failed on round {round}: {rc}"
+            );
             sig.truncate(sig_len as usize);
             total += 1; // sign counted
 
             // Verify the signature
             let mut verify_result: core::ffi::c_int = 0;
             let rc = wolfcrypt_sys::wc_ecc_verify_hash(
-                sig.as_ptr(), sig.len() as wolfcrypt_sys::word32,
-                hash.as_ptr(), 48,
-                &mut verify_result, &mut key,
+                sig.as_ptr(),
+                sig.len() as wolfcrypt_sys::word32,
+                hash.as_ptr(),
+                48,
+                &mut verify_result,
+                &mut key,
             );
-            assert_eq!(rc, 0, "ecdsa384: wc_ecc_verify_hash failed on round {round}: {rc}");
-            assert_eq!(verify_result, 1, "ecdsa384: signature verification failed on round {round}");
+            assert_eq!(
+                rc, 0,
+                "ecdsa384: wc_ecc_verify_hash failed on round {round}: {rc}"
+            );
+            assert_eq!(
+                verify_result, 1,
+                "ecdsa384: signature verification failed on round {round}"
+            );
             total += 1; // verify counted
 
             wolfcrypt_sys::wc_ecc_free(&mut key);

@@ -26,7 +26,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use crate::error::WolfCryptError;
-use wolfcrypt_rs::{wc_AesKeyWrap, wc_AesKeyUnWrap};
+use wolfcrypt_rs::{wc_AesKeyUnWrap, wc_AesKeyWrap};
 
 /// Wrap `plaintext` key data under `kek` per RFC 3394.
 ///
@@ -55,11 +55,17 @@ pub fn aes_wrap_key(kek: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptEr
         )
     };
     if rc <= 0 {
-        return Err(WolfCryptError::Ffi { code: rc, func: "wc_AesKeyWrap" });
+        return Err(WolfCryptError::Ffi {
+            code: rc,
+            func: "wc_AesKeyWrap",
+        });
     }
     let out_len = rc as usize;
     if out_len > out.len() {
-        return Err(WolfCryptError::Ffi { code: -1, func: "wc_AesKeyWrap (output length)" });
+        return Err(WolfCryptError::Ffi {
+            code: -1,
+            func: "wc_AesKeyWrap (output length)",
+        });
     }
     out.truncate(out_len);
     Ok(out)
@@ -92,11 +98,17 @@ pub fn aes_unwrap_key(kek: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>, WolfCryp
         )
     };
     if rc <= 0 {
-        return Err(WolfCryptError::Ffi { code: rc, func: "wc_AesKeyUnWrap" });
+        return Err(WolfCryptError::Ffi {
+            code: rc,
+            func: "wc_AesKeyUnWrap",
+        });
     }
     let out_len = rc as usize;
     if out_len > out.len() {
-        return Err(WolfCryptError::Ffi { code: -1, func: "wc_AesKeyUnWrap (output length)" });
+        return Err(WolfCryptError::Ffi {
+            code: -1,
+            func: "wc_AesKeyUnWrap (output length)",
+        });
     }
     out.truncate(out_len);
     Ok(out)

@@ -1,11 +1,11 @@
-use crate::wolfcrypt_rs::{AES_set_decrypt_key, AES_set_encrypt_key, AES_KEY};
 use crate::cipher::block::Block;
 use crate::cipher::chacha::ChaCha20Key;
 use crate::cipher::{AES_128_KEY_LEN, AES_192_KEY_LEN, AES_256_KEY_LEN};
 use crate::error::Unspecified;
+use crate::wolfcrypt_rs::{AES_set_decrypt_key, AES_set_encrypt_key, AES_KEY};
+use core::ffi::c_uint;
 use core::mem::{size_of, MaybeUninit};
 use core::ptr::copy_nonoverlapping;
-use core::ffi::c_uint;
 use zeroize::Zeroize;
 
 pub(crate) enum SymmetricCipherKey {

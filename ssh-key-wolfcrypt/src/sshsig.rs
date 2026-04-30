@@ -1,11 +1,11 @@
 //! `sshsig` implementation.
 
-use crate::{Algorithm, AssociatedHashAlg, Error, HashAlg, Result, Signature, SigningKey, public};
+use crate::{public, Algorithm, AssociatedHashAlg, Error, HashAlg, Result, Signature, SigningKey};
 use alloc::{string::String, string::ToString, vec::Vec};
 use core::str::FromStr;
 use encoding::{
-    CheckedSum, Decode, DecodePem, Encode, EncodePem, Reader, Writer,
     pem::{LineEnding, PemLabel},
+    CheckedSum, Decode, DecodePem, Encode, EncodePem, Reader, Writer,
 };
 use sha2::Digest;
 use signature::Verifier;
@@ -16,7 +16,7 @@ use crate::{PrivateKey, PublicKey};
 type Version = u32;
 
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize, de, ser};
+use serde::{de, ser, Deserialize, Serialize};
 
 /// `sshsig` provides a general-purpose signature format based on SSH keys and
 /// wire formats.

@@ -73,8 +73,7 @@ macro_rules! keypair_equiv_tests {
                     assert_eq!(
                         wolf_bytes, ref_bytes,
                         "{}: random key pair derivation mismatch at iteration {}",
-                        $variant,
-                        i
+                        $variant, i
                     );
                 }
             }
@@ -123,8 +122,12 @@ macro_rules! keypair_equiv_tests {
                 let wolf_cdi = wolf.derive_cdi(&measurement, info).unwrap();
                 let ref_cdi = refb.derive_cdi(&measurement, info).unwrap();
 
-                let (_, wolf_pub_a) = wolf.derive_key_pair(&wolf_cdi, b"label A", kp_info).unwrap();
-                let (_, wolf_pub_b) = wolf.derive_key_pair(&wolf_cdi, b"label B", kp_info).unwrap();
+                let (_, wolf_pub_a) = wolf
+                    .derive_key_pair(&wolf_cdi, b"label A", kp_info)
+                    .unwrap();
+                let (_, wolf_pub_b) = wolf
+                    .derive_key_pair(&wolf_cdi, b"label B", kp_info)
+                    .unwrap();
                 let (_, ref_pub_a) = refb.derive_key_pair(&ref_cdi, b"label A", kp_info).unwrap();
                 let (_, ref_pub_b) = refb.derive_key_pair(&ref_cdi, b"label B", kp_info).unwrap();
 
@@ -274,12 +277,14 @@ macro_rules! keypair_equiv_tests {
                 let ref_bytes = helpers::pubkey_to_uncompressed(&ref_pub);
 
                 // Validate that the public key is a valid point on the curve
-                $curve_mod::PublicKey::from_sec1_bytes(&wolf_bytes).expect(
-                    concat!($variant, ": wolf public key is not on the expected curve"),
-                );
-                $curve_mod::PublicKey::from_sec1_bytes(&ref_bytes).expect(
-                    concat!($variant, ": ref public key is not on the expected curve"),
-                );
+                $curve_mod::PublicKey::from_sec1_bytes(&wolf_bytes).expect(concat!(
+                    $variant,
+                    ": wolf public key is not on the expected curve"
+                ));
+                $curve_mod::PublicKey::from_sec1_bytes(&ref_bytes).expect(concat!(
+                    $variant,
+                    ": ref public key is not on the expected curve"
+                ));
             }
 
             #[test]

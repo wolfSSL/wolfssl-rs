@@ -20,7 +20,11 @@ fn get_chain_returns_data() {
         size: 2048,
     };
     let result = cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "GetCertificateChain failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "GetCertificateChain failed: {:?}",
+        result.err()
+    );
     match result.unwrap() {
         Response::GetCertificateChain(resp) => {
             assert!(
@@ -43,7 +47,11 @@ fn get_chain_valid_offset() {
         size: 2048,
     };
     let result = cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "GetCertificateChain with offset=0 failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "GetCertificateChain with offset=0 failed: {:?}",
+        result.err()
+    );
     match result.unwrap() {
         Response::GetCertificateChain(resp) => {
             // Should return some certificate data.
@@ -64,16 +72,16 @@ fn get_chain_zero_size() {
     let (mut dpe, mut state) = dpe_harness::new_dpe_wolf(dpe_harness::DEFAULT_SUPPORT);
     let mut env = dpe_harness::make_wolf_env(&mut state);
 
-    let cmd = GetCertificateChainCmd {
-        offset: 0,
-        size: 0,
-    };
+    let cmd = GetCertificateChainCmd { offset: 0, size: 0 };
     let result = cmd.execute(&mut dpe, &mut env, LOCALITY);
     // Size=0 should either succeed with empty data or return an error -- both are acceptable.
     // We just ensure it does not panic.
     match result {
         Ok(Response::GetCertificateChain(resp)) => {
-            assert_eq!(resp.certificate_size, 0, "Zero-size request should return zero bytes");
+            assert_eq!(
+                resp.certificate_size, 0,
+                "Zero-size request should return zero bytes"
+            );
         }
         Ok(_) => panic!("Unexpected response type"),
         Err(_) => {

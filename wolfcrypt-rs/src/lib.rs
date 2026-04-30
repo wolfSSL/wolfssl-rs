@@ -17,12 +17,12 @@
 #![allow(non_camel_case_types, non_snake_case, non_upper_case_globals)]
 #![allow(clippy::upper_case_acronyms)]
 
-use core::ffi::c_void;
 use core::ffi::c_char;
 use core::ffi::c_int;
+use core::ffi::c_void;
 // Used only in OpenSSL compat FFI declarations (cfg-gated below).
 #[cfg(wolfssl_openssl_extra)]
-use core::ffi::{c_uint, c_long, c_ulong};
+use core::ffi::{c_long, c_uint, c_ulong};
 
 // Sizing policy for stack-allocated opaque structs: pick a round size
 // at or above the actual wolfSSL struct size. Sizes are verified at
@@ -188,7 +188,9 @@ impl AES_KEY {
     /// Create a zero-initialized `AES_KEY`. Must be passed to
     /// `AES_set_encrypt_key` or `AES_set_decrypt_key` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; AES_KEY_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; AES_KEY_ALLOC_SIZE],
+        }
     }
 }
 
@@ -204,7 +206,9 @@ impl WcAes {
     /// Create a zero-initialized `WcAes`. Must be passed to `wc_AesInit`
     /// before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_AES_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_AES_ALLOC_SIZE],
+        }
     }
 }
 
@@ -221,7 +225,9 @@ impl wc_ed25519_key {
     /// Create a zero-initialized `wc_ed25519_key`. Must be passed to
     /// `wc_ed25519_init` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_ED25519_KEY_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_ED25519_KEY_ALLOC_SIZE],
+        }
     }
 }
 
@@ -238,7 +244,9 @@ impl wc_curve25519_key {
     /// Create a zero-initialized `wc_curve25519_key`. Must be passed to
     /// `wc_curve25519_init` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_CURVE25519_KEY_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_CURVE25519_KEY_ALLOC_SIZE],
+        }
     }
 }
 
@@ -255,7 +263,9 @@ impl wc_ed448_key {
     /// Create a zero-initialized `wc_ed448_key`. Must be passed to
     /// `wc_ed448_init` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_ED448_KEY_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_ED448_KEY_ALLOC_SIZE],
+        }
     }
 }
 
@@ -272,7 +282,9 @@ impl wc_curve448_key {
     /// Create a zero-initialized `wc_curve448_key`. Must be passed to
     /// `wc_curve448_init` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_CURVE448_KEY_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_CURVE448_KEY_ALLOC_SIZE],
+        }
     }
 }
 
@@ -294,7 +306,9 @@ impl wc_dilithium_key {
     /// Create a zero-initialized `wc_dilithium_key`. Must be passed to
     /// `wc_dilithium_init` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_DILITHIUM_KEY_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_DILITHIUM_KEY_ALLOC_SIZE],
+        }
     }
 }
 
@@ -309,7 +323,9 @@ impl WC_RNG {
     /// Create a zero-initialized `WC_RNG`. Must be passed to `wc_InitRng`
     /// before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_RNG_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_RNG_ALLOC_SIZE],
+        }
     }
 }
 
@@ -336,7 +352,9 @@ impl poly1305_state {
     /// Create a zero-initialized `poly1305_state`. Must be passed to
     /// `wc_Poly1305SetKey` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; POLY1305_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; POLY1305_ALLOC_SIZE],
+        }
     }
 }
 
@@ -353,7 +371,9 @@ impl ChaCha {
     /// Create a zero-initialized `ChaCha`. Must be passed to
     /// `wc_Chacha_SetKey` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; CHACHA_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; CHACHA_ALLOC_SIZE],
+        }
     }
 }
 
@@ -371,7 +391,9 @@ impl ChaChaPoly_Aead {
     /// Create a zero-initialized `ChaChaPoly_Aead`. Must be passed to
     /// `wc_ChaCha20Poly1305_Init` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; CHACHA_POLY_AEAD_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; CHACHA_POLY_AEAD_ALLOC_SIZE],
+        }
     }
 }
 
@@ -554,13 +576,13 @@ const fn wc_oid_sum(oid_der: &[u8]) -> u32 {
 }
 
 #[cfg(wolfssl_curve25519)]
-pub const NID_X25519: c_int = wc_oid_sum(&[0x2b, 0x65, 0x6e]) as c_int;   // OID 1.3.101.110
+pub const NID_X25519: c_int = wc_oid_sum(&[0x2b, 0x65, 0x6e]) as c_int; // OID 1.3.101.110
 #[cfg(wolfssl_ed25519)]
-pub const NID_ED25519: c_int = wc_oid_sum(&[0x2b, 0x65, 0x70]) as c_int;  // OID 1.3.101.112
+pub const NID_ED25519: c_int = wc_oid_sum(&[0x2b, 0x65, 0x70]) as c_int; // OID 1.3.101.112
 #[cfg(wolfssl_ed448)]
-pub const NID_ED448: c_int = wc_oid_sum(&[0x2b, 0x65, 0x71]) as c_int;    // OID 1.3.101.113
+pub const NID_ED448: c_int = wc_oid_sum(&[0x2b, 0x65, 0x71]) as c_int; // OID 1.3.101.113
 #[cfg(wolfssl_curve448)]
-pub const NID_X448: c_int = wc_oid_sum(&[0x2b, 0x65, 0x6f]) as c_int;     // OID 1.3.101.111
+pub const NID_X448: c_int = wc_oid_sum(&[0x2b, 0x65, 0x6f]) as c_int; // OID 1.3.101.111
 
 // ---- DH FFDHE NIDs (RFC 7919) ----
 // Values from wolfssl/openssl/evp.h: WC_NID_ffdhe2048 etc.
@@ -714,8 +736,18 @@ extern "C" {
 extern "C" {
     pub fn wolfcrypt_des3_enc_new(key: *const u8, iv: *const u8) -> *mut c_void;
     pub fn wolfcrypt_des3_dec_new(key: *const u8, iv: *const u8) -> *mut c_void;
-    pub fn wolfcrypt_des3_cbc_encrypt(ctx: *mut c_void, in_: *const u8, out: *mut u8, sz: u32) -> c_int;
-    pub fn wolfcrypt_des3_cbc_decrypt(ctx: *mut c_void, in_: *const u8, out: *mut u8, sz: u32) -> c_int;
+    pub fn wolfcrypt_des3_cbc_encrypt(
+        ctx: *mut c_void,
+        in_: *const u8,
+        out: *mut u8,
+        sz: u32,
+    ) -> c_int;
+    pub fn wolfcrypt_des3_cbc_decrypt(
+        ctx: *mut c_void,
+        in_: *const u8,
+        out: *mut u8,
+        sz: u32,
+    ) -> c_int;
     pub fn wolfcrypt_des3_free(ctx: *mut c_void);
 }
 
@@ -724,7 +756,13 @@ extern "C" {
     pub fn wolfcrypt_dh_new(name: c_int, group_sz: u32) -> *mut c_void;
     pub fn wolfcrypt_dh_generate_keypair(handle: *mut c_void) -> c_int;
     pub fn wolfcrypt_dh_public_key(handle: *mut c_void, out: *mut u8, out_len: *mut u32) -> c_int;
-    pub fn wolfcrypt_dh_agree(handle: *mut c_void, peer_pub: *const u8, peer_pub_sz: u32, secret: *mut u8, secret_sz: *mut u32) -> c_int;
+    pub fn wolfcrypt_dh_agree(
+        handle: *mut c_void,
+        peer_pub: *const u8,
+        peer_pub_sz: u32,
+        secret: *mut u8,
+        secret_sz: *mut u32,
+    ) -> c_int;
     pub fn wolfcrypt_dh_free(handle: *mut c_void);
 }
 
@@ -739,85 +777,119 @@ extern "C" {
     /// Requires WOLFSSL_KEY_GEN; returns NOT_COMPILED_IN otherwise.
     pub fn wolfcrypt_rsa_generate(ctx: *mut c_void, bits: c_int) -> c_int;
     /// Import a private key from PKCS#1 RSAPrivateKey DER.
-    pub fn wolfcrypt_rsa_import_private_pkcs1(ctx: *mut c_void, der: *const u8, der_len: u32) -> c_int;
+    pub fn wolfcrypt_rsa_import_private_pkcs1(
+        ctx: *mut c_void,
+        der: *const u8,
+        der_len: u32,
+    ) -> c_int;
     /// Import a public key from SubjectPublicKeyInfo (SPKI) DER.
-    pub fn wolfcrypt_rsa_import_public_spki(ctx: *mut c_void, der: *const u8, der_len: u32) -> c_int;
+    pub fn wolfcrypt_rsa_import_public_spki(
+        ctx: *mut c_void,
+        der: *const u8,
+        der_len: u32,
+    ) -> c_int;
     /// Export private key as PKCS#1 RSAPrivateKey DER.
     /// Pass out=NULL to query the required buffer size (written to *out_len).
-    pub fn wolfcrypt_rsa_export_private_pkcs1(ctx: *mut c_void, out: *mut u8, out_len: *mut u32) -> c_int;
+    pub fn wolfcrypt_rsa_export_private_pkcs1(
+        ctx: *mut c_void,
+        out: *mut u8,
+        out_len: *mut u32,
+    ) -> c_int;
     /// Export public key as SubjectPublicKeyInfo (SPKI) DER.
     /// Pass out=NULL to query the required buffer size (written to *out_len).
-    pub fn wolfcrypt_rsa_export_public_spki(ctx: *mut c_void, out: *mut u8, out_len: *mut u32) -> c_int;
+    pub fn wolfcrypt_rsa_export_public_spki(
+        ctx: *mut c_void,
+        out: *mut u8,
+        out_len: *mut u32,
+    ) -> c_int;
     /// Return RSA modulus size in bytes (e.g. 256 for a 2048-bit key).
     pub fn wolfcrypt_rsa_key_size_bytes(ctx: *const c_void) -> c_int;
     /// OAEP-SHA256/MGF1-SHA256 encrypt. `out` must be at least key-size bytes.
     /// Returns ciphertext length (== key size) on success, negative on error.
     pub fn wolfcrypt_rsa_oaep_encrypt_sha256(
         ctx: *mut c_void,
-        pt: *const u8, pt_len: u32,
-        out: *mut u8, out_buf_len: u32,
+        pt: *const u8,
+        pt_len: u32,
+        out: *mut u8,
+        out_buf_len: u32,
     ) -> c_int;
     /// OAEP-SHA256/MGF1-SHA256 decrypt.
     /// Returns plaintext length (>0) on success, negative on error.
     pub fn wolfcrypt_rsa_oaep_decrypt_sha256(
         ctx: *mut c_void,
-        ct: *const u8, ct_len: u32,
-        out: *mut u8, out_buf_len: u32,
+        ct: *const u8,
+        ct_len: u32,
+        out: *mut u8,
+        out_buf_len: u32,
     ) -> c_int;
     /// PKCS#1v1.5 sign. `hash_bits` is 256, 384, or 512.
     /// On success sets `*sig_len` to the signature length and returns 0.
     pub fn wolfcrypt_rsa_pkcs1v15_sign(
         ctx: *mut c_void,
         hash_bits: c_int,
-        msg: *const u8, msg_len: u32,
-        sig: *mut u8, sig_len: *mut u32,
+        msg: *const u8,
+        msg_len: u32,
+        sig: *mut u8,
+        sig_len: *mut u32,
     ) -> c_int;
     /// PKCS#1v1.5 verify. `hash_bits` is 256, 384, or 512.
     /// Returns 0 if valid, negative (SIG_VERIFY_E = -228) if invalid.
     pub fn wolfcrypt_rsa_pkcs1v15_verify(
         ctx: *mut c_void,
         hash_bits: c_int,
-        msg: *const u8, msg_len: u32,
-        sig: *const u8, sig_len: u32,
+        msg: *const u8,
+        msg_len: u32,
+        sig: *const u8,
+        sig_len: u32,
     ) -> c_int;
     /// PSS sign. `hash_bits` is 256, 384, or 512. Salt = hash length.
     /// On success sets `*sig_len` to the signature length and returns 0.
     pub fn wolfcrypt_rsa_pss_sign(
         ctx: *mut c_void,
         hash_bits: c_int,
-        msg: *const u8, msg_len: u32,
-        sig: *mut u8, sig_len: *mut u32,
+        msg: *const u8,
+        msg_len: u32,
+        sig: *mut u8,
+        sig_len: *mut u32,
     ) -> c_int;
     /// PSS verify. `hash_bits` is 256, 384, or 512.
     /// Returns 0 if valid, negative on error or invalid signature.
     pub fn wolfcrypt_rsa_pss_verify(
         ctx: *mut c_void,
         hash_bits: c_int,
-        msg: *const u8, msg_len: u32,
-        sig: *const u8, sig_len: u32,
+        msg: *const u8,
+        msg_len: u32,
+        sig: *const u8,
+        sig_len: u32,
     ) -> c_int;
     /// PKCS#1v1.5 encrypt (public-key op). `out` must be at least key-size bytes.
     /// Returns ciphertext length (== key size) on success, negative on error.
     pub fn wolfcrypt_rsa_pkcs1v15_encrypt(
         ctx: *mut c_void,
-        in_: *const u8, in_len: u32,
-        out: *mut u8, out_buf_len: u32,
+        in_: *const u8,
+        in_len: u32,
+        out: *mut u8,
+        out_buf_len: u32,
     ) -> c_int;
     /// PKCS#1v1.5 decrypt (private-key op). `out` must be at least key-size bytes.
     /// Returns plaintext length on success, 0 or negative on error.
     /// Callers MUST check `rc <= 0` as failure (0 = constant-time padding error).
     pub fn wolfcrypt_rsa_pkcs1v15_decrypt(
         ctx: *mut c_void,
-        in_: *const u8, in_len: u32,
-        out: *mut u8, out_buf_len: u32,
+        in_: *const u8,
+        in_len: u32,
+        out: *mut u8,
+        out_buf_len: u32,
     ) -> c_int;
     /// OAEP encrypt with explicit hash. `hash_bits` is 256, 384, or 512.
     /// Returns ciphertext length on success, negative on error.
     pub fn wolfcrypt_rsa_oaep_encrypt(
         ctx: *mut c_void,
         hash_bits: c_int,
-        in_: *const u8, in_len: u32,
-        out: *mut u8, out_buf_len: u32,
+        in_: *const u8,
+        in_len: u32,
+        out: *mut u8,
+        out_buf_len: u32,
     ) -> c_int;
     /// OAEP decrypt with explicit hash. `hash_bits` is 256, 384, or 512.
     /// Returns plaintext length on success, 0 or negative on error.
@@ -825,8 +897,10 @@ extern "C" {
     pub fn wolfcrypt_rsa_oaep_decrypt(
         ctx: *mut c_void,
         hash_bits: c_int,
-        in_: *const u8, in_len: u32,
-        out: *mut u8, out_buf_len: u32,
+        in_: *const u8,
+        in_len: u32,
+        out: *mut u8,
+        out_buf_len: u32,
     ) -> c_int;
 }
 
@@ -986,18 +1060,10 @@ extern "C" {
     ) -> c_int;
 
     #[link_name = "wolfSSL_EVP_DigestSignUpdate"]
-    pub fn EVP_DigestSignUpdate(
-        ctx: *mut EVP_MD_CTX,
-        data: *const c_void,
-        cnt: c_uint,
-    ) -> c_int;
+    pub fn EVP_DigestSignUpdate(ctx: *mut EVP_MD_CTX, data: *const c_void, cnt: c_uint) -> c_int;
 
     #[link_name = "wolfSSL_EVP_DigestSignFinal"]
-    pub fn EVP_DigestSignFinal(
-        ctx: *mut EVP_MD_CTX,
-        sig: *mut u8,
-        siglen: *mut usize,
-    ) -> c_int;
+    pub fn EVP_DigestSignFinal(ctx: *mut EVP_MD_CTX, sig: *mut u8, siglen: *mut usize) -> c_int;
 
     #[link_name = "wolfSSL_EVP_DigestVerifyInit"]
     pub fn EVP_DigestVerifyInit(
@@ -1009,18 +1075,10 @@ extern "C" {
     ) -> c_int;
 
     #[link_name = "wolfSSL_EVP_DigestVerifyUpdate"]
-    pub fn EVP_DigestVerifyUpdate(
-        ctx: *mut EVP_MD_CTX,
-        data: *const c_void,
-        cnt: usize,
-    ) -> c_int;
+    pub fn EVP_DigestVerifyUpdate(ctx: *mut EVP_MD_CTX, data: *const c_void, cnt: usize) -> c_int;
 
     #[link_name = "wolfSSL_EVP_DigestVerifyFinal"]
-    pub fn EVP_DigestVerifyFinal(
-        ctx: *mut EVP_MD_CTX,
-        sig: *const u8,
-        siglen: usize,
-    ) -> c_int;
+    pub fn EVP_DigestVerifyFinal(ctx: *mut EVP_MD_CTX, sig: *const u8, siglen: usize) -> c_int;
 
     // ---- EVP_CIPHER context operations ----
 
@@ -1069,11 +1127,7 @@ extern "C" {
     ) -> c_int;
 
     #[link_name = "wolfSSL_EVP_EncryptFinal_ex"]
-    pub fn EVP_EncryptFinal_ex(
-        ctx: *mut EVP_CIPHER_CTX,
-        out: *mut u8,
-        outl: *mut c_int,
-    ) -> c_int;
+    pub fn EVP_EncryptFinal_ex(ctx: *mut EVP_CIPHER_CTX, out: *mut u8, outl: *mut c_int) -> c_int;
 
     #[link_name = "wolfSSL_EVP_DecryptInit_ex"]
     pub fn EVP_DecryptInit_ex(
@@ -1095,11 +1149,7 @@ extern "C" {
     ) -> c_int;
 
     #[link_name = "wolfSSL_EVP_DecryptFinal_ex"]
-    pub fn EVP_DecryptFinal_ex(
-        ctx: *mut EVP_CIPHER_CTX,
-        out: *mut u8,
-        outl: *mut c_int,
-    ) -> c_int;
+    pub fn EVP_DecryptFinal_ex(ctx: *mut EVP_CIPHER_CTX, out: *mut u8, outl: *mut c_int) -> c_int;
 
     // ---- EVP AES-CBC cipher descriptors (always available with AES) ----
 
@@ -1244,7 +1294,12 @@ extern "C" {
     #[link_name = "wolfSSL_i2d_PrivateKey"]
     pub fn i2d_PrivateKey(pkey: *const EVP_PKEY, out: *mut *mut u8) -> c_int;
     #[link_name = "wolfSSL_d2i_PrivateKey"]
-    pub fn d2i_PrivateKey(type_: c_int, pkey: *mut *mut EVP_PKEY, in_: *mut *const u8, len: c_long) -> *mut EVP_PKEY;
+    pub fn d2i_PrivateKey(
+        type_: c_int,
+        pkey: *mut *mut EVP_PKEY,
+        in_: *mut *const u8,
+        len: c_long,
+    ) -> *mut EVP_PKEY;
     #[link_name = "wolfSSL_i2d_PUBKEY"]
     pub fn i2d_PUBKEY(pkey: *const EVP_PKEY, out: *mut *mut u8) -> c_int;
     #[link_name = "wolfSSL_d2i_PUBKEY"]
@@ -1476,10 +1531,13 @@ extern "C" {
     /// or a negative wolfCrypt error code on failure.
     #[link_name = "wc_AesKeyWrap"]
     pub fn wc_AesKeyWrap(
-        key:   *const u8, keySz: u32,
-        in_:   *const u8, inSz:  u32,
-        out:   *mut u8,   outSz: u32,
-        iv:    *const u8,
+        key: *const u8,
+        keySz: u32,
+        in_: *const u8,
+        inSz: u32,
+        out: *mut u8,
+        outSz: u32,
+        iv: *const u8,
     ) -> c_int;
 
     /// Unwrap `inSz` bytes of wrapped key data under the `keySz`-byte KEK.
@@ -1488,10 +1546,13 @@ extern "C" {
     /// or a negative wolfCrypt error code on failure.
     #[link_name = "wc_AesKeyUnWrap"]
     pub fn wc_AesKeyUnWrap(
-        key:   *const u8, keySz: u32,
-        in_:   *const u8, inSz:  u32,
-        out:   *mut u8,   outSz: u32,
-        iv:    *const u8,
+        key: *const u8,
+        keySz: u32,
+        in_: *const u8,
+        inSz: u32,
+        out: *mut u8,
+        outSz: u32,
+        iv: *const u8,
     ) -> c_int;
 }
 
@@ -1618,11 +1679,8 @@ extern "C" {
     #[link_name = "wolfSSL_EC_KEY_check_key"]
     pub fn EC_KEY_check_key(key: *const EC_KEY) -> c_int;
     #[link_name = "wolfSSL_d2i_ECPrivateKey"]
-    pub fn d2i_ECPrivateKey(
-        key: *mut *mut EC_KEY,
-        in_: *mut *const u8,
-        len: c_long,
-    ) -> *mut EC_KEY;
+    pub fn d2i_ECPrivateKey(key: *mut *mut EC_KEY, in_: *mut *const u8, len: c_long)
+        -> *mut EC_KEY;
 
     // WORKAROUND for wolfSSL bug: d2i_ECPrivateKey doesn't compute the public
     // point when RFC 5915 publicKey field is absent. This shim derives it from
@@ -1681,11 +1739,7 @@ extern "C" {
     #[link_name = "wolfSSL_ECDSA_SIG_set0"]
     pub fn ECDSA_SIG_set0(sig: *mut ECDSA_SIG, r: *mut BIGNUM, s: *mut BIGNUM) -> c_int;
     #[link_name = "wolfSSL_ECDSA_SIG_get0"]
-    pub fn ECDSA_SIG_get0(
-        sig: *const ECDSA_SIG,
-        r: *mut *const BIGNUM,
-        s: *mut *const BIGNUM,
-    );
+    pub fn ECDSA_SIG_get0(sig: *const ECDSA_SIG, r: *mut *const BIGNUM, s: *mut *const BIGNUM);
     #[link_name = "wolfSSL_d2i_ECDSA_SIG"]
     pub fn d2i_ECDSA_SIG(
         sig: *mut *mut ECDSA_SIG,
@@ -1697,7 +1751,12 @@ extern "C" {
     #[link_name = "wolfSSL_ECDSA_do_sign"]
     pub fn ECDSA_do_sign(dgst: *const u8, dgst_len: c_int, eckey: *mut EC_KEY) -> *mut ECDSA_SIG;
     #[link_name = "wolfSSL_ECDSA_do_verify"]
-    pub fn ECDSA_do_verify(dgst: *const u8, dgst_len: c_int, sig: *const ECDSA_SIG, eckey: *mut EC_KEY) -> c_int;
+    pub fn ECDSA_do_verify(
+        dgst: *const u8,
+        dgst_len: c_int,
+        sig: *const ECDSA_SIG,
+        eckey: *mut EC_KEY,
+    ) -> c_int;
 
     // ---- EVP_PKEY EC integration ----
 
@@ -1716,7 +1775,12 @@ extern "C" {
 
     // wolfCrypt ECC DER functions
     pub fn wc_EccPublicKeyDerSize(key: *const wc_ecc_key, with_AlgCurve: c_int) -> c_int;
-    pub fn wc_EccPublicKeyToDer(key: *const wc_ecc_key, output: *mut u8, outLen: u32, with_AlgCurve: c_int) -> c_int;
+    pub fn wc_EccPublicKeyToDer(
+        key: *const wc_ecc_key,
+        output: *mut u8,
+        outLen: u32,
+        with_AlgCurve: c_int,
+    ) -> c_int;
 
     // wolfcrypt_evp_pkey_get_ecc: get the ecc key pointer (opaque, for DER encoding)
     pub fn wolfcrypt_evp_pkey_get_ecc(pkey: *const EVP_PKEY) -> *mut EC_KEY;
@@ -1738,12 +1802,7 @@ extern "C" {
     #[link_name = "wolfSSL_RSA_size"]
     pub fn RSA_size(rsa: *const RSA) -> c_int;
     #[link_name = "wolfSSL_RSA_set0_key"]
-    pub fn RSA_set0_key(
-        r: *mut RSA,
-        n: *mut BIGNUM,
-        e: *mut BIGNUM,
-        d: *mut BIGNUM,
-    ) -> c_int;
+    pub fn RSA_set0_key(r: *mut RSA, n: *mut BIGNUM, e: *mut BIGNUM, d: *mut BIGNUM) -> c_int;
     #[link_name = "wolfSSL_RSA_get0_key"]
     pub fn RSA_get0_key(
         rsa: *const RSA,
@@ -1754,17 +1813,9 @@ extern "C" {
     #[link_name = "wolfSSL_RSA_check_key"]
     pub fn RSA_check_key(rsa: *const RSA) -> c_int;
     #[link_name = "wolfSSL_d2i_RSAPrivateKey"]
-    pub fn d2i_RSAPrivateKey(
-        rsa: *mut *mut RSA,
-        in_: *mut *const u8,
-        len: c_long,
-    ) -> *mut RSA;
+    pub fn d2i_RSAPrivateKey(rsa: *mut *mut RSA, in_: *mut *const u8, len: c_long) -> *mut RSA;
     #[link_name = "wolfSSL_d2i_RSAPublicKey"]
-    pub fn d2i_RSAPublicKey(
-        rsa: *mut *mut RSA,
-        in_: *mut *const u8,
-        len: c_long,
-    ) -> *mut RSA;
+    pub fn d2i_RSAPublicKey(rsa: *mut *mut RSA, in_: *mut *const u8, len: c_long) -> *mut RSA;
     #[link_name = "wolfSSL_i2d_RSAPublicKey"]
     pub fn i2d_RSAPublicKey(rsa: *const RSA, out: *mut *mut u8) -> c_int;
 
@@ -1819,11 +1870,7 @@ extern "C" {
     #[link_name = "wolfSSL_DH_set0_key"]
     pub fn DH_set0_key(dh: *mut DH, pub_key: *mut BIGNUM, priv_key: *mut BIGNUM) -> c_int;
     #[link_name = "wolfSSL_DH_get0_key"]
-    pub fn DH_get0_key(
-        dh: *const DH,
-        pub_key: *mut *const BIGNUM,
-        priv_key: *mut *const BIGNUM,
-    );
+    pub fn DH_get0_key(dh: *const DH, pub_key: *mut *const BIGNUM, priv_key: *mut *const BIGNUM);
     #[link_name = "wolfSSL_DH_check"]
     pub fn DH_check(dh: *const DH, codes: *mut c_int) -> c_int;
     #[link_name = "wolfSSL_DH_generate_parameters_ex"]
@@ -1846,56 +1893,66 @@ extern "C" {
     pub fn wc_ed25519_init(key: *mut wc_ed25519_key) -> c_int;
     pub fn wc_ed25519_free(key: *mut wc_ed25519_key);
     pub fn wc_ed25519_import_private_key(
-        priv_: *const u8, privSz: u32,
-        pub_: *const u8, pubSz: u32,
+        priv_: *const u8,
+        privSz: u32,
+        pub_: *const u8,
+        pubSz: u32,
         key: *mut wc_ed25519_key,
     ) -> c_int;
-    pub fn wc_ed25519_import_public(
-        in_: *const u8, inLen: u32,
-        key: *mut wc_ed25519_key,
-    ) -> c_int;
+    pub fn wc_ed25519_import_public(in_: *const u8, inLen: u32, key: *mut wc_ed25519_key) -> c_int;
     pub fn wc_ed25519_import_private_only(
-        priv_: *const u8, privSz: u32,
+        priv_: *const u8,
+        privSz: u32,
         key: *mut wc_ed25519_key,
     ) -> c_int;
     pub fn wc_ed25519_sign_msg(
-        in_: *const u8, inlen: u32,
-        out: *mut u8, outlen: *mut u32,
+        in_: *const u8,
+        inlen: u32,
+        out: *mut u8,
+        outlen: *mut u32,
         key: *mut wc_ed25519_key,
     ) -> c_int;
     pub fn wc_ed25519_verify_msg(
-        sig: *const u8, siglen: u32,
-        msg: *const u8, msglen: u32,
+        sig: *const u8,
+        siglen: u32,
+        msg: *const u8,
+        msglen: u32,
         res: *mut c_int,
         key: *mut wc_ed25519_key,
     ) -> c_int;
     pub fn wc_ed25519_make_public(
         key: *mut wc_ed25519_key,
-        pubKey: *mut u8, pubKeySz: u32,
+        pubKey: *mut u8,
+        pubKeySz: u32,
     ) -> c_int;
     pub fn wc_ed25519_export_private_only(
         key: *const wc_ed25519_key,
-        out: *mut u8, outLen: *mut u32,
+        out: *mut u8,
+        outLen: *mut u32,
     ) -> c_int;
     pub fn wc_ed25519_export_public(
         key: *const wc_ed25519_key,
-        out: *mut u8, outLen: *mut u32,
+        out: *mut u8,
+        outLen: *mut u32,
     ) -> c_int;
-    pub fn wc_ed25519_make_key(rng: *mut WC_RNG, keysize: c_int, key: *mut wc_ed25519_key) -> c_int;
+    pub fn wc_ed25519_make_key(rng: *mut WC_RNG, keysize: c_int, key: *mut wc_ed25519_key)
+        -> c_int;
     pub fn wc_ed25519_check_key(key: *mut wc_ed25519_key) -> c_int;
 
     // Ed25519 DER encode/decode (PKCS#8 / SubjectPublicKeyInfo)
     // These use wolfCrypt's ASN.1 engine rather than hand-rolled parsing.
     pub fn wc_Ed25519PrivateKeyDecode(
-        input: *const u8, inOutIdx: *mut u32,
-        key: *mut wc_ed25519_key, inSz: u32,
+        input: *const u8,
+        inOutIdx: *mut u32,
+        key: *mut wc_ed25519_key,
+        inSz: u32,
     ) -> c_int;
     pub fn wc_Ed25519PrivateKeyToDer(
-        key: *const wc_ed25519_key, output: *mut u8, inLen: u32,
+        key: *const wc_ed25519_key,
+        output: *mut u8,
+        inLen: u32,
     ) -> c_int;
-    pub fn wc_Ed25519KeyToDer(
-        key: *const wc_ed25519_key, output: *mut u8, inLen: u32,
-    ) -> c_int;
+    pub fn wc_Ed25519KeyToDer(key: *const wc_ed25519_key, output: *mut u8, inLen: u32) -> c_int;
 }
 
 // ============================================================
@@ -1907,42 +1964,47 @@ extern "C" {
     pub fn wc_ed448_init(key: *mut wc_ed448_key) -> c_int;
     pub fn wc_ed448_free(key: *mut wc_ed448_key);
     pub fn wc_ed448_import_private_key(
-        priv_: *const u8, privSz: u32,
-        pub_: *const u8, pubSz: u32,
+        priv_: *const u8,
+        privSz: u32,
+        pub_: *const u8,
+        pubSz: u32,
         key: *mut wc_ed448_key,
     ) -> c_int;
-    pub fn wc_ed448_import_public(
-        in_: *const u8, inLen: u32,
-        key: *mut wc_ed448_key,
-    ) -> c_int;
+    pub fn wc_ed448_import_public(in_: *const u8, inLen: u32, key: *mut wc_ed448_key) -> c_int;
     pub fn wc_ed448_import_private_only(
-        priv_: *const u8, privSz: u32,
+        priv_: *const u8,
+        privSz: u32,
         key: *mut wc_ed448_key,
     ) -> c_int;
     pub fn wc_ed448_sign_msg(
-        in_: *const u8, inlen: u32,
-        out: *mut u8, outlen: *mut u32,
+        in_: *const u8,
+        inlen: u32,
+        out: *mut u8,
+        outlen: *mut u32,
         key: *mut wc_ed448_key,
-        context: *const u8, contextLen: u8,
+        context: *const u8,
+        contextLen: u8,
     ) -> c_int;
     pub fn wc_ed448_verify_msg(
-        sig: *const u8, siglen: u32,
-        msg: *const u8, msglen: u32,
+        sig: *const u8,
+        siglen: u32,
+        msg: *const u8,
+        msglen: u32,
         res: *mut c_int,
         key: *mut wc_ed448_key,
-        context: *const u8, contextLen: u8,
+        context: *const u8,
+        contextLen: u8,
     ) -> c_int;
-    pub fn wc_ed448_make_public(
-        key: *mut wc_ed448_key,
-        pubKey: *mut u8, pubKeySz: u32,
-    ) -> c_int;
+    pub fn wc_ed448_make_public(key: *mut wc_ed448_key, pubKey: *mut u8, pubKeySz: u32) -> c_int;
     pub fn wc_ed448_export_private_only(
         key: *const wc_ed448_key,
-        out: *mut u8, outLen: *mut u32,
+        out: *mut u8,
+        outLen: *mut u32,
     ) -> c_int;
     pub fn wc_ed448_export_public(
         key: *const wc_ed448_key,
-        out: *mut u8, outLen: *mut u32,
+        out: *mut u8,
+        outLen: *mut u32,
     ) -> c_int;
     pub fn wc_ed448_make_key(rng: *mut WC_RNG, keysize: c_int, key: *mut wc_ed448_key) -> c_int;
 
@@ -1951,15 +2013,13 @@ extern "C" {
     // Ed25519 counterparts which take `const`. This matches the upstream
     // wolfSSL API (asn_public.h) — the inconsistency is in wolfSSL itself.
     pub fn wc_Ed448PrivateKeyDecode(
-        input: *const u8, inOutIdx: *mut u32,
-        key: *mut wc_ed448_key, inSz: u32,
+        input: *const u8,
+        inOutIdx: *mut u32,
+        key: *mut wc_ed448_key,
+        inSz: u32,
     ) -> c_int;
-    pub fn wc_Ed448PrivateKeyToDer(
-        key: *mut wc_ed448_key, output: *mut u8, inLen: u32,
-    ) -> c_int;
-    pub fn wc_Ed448KeyToDer(
-        key: *mut wc_ed448_key, output: *mut u8, inLen: u32,
-    ) -> c_int;
+    pub fn wc_Ed448PrivateKeyToDer(key: *mut wc_ed448_key, output: *mut u8, inLen: u32) -> c_int;
+    pub fn wc_Ed448KeyToDer(key: *mut wc_ed448_key, output: *mut u8, inLen: u32) -> c_int;
 }
 
 // ============================================================
@@ -1983,31 +2043,38 @@ extern "C" {
         key: *mut wc_curve25519_key,
     ) -> c_int;
     pub fn wc_curve25519_import_private_ex(
-        priv_: *const u8, privSz: u32,
+        priv_: *const u8,
+        privSz: u32,
         key: *mut wc_curve25519_key,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve25519_import_private_raw_ex(
-        priv_: *const u8, privSz: u32,
-        pub_: *const u8, pubSz: u32,
+        priv_: *const u8,
+        privSz: u32,
+        pub_: *const u8,
+        pubSz: u32,
         key: *mut wc_curve25519_key,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve25519_import_public_ex(
-        in_: *const u8, inLen: u32,
+        in_: *const u8,
+        inLen: u32,
         key: *mut wc_curve25519_key,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve25519_export_key_raw_ex(
         key: *mut wc_curve25519_key,
-        priv_: *mut u8, privSz: *mut u32,
-        pub_: *mut u8, pubSz: *mut u32,
+        priv_: *mut u8,
+        privSz: *mut u32,
+        pub_: *mut u8,
+        pubSz: *mut u32,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve25519_shared_secret_ex(
         priv_: *mut wc_curve25519_key,
         pub_: *mut wc_curve25519_key,
-        out: *mut u8, outLen: *mut u32,
+        out: *mut u8,
+        outLen: *mut u32,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve25519_set_rng(key: *mut wc_curve25519_key, rng: *mut WC_RNG) -> c_int;
@@ -2027,31 +2094,38 @@ extern "C" {
         key: *mut wc_curve448_key,
     ) -> c_int;
     pub fn wc_curve448_import_private_ex(
-        priv_: *const u8, privSz: u32,
+        priv_: *const u8,
+        privSz: u32,
         key: *mut wc_curve448_key,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve448_import_public_ex(
-        in_: *const u8, inLen: u32,
+        in_: *const u8,
+        inLen: u32,
         key: *mut wc_curve448_key,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve448_import_private_raw_ex(
-        priv_: *const u8, privSz: u32,
-        pub_: *const u8, pubSz: u32,
+        priv_: *const u8,
+        privSz: u32,
+        pub_: *const u8,
+        pubSz: u32,
         key: *mut wc_curve448_key,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve448_export_key_raw_ex(
         key: *mut wc_curve448_key,
-        priv_: *mut u8, privSz: *mut u32,
-        pub_: *mut u8, pubSz: *mut u32,
+        priv_: *mut u8,
+        privSz: *mut u32,
+        pub_: *mut u8,
+        pubSz: *mut u32,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve448_shared_secret_ex(
         priv_: *mut wc_curve448_key,
         pub_: *mut wc_curve448_key,
-        out: *mut u8, outLen: *mut u32,
+        out: *mut u8,
+        outLen: *mut u32,
         endian: c_int,
     ) -> c_int;
     pub fn wc_curve448_make_pub(
@@ -2211,22 +2285,11 @@ extern "C" {
 
 #[cfg(wolfssl_poly1305)]
 extern "C" {
-    pub fn wc_Poly1305SetKey(
-        ctx: *mut poly1305_state,
-        key: *const u8,
-        keySz: u32,
-    ) -> c_int;
+    pub fn wc_Poly1305SetKey(ctx: *mut poly1305_state, key: *const u8, keySz: u32) -> c_int;
 
-    pub fn wc_Poly1305Update(
-        ctx: *mut poly1305_state,
-        input: *const u8,
-        sz: u32,
-    ) -> c_int;
+    pub fn wc_Poly1305Update(ctx: *mut poly1305_state, input: *const u8, sz: u32) -> c_int;
 
-    pub fn wc_Poly1305Final(
-        ctx: *mut poly1305_state,
-        mac: *mut u8,
-    ) -> c_int;
+    pub fn wc_Poly1305Final(ctx: *mut poly1305_state, mac: *mut u8) -> c_int;
 }
 
 // ============================================================
@@ -2235,17 +2298,9 @@ extern "C" {
 
 #[cfg(wolfssl_chacha)]
 extern "C" {
-    pub fn wc_Chacha_SetKey(
-        ctx: *mut ChaCha,
-        key: *const u8,
-        keySz: u32,
-    ) -> c_int;
+    pub fn wc_Chacha_SetKey(ctx: *mut ChaCha, key: *const u8, keySz: u32) -> c_int;
 
-    pub fn wc_Chacha_SetIV(
-        ctx: *mut ChaCha,
-        iv: *const u8,
-        counter: u32,
-    ) -> c_int;
+    pub fn wc_Chacha_SetIV(ctx: *mut ChaCha, iv: *const u8, counter: u32) -> c_int;
 
     pub fn wc_Chacha_Process(
         ctx: *mut ChaCha,
@@ -2272,16 +2327,28 @@ extern "C" {
 extern "C" {
     pub fn wc_AesGcmSetKey(aes: *mut WcAes, key: *const u8, len: u32) -> c_int;
     pub fn wc_AesGcmEncrypt(
-        aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32,
-        iv: *const u8, ivSz: u32,
-        authTag: *mut u8, authTagSz: u32,
-        authIn: *const u8, authInSz: u32,
+        aes: *mut WcAes,
+        out: *mut u8,
+        in_: *const u8,
+        sz: u32,
+        iv: *const u8,
+        ivSz: u32,
+        authTag: *mut u8,
+        authTagSz: u32,
+        authIn: *const u8,
+        authInSz: u32,
     ) -> c_int;
     pub fn wc_AesGcmDecrypt(
-        aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32,
-        iv: *const u8, ivSz: u32,
-        authTag: *const u8, authTagSz: u32,
-        authIn: *const u8, authInSz: u32,
+        aes: *mut WcAes,
+        out: *mut u8,
+        in_: *const u8,
+        sz: u32,
+        iv: *const u8,
+        ivSz: u32,
+        authTag: *const u8,
+        authTagSz: u32,
+        authIn: *const u8,
+        authInSz: u32,
     ) -> c_int;
 }
 
@@ -2305,21 +2372,31 @@ extern "C" {
     /// AES-CCM encrypt with authentication.
     #[link_name = "wc_AesCcmEncrypt"]
     pub fn wc_AesCcmEncrypt(
-        aes: *mut WcAes, out: *mut u8,
-        in_: *const u8, inSz: u32,
-        nonce: *const u8, nonceSz: u32,
-        authTag: *mut u8, authTagSz: u32,
-        authIn: *const u8, authInSz: u32,
+        aes: *mut WcAes,
+        out: *mut u8,
+        in_: *const u8,
+        inSz: u32,
+        nonce: *const u8,
+        nonceSz: u32,
+        authTag: *mut u8,
+        authTagSz: u32,
+        authIn: *const u8,
+        authInSz: u32,
     ) -> c_int;
 
     /// AES-CCM decrypt with authentication verification.
     #[link_name = "wc_AesCcmDecrypt"]
     pub fn wc_AesCcmDecrypt(
-        aes: *mut WcAes, out: *mut u8,
-        in_: *const u8, inSz: u32,
-        nonce: *const u8, nonceSz: u32,
-        authTag: *const u8, authTagSz: u32,
-        authIn: *const u8, authInSz: u32,
+        aes: *mut WcAes,
+        out: *mut u8,
+        in_: *const u8,
+        inSz: u32,
+        nonce: *const u8,
+        nonceSz: u32,
+        authTag: *const u8,
+        authTagSz: u32,
+        authIn: *const u8,
+        authInSz: u32,
     ) -> c_int;
 }
 
@@ -2332,53 +2409,64 @@ extern "C" {
     /// Initialize AES-GCM streaming context with key and IV.
     #[link_name = "wc_AesGcmInit"]
     pub fn wc_AesGcmInit(
-        aes: *mut WcAes, key: *const u8, len: u32,
-        iv: *const u8, ivSz: u32,
+        aes: *mut WcAes,
+        key: *const u8,
+        len: u32,
+        iv: *const u8,
+        ivSz: u32,
     ) -> c_int;
 
     /// Start AES-GCM streaming encryption (set key + IV).
     #[link_name = "wc_AesGcmEncryptInit"]
     pub fn wc_AesGcmEncryptInit(
-        aes: *mut WcAes, key: *const u8, len: u32,
-        iv: *const u8, ivSz: u32,
+        aes: *mut WcAes,
+        key: *const u8,
+        len: u32,
+        iv: *const u8,
+        ivSz: u32,
     ) -> c_int;
 
     /// Feed plaintext and/or AAD into the streaming GCM encryption.
     /// Either `out`/`in_`/`sz` or `authIn`/`authInSz` may be zero-length.
     #[link_name = "wc_AesGcmEncryptUpdate"]
     pub fn wc_AesGcmEncryptUpdate(
-        aes: *mut WcAes, out: *mut u8,
-        in_: *const u8, sz: u32,
-        authIn: *const u8, authInSz: u32,
+        aes: *mut WcAes,
+        out: *mut u8,
+        in_: *const u8,
+        sz: u32,
+        authIn: *const u8,
+        authInSz: u32,
     ) -> c_int;
 
     /// Finalize streaming GCM encryption, producing the authentication tag.
     #[link_name = "wc_AesGcmEncryptFinal"]
-    pub fn wc_AesGcmEncryptFinal(
-        aes: *mut WcAes, authTag: *mut u8, authTagSz: u32,
-    ) -> c_int;
+    pub fn wc_AesGcmEncryptFinal(aes: *mut WcAes, authTag: *mut u8, authTagSz: u32) -> c_int;
 
     /// Start AES-GCM streaming decryption (set key + IV).
     #[link_name = "wc_AesGcmDecryptInit"]
     pub fn wc_AesGcmDecryptInit(
-        aes: *mut WcAes, key: *const u8, len: u32,
-        iv: *const u8, ivSz: u32,
+        aes: *mut WcAes,
+        key: *const u8,
+        len: u32,
+        iv: *const u8,
+        ivSz: u32,
     ) -> c_int;
 
     /// Feed ciphertext and/or AAD into the streaming GCM decryption.
     #[link_name = "wc_AesGcmDecryptUpdate"]
     pub fn wc_AesGcmDecryptUpdate(
-        aes: *mut WcAes, out: *mut u8,
-        in_: *const u8, sz: u32,
-        authIn: *const u8, authInSz: u32,
+        aes: *mut WcAes,
+        out: *mut u8,
+        in_: *const u8,
+        sz: u32,
+        authIn: *const u8,
+        authInSz: u32,
     ) -> c_int;
 
     /// Finalize streaming GCM decryption, verifying the authentication tag.
     /// Returns 0 on success (tag matches), negative on failure.
     #[link_name = "wc_AesGcmDecryptFinal"]
-    pub fn wc_AesGcmDecryptFinal(
-        aes: *mut WcAes, authTag: *const u8, authTagSz: u32,
-    ) -> c_int;
+    pub fn wc_AesGcmDecryptFinal(aes: *mut WcAes, authTag: *const u8, authTagSz: u32) -> c_int;
 }
 
 // ============================================================
@@ -2392,8 +2480,10 @@ extern "C" {
     #[link_name = "wc_Tls13_HKDF_Extract"]
     pub fn wc_Tls13_HKDF_Extract(
         prk: *mut u8,
-        salt: *const u8, saltLen: u32,
-        ikm: *mut u8, ikmLen: u32,
+        salt: *const u8,
+        saltLen: u32,
+        ikm: *mut u8,
+        ikmLen: u32,
         digest: c_int,
     ) -> c_int;
 
@@ -2401,34 +2491,48 @@ extern "C" {
     #[link_name = "wc_Tls13_HKDF_Extract_ex"]
     pub fn wc_Tls13_HKDF_Extract_ex(
         prk: *mut u8,
-        salt: *const u8, saltLen: u32,
-        ikm: *mut u8, ikmLen: u32,
+        salt: *const u8,
+        saltLen: u32,
+        ikm: *mut u8,
+        ikmLen: u32,
         digest: c_int,
-        heap: *mut c_void, devId: c_int,
+        heap: *mut c_void,
+        devId: c_int,
     ) -> c_int;
 
     /// TLS 1.3 HKDF-Expand-Label per RFC 8446 §7.1.
     /// `protocol` is typically b"tls13 " or b"dtls13".
     #[link_name = "wc_Tls13_HKDF_Expand_Label"]
     pub fn wc_Tls13_HKDF_Expand_Label(
-        okm: *mut u8, okmLen: u32,
-        prk: *const u8, prkLen: u32,
-        protocol: *const u8, protocolLen: u32,
-        label: *const u8, labelLen: u32,
-        info: *const u8, infoLen: u32,
+        okm: *mut u8,
+        okmLen: u32,
+        prk: *const u8,
+        prkLen: u32,
+        protocol: *const u8,
+        protocolLen: u32,
+        label: *const u8,
+        labelLen: u32,
+        info: *const u8,
+        infoLen: u32,
         digest: c_int,
     ) -> c_int;
 
     /// TLS 1.3 HKDF-Expand-Label (extended, with heap/devId).
     #[link_name = "wc_Tls13_HKDF_Expand_Label_ex"]
     pub fn wc_Tls13_HKDF_Expand_Label_ex(
-        okm: *mut u8, okmLen: u32,
-        prk: *const u8, prkLen: u32,
-        protocol: *const u8, protocolLen: u32,
-        label: *const u8, labelLen: u32,
-        info: *const u8, infoLen: u32,
+        okm: *mut u8,
+        okmLen: u32,
+        prk: *const u8,
+        prkLen: u32,
+        protocol: *const u8,
+        protocolLen: u32,
+        label: *const u8,
+        labelLen: u32,
+        info: *const u8,
+        infoLen: u32,
         digest: c_int,
-        heap: *mut c_void, devId: c_int,
+        heap: *mut c_void,
+        devId: c_int,
     ) -> c_int;
 }
 
@@ -2439,16 +2543,22 @@ extern "C" {
 #[cfg(wolfssl_chacha20_poly1305)]
 extern "C" {
     pub fn wc_ChaCha20Poly1305_Encrypt(
-        inKey: *const u8, inIV: *const u8,
-        inAAD: *const u8, inAADLen: u32,
-        inPlaintext: *const u8, inPlaintextLen: u32,
+        inKey: *const u8,
+        inIV: *const u8,
+        inAAD: *const u8,
+        inAADLen: u32,
+        inPlaintext: *const u8,
+        inPlaintextLen: u32,
         outCiphertext: *mut u8,
         outAuthTag: *mut u8,
     ) -> c_int;
     pub fn wc_ChaCha20Poly1305_Decrypt(
-        inKey: *const u8, inIV: *const u8,
-        inAAD: *const u8, inAADLen: u32,
-        inCiphertext: *const u8, inCiphertextLen: u32,
+        inKey: *const u8,
+        inIV: *const u8,
+        inAAD: *const u8,
+        inAADLen: u32,
+        inCiphertext: *const u8,
+        inCiphertextLen: u32,
         inAuthTag: *const u8,
         outPlaintext: *mut u8,
     ) -> c_int;
@@ -2456,24 +2566,23 @@ extern "C" {
     // Streaming API
     pub fn wc_ChaCha20Poly1305_Init(
         aead: *mut ChaChaPoly_Aead,
-        inKey: *const u8, inIV: *const u8,
+        inKey: *const u8,
+        inIV: *const u8,
         isEncrypt: c_int,
     ) -> c_int;
     pub fn wc_ChaCha20Poly1305_UpdateAad(
         aead: *mut ChaChaPoly_Aead,
-        inAAD: *const u8, inAADLen: u32,
+        inAAD: *const u8,
+        inAADLen: u32,
     ) -> c_int;
     pub fn wc_ChaCha20Poly1305_UpdateData(
         aead: *mut ChaChaPoly_Aead,
-        inData: *const u8, outData: *mut u8, dataLen: u32,
+        inData: *const u8,
+        outData: *mut u8,
+        dataLen: u32,
     ) -> c_int;
-    pub fn wc_ChaCha20Poly1305_Final(
-        aead: *mut ChaChaPoly_Aead,
-        outAuthTag: *mut u8,
-    ) -> c_int;
-    pub fn wc_ChaCha20Poly1305_CheckTag(
-        authTag: *const u8, authTagChk: *const u8,
-    ) -> c_int;
+    pub fn wc_ChaCha20Poly1305_Final(aead: *mut ChaChaPoly_Aead, outAuthTag: *mut u8) -> c_int;
+    pub fn wc_ChaCha20Poly1305_CheckTag(authTag: *const u8, authTagChk: *const u8) -> c_int;
 }
 
 // ============================================================
@@ -2495,10 +2604,7 @@ extern "C" {
     pub fn wc_dilithium_make_key(key: *mut wc_dilithium_key, rng: *mut WC_RNG) -> c_int;
 
     #[link_name = "wc_dilithium_make_key_from_seed"]
-    pub fn wc_dilithium_make_key_from_seed(
-        key: *mut wc_dilithium_key,
-        seed: *const u8,
-    ) -> c_int;
+    pub fn wc_dilithium_make_key_from_seed(key: *mut wc_dilithium_key, seed: *const u8) -> c_int;
 
     #[link_name = "wc_dilithium_sign_msg"]
     pub fn wc_dilithium_sign_msg(
@@ -2698,19 +2804,11 @@ extern "C" {
 
     /// Decode (import) a private key from raw bytes.
     #[link_name = "wc_MlKemKey_DecodePrivateKey"]
-    pub fn wc_MlKemKey_DecodePrivateKey(
-        key: *mut MlKemKey,
-        input: *const u8,
-        len: u32,
-    ) -> c_int;
+    pub fn wc_MlKemKey_DecodePrivateKey(key: *mut MlKemKey, input: *const u8, len: u32) -> c_int;
 
     /// Decode (import) a public key from raw bytes.
     #[link_name = "wc_MlKemKey_DecodePublicKey"]
-    pub fn wc_MlKemKey_DecodePublicKey(
-        key: *mut MlKemKey,
-        input: *const u8,
-        len: u32,
-    ) -> c_int;
+    pub fn wc_MlKemKey_DecodePublicKey(key: *mut MlKemKey, input: *const u8, len: u32) -> c_int;
 
     /// Get the private key size for this key's algorithm.
     #[link_name = "wc_MlKemKey_PrivateKeySize"]
@@ -2722,19 +2820,11 @@ extern "C" {
 
     /// Encode (export) the private key to raw bytes.
     #[link_name = "wc_MlKemKey_EncodePrivateKey"]
-    pub fn wc_MlKemKey_EncodePrivateKey(
-        key: *mut MlKemKey,
-        out: *mut u8,
-        len: u32,
-    ) -> c_int;
+    pub fn wc_MlKemKey_EncodePrivateKey(key: *mut MlKemKey, out: *mut u8, len: u32) -> c_int;
 
     /// Encode (export) the public key to raw bytes.
     #[link_name = "wc_MlKemKey_EncodePublicKey"]
-    pub fn wc_MlKemKey_EncodePublicKey(
-        key: *mut MlKemKey,
-        out: *mut u8,
-        len: u32,
-    ) -> c_int;
+    pub fn wc_MlKemKey_EncodePublicKey(key: *mut MlKemKey, out: *mut u8, len: u32) -> c_int;
 }
 
 // ============================================================
@@ -2759,7 +2849,9 @@ impl WcBlake2b {
     /// Create a zero-initialized `WcBlake2b`. Must be passed to
     /// `wc_InitBlake2b` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_BLAKE2B_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_BLAKE2B_ALLOC_SIZE],
+        }
     }
 }
 
@@ -2769,8 +2861,10 @@ extern "C" {
     pub fn wc_InitBlake2b(b2b: *mut WcBlake2b, digestSz: u32) -> c_int;
     #[link_name = "wc_InitBlake2b_WithKey"]
     pub fn wc_InitBlake2b_WithKey(
-        b2b: *mut WcBlake2b, digestSz: u32,
-        key: *const u8, keySz: u32,
+        b2b: *mut WcBlake2b,
+        digestSz: u32,
+        key: *const u8,
+        keySz: u32,
     ) -> c_int;
     #[link_name = "wc_Blake2bUpdate"]
     pub fn wc_Blake2bUpdate(b2b: *mut WcBlake2b, data: *const u8, len: u32) -> c_int;
@@ -2800,7 +2894,9 @@ impl WcBlake2s {
     /// Create a zero-initialized `WcBlake2s`. Must be passed to
     /// `wc_InitBlake2s` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_BLAKE2S_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_BLAKE2S_ALLOC_SIZE],
+        }
     }
 }
 
@@ -2810,8 +2906,10 @@ extern "C" {
     pub fn wc_InitBlake2s(b2s: *mut WcBlake2s, digestSz: u32) -> c_int;
     #[link_name = "wc_InitBlake2s_WithKey"]
     pub fn wc_InitBlake2s_WithKey(
-        b2s: *mut WcBlake2s, digestSz: u32,
-        key: *const u8, keySz: u32,
+        b2s: *mut WcBlake2s,
+        digestSz: u32,
+        key: *const u8,
+        keySz: u32,
     ) -> c_int;
     #[link_name = "wc_Blake2sUpdate"]
     pub fn wc_Blake2sUpdate(b2s: *mut WcBlake2s, data: *const u8, len: u32) -> c_int;
@@ -2841,7 +2939,9 @@ impl WcShake {
     /// Create a zero-initialized `WcShake`. Must be passed to
     /// `wc_InitShake128` or `wc_InitShake256` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_SHAKE_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_SHAKE_ALLOC_SIZE],
+        }
     }
 }
 
@@ -2899,7 +2999,9 @@ impl XtsAes {
     /// Create a zero-initialized `XtsAes`. Must be passed to
     /// `wc_AesXtsInit` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_XTS_AES_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_XTS_AES_ALLOC_SIZE],
+        }
     }
 }
 
@@ -2911,13 +3013,21 @@ extern "C" {
     pub fn wc_AesXtsSetKeyNoInit(xts: *mut XtsAes, key: *const u8, len: u32, dir: c_int) -> c_int;
     #[link_name = "wc_AesXtsEncrypt"]
     pub fn wc_AesXtsEncrypt(
-        xts: *mut XtsAes, out: *mut u8, in_: *const u8, sz: u32,
-        tweak: *const u8, tweakSz: u32,
+        xts: *mut XtsAes,
+        out: *mut u8,
+        in_: *const u8,
+        sz: u32,
+        tweak: *const u8,
+        tweakSz: u32,
     ) -> c_int;
     #[link_name = "wc_AesXtsDecrypt"]
     pub fn wc_AesXtsDecrypt(
-        xts: *mut XtsAes, out: *mut u8, in_: *const u8, sz: u32,
-        tweak: *const u8, tweakSz: u32,
+        xts: *mut XtsAes,
+        out: *mut u8,
+        in_: *const u8,
+        sz: u32,
+        tweak: *const u8,
+        tweakSz: u32,
     ) -> c_int;
     #[link_name = "wc_AesXtsFree"]
     pub fn wc_AesXtsFree(xts: *mut XtsAes) -> c_int;
@@ -2967,25 +3077,39 @@ extern "C" {
     // One-shot API
     #[link_name = "wc_AesCtsEncrypt"]
     pub fn wc_AesCtsEncrypt(
-        key: *const u8, keySz: u32, out: *mut u8,
-        in_: *const u8, inSz: u32, iv: *const u8,
+        key: *const u8,
+        keySz: u32,
+        out: *mut u8,
+        in_: *const u8,
+        inSz: u32,
+        iv: *const u8,
     ) -> c_int;
     #[link_name = "wc_AesCtsDecrypt"]
     pub fn wc_AesCtsDecrypt(
-        key: *const u8, keySz: u32, out: *mut u8,
-        in_: *const u8, inSz: u32, iv: *const u8,
+        key: *const u8,
+        keySz: u32,
+        out: *mut u8,
+        in_: *const u8,
+        inSz: u32,
+        iv: *const u8,
     ) -> c_int;
 
     // Incremental API
     #[link_name = "wc_AesCtsEncryptUpdate"]
     pub fn wc_AesCtsEncryptUpdate(
-        aes: *mut WcAes, out: *mut u8, outSz: *mut u32,
-        in_: *const u8, inSz: u32,
+        aes: *mut WcAes,
+        out: *mut u8,
+        outSz: *mut u32,
+        in_: *const u8,
+        inSz: u32,
     ) -> c_int;
     #[link_name = "wc_AesCtsDecryptUpdate"]
     pub fn wc_AesCtsDecryptUpdate(
-        aes: *mut WcAes, out: *mut u8, outSz: *mut u32,
-        in_: *const u8, inSz: u32,
+        aes: *mut WcAes,
+        out: *mut u8,
+        outSz: *mut u32,
+        in_: *const u8,
+        inSz: u32,
     ) -> c_int;
     #[link_name = "wc_AesCtsEncryptFinal"]
     pub fn wc_AesCtsEncryptFinal(aes: *mut WcAes, out: *mut u8, outSz: *mut u32) -> c_int;
@@ -3001,19 +3125,31 @@ extern "C" {
 extern "C" {
     #[link_name = "wc_AesEaxEncryptAuth"]
     pub fn wc_AesEaxEncryptAuth(
-        key: *const u8, keySz: u32,
-        out: *mut u8, in_: *const u8, inSz: u32,
-        nonce: *const u8, nonceSz: u32,
-        authTag: *mut u8, authTagSz: u32,
-        authIn: *const u8, authInSz: u32,
+        key: *const u8,
+        keySz: u32,
+        out: *mut u8,
+        in_: *const u8,
+        inSz: u32,
+        nonce: *const u8,
+        nonceSz: u32,
+        authTag: *mut u8,
+        authTagSz: u32,
+        authIn: *const u8,
+        authInSz: u32,
     ) -> c_int;
     #[link_name = "wc_AesEaxDecryptAuth"]
     pub fn wc_AesEaxDecryptAuth(
-        key: *const u8, keySz: u32,
-        out: *mut u8, in_: *const u8, inSz: u32,
-        nonce: *const u8, nonceSz: u32,
-        authTag: *const u8, authTagSz: u32,
-        authIn: *const u8, authInSz: u32,
+        key: *const u8,
+        keySz: u32,
+        out: *mut u8,
+        in_: *const u8,
+        inSz: u32,
+        nonce: *const u8,
+        nonceSz: u32,
+        authTag: *const u8,
+        authTagSz: u32,
+        authIn: *const u8,
+        authInSz: u32,
     ) -> c_int;
 }
 
@@ -3050,25 +3186,35 @@ extern "C" {
     pub fn wc_ecc_set_curve(key: *mut wc_ecc_key, keySize: c_int, curveId: c_int) -> c_int;
     #[link_name = "wc_ecc_make_key_ex"]
     pub fn wc_ecc_make_key_ex(
-        rng: *mut WC_RNG, keySize: c_int,
-        key: *mut wc_ecc_key, curveId: c_int,
+        rng: *mut WC_RNG,
+        keySize: c_int,
+        key: *mut wc_ecc_key,
+        curveId: c_int,
     ) -> c_int;
     #[link_name = "wc_ecc_shared_secret"]
     pub fn wc_ecc_shared_secret(
-        privKey: *mut wc_ecc_key, pubKey: *mut wc_ecc_key,
-        out: *mut u8, outSz: *mut u32,
+        privKey: *mut wc_ecc_key,
+        pubKey: *mut wc_ecc_key,
+        out: *mut u8,
+        outSz: *mut u32,
     ) -> c_int;
     #[link_name = "wc_ecc_sign_hash"]
     pub fn wc_ecc_sign_hash(
-        in_: *const u8, inSz: u32,
-        out: *mut u8, outSz: *mut u32,
-        rng: *mut WC_RNG, key: *mut wc_ecc_key,
+        in_: *const u8,
+        inSz: u32,
+        out: *mut u8,
+        outSz: *mut u32,
+        rng: *mut WC_RNG,
+        key: *mut wc_ecc_key,
     ) -> c_int;
     #[link_name = "wc_ecc_verify_hash"]
     pub fn wc_ecc_verify_hash(
-        sig: *const u8, sigSz: u32,
-        hash: *const u8, hashSz: u32,
-        res: *mut c_int, key: *mut wc_ecc_key,
+        sig: *const u8,
+        sigSz: u32,
+        hash: *const u8,
+        hashSz: u32,
+        res: *mut c_int,
+        key: *mut wc_ecc_key,
     ) -> c_int;
     #[link_name = "wc_ecc_export_x963"]
     pub fn wc_ecc_export_x963(key: *mut wc_ecc_key, out: *mut u8, outSz: *mut u32) -> c_int;
@@ -3082,19 +3228,24 @@ extern "C" {
     pub fn wc_ecc_import_x963(in_: *const u8, inSz: u32, key: *mut wc_ecc_key) -> c_int;
     #[link_name = "wc_ecc_import_private_key"]
     pub fn wc_ecc_import_private_key(
-        priv_: *const u8, privSz: u32,
-        pub_: *const u8, pubSz: u32,
+        priv_: *const u8,
+        privSz: u32,
+        pub_: *const u8,
+        pubSz: u32,
         key: *mut wc_ecc_key,
     ) -> c_int;
     #[link_name = "wc_ecc_import_private_key_ex"]
     pub fn wc_ecc_import_private_key_ex(
-        priv_: *const u8, privSz: u32,
-        pub_: *const u8, pubSz: u32,
+        priv_: *const u8,
+        privSz: u32,
+        pub_: *const u8,
+        pubSz: u32,
         key: *mut wc_ecc_key,
         curve_id: c_int,
     ) -> c_int;
     #[link_name = "wc_ecc_export_private_only"]
-    pub fn wc_ecc_export_private_only(key: *mut wc_ecc_key, out: *mut u8, outSz: *mut u32) -> c_int;
+    pub fn wc_ecc_export_private_only(key: *mut wc_ecc_key, out: *mut u8, outSz: *mut u32)
+        -> c_int;
     #[link_name = "wc_ecc_check_key"]
     pub fn wc_ecc_check_key(key: *mut wc_ecc_key) -> c_int;
     /// Attach an RNG to an ECC key for use during scalar-multiplication blinding.
@@ -3110,17 +3261,23 @@ extern "C" {
     /// Convert DER-encoded ECDSA signature to raw (r, s) byte arrays.
     #[link_name = "wc_ecc_sig_to_rs"]
     pub fn wc_ecc_sig_to_rs(
-        sig: *const u8, sigLen: u32,
-        r: *mut u8, rLen: *mut u32,
-        s: *mut u8, sLen: *mut u32,
+        sig: *const u8,
+        sigLen: u32,
+        r: *mut u8,
+        rLen: *mut u32,
+        s: *mut u8,
+        sLen: *mut u32,
     ) -> c_int;
 
     /// Convert raw (r, s) byte arrays to DER-encoded ECDSA signature.
     #[link_name = "wc_ecc_rs_raw_to_sig"]
     pub fn wc_ecc_rs_raw_to_sig(
-        r: *const u8, rSz: u32,
-        s: *const u8, sSz: u32,
-        out: *mut u8, outSz: *mut u32,
+        r: *const u8,
+        rSz: u32,
+        s: *const u8,
+        sSz: u32,
+        out: *mut u8,
+        outSz: *mut u32,
     ) -> c_int;
 }
 
@@ -3146,7 +3303,9 @@ impl WcLmsKey {
     /// Create a zero-initialized `WcLmsKey`. Must be passed to
     /// `wc_LmsKey_Init` before use.
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_LMS_KEY_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_LMS_KEY_ALLOC_SIZE],
+        }
     }
 }
 
@@ -3156,25 +3315,35 @@ extern "C" {
     pub fn wc_LmsKey_Init(key: *mut WcLmsKey, heap: *mut c_void, devId: c_int) -> c_int;
     #[link_name = "wc_LmsKey_SetParameters"]
     pub fn wc_LmsKey_SetParameters(
-        key: *mut WcLmsKey, levels: c_int,
-        height: c_int, winternitz: c_int,
+        key: *mut WcLmsKey,
+        levels: c_int,
+        height: c_int,
+        winternitz: c_int,
     ) -> c_int;
     #[link_name = "wc_LmsKey_GetParameters"]
     pub fn wc_LmsKey_GetParameters(
-        key: *const WcLmsKey, levels: *mut c_int,
-        height: *mut c_int, winternitz: *mut c_int,
+        key: *const WcLmsKey,
+        levels: *mut c_int,
+        height: *mut c_int,
+        winternitz: *mut c_int,
     ) -> c_int;
     #[link_name = "wc_LmsKey_MakeKey"]
     pub fn wc_LmsKey_MakeKey(key: *mut WcLmsKey, rng: *mut WC_RNG) -> c_int;
     #[link_name = "wc_LmsKey_Sign"]
     pub fn wc_LmsKey_Sign(
-        key: *mut WcLmsKey, sig: *mut u8, sigSz: *mut u32,
-        msg: *const u8, msgSz: c_int,
+        key: *mut WcLmsKey,
+        sig: *mut u8,
+        sigSz: *mut u32,
+        msg: *const u8,
+        msgSz: c_int,
     ) -> c_int;
     #[link_name = "wc_LmsKey_Verify"]
     pub fn wc_LmsKey_Verify(
-        key: *mut WcLmsKey, sig: *const u8, sigSz: u32,
-        msg: *const u8, msgSz: c_int,
+        key: *mut WcLmsKey,
+        sig: *const u8,
+        sigSz: u32,
+        msg: *const u8,
+        msgSz: c_int,
     ) -> c_int;
     #[link_name = "wc_LmsKey_Free"]
     pub fn wc_LmsKey_Free(key: *mut WcLmsKey);
@@ -3187,26 +3356,26 @@ extern "C" {
     #[link_name = "wc_LmsKey_ExportPub"]
     pub fn wc_LmsKey_ExportPub(keyDst: *mut WcLmsKey, keySrc: *const WcLmsKey) -> c_int;
     #[link_name = "wc_LmsKey_ExportPubRaw"]
-    pub fn wc_LmsKey_ExportPubRaw(
-        key: *const WcLmsKey, out: *mut u8, outSz: *mut u32,
-    ) -> c_int;
+    pub fn wc_LmsKey_ExportPubRaw(key: *const WcLmsKey, out: *mut u8, outSz: *mut u32) -> c_int;
     #[link_name = "wc_LmsKey_ImportPubRaw"]
-    pub fn wc_LmsKey_ImportPubRaw(
-        key: *mut WcLmsKey, in_: *const u8, inLen: u32,
-    ) -> c_int;
+    pub fn wc_LmsKey_ImportPubRaw(key: *mut WcLmsKey, in_: *const u8, inLen: u32) -> c_int;
 
     /// Register callback for writing the private key to persistent storage.
     #[link_name = "wc_LmsKey_SetWriteCb"]
     pub fn wc_LmsKey_SetWriteCb(
         key: *mut WcLmsKey,
-        write_cb: Option<unsafe extern "C" fn(priv_: *const u8, privSz: u32, context: *mut c_void) -> c_int>,
+        write_cb: Option<
+            unsafe extern "C" fn(priv_: *const u8, privSz: u32, context: *mut c_void) -> c_int,
+        >,
     ) -> c_int;
 
     /// Register callback for reading the private key from persistent storage.
     #[link_name = "wc_LmsKey_SetReadCb"]
     pub fn wc_LmsKey_SetReadCb(
         key: *mut WcLmsKey,
-        read_cb: Option<unsafe extern "C" fn(priv_: *mut u8, privSz: u32, context: *mut c_void) -> c_int>,
+        read_cb: Option<
+            unsafe extern "C" fn(priv_: *mut u8, privSz: u32, context: *mut c_void) -> c_int,
+        >,
     ) -> c_int;
 
     /// Set the opaque context pointer passed to read/write callbacks.
@@ -3231,21 +3400,30 @@ extern "C" {
     /// `hash` is a `wc_HashType` constant (e.g., `WC_HASH_TYPE_SHA256`).
     #[link_name = "wc_PRF"]
     pub fn wc_PRF(
-        result: *mut u8, resLen: u32,
-        secret: *const u8, secLen: u32,
-        seed: *const u8, seedLen: u32,
+        result: *mut u8,
+        resLen: u32,
+        secret: *const u8,
+        secLen: u32,
+        seed: *const u8,
+        seedLen: u32,
         hash: c_int,
-        heap: *mut c_void, devId: c_int,
+        heap: *mut c_void,
+        devId: c_int,
     ) -> c_int;
 
     /// TLS 1.0/1.1 PRF (HMAC-MD5 + HMAC-SHA1 split).
     #[link_name = "wc_PRF_TLSv1"]
     pub fn wc_PRF_TLSv1(
-        digest: *mut u8, digLen: u32,
-        secret: *const u8, secLen: u32,
-        label: *const u8, labLen: u32,
-        seed: *const u8, seedLen: u32,
-        heap: *mut c_void, devId: c_int,
+        digest: *mut u8,
+        digLen: u32,
+        secret: *const u8,
+        secLen: u32,
+        label: *const u8,
+        labLen: u32,
+        seed: *const u8,
+        seedLen: u32,
+        heap: *mut c_void,
+        devId: c_int,
     ) -> c_int;
 
     /// TLS 1.2 PRF.
@@ -3253,12 +3431,18 @@ extern "C" {
     /// `hash_type`: a `wc_HashType` constant.
     #[link_name = "wc_PRF_TLS"]
     pub fn wc_PRF_TLS(
-        digest: *mut u8, digLen: u32,
-        secret: *const u8, secLen: u32,
-        label: *const u8, labLen: u32,
-        seed: *const u8, seedLen: u32,
-        useAtLeastSha256: c_int, hash_type: c_int,
-        heap: *mut c_void, devId: c_int,
+        digest: *mut u8,
+        digLen: u32,
+        secret: *const u8,
+        secLen: u32,
+        label: *const u8,
+        labLen: u32,
+        seed: *const u8,
+        seedLen: u32,
+        useAtLeastSha256: c_int,
+        hash_type: c_int,
+        heap: *mut c_void,
+        devId: c_int,
     ) -> c_int;
 
     /// SSH KDF per RFC 4253.
@@ -3266,39 +3450,61 @@ extern "C" {
     /// `keyId`: single ASCII character identifying the key (e.g., b'A'..b'F').
     #[link_name = "wc_SSH_KDF"]
     pub fn wc_SSH_KDF(
-        hashId: u8, keyId: u8,
-        key: *mut u8, keySz: u32,
-        k: *const u8, kSz: u32,
-        h: *const u8, hSz: u32,
-        sessionId: *const u8, sessionIdSz: u32,
+        hashId: u8,
+        keyId: u8,
+        key: *mut u8,
+        keySz: u32,
+        k: *const u8,
+        kSz: u32,
+        h: *const u8,
+        hSz: u32,
+        sessionId: *const u8,
+        sessionIdSz: u32,
     ) -> c_int;
 
     /// SRTP KDF per RFC 3711 §4.3.1.
     #[link_name = "wc_SRTP_KDF"]
     pub fn wc_SRTP_KDF(
-        key: *const u8, keySz: u32,
-        salt: *const u8, saltSz: u32,
+        key: *const u8,
+        keySz: u32,
+        salt: *const u8,
+        saltSz: u32,
         kdrIdx: c_int,
         idx: *const u8,
-        key1: *mut u8, key1Sz: u32,
-        key2: *mut u8, key2Sz: u32,
-        key3: *mut u8, key3Sz: u32,
+        key1: *mut u8,
+        key1Sz: u32,
+        key2: *mut u8,
+        key2Sz: u32,
+        key3: *mut u8,
+        key3Sz: u32,
     ) -> c_int;
 
     /// PKCS#12 PBKDF per RFC 7292 appendix B.
     #[link_name = "wc_PKCS12_PBKDF"]
     pub fn wc_PKCS12_PBKDF(
-        output: *mut u8, passwd: *const u8, passLen: c_int,
-        salt: *const u8, saltLen: c_int, iterations: c_int,
-        kLen: c_int, hashType: c_int, id: c_int,
+        output: *mut u8,
+        passwd: *const u8,
+        passLen: c_int,
+        salt: *const u8,
+        saltLen: c_int,
+        iterations: c_int,
+        kLen: c_int,
+        hashType: c_int,
+        id: c_int,
     ) -> c_int;
 
     /// PKCS#12 PBKDF (extended, with heap parameter).
     #[link_name = "wc_PKCS12_PBKDF_ex"]
     pub fn wc_PKCS12_PBKDF_ex(
-        output: *mut u8, passwd: *const u8, passLen: c_int,
-        salt: *const u8, saltLen: c_int, iterations: c_int,
-        kLen: c_int, hashType: c_int, id: c_int,
+        output: *mut u8,
+        passwd: *const u8,
+        passLen: c_int,
+        salt: *const u8,
+        saltLen: c_int,
+        iterations: c_int,
+        kLen: c_int,
+        hashType: c_int,
+        id: c_int,
         heap: *mut c_void,
     ) -> c_int;
 }
@@ -3318,9 +3524,7 @@ pub struct RsaKey {
 #[cfg(wolfssl_rsa)]
 extern "C" {
     #[link_name = "wc_NewRsaKey"]
-    pub fn wc_NewRsaKey(
-        heap: *mut c_void, devId: c_int, result_code: *mut c_int,
-    ) -> *mut RsaKey;
+    pub fn wc_NewRsaKey(heap: *mut c_void, devId: c_int, result_code: *mut c_int) -> *mut RsaKey;
     #[link_name = "wc_DeleteRsaKey"]
     pub fn wc_DeleteRsaKey(key: *mut RsaKey, key_p: *mut *mut RsaKey) -> c_int;
     #[link_name = "wc_InitRsaKey"]
@@ -3331,50 +3535,73 @@ extern "C" {
     pub fn wc_FreeRsaKey(key: *mut RsaKey) -> c_int;
     #[link_name = "wc_RsaFunction"]
     pub fn wc_RsaFunction(
-        in_: *const u8, inLen: u32,
-        out: *mut u8, outLen: *mut u32,
-        type_: c_int, key: *mut RsaKey, rng: *mut WC_RNG,
+        in_: *const u8,
+        inLen: u32,
+        out: *mut u8,
+        outLen: *mut u32,
+        type_: c_int,
+        key: *mut RsaKey,
+        rng: *mut WC_RNG,
     ) -> c_int;
     #[link_name = "wc_RsaPublicEncrypt"]
     pub fn wc_RsaPublicEncrypt(
-        in_: *const u8, inLen: u32,
-        out: *mut u8, outLen: u32,
-        key: *mut RsaKey, rng: *mut WC_RNG,
+        in_: *const u8,
+        inLen: u32,
+        out: *mut u8,
+        outLen: u32,
+        key: *mut RsaKey,
+        rng: *mut WC_RNG,
     ) -> c_int;
     #[link_name = "wc_RsaPrivateDecrypt"]
     pub fn wc_RsaPrivateDecrypt(
-        in_: *const u8, inLen: u32,
-        out: *mut u8, outLen: u32,
+        in_: *const u8,
+        inLen: u32,
+        out: *mut u8,
+        outLen: u32,
         key: *mut RsaKey,
     ) -> c_int;
     #[link_name = "wc_RsaSSL_Sign"]
     pub fn wc_RsaSSL_Sign(
-        in_: *const u8, inLen: u32,
-        out: *mut u8, outLen: u32,
-        key: *mut RsaKey, rng: *mut WC_RNG,
+        in_: *const u8,
+        inLen: u32,
+        out: *mut u8,
+        outLen: u32,
+        key: *mut RsaKey,
+        rng: *mut WC_RNG,
     ) -> c_int;
     #[link_name = "wc_RsaSSL_Verify"]
     pub fn wc_RsaSSL_Verify(
-        in_: *const u8, inLen: u32,
-        out: *mut u8, outLen: u32,
+        in_: *const u8,
+        inLen: u32,
+        out: *mut u8,
+        outLen: u32,
         key: *mut RsaKey,
     ) -> c_int;
     #[link_name = "wc_RsaEncryptSize"]
     pub fn wc_RsaEncryptSize(key: *const RsaKey) -> c_int;
     #[link_name = "wc_RsaPrivateKeyDecode"]
     pub fn wc_RsaPrivateKeyDecode(
-        input: *const u8, inOutIdx: *mut u32,
-        key: *mut RsaKey, inSz: u32,
+        input: *const u8,
+        inOutIdx: *mut u32,
+        key: *mut RsaKey,
+        inSz: u32,
     ) -> c_int;
     #[link_name = "wc_RsaPublicKeyDecode"]
     pub fn wc_RsaPublicKeyDecode(
-        input: *const u8, inOutIdx: *mut u32,
-        key: *mut RsaKey, inSz: u32,
+        input: *const u8,
+        inOutIdx: *mut u32,
+        key: *mut RsaKey,
+        inSz: u32,
     ) -> c_int;
     #[link_name = "wc_CheckRsaKey"]
     pub fn wc_CheckRsaKey(key: *mut RsaKey) -> c_int;
     #[link_name = "wc_MakeRsaKey"]
-    pub fn wc_MakeRsaKey(key: *mut RsaKey, size: c_int, e: core::ffi::c_long, rng: *mut WC_RNG) -> c_int;
+    pub fn wc_MakeRsaKey(
+        key: *mut RsaKey,
+        size: c_int,
+        e: core::ffi::c_long,
+        rng: *mut WC_RNG,
+    ) -> c_int;
     #[link_name = "wc_RsaSetRNG"]
     pub fn wc_RsaSetRNG(key: *mut RsaKey, rng: *mut WC_RNG) -> c_int;
 
@@ -3388,14 +3615,22 @@ extern "C" {
     /// `u` is the CRT coefficient (iqmp), required when WOLFSSL_KEY_GEN or OPENSSL_EXTRA.
     #[link_name = "wc_RsaPrivateKeyDecodeRaw"]
     pub fn wc_RsaPrivateKeyDecodeRaw(
-        n: *const u8, nSz: u32,
-        e: *const u8, eSz: u32,
-        d: *const u8, dSz: u32,
-        u: *const u8, uSz: u32,
-        p: *const u8, pSz: u32,
-        q: *const u8, qSz: u32,
-        dP: *const u8, dPSz: u32,
-        dQ: *const u8, dQSz: u32,
+        n: *const u8,
+        nSz: u32,
+        e: *const u8,
+        eSz: u32,
+        d: *const u8,
+        dSz: u32,
+        u: *const u8,
+        uSz: u32,
+        p: *const u8,
+        pSz: u32,
+        q: *const u8,
+        qSz: u32,
+        dP: *const u8,
+        dPSz: u32,
+        dQ: *const u8,
+        dQSz: u32,
         key: *mut RsaKey,
     ) -> c_int;
 
@@ -3406,19 +3641,26 @@ extern "C" {
     #[link_name = "wc_RsaExportKey"]
     pub fn wc_RsaExportKey(
         key: *mut RsaKey,
-        e: *mut u8, eSz: *mut u32,
-        n: *mut u8, nSz: *mut u32,
-        d: *mut u8, dSz: *mut u32,
-        p: *mut u8, pSz: *mut u32,
-        q: *mut u8, qSz: *mut u32,
+        e: *mut u8,
+        eSz: *mut u32,
+        n: *mut u8,
+        nSz: *mut u32,
+        d: *mut u8,
+        dSz: *mut u32,
+        p: *mut u8,
+        pSz: *mut u32,
+        q: *mut u8,
+        qSz: *mut u32,
     ) -> c_int;
 
     /// Export just the public components (e, n) from an initialized RsaKey.
     #[link_name = "wc_RsaFlattenPublicKey"]
     pub fn wc_RsaFlattenPublicKey(
         key: *mut RsaKey,
-        e: *mut u8, eSz: *mut u32,
-        n: *mut u8, nSz: *mut u32,
+        e: *mut u8,
+        eSz: *mut u32,
+        n: *mut u8,
+        nSz: *mut u32,
     ) -> c_int;
 }
 
@@ -3495,7 +3737,9 @@ extern "C" {
     #[link_name = "wc_CryptoCb_RegisterDevice"]
     pub fn wc_CryptoCb_RegisterDevice(
         devId: c_int,
-        cb: Option<unsafe extern "C" fn(devId: c_int, info: *mut wc_CryptoInfo, ctx: *mut c_void) -> c_int>,
+        cb: Option<
+            unsafe extern "C" fn(devId: c_int, info: *mut wc_CryptoInfo, ctx: *mut c_void) -> c_int,
+        >,
         ctx: *mut c_void,
     ) -> c_int;
 
@@ -3581,7 +3825,8 @@ extern "C" {
 
     // Cipher AES-GCM enc accessors
     #[cfg(wolfssl_aes_gcm)]
-    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_aes(info: *const wc_CryptoInfo) -> *mut c_void;
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_aes(info: *const wc_CryptoInfo)
+        -> *mut c_void;
     #[cfg(wolfssl_aes_gcm)]
     pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_out(info: *mut wc_CryptoInfo) -> *mut u8;
     #[cfg(wolfssl_aes_gcm)]
@@ -3595,15 +3840,19 @@ extern "C" {
     #[cfg(wolfssl_aes_gcm)]
     pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag(info: *mut wc_CryptoInfo) -> *mut u8;
     #[cfg(wolfssl_aes_gcm)]
-    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag_sz(info: *const wc_CryptoInfo) -> u32;
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag_sz(info: *const wc_CryptoInfo)
+        -> u32;
     #[cfg(wolfssl_aes_gcm)]
-    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in(info: *const wc_CryptoInfo) -> *const u8;
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in(
+        info: *const wc_CryptoInfo,
+    ) -> *const u8;
     #[cfg(wolfssl_aes_gcm)]
     pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in_sz(info: *const wc_CryptoInfo) -> u32;
 
     // Cipher AES-GCM dec accessors
     #[cfg(wolfssl_aes_gcm)]
-    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_aes(info: *const wc_CryptoInfo) -> *mut c_void;
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_aes(info: *const wc_CryptoInfo)
+        -> *mut c_void;
     #[cfg(wolfssl_aes_gcm)]
     pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_out(info: *mut wc_CryptoInfo) -> *mut u8;
     #[cfg(wolfssl_aes_gcm)]
@@ -3615,11 +3864,16 @@ extern "C" {
     #[cfg(wolfssl_aes_gcm)]
     pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_iv_sz(info: *const wc_CryptoInfo) -> u32;
     #[cfg(wolfssl_aes_gcm)]
-    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag(info: *const wc_CryptoInfo) -> *const u8;
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag(
+        info: *const wc_CryptoInfo,
+    ) -> *const u8;
     #[cfg(wolfssl_aes_gcm)]
-    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag_sz(info: *const wc_CryptoInfo) -> u32;
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag_sz(info: *const wc_CryptoInfo)
+        -> u32;
     #[cfg(wolfssl_aes_gcm)]
-    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in(info: *const wc_CryptoInfo) -> *const u8;
+    pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in(
+        info: *const wc_CryptoInfo,
+    ) -> *const u8;
     #[cfg(wolfssl_aes_gcm)]
     pub fn wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in_sz(info: *const wc_CryptoInfo) -> u32;
 
@@ -3659,7 +3913,9 @@ pub struct WcHpke {
 #[cfg(wolfssl_hpke)]
 impl WcHpke {
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_HPKE_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_HPKE_ALLOC_SIZE],
+        }
     }
 }
 
@@ -3673,7 +3929,9 @@ pub struct WcHpkeBaseContext {
 #[cfg(wolfssl_hpke)]
 impl WcHpkeBaseContext {
     pub const fn zeroed() -> Self {
-        Self { _opaque: [0u8; WC_HPKE_BASE_CONTEXT_ALLOC_SIZE] }
+        Self {
+            _opaque: [0u8; WC_HPKE_BASE_CONTEXT_ALLOC_SIZE],
+        }
     }
 }
 
@@ -3726,87 +3984,119 @@ extern "C" {
     /// Initialize an HPKE context with the given suite.
     #[link_name = "wc_HpkeInit"]
     pub fn wc_HpkeInit(
-        hpke: *mut WcHpke, kem: c_int, kdf: c_int, aead: c_int, heap: *mut c_void,
+        hpke: *mut WcHpke,
+        kem: c_int,
+        kdf: c_int,
+        aead: c_int,
+        heap: *mut c_void,
     ) -> c_int;
 
     /// Generate a KEM key pair.
     #[link_name = "wc_HpkeGenerateKeyPair"]
     pub fn wc_HpkeGenerateKeyPair(
-        hpke: *mut WcHpke, keypair: *mut *mut c_void, rng: *mut WC_RNG,
+        hpke: *mut WcHpke,
+        keypair: *mut *mut c_void,
+        rng: *mut WC_RNG,
     ) -> c_int;
 
     /// Serialize a public key to bytes.
     #[link_name = "wc_HpkeSerializePublicKey"]
     pub fn wc_HpkeSerializePublicKey(
-        hpke: *mut WcHpke, key: *mut c_void, out: *mut u8, outSz: *mut u16,
+        hpke: *mut WcHpke,
+        key: *mut c_void,
+        out: *mut u8,
+        outSz: *mut u16,
     ) -> c_int;
 
     /// Deserialize a public key from bytes.
     #[link_name = "wc_HpkeDeserializePublicKey"]
     pub fn wc_HpkeDeserializePublicKey(
-        hpke: *mut WcHpke, key: *mut *mut c_void, in_: *const u8, inSz: u16,
+        hpke: *mut WcHpke,
+        key: *mut *mut c_void,
+        in_: *const u8,
+        inSz: u16,
     ) -> c_int;
 
     /// Free a KEM key pair.
     #[link_name = "wc_HpkeFreeKey"]
-    pub fn wc_HpkeFreeKey(
-        hpke: *mut WcHpke, kem: u16, keypair: *mut c_void, heap: *mut c_void,
-    );
+    pub fn wc_HpkeFreeKey(hpke: *mut WcHpke, kem: u16, keypair: *mut c_void, heap: *mut c_void);
 
     /// One-shot HPKE Base-mode seal (encrypt).
     /// `ciphertext` output is plaintext_len + tag_len bytes.
     #[link_name = "wc_HpkeSealBase"]
     pub fn wc_HpkeSealBase(
-        hpke: *mut WcHpke, ephemeralKey: *mut c_void, receiverKey: *mut c_void,
-        info: *mut u8, infoSz: u32,
-        aad: *mut u8, aadSz: u32,
-        plaintext: *mut u8, ptSz: u32,
+        hpke: *mut WcHpke,
+        ephemeralKey: *mut c_void,
+        receiverKey: *mut c_void,
+        info: *mut u8,
+        infoSz: u32,
+        aad: *mut u8,
+        aadSz: u32,
+        plaintext: *mut u8,
+        ptSz: u32,
         ciphertext: *mut u8,
     ) -> c_int;
 
     /// One-shot HPKE Base-mode open (decrypt).
     #[link_name = "wc_HpkeOpenBase"]
     pub fn wc_HpkeOpenBase(
-        hpke: *mut WcHpke, receiverKey: *mut c_void,
-        pubKey: *const u8, pubKeySz: u16,
-        info: *mut u8, infoSz: u32,
-        aad: *mut u8, aadSz: u32,
-        ciphertext: *mut u8, ctSz: u32,
+        hpke: *mut WcHpke,
+        receiverKey: *mut c_void,
+        pubKey: *const u8,
+        pubKeySz: u16,
+        info: *mut u8,
+        infoSz: u32,
+        aad: *mut u8,
+        aadSz: u32,
+        ciphertext: *mut u8,
+        ctSz: u32,
         plaintext: *mut u8,
     ) -> c_int;
 
     /// Initialize a seal (encryption) context for multi-message use.
     #[link_name = "wc_HpkeInitSealContext"]
     pub fn wc_HpkeInitSealContext(
-        hpke: *mut WcHpke, context: *mut WcHpkeBaseContext,
-        ephemeralKey: *mut c_void, receiverKey: *mut c_void,
-        info: *mut u8, infoSz: u32,
+        hpke: *mut WcHpke,
+        context: *mut WcHpkeBaseContext,
+        ephemeralKey: *mut c_void,
+        receiverKey: *mut c_void,
+        info: *mut u8,
+        infoSz: u32,
     ) -> c_int;
 
     /// Encrypt one message using a seal context.
     #[link_name = "wc_HpkeContextSealBase"]
     pub fn wc_HpkeContextSealBase(
-        hpke: *mut WcHpke, context: *mut WcHpkeBaseContext,
-        aad: *mut u8, aadSz: u32,
-        plaintext: *mut u8, ptSz: u32,
+        hpke: *mut WcHpke,
+        context: *mut WcHpkeBaseContext,
+        aad: *mut u8,
+        aadSz: u32,
+        plaintext: *mut u8,
+        ptSz: u32,
         out: *mut u8,
     ) -> c_int;
 
     /// Initialize an open (decryption) context for multi-message use.
     #[link_name = "wc_HpkeInitOpenContext"]
     pub fn wc_HpkeInitOpenContext(
-        hpke: *mut WcHpke, context: *mut WcHpkeBaseContext,
+        hpke: *mut WcHpke,
+        context: *mut WcHpkeBaseContext,
         receiverKey: *mut c_void,
-        pubKey: *const u8, pubKeySz: u16,
-        info: *mut u8, infoSz: u32,
+        pubKey: *const u8,
+        pubKeySz: u16,
+        info: *mut u8,
+        infoSz: u32,
     ) -> c_int;
 
     /// Decrypt one message using an open context.
     #[link_name = "wc_HpkeContextOpenBase"]
     pub fn wc_HpkeContextOpenBase(
-        hpke: *mut WcHpke, context: *mut WcHpkeBaseContext,
-        aad: *mut u8, aadSz: u32,
-        ciphertext: *mut u8, ctSz: u32,
+        hpke: *mut WcHpke,
+        context: *mut WcHpkeBaseContext,
+        aad: *mut u8,
+        aadSz: u32,
+        ciphertext: *mut u8,
+        ctSz: u32,
         out: *mut u8,
     ) -> c_int;
 }
@@ -3881,4 +4171,3 @@ mod tests {
         assert_eq!(wc_oid_sum(&[]), 0);
     }
 }
-

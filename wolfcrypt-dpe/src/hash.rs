@@ -49,4 +49,3 @@ impl Hasher for WolfCryptHasher {
         }
     }
 }
-

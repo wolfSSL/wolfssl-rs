@@ -9,11 +9,9 @@ use core::cell::UnsafeCell;
 
 use crate::error::{check, len_as_u32, WolfCryptError};
 use wolfcrypt_rs::{
-    wc_ed448_export_public, wc_ed448_free, wc_ed448_import_private_key,
-    wc_ed448_import_private_only,
-    wc_ed448_import_public, wc_ed448_init, wc_ed448_make_key,
-    wc_ed448_make_public, wc_ed448_sign_msg, wc_ed448_verify_msg,
-    wc_ed448_key, wc_FreeRng, wc_InitRng, WC_RNG,
+    wc_FreeRng, wc_InitRng, wc_ed448_export_public, wc_ed448_free, wc_ed448_import_private_key,
+    wc_ed448_import_private_only, wc_ed448_import_public, wc_ed448_init, wc_ed448_key,
+    wc_ed448_make_key, wc_ed448_make_public, wc_ed448_sign_msg, wc_ed448_verify_msg, WC_RNG,
 };
 
 /// Ed448 key size in bytes (seed = 57 bytes).
@@ -112,9 +110,8 @@ impl Ed448SigningKey {
         // step is load-bearing, not redundant.
         //
         // SAFETY: `key` is initialised. We import exactly 57 bytes of seed.
-        let rc = unsafe {
-            wc_ed448_import_private_only(seed.as_ptr(), ED448_KEY_SIZE as u32, &mut key)
-        };
+        let rc =
+            unsafe { wc_ed448_import_private_only(seed.as_ptr(), ED448_KEY_SIZE as u32, &mut key) };
         check(rc, "wc_ed448_import_private_only")?;
 
         // Derive the public key from the imported seed.
@@ -132,9 +129,8 @@ impl Ed448SigningKey {
         let mut pub_buf = [0u8; ED448_KEY_SIZE];
         // SAFETY: `key` has a private key set. `pub_buf` is exactly
         // ED448_KEY_SIZE (57) bytes as required by `make_public`.
-        let rc = unsafe {
-            wc_ed448_make_public(&mut key, pub_buf.as_mut_ptr(), ED448_KEY_SIZE as u32)
-        };
+        let rc =
+            unsafe { wc_ed448_make_public(&mut key, pub_buf.as_mut_ptr(), ED448_KEY_SIZE as u32) };
         check(rc, "wc_ed448_make_public")?;
 
         // SAFETY: `seed` is 57 bytes, `pub_buf` is 57 bytes of the just-
@@ -174,9 +170,7 @@ impl Ed448SigningKey {
 
         // SAFETY: `key` is initialised, `rng.rng` is a valid WC_RNG.
         // Key size is 57 for Ed448.
-        let rc = unsafe {
-            wc_ed448_make_key(&mut rng.rng, ED448_KEY_SIZE as i32, &mut key)
-        };
+        let rc = unsafe { wc_ed448_make_key(&mut rng.rng, ED448_KEY_SIZE as i32, &mut key) };
         check(rc, "wc_ed448_make_key")?;
 
         // Initialise an internal RNG owned by this signing key for future sign calls.
@@ -208,8 +202,7 @@ impl Ed448SigningKey {
         };
         assert_eq!(rc, 0, "wc_ed448_export_public failed (key not initialized)");
 
-        Ed448VerifyingKey::from_bytes(&pub_buf)
-            .expect("exported public key must be valid")
+        Ed448VerifyingKey::from_bytes(&pub_buf).expect("exported public key must be valid")
     }
 }
 
@@ -279,9 +272,7 @@ impl Ed448VerifyingKey {
         check(rc, "wc_ed448_init")?;
 
         // SAFETY: `key` is initialised. We import exactly 57 bytes of public key.
-        let rc = unsafe {
-            wc_ed448_import_public(bytes.as_ptr(), ED448_KEY_SIZE as u32, &mut key)
-        };
+        let rc = unsafe { wc_ed448_import_public(bytes.as_ptr(), ED448_KEY_SIZE as u32, &mut key) };
         check(rc, "wc_ed448_import_public")?;
 
         Ok(Self {
@@ -307,11 +298,7 @@ impl Drop for Ed448VerifyingKey {
 }
 
 impl signature_trait::Verifier<Ed448Signature> for Ed448VerifyingKey {
-    fn verify(
-        &self,
-        msg: &[u8],
-        signature: &Ed448Signature,
-    ) -> Result<(), signature_trait::Error> {
+    fn verify(&self, msg: &[u8], signature: &Ed448Signature) -> Result<(), signature_trait::Error> {
         let sig_bytes = signature.to_bytes();
         let mut result: i32 = 0;
 

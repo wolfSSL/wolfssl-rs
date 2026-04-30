@@ -5,8 +5,7 @@ mod quic;
 
 use crate::aead::nonce_sequence::Counter64Builder;
 use crate::aead::{
-    Aad, BoundKey, OpeningKey, SealingKey, UnboundKey, AES_128_GCM, AES_256_GCM,
-    CHACHA20_POLY1305,
+    Aad, BoundKey, OpeningKey, SealingKey, UnboundKey, AES_128_GCM, AES_256_GCM, CHACHA20_POLY1305,
 };
 use crate::fips::{assert_fips_status_indicator, FipsServiceStatus};
 

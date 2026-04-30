@@ -156,16 +156,6 @@ macro_rules! rng_contract_tests {
     };
 }
 
-rng_contract_tests!(
-    p384,
-    helpers::new_wolf_384,
-    helpers::new_ref_384,
-    "P-384"
-);
+rng_contract_tests!(p384, helpers::new_wolf_384, helpers::new_ref_384, "P-384");
 
-rng_contract_tests!(
-    p256,
-    helpers::new_wolf_256,
-    helpers::new_ref_256,
-    "P-256"
-);
+rng_contract_tests!(p256, helpers::new_wolf_256, helpers::new_ref_256, "P-256");

@@ -85,10 +85,10 @@ vkey.verify(&sig, b"hello").expect("verify failed");
 
 #![cfg(lms)]
 
-use crate::sys;
-use core::mem::MaybeUninit;
 #[cfg(all(lms_make_key, random))]
 use crate::random::RNG;
+use crate::sys;
+use core::mem::MaybeUninit;
 
 /// Rust wrapper for a wolfSSL `LmsKey` object (LMS/HSS, RFC 8554).
 ///
@@ -148,10 +148,10 @@ impl Lms {
 
 #[cfg(lms_sha256_192)]
 impl Lms {
-    pub const PARM_SHA256_192_L1_H5_W1 : u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W1;
-    pub const PARM_SHA256_192_L1_H5_W2 : u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W2;
-    pub const PARM_SHA256_192_L1_H5_W4 : u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W4;
-    pub const PARM_SHA256_192_L1_H5_W8 : u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W8;
+    pub const PARM_SHA256_192_L1_H5_W1: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W1;
+    pub const PARM_SHA256_192_L1_H5_W2: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W2;
+    pub const PARM_SHA256_192_L1_H5_W4: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W4;
+    pub const PARM_SHA256_192_L1_H5_W8: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W8;
     pub const PARM_SHA256_192_L1_H10_W2: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H10_W2;
     pub const PARM_SHA256_192_L1_H10_W4: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H10_W4;
     pub const PARM_SHA256_192_L1_H10_W8: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H10_W8;
@@ -163,11 +163,11 @@ impl Lms {
     pub const PARM_SHA256_192_L2_H10_W2: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L2_H10_W2;
     pub const PARM_SHA256_192_L2_H10_W4: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L2_H10_W4;
     pub const PARM_SHA256_192_L2_H10_W8: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L2_H10_W8;
-    pub const PARM_SHA256_192_L3_H5_W2 : u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L3_H5_W2;
-    pub const PARM_SHA256_192_L3_H5_W4 : u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L3_H5_W4;
-    pub const PARM_SHA256_192_L3_H5_W8 : u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L3_H5_W8;
+    pub const PARM_SHA256_192_L3_H5_W2: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L3_H5_W2;
+    pub const PARM_SHA256_192_L3_H5_W4: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L3_H5_W4;
+    pub const PARM_SHA256_192_L3_H5_W8: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L3_H5_W8;
     pub const PARM_SHA256_192_L3_H10_W4: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L3_H10_W4;
-    pub const PARM_SHA256_192_L4_H5_W8 : u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L4_H5_W8;
+    pub const PARM_SHA256_192_L4_H5_W8: u32 = sys::wc_LmsParm_WC_LMS_PARM_SHA256_192_L4_H5_W8;
 }
 
 impl Lms {
@@ -216,10 +216,7 @@ impl Lms {
     /// let key = Lms::new_ex(None, None).expect("Error with Lms::new_ex()");
     /// }
     /// ```
-    pub fn new_ex(
-        heap: Option<*mut core::ffi::c_void>,
-        dev_id: Option<i32>,
-    ) -> Result<Self, i32> {
+    pub fn new_ex(heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<Self, i32> {
         let heap = match heap {
             Some(h) => h,
             None => core::ptr::null_mut(),
@@ -294,9 +291,8 @@ impl Lms {
     /// }
     /// ```
     pub fn set_parameters(&mut self, levels: i32, height: i32, winternitz: i32) -> Result<(), i32> {
-        let rc = unsafe {
-            sys::wc_LmsKey_SetParameters(&mut self.ws_key, levels, height, winternitz)
-        };
+        let rc =
+            unsafe { sys::wc_LmsKey_SetParameters(&mut self.ws_key, levels, height, winternitz) };
         if rc != 0 {
             return Err(rc);
         }
@@ -328,12 +324,7 @@ impl Lms {
         let mut height = 0i32;
         let mut winternitz = 0i32;
         let rc = unsafe {
-            sys::wc_LmsKey_GetParameters(
-                &self.ws_key,
-                &mut levels,
-                &mut height,
-                &mut winternitz,
-            )
+            sys::wc_LmsKey_GetParameters(&self.ws_key, &mut levels, &mut height, &mut winternitz)
         };
         if rc != 0 {
             return Err(rc);
@@ -632,9 +623,7 @@ impl Lms {
     /// Returns either Ok(()) on success or Err(e) containing the wolfSSL
     /// library error code value.
     pub fn export_pub_from(&mut self, src: &Lms) -> Result<(), i32> {
-        let rc = unsafe {
-            sys::wc_LmsKey_ExportPub(&mut self.ws_key, &src.ws_key)
-        };
+        let rc = unsafe { sys::wc_LmsKey_ExportPub(&mut self.ws_key, &src.ws_key) };
         if rc != 0 {
             return Err(rc);
         }
@@ -671,9 +660,8 @@ impl Lms {
     /// ```
     pub fn export_pub_raw(&self, out: &mut [u8]) -> Result<usize, i32> {
         let mut out_len = out.len() as u32;
-        let rc = unsafe {
-            sys::wc_LmsKey_ExportPubRaw(&self.ws_key, out.as_mut_ptr(), &mut out_len)
-        };
+        let rc =
+            unsafe { sys::wc_LmsKey_ExportPubRaw(&self.ws_key, out.as_mut_ptr(), &mut out_len) };
         if rc != 0 {
             return Err(rc);
         }
@@ -761,9 +749,7 @@ impl Lms {
     pub fn get_kid(&mut self) -> Result<&[u8], i32> {
         let mut kid_ptr: *const u8 = core::ptr::null();
         let mut kid_sz: u32 = 0;
-        let rc = unsafe {
-            sys::wc_LmsKey_GetKid(&mut self.ws_key, &mut kid_ptr, &mut kid_sz)
-        };
+        let rc = unsafe { sys::wc_LmsKey_GetKid(&mut self.ws_key, &mut kid_ptr, &mut kid_sz) };
         if rc != 0 {
             return Err(rc);
         }

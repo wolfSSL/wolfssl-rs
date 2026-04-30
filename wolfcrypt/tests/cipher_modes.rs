@@ -67,7 +67,11 @@ mod ofb {
         let mut ct = plaintext.to_vec();
         let mut cipher = Aes256Ofb::new((&key).into(), (&iv).into());
         cipher.apply_keystream(&mut ct);
-        assert_ne!(&ct[..], &plaintext[..], "ciphertext must differ from plaintext");
+        assert_ne!(
+            &ct[..],
+            &plaintext[..],
+            "ciphertext must differ from plaintext"
+        );
 
         let mut pt = ct.clone();
         let mut cipher = Aes256Ofb::new((&key).into(), (&iv).into());
@@ -115,7 +119,8 @@ mod xts {
         // Encrypt
         let mut enc = AesXts::new_encrypt(&key).expect("new_encrypt failed");
         let mut ct = vec![0u8; plaintext.len()];
-        enc.encrypt(&mut ct, &plaintext, &tweak).expect("encrypt failed");
+        enc.encrypt(&mut ct, &plaintext, &tweak)
+            .expect("encrypt failed");
         assert_eq!(ct, expected_ct, "AES-128-XTS encrypt mismatch");
 
         // Decrypt
@@ -218,8 +223,7 @@ mod eax {
 
         // Decrypt
         let mut pt = vec![0u8; ct.len()];
-        aes_eax_decrypt(&key, &nonce, &aad, &ct, &mut pt, &tag)
-            .expect("EAX decrypt failed");
+        aes_eax_decrypt(&key, &nonce, &aad, &ct, &mut pt, &tag).expect("EAX decrypt failed");
         assert_eq!(pt, plaintext, "EAX plaintext mismatch on vector 1");
     }
 
@@ -250,9 +254,12 @@ mod eax {
 
         // Decrypt
         let mut pt = vec![0u8; ct.len()];
-        aes_eax_decrypt(&key, &nonce, &aad, &ct, &mut pt, &tag)
-            .expect("EAX decrypt failed");
-        assert_eq!(pt.as_slice(), plaintext.as_slice(), "EAX plaintext mismatch on vector 2");
+        aes_eax_decrypt(&key, &nonce, &aad, &ct, &mut pt, &tag).expect("EAX decrypt failed");
+        assert_eq!(
+            pt.as_slice(),
+            plaintext.as_slice(),
+            "EAX plaintext mismatch on vector 2"
+        );
     }
 
     /// EAX test vector #4 from Bellare, Rogaway, Wagner (2004).
@@ -280,9 +287,12 @@ mod eax {
         assert_eq!(tag, expected_tag, "EAX tag mismatch on vector 4");
 
         let mut pt = vec![0u8; ct.len()];
-        aes_eax_decrypt(&key, &nonce, &aad, &ct, &mut pt, &tag)
-            .expect("EAX decrypt failed");
-        assert_eq!(pt.as_slice(), plaintext.as_slice(), "EAX plaintext mismatch on vector 4");
+        aes_eax_decrypt(&key, &nonce, &aad, &ct, &mut pt, &tag).expect("EAX decrypt failed");
+        assert_eq!(
+            pt.as_slice(),
+            plaintext.as_slice(),
+            "EAX plaintext mismatch on vector 4"
+        );
     }
 
     /// Verify that a corrupted tag causes decryption to fail.

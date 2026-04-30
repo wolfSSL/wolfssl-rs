@@ -299,30 +299,25 @@ pub use cipher::{Aes128Ctr, Aes256Ctr};
 pub use cipher::Aes192Ctr;
 
 #[cfg(feature = "cipher")]
-pub use cipher::{Aes128CbcEnc, Aes128CbcDec, Aes256CbcEnc, Aes256CbcDec};
+pub use cipher::{Aes128CbcDec, Aes128CbcEnc, Aes256CbcDec, Aes256CbcEnc};
 
 #[cfg(all(feature = "cipher", wolfssl_aes_192))]
-pub use cipher::{Aes192CbcEnc, Aes192CbcDec};
+pub use cipher::{Aes192CbcDec, Aes192CbcEnc};
 
 #[cfg(all(feature = "cipher", wolfssl_chacha))]
 pub use cipher::WolfChaCha20;
 
 #[cfg(all(feature = "cipher", wolfssl_aes_cfb))]
-pub use cipher::{
-    Aes128CfbEnc, Aes128CfbDec,
-    Aes256CfbEnc, Aes256CfbDec,
-};
+pub use cipher::{Aes128CfbDec, Aes128CfbEnc, Aes256CfbDec, Aes256CfbEnc};
 
 #[cfg(all(feature = "cipher", wolfssl_aes_cfb, wolfssl_aes_192))]
-pub use cipher::{
-    Aes192CfbEnc, Aes192CfbDec,
-};
+pub use cipher::{Aes192CfbDec, Aes192CfbEnc};
 
 #[cfg(all(feature = "des3", wolfssl_des3))]
 pub mod des3;
 
 #[cfg(all(feature = "des3", wolfssl_des3))]
-pub use des3::{DesEde3CbcEnc, DesEde3CbcDec};
+pub use des3::{DesEde3CbcDec, DesEde3CbcEnc};
 
 #[cfg(all(feature = "dh", wolfssl_dh))]
 pub mod dh;
@@ -359,8 +354,7 @@ pub use ecdh::{X448PublicKey, X448SharedSecret, X448StaticSecret};
 
 #[cfg(all(feature = "ecdh", wolfssl_ecc))]
 pub use ecdh::{
-    NistCurve, NistEcdhPublicKey, NistEcdhSecret, NistEcdhSharedSecret,
-    NistP256, P256EcdhSecret,
+    NistCurve, NistEcdhPublicKey, NistEcdhSecret, NistEcdhSharedSecret, NistP256, P256EcdhSecret,
 };
 #[cfg(all(feature = "ecdh", wolfssl_ecc, wolfssl_ecc_p384))]
 pub use ecdh::{NistP384, P384EcdhSecret};
@@ -375,27 +369,21 @@ pub mod ecdsa;
 
 #[cfg(all(feature = "ecdsa", wolfssl_ecc))]
 pub use ecdsa::{
-    EcdsaCurve, EcdsaSignature, EcdsaSigningKey, EcdsaVerifyingKey,
-    P256, P256SigningKey, P256VerifyingKey, P256Signature,
+    EcdsaCurve, EcdsaSignature, EcdsaSigningKey, EcdsaVerifyingKey, P256Signature, P256SigningKey,
+    P256VerifyingKey, P256,
 };
 
 #[cfg(all(feature = "ecdsa", wolfssl_ecc, wolfssl_ecc_p384))]
-pub use ecdsa::{
-    P384, P384SigningKey, P384VerifyingKey, P384Signature,
-};
+pub use ecdsa::{P384Signature, P384SigningKey, P384VerifyingKey, P384};
 
 #[cfg(all(feature = "ecdsa", wolfssl_ecc, wolfssl_ecc_p521, wolfssl_sha512))]
-pub use ecdsa::{
-    P521, P521SigningKey, P521VerifyingKey, P521Signature,
-};
+pub use ecdsa::{P521Signature, P521SigningKey, P521VerifyingKey, P521};
 
 #[cfg(feature = "rsa")]
 pub mod rsa;
 
 #[cfg(all(feature = "rsa", wolfssl_rsa))]
-pub use rsa::{
-    RsaDigest, RsaPkcs1v15Signature, RsaPssSignature, RsaPrivateKey, RsaPublicKey,
-};
+pub use rsa::{RsaDigest, RsaPkcs1v15Signature, RsaPrivateKey, RsaPssSignature, RsaPublicKey};
 
 #[cfg(all(feature = "rsa-direct", wolfssl_rsa))]
 pub use rsa::{NativeRsaKey, RsaDirectType, RsaRawComponents};
@@ -404,17 +392,15 @@ pub use rsa::{NativeRsaKey, RsaDirectType, RsaRawComponents};
 pub mod keywrap;
 
 #[cfg(all(feature = "keywrap", wolfssl_aes_keywrap))]
-pub use keywrap::{aes_wrap_key, aes_unwrap_key};
+pub use keywrap::{aes_unwrap_key, aes_wrap_key};
 
 #[cfg(all(feature = "mldsa", wolfssl_dilithium))]
 pub mod mldsa;
 
 #[cfg(all(feature = "mldsa", wolfssl_dilithium))]
 pub use mldsa::{
-    MlDsaSignature,
-    MlDsa44SigningKey, MlDsa44VerifyingKey, MlDsa44Signature,
-    MlDsa65SigningKey, MlDsa65VerifyingKey, MlDsa65Signature,
-    MlDsa87SigningKey, MlDsa87VerifyingKey, MlDsa87Signature,
+    MlDsa44Signature, MlDsa44SigningKey, MlDsa44VerifyingKey, MlDsa65Signature, MlDsa65SigningKey,
+    MlDsa65VerifyingKey, MlDsa87Signature, MlDsa87SigningKey, MlDsa87VerifyingKey, MlDsaSignature,
 };
 
 #[cfg(feature = "mlkem")]
@@ -422,9 +408,9 @@ pub mod mlkem;
 
 #[cfg(all(feature = "mlkem", wolfssl_mlkem))]
 pub use mlkem::{
-    MlKem512, MlKem768, MlKem1024,
-    MlKem512DecapsulationKey, MlKem768DecapsulationKey, MlKem1024DecapsulationKey,
-    MlKem512EncapsulationKey, MlKem768EncapsulationKey, MlKem1024EncapsulationKey,
+    MlKem1024, MlKem1024DecapsulationKey, MlKem1024EncapsulationKey, MlKem512,
+    MlKem512DecapsulationKey, MlKem512EncapsulationKey, MlKem768, MlKem768DecapsulationKey,
+    MlKem768EncapsulationKey,
 };
 
 // --- New algorithm modules ---

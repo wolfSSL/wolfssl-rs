@@ -4,8 +4,8 @@ mod helpers;
 
 use caliptra_cfi_lib::CfiCounter;
 use caliptra_dpe::commands::{
-    CommandExecution, DeriveContextCmd, DeriveContextFlags, DestroyCtxCmd, InitCtxCmd,
-    SignP384Cmd, SignFlags,
+    CommandExecution, DeriveContextCmd, DeriveContextFlags, DestroyCtxCmd, InitCtxCmd, SignFlags,
+    SignP384Cmd,
 };
 use caliptra_dpe::context::ContextHandle;
 use caliptra_dpe::dpe_instance::DpeInstance;
@@ -78,7 +78,11 @@ fn destroy_frees_slot() {
 
     // After destroying, we should be able to create a new simulation context.
     let result = InitCtxCmd::new_simulation().execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "Should be able to init after destroy frees slot: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Should be able to init after destroy frees slot: {:?}",
+        result.err()
+    );
 }
 
 #[test]

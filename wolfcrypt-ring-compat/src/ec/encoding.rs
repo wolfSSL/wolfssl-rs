@@ -1,33 +1,31 @@
-use crate::wolfcrypt_rs::{EVP_PKEY, EVP_PKEY_EC};
 use crate::ec::encoding::sec1::parse_sec1_public_point;
 use crate::ec::validate_ec_evp_key;
+use crate::wolfcrypt_rs::{EVP_PKEY, EVP_PKEY_EC};
 
 use crate::error::KeyRejected;
 use crate::ptr::LcPtr;
-
 
 // [SEC 1](https://secg.org/sec1-v2.pdf)
 //
 // SEC 1: Elliptic Curve Cryptography, Version 2.0
 pub(crate) mod sec1 {
-    #[cfg(not(feature = "std"))]
-    use crate::prelude::*;
-    use crate::wolfcrypt_rs::{
-        point_conversion_form_t, BN_num_bytes, BN_bn2bin, EC_GROUP_get_curve_name, EC_KEY_get0_group,
-        EC_KEY_get0_private_key, EC_KEY_get0_public_key, EC_KEY_new, EC_KEY_set_group,
-        EC_KEY_set_private_key, EC_KEY_set_public_key, EC_POINT_mul, EC_POINT_new,
-        EC_POINT_oct2point, EC_POINT_point2oct,
-        EVP_PKEY_assign_EC_KEY, EVP_PKEY_get0_EC_KEY,
-        EVP_PKEY_new, NID_X9_62_prime256v1, NID_secp256k1, NID_secp384r1, NID_secp521r1, BIGNUM,
-        EC_GROUP, EC_POINT, EVP_PKEY,
-    };
     use crate::cbb::LcCBB;
     use crate::ec::{
         compressed_public_key_size_bytes, ec_group_from_nid, uncompressed_public_key_size_bytes,
         validate_ec_evp_key, KeyRejected,
     };
     use crate::error::Unspecified;
+    #[cfg(not(feature = "std"))]
+    use crate::prelude::*;
     use crate::ptr::{ConstPointer, DetachableLcPtr, LcPtr};
+    use crate::wolfcrypt_rs::{
+        point_conversion_form_t, BN_bn2bin, BN_num_bytes, EC_GROUP_get_curve_name,
+        EC_KEY_get0_group, EC_KEY_get0_private_key, EC_KEY_get0_public_key, EC_KEY_new,
+        EC_KEY_set_group, EC_KEY_set_private_key, EC_KEY_set_public_key, EC_POINT_mul,
+        EC_POINT_new, EC_POINT_oct2point, EC_POINT_point2oct, EVP_PKEY_assign_EC_KEY,
+        EVP_PKEY_get0_EC_KEY, EVP_PKEY_new, NID_X9_62_prime256v1, NID_secp256k1, NID_secp384r1,
+        NID_secp521r1, BIGNUM, EC_GROUP, EC_POINT, EVP_PKEY,
+    };
     use core::ptr::{null, null_mut};
 
     pub(crate) fn parse_sec1_public_point(
@@ -204,12 +202,7 @@ pub(crate) mod sec1 {
 
         // SAFETY: ec_group and ec_point are valid const pointers from the key.
         unsafe {
-            ec_point_to_vec(
-                cbb,
-                ec_group.as_const_ptr(),
-                ec_point.as_const_ptr(),
-                form,
-            )?;
+            ec_point_to_vec(cbb, ec_group.as_const_ptr(), ec_point.as_const_ptr(), form)?;
         }
         Ok(())
     }
@@ -224,10 +217,7 @@ pub(crate) mod sec1 {
         if group.is_null() || point.is_null() {
             return Err(Unspecified);
         }
-        let len = EC_POINT_point2oct(
-            group, point, form,
-            core::ptr::null_mut(), 0, null_mut(),
-        );
+        let len = EC_POINT_point2oct(group, point, form, core::ptr::null_mut(), 0, null_mut());
         if len == 0 {
             return Err(Unspecified);
         }
@@ -270,7 +260,9 @@ pub(crate) mod sec1 {
     fn bn_to_padded_vec(bn: &ConstPointer<BIGNUM>, len: usize) -> Result<Vec<u8>, Unspecified> {
         // SAFETY: bn is a valid BIGNUM pointer.
         let bn_len = unsafe { BN_num_bytes(bn.as_const_ptr()) } as usize;
-        if bn_len > len { return Err(Unspecified); }
+        if bn_len > len {
+            return Err(Unspecified);
+        }
         let mut buf = vec![0u8; len];
         // BN_bn2bin writes big-endian at the start; we offset to right-align (zero-pad on left).
         // SAFETY: pointer offset is within the allocated buf; bn is valid.
@@ -280,18 +272,17 @@ pub(crate) mod sec1 {
 }
 
 pub(crate) mod rfc5915 {
-    #[cfg(not(feature = "std"))]
-    use crate::prelude::*;
-    use crate::wolfcrypt_rs::{
-        d2i_ECPrivateKey, i2d_ECPrivateKey, wolfcrypt_fix_ec_privatekey_only,
-        EC_GROUP_get_curve_name, EC_KEY_get0_group,
-        EC_KEY_set_group, EC_KEY_free, OPENSSL_malloc, OPENSSL_free,
-        EVP_PKEY_get0_EC_KEY, EVP_PKEY_new, EVP_PKEY_set1_EC_KEY, EVP_PKEY,
-        EC_GROUP, EC_KEY,
-    };
     use crate::ec::ec_group_from_nid;
     use crate::error::{KeyRejected, Unspecified};
+    #[cfg(not(feature = "std"))]
+    use crate::prelude::*;
     use crate::ptr::LcPtr;
+    use crate::wolfcrypt_rs::{
+        d2i_ECPrivateKey, i2d_ECPrivateKey, wolfcrypt_fix_ec_privatekey_only,
+        EC_GROUP_get_curve_name, EC_KEY_free, EC_KEY_get0_group, EC_KEY_set_group,
+        EVP_PKEY_get0_EC_KEY, EVP_PKEY_new, EVP_PKEY_set1_EC_KEY, OPENSSL_free, OPENSSL_malloc,
+        EC_GROUP, EC_KEY, EVP_PKEY,
+    };
     use core::ffi::{c_long, c_void};
 
     /// ec_key_parse_private_key: parse an EC private key from a byte slice.

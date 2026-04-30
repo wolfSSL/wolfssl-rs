@@ -5,7 +5,7 @@ use std::net::TcpStream;
 
 use wolfssl::{ProtocolVersion, RootCertStore, TlsClient, TlsClientConfig};
 
-use support::{start_echo_server, server_config, CA_CERT_PEM};
+use support::{server_config, start_echo_server, CA_CERT_PEM};
 
 #[test]
 fn client_connects_to_localhost_server() {
@@ -168,8 +168,8 @@ fn connection_uses_modern_tls() {
         .unwrap();
 
     let stream = TcpStream::connect(format!("127.0.0.1:{port}")).unwrap();
-    let mut tls = TlsClient::new(config, "localhost", stream)
-        .expect("TLS 1.3 handshake should succeed");
+    let mut tls =
+        TlsClient::new(config, "localhost", stream).expect("TLS 1.3 handshake should succeed");
 
     // Verify we can exchange data.
     tls.write_all(b"tls13").unwrap();
@@ -204,10 +204,7 @@ fn rejects_oversized_server_name() {
 
     match result {
         Err(wolfssl::TlsError::InvalidConfig(msg)) => {
-            assert!(
-                msg.contains("SNI"),
-                "error should mention SNI, got: {msg}"
-            );
+            assert!(msg.contains("SNI"), "error should mention SNI, got: {msg}");
         }
         Err(other) => panic!("expected InvalidConfig, got: {other}"),
         Ok(_) => panic!("should have rejected oversized server name"),

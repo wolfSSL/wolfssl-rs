@@ -78,8 +78,7 @@ pub fn new_dpe_wolf(support: Support) -> (DpeInstance, State) {
     CfiCounter::reset_for_test();
     let mut state = State::new(support, DpeFlags::empty());
     let mut env = make_wolf_env(&mut state);
-    let dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-        .expect("Wolf DPE init failed");
+    let dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("Wolf DPE init failed");
     (dpe, state)
 }
 
@@ -88,7 +87,6 @@ pub fn new_dpe_ref(support: Support) -> (DpeInstance, State) {
     CfiCounter::reset_for_test();
     let mut state = State::new(support, DpeFlags::empty());
     let mut env = make_ref_env(&mut state);
-    let dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-        .expect("Ref DPE init failed");
+    let dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("Ref DPE init failed");
     (dpe, state)
 }

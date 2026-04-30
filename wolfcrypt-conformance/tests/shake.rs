@@ -8,8 +8,8 @@
 
 #[cfg(wolfssl_shake256)]
 mod shake256_tests {
-    use wolfcrypt::shake::Shake256;
     use hex_literal::hex;
+    use wolfcrypt::shake::Shake256;
 
     // NIST CAVP ShortMsg vector: Len = 0, output 256 bits (32 bytes)
     #[test]
@@ -82,7 +82,10 @@ mod shake256_tests {
         let mut out = [0u8; Shake256::BLOCK_SIZE * 2];
         xof.squeeze_blocks(&mut out).unwrap();
         // Output should not be all zeros (statistical check)
-        assert!(out.iter().any(|&b| b != 0), "squeeze output must not be all zeros");
+        assert!(
+            out.iter().any(|&b| b != 0),
+            "squeeze output must not be all zeros"
+        );
     }
 
     // squeeze_blocks rejects non-block-aligned lengths
@@ -108,8 +111,8 @@ mod shake256_tests {
 
 #[cfg(wolfssl_shake128)]
 mod shake128_tests {
-    use wolfcrypt::shake::Shake128;
     use hex_literal::hex;
+    use wolfcrypt::shake::Shake128;
 
     // NIST CAVP: SHAKE128("") first 32 bytes
     #[test]

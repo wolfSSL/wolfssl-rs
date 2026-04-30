@@ -76,7 +76,10 @@ fn wrong_tag_rejected() {
     bad_tag[0] ^= 0xff; // flip one byte
 
     let result = dec.finalize(&bad_tag);
-    assert!(result.is_err(), "expected authentication failure with wrong tag");
+    assert!(
+        result.is_err(),
+        "expected authentication failure with wrong tag"
+    );
 }
 
 /// Verify that AAD affects the authentication tag.

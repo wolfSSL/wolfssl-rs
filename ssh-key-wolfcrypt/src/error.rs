@@ -171,9 +171,7 @@ impl From<cipher::Error> for Error {
 impl From<wolfcrypt::WolfCryptError> for Error {
     fn from(err: wolfcrypt::WolfCryptError) -> Error {
         match err {
-            wolfcrypt::WolfCryptError::Ffi { code, func } => {
-                Error::WolfCrypt { func, code }
-            }
+            wolfcrypt::WolfCryptError::Ffi { code, func } => Error::WolfCrypt { func, code },
             _ => Error::Crypto,
         }
     }

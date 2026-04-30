@@ -4,7 +4,7 @@
 
 use encoding::{Base64Reader, Decode, Encode, Reader};
 use hex_literal::hex;
-use ssh_key::{Algorithm, Certificate, public::KeyData};
+use ssh_key::{public::KeyData, Algorithm, Certificate};
 use std::str::FromStr;
 
 #[cfg(feature = "ecdsa")]

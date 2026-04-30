@@ -1,5 +1,5 @@
-use wolfcrypt_ring_compat::{test, test_file};
 use criterion::{criterion_group, criterion_main, Criterion};
+use wolfcrypt_ring_compat::{test, test_file};
 
 #[derive(Debug)]
 pub enum AeadAlgorithm {
@@ -191,8 +191,11 @@ fn test_aead_separate(c: &mut Criterion, config: &AeadConfig) {
     group.bench_function("wolfcrypt-ring-compat", |b| {
         b.iter(|| {
             let wc_aad = wolfcrypt_ring_compat_benchmarks::aad(config);
-            let _tag =
-                wolfcrypt_ring_compat_benchmarks::seal_separate(&mut wc_sealing_key, wc_aad, &mut in_out);
+            let _tag = wolfcrypt_ring_compat_benchmarks::seal_separate(
+                &mut wc_sealing_key,
+                wc_aad,
+                &mut in_out,
+            );
         });
     });
 
@@ -220,7 +223,11 @@ fn test_aead_append(c: &mut Criterion, config: &AeadConfig) {
         b.iter(|| {
             let mut wc_in_out = in_out.clone();
             let wc_aad = wolfcrypt_ring_compat_benchmarks::aad(config);
-            wolfcrypt_ring_compat_benchmarks::seal_append(&mut wc_sealing_key, wc_aad, &mut wc_in_out);
+            wolfcrypt_ring_compat_benchmarks::seal_append(
+                &mut wc_sealing_key,
+                wc_aad,
+                &mut wc_in_out,
+            );
         });
     });
 

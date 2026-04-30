@@ -85,4 +85,3 @@ impl fmt::UpperHex for Ed25519PublicKey {
         Ok(())
     }
 }
-

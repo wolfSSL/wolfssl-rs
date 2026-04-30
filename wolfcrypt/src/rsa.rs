@@ -36,17 +36,14 @@ use alloc::vec::Vec;
 
 use crate::error::WolfCryptError;
 #[cfg(feature = "rsa-direct")]
-use crate::error::{len_as_u32, check};
+use crate::error::{check, len_as_u32};
 use wolfcrypt_rs::{
-    wolfcrypt_rsa_new, wolfcrypt_rsa_free,
-    wolfcrypt_rsa_generate,
-    wolfcrypt_rsa_import_private_pkcs1, wolfcrypt_rsa_import_public_spki,
-    wolfcrypt_rsa_export_private_pkcs1, wolfcrypt_rsa_export_public_spki,
-    wolfcrypt_rsa_key_size_bytes,
-    wolfcrypt_rsa_oaep_encrypt_sha256, wolfcrypt_rsa_oaep_decrypt_sha256,
-    wolfcrypt_rsa_pkcs1v15_sign, wolfcrypt_rsa_pkcs1v15_verify,
+    wolfcrypt_rsa_export_private_pkcs1, wolfcrypt_rsa_export_public_spki, wolfcrypt_rsa_free,
+    wolfcrypt_rsa_generate, wolfcrypt_rsa_import_private_pkcs1, wolfcrypt_rsa_import_public_spki,
+    wolfcrypt_rsa_key_size_bytes, wolfcrypt_rsa_new, wolfcrypt_rsa_oaep_decrypt_sha256,
+    wolfcrypt_rsa_oaep_encrypt_sha256, wolfcrypt_rsa_pkcs1v15_decrypt,
+    wolfcrypt_rsa_pkcs1v15_encrypt, wolfcrypt_rsa_pkcs1v15_sign, wolfcrypt_rsa_pkcs1v15_verify,
     wolfcrypt_rsa_pss_sign, wolfcrypt_rsa_pss_verify,
-    wolfcrypt_rsa_pkcs1v15_encrypt, wolfcrypt_rsa_pkcs1v15_decrypt,
 };
 
 // ---------------------------------------------------------------------------
@@ -150,7 +147,7 @@ impl RsaDigest {
     /// the appropriate `wc_HashType` enum value.
     fn hash_bits(self) -> i32 {
         match self {
-            Self::Sha1   => 160,
+            Self::Sha1 => 160,
             Self::Sha256 => 256,
             Self::Sha384 => 384,
             Self::Sha512 => 512,
@@ -173,16 +170,24 @@ unsafe fn native_oaep_encrypt_sha256(
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
-            return Err(WolfCryptError::Ffi { code: key_size, func: "wolfcrypt_rsa_key_size_bytes" });
+            return Err(WolfCryptError::Ffi {
+                code: key_size,
+                func: "wolfcrypt_rsa_key_size_bytes",
+            });
         }
         let mut out = vec![0u8; key_size as usize];
         let rc = wolfcrypt_rsa_oaep_encrypt_sha256(
             ctx,
-            plaintext.as_ptr(), plaintext.len() as u32,
-            out.as_mut_ptr(), key_size as u32,
+            plaintext.as_ptr(),
+            plaintext.len() as u32,
+            out.as_mut_ptr(),
+            key_size as u32,
         );
         if rc <= 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_oaep_encrypt_sha256" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_rsa_oaep_encrypt_sha256",
+            });
         }
         out.truncate(rc as usize);
         Ok(out)
@@ -199,16 +204,24 @@ unsafe fn native_oaep_decrypt_sha256(
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
-            return Err(WolfCryptError::Ffi { code: key_size, func: "wolfcrypt_rsa_key_size_bytes" });
+            return Err(WolfCryptError::Ffi {
+                code: key_size,
+                func: "wolfcrypt_rsa_key_size_bytes",
+            });
         }
         let mut out = vec![0u8; key_size as usize];
         let rc = wolfcrypt_rsa_oaep_decrypt_sha256(
             ctx,
-            ciphertext.as_ptr(), ciphertext.len() as u32,
-            out.as_mut_ptr(), key_size as u32,
+            ciphertext.as_ptr(),
+            ciphertext.len() as u32,
+            out.as_mut_ptr(),
+            key_size as u32,
         );
         if rc <= 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_oaep_decrypt_sha256" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_rsa_oaep_decrypt_sha256",
+            });
         }
         out.truncate(rc as usize);
         Ok(out)
@@ -232,17 +245,26 @@ unsafe fn native_pkcs1v15_sign(
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
-            return Err(WolfCryptError::Ffi { code: key_size, func: "wolfcrypt_rsa_key_size_bytes" });
+            return Err(WolfCryptError::Ffi {
+                code: key_size,
+                func: "wolfcrypt_rsa_key_size_bytes",
+            });
         }
         let mut sig = vec![0u8; key_size as usize];
         let mut sig_len = key_size as u32;
         let rc = wolfcrypt_rsa_pkcs1v15_sign(
-            ctx, hash_bits,
-            msg.as_ptr(), msg.len() as u32,
-            sig.as_mut_ptr(), &mut sig_len,
+            ctx,
+            hash_bits,
+            msg.as_ptr(),
+            msg.len() as u32,
+            sig.as_mut_ptr(),
+            &mut sig_len,
         );
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_pkcs1v15_sign" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_rsa_pkcs1v15_sign",
+            });
         }
         sig.truncate(sig_len as usize);
         Ok(sig)
@@ -262,12 +284,18 @@ unsafe fn native_pkcs1v15_verify(
 ) -> Result<(), WolfCryptError> {
     unsafe {
         let rc = wolfcrypt_rsa_pkcs1v15_verify(
-            ctx, hash_bits,
-            msg.as_ptr(), msg.len() as u32,
-            sig.as_ptr(), sig.len() as u32,
+            ctx,
+            hash_bits,
+            msg.as_ptr(),
+            msg.len() as u32,
+            sig.as_ptr(),
+            sig.len() as u32,
         );
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_pkcs1v15_verify" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_rsa_pkcs1v15_verify",
+            });
         }
         Ok(())
     }
@@ -290,17 +318,26 @@ unsafe fn native_pss_sign(
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
-            return Err(WolfCryptError::Ffi { code: key_size, func: "wolfcrypt_rsa_key_size_bytes" });
+            return Err(WolfCryptError::Ffi {
+                code: key_size,
+                func: "wolfcrypt_rsa_key_size_bytes",
+            });
         }
         let mut sig = vec![0u8; key_size as usize];
         let mut sig_len = key_size as u32;
         let rc = wolfcrypt_rsa_pss_sign(
-            ctx, hash_bits,
-            msg.as_ptr(), msg.len() as u32,
-            sig.as_mut_ptr(), &mut sig_len,
+            ctx,
+            hash_bits,
+            msg.as_ptr(),
+            msg.len() as u32,
+            sig.as_mut_ptr(),
+            &mut sig_len,
         );
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_pss_sign" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_rsa_pss_sign",
+            });
         }
         sig.truncate(sig_len as usize);
         Ok(sig)
@@ -319,12 +356,18 @@ unsafe fn native_pss_verify(
 ) -> Result<(), WolfCryptError> {
     unsafe {
         let rc = wolfcrypt_rsa_pss_verify(
-            ctx, hash_bits,
-            msg.as_ptr(), msg.len() as u32,
-            sig.as_ptr(), sig.len() as u32,
+            ctx,
+            hash_bits,
+            msg.as_ptr(),
+            msg.len() as u32,
+            sig.as_ptr(),
+            sig.len() as u32,
         );
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_pss_verify" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_rsa_pss_verify",
+            });
         }
         Ok(())
     }
@@ -344,16 +387,24 @@ unsafe fn native_pkcs1v15_encrypt(
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
-            return Err(WolfCryptError::Ffi { code: key_size, func: "wolfcrypt_rsa_key_size_bytes" });
+            return Err(WolfCryptError::Ffi {
+                code: key_size,
+                func: "wolfcrypt_rsa_key_size_bytes",
+            });
         }
         let mut out = vec![0u8; key_size as usize];
         let rc = wolfcrypt_rsa_pkcs1v15_encrypt(
             ctx,
-            plaintext.as_ptr(), plaintext.len() as u32,
-            out.as_mut_ptr(), key_size as u32,
+            plaintext.as_ptr(),
+            plaintext.len() as u32,
+            out.as_mut_ptr(),
+            key_size as u32,
         );
         if rc <= 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_pkcs1v15_encrypt" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_rsa_pkcs1v15_encrypt",
+            });
         }
         out.truncate(rc as usize);
         Ok(out)
@@ -374,16 +425,24 @@ unsafe fn native_pkcs1v15_decrypt(
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
-            return Err(WolfCryptError::Ffi { code: key_size, func: "wolfcrypt_rsa_key_size_bytes" });
+            return Err(WolfCryptError::Ffi {
+                code: key_size,
+                func: "wolfcrypt_rsa_key_size_bytes",
+            });
         }
         let mut out = vec![0u8; key_size as usize];
         let rc = wolfcrypt_rsa_pkcs1v15_decrypt(
             ctx,
-            ciphertext.as_ptr(), ciphertext.len() as u32,
-            out.as_mut_ptr(), key_size as u32,
+            ciphertext.as_ptr(),
+            ciphertext.len() as u32,
+            out.as_mut_ptr(),
+            key_size as u32,
         );
         if rc <= 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_pkcs1v15_decrypt" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_rsa_pkcs1v15_decrypt",
+            });
         }
         out.truncate(rc as usize);
         Ok(out)
@@ -423,9 +482,14 @@ impl RsaPrivateKey {
             let rc = wolfcrypt_rsa_import_private_pkcs1(ctx, der.as_ptr(), der.len() as u32);
             if rc != 0 {
                 wolfcrypt_rsa_free(ctx);
-                return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_import_private_pkcs1" });
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wolfcrypt_rsa_import_private_pkcs1",
+                });
             }
-            Ok(Self { ctx: UnsafeCell::new(ctx) })
+            Ok(Self {
+                ctx: UnsafeCell::new(ctx),
+            })
         }
     }
 
@@ -438,7 +502,10 @@ impl RsaPrivateKey {
             let mut len = buf.len() as u32;
             let rc = wolfcrypt_rsa_export_private_pkcs1(ctx, buf.as_mut_ptr(), &mut len);
             if rc != 0 {
-                return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_export_private_pkcs1" });
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wolfcrypt_rsa_export_private_pkcs1",
+                });
             }
             buf.truncate(len as usize);
             Ok(buf)
@@ -455,9 +522,14 @@ impl RsaPrivateKey {
             let rc = wolfcrypt_rsa_generate(ctx, bits as i32);
             if rc != 0 {
                 wolfcrypt_rsa_free(ctx);
-                return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_generate" });
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wolfcrypt_rsa_generate",
+                });
             }
-            Ok(Self { ctx: UnsafeCell::new(ctx) })
+            Ok(Self {
+                ctx: UnsafeCell::new(ctx),
+            })
         }
     }
 
@@ -483,7 +555,9 @@ impl RsaPrivateKey {
             let rc = wolfcrypt_rsa_import_public_spki(new_ctx, spki.as_ptr(), spki_len);
             assert!(rc == 0, "wolfcrypt_rsa_import_public_spki failed: {rc}");
 
-            RsaPublicKey { ctx: UnsafeCell::new(new_ctx) }
+            RsaPublicKey {
+                ctx: UnsafeCell::new(new_ctx),
+            }
         }
     }
 
@@ -552,21 +626,25 @@ impl RsaPrivateKey {
 
 impl Drop for RsaPrivateKey {
     fn drop(&mut self) {
-        unsafe { wolfcrypt_rsa_free(*self.ctx.get()); }
+        unsafe {
+            wolfcrypt_rsa_free(*self.ctx.get());
+        }
     }
 }
 
 /// Signs with PKCS#1v1.5 / SHA-256.
 impl signature_trait::Signer<RsaPkcs1v15Signature> for RsaPrivateKey {
     fn try_sign(&self, msg: &[u8]) -> Result<RsaPkcs1v15Signature, signature_trait::Error> {
-        self.sign_pkcs1v15(msg).map_err(|_| signature_trait::Error::new())
+        self.sign_pkcs1v15(msg)
+            .map_err(|_| signature_trait::Error::new())
     }
 }
 
 /// Signs with PSS / SHA-256.
 impl signature_trait::Signer<RsaPssSignature> for RsaPrivateKey {
     fn try_sign(&self, msg: &[u8]) -> Result<RsaPssSignature, signature_trait::Error> {
-        self.sign_pss(msg).map_err(|_| signature_trait::Error::new())
+        self.sign_pss(msg)
+            .map_err(|_| signature_trait::Error::new())
     }
 }
 
@@ -603,9 +681,14 @@ impl RsaPublicKey {
             let rc = wolfcrypt_rsa_import_public_spki(ctx, der.as_ptr(), der.len() as u32);
             if rc != 0 {
                 wolfcrypt_rsa_free(ctx);
-                return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_rsa_import_public_spki" });
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wolfcrypt_rsa_import_public_spki",
+                });
             }
-            Ok(Self { ctx: UnsafeCell::new(ctx) })
+            Ok(Self {
+                ctx: UnsafeCell::new(ctx),
+            })
         }
     }
 
@@ -662,7 +745,9 @@ impl RsaPublicKey {
 
 impl Drop for RsaPublicKey {
     fn drop(&mut self) {
-        unsafe { wolfcrypt_rsa_free(*self.ctx.get()); }
+        unsafe {
+            wolfcrypt_rsa_free(*self.ctx.get());
+        }
     }
 }
 
@@ -775,14 +860,13 @@ impl NativeRsaKey {
     fn alloc() -> Result<*mut wolfcrypt_rs::RsaKey, WolfCryptError> {
         let mut rc: core::ffi::c_int = 0;
         let key = unsafe {
-            wolfcrypt_rs::wc_NewRsaKey(
-                ptr::null_mut(),
-                wolfcrypt_rs::INVALID_DEVID,
-                &mut rc,
-            )
+            wolfcrypt_rs::wc_NewRsaKey(ptr::null_mut(), wolfcrypt_rs::INVALID_DEVID, &mut rc)
         };
         if key.is_null() {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_NewRsaKey" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_NewRsaKey",
+            });
         }
         Ok(key)
     }
@@ -796,16 +880,14 @@ impl NativeRsaKey {
     ) -> Result<Self, WolfCryptError> {
         let key = Self::alloc()?;
         let rc = unsafe {
-            wolfcrypt_rs::wc_MakeRsaKey(
-                key,
-                bits as core::ffi::c_int,
-                65537,
-                &mut rng.rng,
-            )
+            wolfcrypt_rs::wc_MakeRsaKey(key, bits as core::ffi::c_int, 65537, &mut rng.rng)
         };
         if rc != 0 {
             unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_MakeRsaKey" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_MakeRsaKey",
+            });
         }
         Ok(Self { key })
     }
@@ -818,14 +900,13 @@ impl NativeRsaKey {
         // Start with a generous buffer; typical 2048-bit key DER is ~1200 bytes.
         let mut buf = alloc::vec![0u8; 4096];
         let rc = unsafe {
-            wolfcrypt_rs::wc_RsaKeyToDer(
-                self.key,
-                buf.as_mut_ptr(),
-                len_as_u32(buf.len()),
-            )
+            wolfcrypt_rs::wc_RsaKeyToDer(self.key, buf.as_mut_ptr(), len_as_u32(buf.len()))
         };
         if rc < 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaKeyToDer" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_RsaKeyToDer",
+            });
         }
         buf.truncate(rc as usize);
         Ok(buf)
@@ -839,17 +920,17 @@ impl NativeRsaKey {
         let key = Self::alloc()?;
         let mut idx: u32 = 0;
         let rc = unsafe {
-            wolfcrypt_rs::wc_RsaPrivateKeyDecode(
-                der.as_ptr(),
-                &mut idx,
-                key,
-                len_as_u32(der.len()),
-            )
+            wolfcrypt_rs::wc_RsaPrivateKeyDecode(der.as_ptr(), &mut idx, key, len_as_u32(der.len()))
         };
         if rc != 0 {
             // Clean up on failure.
-            unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()); }
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaPrivateKeyDecode" });
+            unsafe {
+                wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut());
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_RsaPrivateKeyDecode",
+            });
         }
         Ok(Self { key })
     }
@@ -862,16 +943,16 @@ impl NativeRsaKey {
         let key = Self::alloc()?;
         let mut idx: u32 = 0;
         let rc = unsafe {
-            wolfcrypt_rs::wc_RsaPublicKeyDecode(
-                der.as_ptr(),
-                &mut idx,
-                key,
-                len_as_u32(der.len()),
-            )
+            wolfcrypt_rs::wc_RsaPublicKeyDecode(der.as_ptr(), &mut idx, key, len_as_u32(der.len()))
         };
         if rc != 0 {
-            unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()); }
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaPublicKeyDecode" });
+            unsafe {
+                wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut());
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_RsaPublicKeyDecode",
+            });
         }
         Ok(Self { key })
     }
@@ -891,8 +972,13 @@ impl NativeRsaKey {
             )
         };
         if rc != 0 {
-            unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()); }
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_MakeRsaKey" });
+            unsafe {
+                wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut());
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_MakeRsaKey",
+            });
         }
         Ok(Self { key })
     }
@@ -902,7 +988,10 @@ impl NativeRsaKey {
     pub fn encrypt_size(&self) -> Result<usize, WolfCryptError> {
         let sz = unsafe { wolfcrypt_rs::wc_RsaEncryptSize(self.key as *const _) };
         if sz <= 0 {
-            return Err(WolfCryptError::Ffi { code: sz, func: "wc_RsaEncryptSize" });
+            return Err(WolfCryptError::Ffi {
+                code: sz,
+                func: "wc_RsaEncryptSize",
+            });
         }
         Ok(sz as usize)
     }
@@ -970,20 +1059,31 @@ impl NativeRsaKey {
         let key = Self::alloc()?;
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaPrivateKeyDecodeRaw(
-                n.as_ptr(), len_as_u32(n.len()),
-                e.as_ptr(), len_as_u32(e.len()),
-                d.as_ptr(), len_as_u32(d.len()),
-                iqmp.as_ptr(), len_as_u32(iqmp.len()),
-                p.as_ptr(), len_as_u32(p.len()),
-                q.as_ptr(), len_as_u32(q.len()),
-                ptr::null(), 0, // dp — let wolfCrypt compute
-                ptr::null(), 0, // dq — let wolfCrypt compute
+                n.as_ptr(),
+                len_as_u32(n.len()),
+                e.as_ptr(),
+                len_as_u32(e.len()),
+                d.as_ptr(),
+                len_as_u32(d.len()),
+                iqmp.as_ptr(),
+                len_as_u32(iqmp.len()),
+                p.as_ptr(),
+                len_as_u32(p.len()),
+                q.as_ptr(),
+                len_as_u32(q.len()),
+                ptr::null(),
+                0, // dp — let wolfCrypt compute
+                ptr::null(),
+                0, // dq — let wolfCrypt compute
                 key,
             )
         };
         if rc != 0 {
             unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaPrivateKeyDecodeRaw" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_RsaPrivateKeyDecodeRaw",
+            });
         }
         Ok(Self { key })
     }
@@ -992,7 +1092,10 @@ impl NativeRsaKey {
     pub fn key_size(&self) -> Result<usize, WolfCryptError> {
         let rc = unsafe { wolfcrypt_rs::wc_RsaEncryptSize(self.key) };
         if rc < 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaEncryptSize" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_RsaEncryptSize",
+            });
         }
         Ok(rc as usize)
     }
@@ -1020,7 +1123,10 @@ impl NativeRsaKey {
             )
         };
         if rc < 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaSSL_Sign" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_RsaSSL_Sign",
+            });
         }
         out.truncate(rc as usize);
         Ok(out)
@@ -1044,7 +1150,10 @@ impl NativeRsaKey {
             )
         };
         if rc < 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_RsaSSL_Verify" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_RsaSSL_Verify",
+            });
         }
         out.truncate(rc as usize);
         Ok(out)
@@ -1055,9 +1164,7 @@ impl NativeRsaKey {
     /// Uses `wc_RsaExportKey` for (e, n, d, p, q) and extracts iqmp from
     /// the PKCS#1 DER via `wc_RsaKeyToDer` (the only way to get iqmp out
     /// of wolfCrypt's opaque `RsaKey`).
-    pub fn export_raw_components(
-        &mut self,
-    ) -> Result<RsaRawComponents, WolfCryptError> {
+    pub fn export_raw_components(&mut self) -> Result<RsaRawComponents, WolfCryptError> {
         // Use key_size as a conservative upper bound for all component buffers.
         let sz = self.key_size()?;
         let mut e = alloc::vec![0u8; sz];
@@ -1074,11 +1181,16 @@ impl NativeRsaKey {
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaExportKey(
                 self.key,
-                e.as_mut_ptr(), &mut e_sz,
-                n.as_mut_ptr(), &mut n_sz,
-                d.as_mut_ptr(), &mut d_sz,
-                p.as_mut_ptr(), &mut p_sz,
-                q.as_mut_ptr(), &mut q_sz,
+                e.as_mut_ptr(),
+                &mut e_sz,
+                n.as_mut_ptr(),
+                &mut n_sz,
+                d.as_mut_ptr(),
+                &mut d_sz,
+                p.as_mut_ptr(),
+                &mut p_sz,
+                q.as_mut_ptr(),
+                &mut q_sz,
             )
         };
         check(rc, "wc_RsaExportKey")?;
@@ -1094,7 +1206,14 @@ impl NativeRsaKey {
         let der = self.to_pkcs1_der()?;
         let iqmp = extract_iqmp_from_pkcs1_der(&der)?;
 
-        Ok(RsaRawComponents { e, n, d, p, q, iqmp })
+        Ok(RsaRawComponents {
+            e,
+            n,
+            d,
+            p,
+            q,
+            iqmp,
+        })
     }
 
     /// Import an RSA public key from raw big-endian (n, e) byte arrays.
@@ -1199,11 +1318,16 @@ fn der_push_length(len: usize, out: &mut alloc::vec::Vec<u8>) {
 ///   SEQUENCE { version, n, e, d, p, q, dp, dq, iqmp }
 #[cfg(feature = "rsa-direct")]
 fn extract_iqmp_from_pkcs1_der(der: &[u8]) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
-    let err = || WolfCryptError::Ffi { code: -1, func: "extract_iqmp_from_pkcs1_der" };
+    let err = || WolfCryptError::Ffi {
+        code: -1,
+        func: "extract_iqmp_from_pkcs1_der",
+    };
     let mut pos = 0;
 
     // SEQUENCE tag
-    if pos >= der.len() || der[pos] != 0x30 { return Err(err()); }
+    if pos >= der.len() || der[pos] != 0x30 {
+        return Err(err());
+    }
     pos = pos.checked_add(1).ok_or_else(err)?;
     let (_seq_len, hdr) = der_read_len(der, pos).ok_or_else(err)?;
     pos = pos.checked_add(hdr).ok_or_else(err)?;
@@ -1226,9 +1350,13 @@ fn der_read_len(data: &[u8], pos: usize) -> Option<(usize, usize)> {
         Some((b as usize, 1))
     } else {
         let n = (b & 0x7f) as usize;
-        if n == 0 || n > 4 { return None; }
+        if n == 0 || n > 4 {
+            return None;
+        }
         let end = pos.checked_add(1)?.checked_add(n)?;
-        if end > data.len() { return None; }
+        if end > data.len() {
+            return None;
+        }
         let mut len = 0usize;
         for i in 0..n {
             len = len.checked_shl(8)? | (*data.get(pos + 1 + i)? as usize);
@@ -1241,23 +1369,33 @@ fn der_read_len(data: &[u8], pos: usize) -> Option<(usize, usize)> {
 /// Returns the unsigned value bytes.
 #[cfg(feature = "rsa-direct")]
 fn der_read_int(data: &[u8], pos: usize) -> Option<&[u8]> {
-    if *data.get(pos)? != 0x02 { return None; }
+    if *data.get(pos)? != 0x02 {
+        return None;
+    }
     let (len, hdr) = der_read_len(data, pos.checked_add(1)?)?;
     let start = pos.checked_add(1)?.checked_add(hdr)?;
     let end = start.checked_add(len)?;
-    if end > data.len() { return None; }
+    if end > data.len() {
+        return None;
+    }
     let mut val = &data[start..end];
-    while val.len() > 1 && val[0] == 0 { val = &val[1..]; }
+    while val.len() > 1 && val[0] == 0 {
+        val = &val[1..];
+    }
     Some(val)
 }
 
 /// Skip a DER INTEGER at `pos`, returning the position after it.
 #[cfg(feature = "rsa-direct")]
 fn der_skip_int(data: &[u8], pos: usize) -> Option<usize> {
-    if *data.get(pos)? != 0x02 { return None; }
+    if *data.get(pos)? != 0x02 {
+        return None;
+    }
     let (len, hdr) = der_read_len(data, pos.checked_add(1)?)?;
     let end = pos.checked_add(1)?.checked_add(hdr)?.checked_add(len)?;
-    if end > data.len() { return None; }
+    if end > data.len() {
+        return None;
+    }
     Some(end)
 }
 

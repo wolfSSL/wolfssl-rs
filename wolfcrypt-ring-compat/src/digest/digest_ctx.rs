@@ -1,9 +1,7 @@
-use crate::wolfcrypt_rs::{
-    EVP_DigestInit_ex, EVP_MD_CTX_copy, EVP_MD_CTX_new, EVP_MD_CTX,
-};
 use crate::digest::{match_digest_type, Algorithm};
 use crate::error::Unspecified;
 use crate::ptr::LcPtr;
+use crate::wolfcrypt_rs::{EVP_DigestInit_ex, EVP_MD_CTX_copy, EVP_MD_CTX_new, EVP_MD_CTX};
 use core::ptr::null_mut;
 
 pub(crate) struct DigestContext(LcPtr<EVP_MD_CTX>);
@@ -52,8 +50,8 @@ impl Clone for DigestContext {
 impl DigestContext {
     fn try_clone(&self) -> Result<Self, &'static str> {
         // SAFETY: EVP_MD_CTX_new returns a heap-allocated context or null (checked by LcPtr::new).
-        let mut dc = LcPtr::new(unsafe { EVP_MD_CTX_new() })
-            .map_err(|_| "EVP_MD_CTX_new failed")?;
+        let mut dc =
+            LcPtr::new(unsafe { EVP_MD_CTX_new() }).map_err(|_| "EVP_MD_CTX_new failed")?;
         // SAFETY: both contexts are valid; EVP_MD_CTX_copy performs a deep copy.
         unsafe {
             if 1 != EVP_MD_CTX_copy(dc.as_mut_ptr(), self.as_ptr()) {

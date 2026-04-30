@@ -45,20 +45,16 @@
 use core::ffi::c_int;
 use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 
-use aes::Aes256;
 use aes::cipher::{BlockEncrypt, KeyInit, KeyIvInit};
-use ghash::{GHash, universal_hash::UniversalHash};
-use cbc::cipher::{block_padding::NoPadding, BlockEncryptMut, BlockDecryptMut};
+use aes::Aes256;
+use cbc::cipher::{block_padding::NoPadding, BlockDecryptMut, BlockEncryptMut};
+use ghash::{universal_hash::UniversalHash, GHash};
 use subtle::ConstantTimeEq;
 use zeroize::Zeroize;
 
 use wolfcrypt_sys::{
-    wc_CryptoInfo,
-    wc_CipherType_WC_CIPHER_AES_GCM,
-    wc_CipherType_WC_CIPHER_AES_CBC,
-    wolfCrypt_ErrorCodes_AES_GCM_AUTH_E,
-    wc_CryptoCb_AesAuthEnc,
-    wc_CryptoCb_AesAuthDec,
+    wc_CipherType_WC_CIPHER_AES_CBC, wc_CipherType_WC_CIPHER_AES_GCM, wc_CryptoCb_AesAuthDec,
+    wc_CryptoCb_AesAuthEnc, wc_CryptoInfo, wolfCrypt_ErrorCodes_AES_GCM_AUTH_E,
 };
 
 // Type alias for the very long bindgen-generated AES-CBC info struct name.
@@ -292,11 +288,7 @@ unsafe fn dispatch_aescbc(enc: c_int, cbc: &WcAesCbcInfo) -> c_int {
     // wolfSSL stores the IV in reg as a flat byte copy via XMEMCPY; reading
     // the [word32; 4] field as bytes gives the IV in wire order.
     let mut iv = [0u8; 16];
-    core::ptr::copy_nonoverlapping(
-        (*cbc.aes).reg.as_ptr() as *const u8,
-        iv.as_mut_ptr(),
-        16,
-    );
+    core::ptr::copy_nonoverlapping((*cbc.aes).reg.as_ptr() as *const u8, iv.as_mut_ptr(), 16);
 
     let input = core::slice::from_raw_parts(cbc.in_ as *const u8, cbc.sz as usize);
     let output = core::slice::from_raw_parts_mut(cbc.out, cbc.sz as usize);
@@ -316,12 +308,12 @@ unsafe fn dispatch_aescbc(enc: c_int, cbc: &WcAesCbcInfo) -> c_int {
     // Update aes->reg with the last ciphertext block for chaining correctness.
     // For encrypt: last 16 bytes of ciphertext; for decrypt: last 16 bytes of
     // the original ciphertext (which becomes the IV for the next decrypt block).
-    let last_ct = if enc != 0 { &output[output.len() - 16..] } else { &input[input.len() - 16..] };
-    core::ptr::copy_nonoverlapping(
-        last_ct.as_ptr(),
-        (*cbc.aes).reg.as_mut_ptr() as *mut u8,
-        16,
-    );
+    let last_ct = if enc != 0 {
+        &output[output.len() - 16..]
+    } else {
+        &input[input.len() - 16..]
+    };
+    core::ptr::copy_nonoverlapping(last_ct.as_ptr(), (*cbc.aes).reg.as_mut_ptr() as *mut u8, 16);
 
     AES_DISPATCH_COUNT.fetch_add(1, Relaxed);
     0
@@ -404,12 +396,7 @@ fn gcm_decrypt_256(
 ///
 /// Tag = E_K(J0) XOR GHASH_H(AAD || ciphertext || lengths)
 /// where J0 = IV || 0x00000001 and H = E_K(0^128).
-fn compute_gcm_auth_tag(
-    cipher: &Aes256,
-    iv: &[u8; 12],
-    aad: &[u8],
-    ciphertext: &[u8],
-) -> [u8; 16] {
+fn compute_gcm_auth_tag(cipher: &Aes256, iv: &[u8; 12], aad: &[u8], ciphertext: &[u8]) -> [u8; 16] {
     // H = AES_K(0^128): the GHASH key.
     let mut h = aes::cipher::Block::<Aes256>::default(); // 16 zero bytes
     cipher.encrypt_block(&mut h);

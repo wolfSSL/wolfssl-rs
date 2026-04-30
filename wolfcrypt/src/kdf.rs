@@ -17,8 +17,8 @@
 //!
 //! All functions are stateless (no structs) and return `Result<(), WolfCryptError>`.
 
-use core::ffi::c_int;
 use crate::error::{check, len_as_c_int, len_as_u32, WolfCryptError};
+use core::ffi::c_int;
 
 // ======================================================================
 // TLS PRF (wc_PRF)
@@ -157,7 +157,7 @@ pub fn ssh_kdf(
             len_as_u32(out.len()),
             key.as_ptr(),
             len_as_u32(key.len()),
-            key.as_ptr(),         // h = same as k for this simplified API
+            key.as_ptr(), // h = same as k for this simplified API
             len_as_u32(key.len()),
             session_id.as_ptr(),
             len_as_u32(session_id.len()),

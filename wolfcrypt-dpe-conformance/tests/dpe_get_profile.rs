@@ -21,7 +21,10 @@ fn get_profile_returns_flags() {
         Response::GetProfile(resp) => {
             // The flags field should reflect the support flags we configured.
             // At minimum, AUTO_INIT and SIMULATION should be indicated.
-            assert!(resp.flags != 0, "GetProfile flags should be non-zero for DEFAULT_SUPPORT");
+            assert!(
+                resp.flags != 0,
+                "GetProfile flags should be non-zero for DEFAULT_SUPPORT"
+            );
         }
         _ => panic!("Expected GetProfile response, got unexpected response"),
     }

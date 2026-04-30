@@ -5,7 +5,7 @@
 
 #[cfg(wolfssl_prf)]
 mod tls_prf_tests {
-    use wolfcrypt::kdf::{tls_prf, tls12_prf, SHA256_MAC, SHA384_MAC};
+    use wolfcrypt::kdf::{tls12_prf, tls_prf, SHA256_MAC, SHA384_MAC};
 
     // Basic smoke test: tls_prf produces non-zero output
     #[test]
@@ -15,7 +15,10 @@ mod tls_prf_tests {
         let mut out = [0u8; 48];
 
         tls_prf(&secret, &seed, SHA256_MAC, &mut out).unwrap();
-        assert!(out.iter().any(|&b| b != 0), "PRF output must not be all zeros");
+        assert!(
+            out.iter().any(|&b| b != 0),
+            "PRF output must not be all zeros"
+        );
     }
 
     // Same inputs always produce same output (determinism)
@@ -43,7 +46,10 @@ mod tls_prf_tests {
         tls_prf(&[0x01; 32], &seed, SHA256_MAC, &mut out1).unwrap();
         tls_prf(&[0x02; 32], &seed, SHA256_MAC, &mut out2).unwrap();
 
-        assert_ne!(out1, out2, "different secrets must produce different output");
+        assert_ne!(
+            out1, out2,
+            "different secrets must produce different output"
+        );
     }
 
     // Different seeds produce different output

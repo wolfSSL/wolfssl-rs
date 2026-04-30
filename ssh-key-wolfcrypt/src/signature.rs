@@ -1,6 +1,6 @@
 //! Signatures (e.g. CA signatures over SSH certificates)
 
-use crate::{Algorithm, EcdsaCurve, Error, Mpint, PrivateKey, PublicKey, Result, private, public};
+use crate::{private, public, Algorithm, EcdsaCurve, Error, Mpint, PrivateKey, PublicKey, Result};
 use alloc::vec::Vec;
 use core::fmt;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
@@ -16,13 +16,8 @@ use crate::{
 };
 
 #[cfg(feature = "rsa")]
-use {
-    crate::{
-        HashAlg,
-        private::RsaKeypair,
-        private::rsa::import_rsa_public_key,
-        public::RsaPublicKey,
-    },
+use crate::{
+    private::rsa::import_rsa_public_key, private::RsaKeypair, public::RsaPublicKey, HashAlg,
 };
 
 #[cfg(any(feature = "ed25519", feature = "p256"))]
@@ -354,8 +349,7 @@ impl Verifier<Signature> for public::KeyData {
 /// Returns [`Error::WolfCrypt`] if key import or the signing operation fails.
 #[cfg(feature = "ed25519")]
 fn ed25519_sign(seed: &[u8], pub_key: &[u8], message: &[u8]) -> Result<[u8; 64]> {
-    wolfcrypt::ed25519::ed25519_sign_raw(seed, pub_key, message)
-        .map_err(Error::from)
+    wolfcrypt::ed25519::ed25519_sign_raw(seed, pub_key, message).map_err(Error::from)
 }
 
 /// Verify an Ed25519 signature via wolfcrypt's standalone function.
@@ -364,8 +358,7 @@ fn ed25519_sign(seed: &[u8], pub_key: &[u8], message: &[u8]) -> Result<[u8; 64]>
 /// if the signature is invalid.
 #[cfg(feature = "ed25519")]
 fn ed25519_verify(pub_key: &[u8], message: &[u8], sig: &[u8]) -> Result<()> {
-    wolfcrypt::ed25519::ed25519_verify_raw(pub_key, message, sig)
-        .map_err(Error::from)
+    wolfcrypt::ed25519::ed25519_verify_raw(pub_key, message, sig).map_err(Error::from)
 }
 
 #[cfg(feature = "ed25519")]
@@ -453,10 +446,7 @@ const MAX_ECDSA_DIGEST_SIZE: usize = 64;
 /// Hash `message` with the curve-appropriate SHA, writing into a stack buffer.
 /// Returns `(buffer, length)` — the digest is `&buf[..len]`.
 #[cfg(any(feature = "p256", feature = "p384", feature = "p521"))]
-fn ecdsa_hash_message(
-    curve: EcdsaCurve,
-    message: &[u8],
-) -> ([u8; MAX_ECDSA_DIGEST_SIZE], usize) {
+fn ecdsa_hash_message(curve: EcdsaCurve, message: &[u8]) -> ([u8; MAX_ECDSA_DIGEST_SIZE], usize) {
     use sha2::{Digest as _, Sha256, Sha384, Sha512};
     let mut buf = [0u8; MAX_ECDSA_DIGEST_SIZE];
     let len = match curve {
@@ -512,8 +502,7 @@ fn ecdsa_hash_message(
 /// Flow: DER → wolfCrypt extracts raw (r, s) → encode as SSH mpints.
 #[cfg(any(feature = "p256", feature = "p384", feature = "p521"))]
 fn der_sig_to_ssh(der: &[u8]) -> Result<Vec<u8>> {
-    let (r_bytes, s_bytes) =
-        wolfcrypt::ecc::ecc_sig_der_to_rs(der).map_err(Error::from)?;
+    let (r_bytes, s_bytes) = wolfcrypt::ecc::ecc_sig_der_to_rs(der).map_err(Error::from)?;
 
     let mut data = Vec::with_capacity(r_bytes.len() + s_bytes.len() + 12);
     Mpint::from_positive_bytes(&r_bytes)?.encode(&mut data)?;
@@ -599,12 +588,10 @@ fn ecdsa_sign_message(
     let hash = &hash_buf[..hash_len];
     let curve_id = ecdsa_curve_to_ecc_id(curve);
 
-    let mut key = wolfcrypt::ecc::EccKey::from_private(curve_id, private_key_bytes)
-        .map_err(Error::from)?;
+    let mut key =
+        wolfcrypt::ecc::EccKey::from_private(curve_id, private_key_bytes).map_err(Error::from)?;
 
-    let der_sig = with_cached_rng(|rng| {
-        key.sign_hash(hash, rng).map_err(Error::from)
-    })?;
+    let der_sig = with_cached_rng(|rng| key.sign_hash(hash, rng).map_err(Error::from))?;
 
     der_sig_to_ssh(&der_sig)
 }
@@ -621,8 +608,7 @@ fn ecdsa_verify_message(
     let hash = &hash_buf[..hash_len];
     let der_sig = ssh_sig_to_der(ssh_sig_data)?;
 
-    let mut key =
-        wolfcrypt::ecc::EccKey::from_public_x963(public_key_sec1).map_err(Error::from)?;
+    let mut key = wolfcrypt::ecc::EccKey::from_public_x963(public_key_sec1).map_err(Error::from)?;
 
     let valid = key.verify_hash(&der_sig, &hash).map_err(Error::from)?;
     if valid {
@@ -639,7 +625,11 @@ fn ecdsa_verify_message(
 /// Maps `SIZE` → `EcdsaCurve` and delegates to [`ecdsa_sign_message`],
 /// which imports the private key once and derives the public point internally.
 #[cfg(any(feature = "p256", feature = "p384", feature = "p521"))]
-fn ecdsa_try_sign(curve: EcdsaCurve, private_key: &[u8], message: &[u8]) -> signature::Result<Signature> {
+fn ecdsa_try_sign(
+    curve: EcdsaCurve,
+    private_key: &[u8],
+    message: &[u8],
+) -> signature::Result<Signature> {
     let data = ecdsa_sign_message(curve, private_key, message)
         .map_err(|e| signature::Error::from_source(e))?;
     Ok(Signature {
@@ -715,17 +705,35 @@ fn rsa_try_sign(
     hash: Option<HashAlg>,
     message: &[u8],
 ) -> signature::Result<Signature> {
-    let n_bytes = keypair.public().n().as_positive_bytes()
+    let n_bytes = keypair
+        .public()
+        .n()
+        .as_positive_bytes()
         .ok_or(signature::Error::new())?;
-    let e_bytes = keypair.public().e().as_positive_bytes()
+    let e_bytes = keypair
+        .public()
+        .e()
+        .as_positive_bytes()
         .ok_or(signature::Error::new())?;
-    let d_bytes = keypair.private().d().as_positive_bytes()
+    let d_bytes = keypair
+        .private()
+        .d()
+        .as_positive_bytes()
         .ok_or(signature::Error::new())?;
-    let p_bytes = keypair.private().p().as_positive_bytes()
+    let p_bytes = keypair
+        .private()
+        .p()
+        .as_positive_bytes()
         .ok_or(signature::Error::new())?;
-    let q_bytes = keypair.private().q().as_positive_bytes()
+    let q_bytes = keypair
+        .private()
+        .q()
+        .as_positive_bytes()
         .ok_or(signature::Error::new())?;
-    let iqmp_bytes = keypair.private().iqmp().as_positive_bytes()
+    let iqmp_bytes = keypair
+        .private()
+        .iqmp()
+        .as_positive_bytes()
         .ok_or(signature::Error::new())?;
 
     // Import directly from raw components — wolfCrypt computes dp/dq.
@@ -740,7 +748,9 @@ fn rsa_try_sign(
 
     // PKCS#1v1.5 sign via NativeRsaKey — uses cached thread-local RNG
     let sig = with_cached_rng(|rng| {
-        wc_key.sign_pkcs1v15_raw(&digest_info, rng).map_err(Error::from)
+        wc_key
+            .sign_pkcs1v15_raw(&digest_info, rng)
+            .map_err(Error::from)
     })
     .map_err(|e| signature::Error::from_source(e))?;
 
@@ -788,19 +798,25 @@ fn build_digest_info(hash: Option<HashAlg>, message: &[u8]) -> Result<Vec<u8>> {
 
     let (prefix, hash_output): (&[u8], Vec<u8>) = match hash {
         Some(HashAlg::Sha256) => (
-            &[0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
-              0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20],
+            &[
+                0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02,
+                0x01, 0x05, 0x00, 0x04, 0x20,
+            ],
             Sha256::digest(message).to_vec(),
         ),
         Some(HashAlg::Sha512) => (
-            &[0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
-              0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40],
+            &[
+                0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02,
+                0x03, 0x05, 0x00, 0x04, 0x40,
+            ],
             Sha512::digest(message).to_vec(),
         ),
         #[cfg(feature = "sha1")]
         None => (
-            &[0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02,
-              0x1a, 0x05, 0x00, 0x04, 0x14],
+            &[
+                0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04,
+                0x14,
+            ],
             {
                 use sha1::Sha1;
                 Sha1::digest(message).to_vec()
@@ -828,9 +844,13 @@ impl Verifier<Signature> for RsaPublicKey {
     fn verify(&self, message: &[u8], signature: &Signature) -> signature::Result<()> {
         match signature.algorithm {
             Algorithm::Rsa { hash } => {
-                let n_bytes = self.n().as_positive_bytes()
+                let n_bytes = self
+                    .n()
+                    .as_positive_bytes()
                     .ok_or(signature::Error::new())?;
-                let e_bytes = self.e().as_positive_bytes()
+                let e_bytes = self
+                    .e()
+                    .as_positive_bytes()
                     .ok_or(signature::Error::new())?;
 
                 // Import into wolfcrypt NativeRsaKey from raw (n, e)
@@ -838,7 +858,8 @@ impl Verifier<Signature> for RsaPublicKey {
                     .map_err(|e| signature::Error::from_source(Error::from(e)))?;
 
                 // Recover the DigestInfo from the signature
-                let recovered = wc_key.verify_pkcs1v15_raw(&signature.data)
+                let recovered = wc_key
+                    .verify_pkcs1v15_raw(&signature.data)
                     .map_err(|e| signature::Error::from_source(Error::from(e)))?;
 
                 // Build the expected DigestInfo from the message
@@ -989,11 +1010,9 @@ mod tests {
 
     #[test]
     fn placeholder() {
-        assert!(
-            !Signature::try_from(ED25519_SIGNATURE)
-                .unwrap()
-                .is_placeholder()
-        );
+        assert!(!Signature::try_from(ED25519_SIGNATURE)
+            .unwrap()
+            .is_placeholder());
 
         let placeholder = Signature::placeholder();
         assert!(placeholder.is_placeholder());

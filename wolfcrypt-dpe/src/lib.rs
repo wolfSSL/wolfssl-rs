@@ -13,18 +13,17 @@ pub(crate) mod prelude {
 
 use crate::prelude::*;
 
+mod ecdsa;
 mod error;
 mod hash;
 mod hkdf;
-mod ecdsa;
 mod rng;
 
 use core::marker::PhantomData;
 
 use caliptra_dpe_crypto::{
-    Crypto, CryptoError, CryptoSuite, Digest, DigestAlgorithm,
-    DigestType, ExportedCdiHandle, PubKey, SignData, Signature, SignatureAlgorithm,
-    SignatureType, MAX_EXPORTED_CDI_SIZE,
+    Crypto, CryptoError, CryptoSuite, Digest, DigestAlgorithm, DigestType, ExportedCdiHandle,
+    PubKey, SignData, Signature, SignatureAlgorithm, SignatureType, MAX_EXPORTED_CDI_SIZE,
 };
 
 use subtle::ConstantTimeEq;
@@ -138,7 +137,11 @@ impl<S: SignatureType, D: DigestType> WolfCryptDpeImpl<S, D> {
     ///
     /// Imports the key into wolfCrypt once and caches the handle so that
     /// subsequent `sign_with_alias` calls skip the EC point multiplication.
-    pub fn set_alias_key(&mut self, priv_key: WolfCryptPrivKey, pub_key: PubKey) -> Result<(), CryptoError> {
+    pub fn set_alias_key(
+        &mut self,
+        priv_key: WolfCryptPrivKey,
+        pub_key: PubKey,
+    ) -> Result<(), CryptoError> {
         let cached = CachedSigningKey::new(S::SIGNATURE_ALGORITHM, &priv_key.0, &pub_key)?;
         self.alias_signing_key = Some(cached);
         self.alias_pub_key = Some(pub_key);
@@ -192,7 +195,10 @@ fn ct_eq(a: &[u8], b: &[u8]) -> bool {
 
 impl<S: SignatureType, D: DigestType> Crypto for WolfCryptDpeImpl<S, D> {
     type Cdi = Vec<u8>;
-    type Hasher<'c> = WolfCryptHasher where Self: 'c;
+    type Hasher<'c>
+        = WolfCryptHasher
+    where
+        Self: 'c;
     type PrivKey = WolfCryptPrivKey;
 
     fn rand_bytes(&mut self, dst: &mut [u8]) -> Result<(), CryptoError> {
@@ -203,11 +209,7 @@ impl<S: SignatureType, D: DigestType> Crypto for WolfCryptDpeImpl<S, D> {
         WolfCryptHasher::new(D::DIGEST_ALGORITHM)
     }
 
-    fn derive_cdi(
-        &mut self,
-        measurement: &Digest,
-        info: &[u8],
-    ) -> Result<Self::Cdi, CryptoError> {
+    fn derive_cdi(&mut self, measurement: &Digest, info: &[u8]) -> Result<Self::Cdi, CryptoError> {
         hkdf::hkdf_derive_cdi(S::SIGNATURE_ALGORITHM, measurement, info)
     }
 

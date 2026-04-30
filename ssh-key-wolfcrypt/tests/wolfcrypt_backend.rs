@@ -28,7 +28,8 @@ fn sign_and_verify(private_key: &PrivateKey, message: &[u8]) -> Signature {
         .expect("signing should succeed");
 
     private_key
-        .public_key().key_data()
+        .public_key()
+        .key_data()
         .verify(message, &signature)
         .expect("verification should succeed");
 
@@ -37,7 +38,10 @@ fn sign_and_verify(private_key: &PrivateKey, message: &[u8]) -> Signature {
 
 /// Helper: assert that a signature does NOT verify against a different message.
 fn assert_wrong_message_rejected(private_key: &PrivateKey, signature: &Signature) {
-    let result = private_key.public_key().key_data().verify(b"wrong message", signature);
+    let result = private_key
+        .public_key()
+        .key_data()
+        .verify(b"wrong message", signature);
     assert!(
         result.is_err(),
         "verification should fail with wrong message",
@@ -79,7 +83,10 @@ mod ed25519_tests {
         let bad_signature =
             Signature::new(Algorithm::Ed25519, bad_bytes).expect("construct tampered signature");
 
-        let result = private_key.public_key().key_data().verify(TEST_MESSAGE, &bad_signature);
+        let result = private_key
+            .public_key()
+            .key_data()
+            .verify(TEST_MESSAGE, &bad_signature);
         assert!(
             result.is_err(),
             "verification should fail with tampered Ed25519 signature",
@@ -171,7 +178,10 @@ mod ecdsa_p256_tests {
             curve: EcdsaCurve::NistP256,
         };
         if let Ok(bad_signature) = Signature::new(alg, bad_bytes) {
-            let result = private_key.public_key().key_data().verify(TEST_MESSAGE, &bad_signature);
+            let result = private_key
+                .public_key()
+                .key_data()
+                .verify(TEST_MESSAGE, &bad_signature);
             assert!(
                 result.is_err(),
                 "verification should fail with tampered P-256 signature",
@@ -279,41 +289,53 @@ mod rsa_tests {
 
     #[test]
     fn parse_rsa_3072_key() {
-        let private_key = PrivateKey::from_openssh(RSA_3072_KEY).expect("parse RSA 3072 private key");
+        let private_key =
+            PrivateKey::from_openssh(RSA_3072_KEY).expect("parse RSA 3072 private key");
         assert!(matches!(private_key.algorithm(), Algorithm::Rsa { .. }));
     }
 
     #[test]
     fn parse_rsa_4096_key() {
-        let private_key = PrivateKey::from_openssh(RSA_4096_KEY).expect("parse RSA 4096 private key");
+        let private_key =
+            PrivateKey::from_openssh(RSA_4096_KEY).expect("parse RSA 4096 private key");
         assert!(matches!(private_key.algorithm(), Algorithm::Rsa { .. }));
     }
 
     #[test]
     fn sign_and_verify_rsa_3072() {
-        let private_key = PrivateKey::from_openssh(RSA_3072_KEY).expect("parse RSA 3072 private key");
+        let private_key =
+            PrivateKey::from_openssh(RSA_3072_KEY).expect("parse RSA 3072 private key");
         sign_and_verify(&private_key, TEST_MESSAGE);
     }
 
     #[test]
     fn sign_and_verify_rsa_4096() {
-        let private_key = PrivateKey::from_openssh(RSA_4096_KEY).expect("parse RSA 4096 private key");
+        let private_key =
+            PrivateKey::from_openssh(RSA_4096_KEY).expect("parse RSA 4096 private key");
         sign_and_verify(&private_key, TEST_MESSAGE);
     }
 
     #[test]
     fn tampered_signature_rejected() {
-        let private_key = PrivateKey::from_openssh(RSA_3072_KEY).expect("parse RSA 3072 private key");
+        let private_key =
+            PrivateKey::from_openssh(RSA_3072_KEY).expect("parse RSA 3072 private key");
         let signature = sign_and_verify(&private_key, TEST_MESSAGE);
 
         // Flip a bit in the raw signature bytes.
         let mut bad_bytes = signature.as_bytes().to_vec();
         bad_bytes[0] ^= 0x01;
-        let bad_signature =
-            Signature::new(Algorithm::Rsa { hash: Some(ssh_key::HashAlg::Sha512) }, bad_bytes)
-                .expect("construct tampered signature");
+        let bad_signature = Signature::new(
+            Algorithm::Rsa {
+                hash: Some(ssh_key::HashAlg::Sha512),
+            },
+            bad_bytes,
+        )
+        .expect("construct tampered signature");
 
-        let result = private_key.public_key().key_data().verify(TEST_MESSAGE, &bad_signature);
+        let result = private_key
+            .public_key()
+            .key_data()
+            .verify(TEST_MESSAGE, &bad_signature);
         assert!(
             result.is_err(),
             "verification should fail with tampered RSA signature",
@@ -322,7 +344,8 @@ mod rsa_tests {
 
     #[test]
     fn wrong_message_rejected() {
-        let private_key = PrivateKey::from_openssh(RSA_3072_KEY).expect("parse RSA 3072 private key");
+        let private_key =
+            PrivateKey::from_openssh(RSA_3072_KEY).expect("parse RSA 3072 private key");
         let signature = sign_and_verify(&private_key, TEST_MESSAGE);
         assert_wrong_message_rejected(&private_key, &signature);
     }
@@ -337,18 +360,19 @@ mod rsa_tests {
 #[cfg(all(feature = "ed25519", feature = "p256"))]
 #[test]
 fn cross_algorithm_verification_fails() {
-    let ed25519_key = PrivateKey::from_openssh(include_str!("examples/id_ed25519"))
-        .expect("parse Ed25519 key");
-    let p256_key = PrivateKey::from_openssh(include_str!("examples/id_ecdsa_p256"))
-        .expect("parse P-256 key");
+    let ed25519_key =
+        PrivateKey::from_openssh(include_str!("examples/id_ed25519")).expect("parse Ed25519 key");
+    let p256_key =
+        PrivateKey::from_openssh(include_str!("examples/id_ecdsa_p256")).expect("parse P-256 key");
 
     // Sign with Ed25519
-    let ed25519_sig: Signature = ed25519_key
-        .try_sign(TEST_MESSAGE)
-        .expect("Ed25519 signing");
+    let ed25519_sig: Signature = ed25519_key.try_sign(TEST_MESSAGE).expect("Ed25519 signing");
 
     // Attempt to verify Ed25519 signature with P-256 public key -- must fail.
-    let result = p256_key.public_key().key_data().verify(TEST_MESSAGE, &ed25519_sig);
+    let result = p256_key
+        .public_key()
+        .key_data()
+        .verify(TEST_MESSAGE, &ed25519_sig);
     assert!(
         result.is_err(),
         "P-256 public key should not verify an Ed25519 signature",

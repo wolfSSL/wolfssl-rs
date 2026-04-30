@@ -76,9 +76,8 @@ impl DhSecret {
     pub fn generate(group: FfdheGroup) -> Result<Self, WolfCryptError> {
         // SAFETY: wolfcrypt_dh_new allocates a DhKey, initialises it with the
         // named group, and returns NULL on any error.
-        let ctx = unsafe {
-            wolfcrypt_rs::wolfcrypt_dh_new(group.wc_name(), group.byte_size() as u32)
-        };
+        let ctx =
+            unsafe { wolfcrypt_rs::wolfcrypt_dh_new(group.wc_name(), group.byte_size() as u32) };
         if ctx.is_null() {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
@@ -87,10 +86,16 @@ impl DhSecret {
         let rc = unsafe { wolfcrypt_rs::wolfcrypt_dh_generate_keypair(ctx) };
         if rc != 0 {
             unsafe { wolfcrypt_rs::wolfcrypt_dh_free(ctx) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_dh_generate_keypair" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_dh_generate_keypair",
+            });
         }
 
-        Ok(Self { ctx, group_sz: group.byte_size() })
+        Ok(Self {
+            ctx,
+            group_sz: group.byte_size(),
+        })
     }
 
     /// Generate a DH key pair using FFDHE2048 (convenience wrapper).
@@ -103,9 +108,8 @@ impl DhSecret {
         let mut buf = vec![0u8; self.group_sz];
         let mut len = self.group_sz as u32;
         // SAFETY: buf is group_sz bytes, which is the declared output size.
-        let rc = unsafe {
-            wolfcrypt_rs::wolfcrypt_dh_public_key(self.ctx, buf.as_mut_ptr(), &mut len)
-        };
+        let rc =
+            unsafe { wolfcrypt_rs::wolfcrypt_dh_public_key(self.ctx, buf.as_mut_ptr(), &mut len) };
         assert_eq!(rc, 0, "wolfcrypt_dh_public_key failed");
         buf.truncate(len as usize);
         buf
@@ -144,7 +148,10 @@ impl DhSecret {
         };
 
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wolfcrypt_dh_agree" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_dh_agree",
+            });
         }
 
         secret.truncate(sz as usize);

@@ -1,6 +1,6 @@
 //! Rivest–Shamir–Adleman (RSA) private keys.
 
-use crate::{Error, Mpint, Result, public::RsaPublicKey};
+use crate::{public::RsaPublicKey, Error, Mpint, Result};
 use core::fmt;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
 use subtle::{Choice, ConstantTimeEq};
@@ -139,9 +139,8 @@ impl RsaKeypair {
     pub fn random<R: CryptoRng + ?Sized>(_rng: &mut R, bit_size: usize) -> Result<Self> {
         let mut wc_rng = wolfcrypt::rand::WolfRng::new().map_err(Error::from)?;
         let bit_size = u32::try_from(bit_size).map_err(|_| Error::Crypto)?;
-        let mut wc_key = wolfcrypt::rsa::NativeRsaKey::generate_native(
-            bit_size, &mut wc_rng,
-        ).map_err(Error::from)?;
+        let mut wc_key = wolfcrypt::rsa::NativeRsaKey::generate_native(bit_size, &mut wc_rng)
+            .map_err(Error::from)?;
 
         // Export raw (e, n, d, p, q, iqmp) — wolfCrypt handles all DER
         // parsing internally via wc_RsaExportKey + wc_RsaKeyToDer.
@@ -186,7 +185,6 @@ impl RsaKeypair {
     pub fn private(&self) -> &RsaPrivateKey {
         &self.private
     }
-
 }
 
 /// Import an RSA public key into wolfCrypt from raw (n, e) byte arrays.
@@ -260,4 +258,3 @@ impl fmt::Debug for RsaKeypair {
             .finish_non_exhaustive()
     }
 }
-

@@ -22,8 +22,9 @@ fn main() {
 
     // --- Link against wolfssl ---
     if vendored {
-        let wolfcrypt_sys_out = env::var("DEP_WOLFCRYPT_SYS_ROOT")
-            .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_ROOT not set — is wolfcrypt-sys a dependency?"));
+        let wolfcrypt_sys_out = env::var("DEP_WOLFCRYPT_SYS_ROOT").unwrap_or_else(|_| {
+            panic!("DEP_WOLFCRYPT_SYS_ROOT not set — is wolfcrypt-sys a dependency?")
+        });
         println!("cargo:rustc-link-search=native={wolfcrypt_sys_out}");
         println!("cargo:rustc-link-lib=static=wolfssl");
     } else {
@@ -36,10 +37,12 @@ fn main() {
     }
 
     // --- Compile compat_shim.c ---
-    let wolfssl_include = env::var("DEP_WOLFCRYPT_SYS_INCLUDE")
-        .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_INCLUDE not set — is wolfcrypt-sys a dependency?"));
-    let settings_include = env::var("DEP_WOLFCRYPT_SYS_SETTINGS_INCLUDE")
-        .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_SETTINGS_INCLUDE not set — is wolfcrypt-sys a dependency?"));
+    let wolfssl_include = env::var("DEP_WOLFCRYPT_SYS_INCLUDE").unwrap_or_else(|_| {
+        panic!("DEP_WOLFCRYPT_SYS_INCLUDE not set — is wolfcrypt-sys a dependency?")
+    });
+    let settings_include = env::var("DEP_WOLFCRYPT_SYS_SETTINGS_INCLUDE").unwrap_or_else(|_| {
+        panic!("DEP_WOLFCRYPT_SYS_SETTINGS_INCLUDE not set — is wolfcrypt-sys a dependency?")
+    });
 
     let mut shim_build = cc::Build::new();
     shim_build.include(&wolfssl_include);
@@ -91,20 +94,48 @@ fn main() {
     shim_build.compile("wolfssl_shims");
 
     // --- Re-export metadata for wolfcrypt-ring-compat ---
-    println!("cargo:CFGS={}", env::var("DEP_WOLFCRYPT_SYS_CFGS")
-        .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_CFGS not set — is wolfcrypt-sys a dependency?")));
-    println!("cargo:ALL_CFGS={}", env::var("DEP_WOLFCRYPT_SYS_ALL_CFGS")
-        .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_ALL_CFGS not set — is wolfcrypt-sys a dependency?")));
-    println!("cargo:INCLUDE={}", env::var("DEP_WOLFCRYPT_SYS_INCLUDE")
-        .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_INCLUDE not set — is wolfcrypt-sys a dependency?")));
-    println!("cargo:SETTINGS_INCLUDE={}", env::var("DEP_WOLFCRYPT_SYS_SETTINGS_INCLUDE")
-        .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_SETTINGS_INCLUDE not set — is wolfcrypt-sys a dependency?")));
-    println!("cargo:ROOT={}", env::var("DEP_WOLFCRYPT_SYS_ROOT")
-        .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_ROOT not set — is wolfcrypt-sys a dependency?")));
-    println!("cargo:LIBCRYPTO={}", env::var("DEP_WOLFCRYPT_SYS_LIBCRYPTO")
-        .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_LIBCRYPTO not set — is wolfcrypt-sys a dependency?")));
-    println!("cargo:VENDORED={}", env::var("DEP_WOLFCRYPT_SYS_VENDORED")
-        .unwrap_or_else(|_| panic!("DEP_WOLFCRYPT_SYS_VENDORED not set — is wolfcrypt-sys a dependency?")));
+    println!(
+        "cargo:CFGS={}",
+        env::var("DEP_WOLFCRYPT_SYS_CFGS").unwrap_or_else(|_| panic!(
+            "DEP_WOLFCRYPT_SYS_CFGS not set — is wolfcrypt-sys a dependency?"
+        ))
+    );
+    println!(
+        "cargo:ALL_CFGS={}",
+        env::var("DEP_WOLFCRYPT_SYS_ALL_CFGS").unwrap_or_else(|_| panic!(
+            "DEP_WOLFCRYPT_SYS_ALL_CFGS not set — is wolfcrypt-sys a dependency?"
+        ))
+    );
+    println!(
+        "cargo:INCLUDE={}",
+        env::var("DEP_WOLFCRYPT_SYS_INCLUDE").unwrap_or_else(|_| panic!(
+            "DEP_WOLFCRYPT_SYS_INCLUDE not set — is wolfcrypt-sys a dependency?"
+        ))
+    );
+    println!(
+        "cargo:SETTINGS_INCLUDE={}",
+        env::var("DEP_WOLFCRYPT_SYS_SETTINGS_INCLUDE").unwrap_or_else(|_| panic!(
+            "DEP_WOLFCRYPT_SYS_SETTINGS_INCLUDE not set — is wolfcrypt-sys a dependency?"
+        ))
+    );
+    println!(
+        "cargo:ROOT={}",
+        env::var("DEP_WOLFCRYPT_SYS_ROOT").unwrap_or_else(|_| panic!(
+            "DEP_WOLFCRYPT_SYS_ROOT not set — is wolfcrypt-sys a dependency?"
+        ))
+    );
+    println!(
+        "cargo:LIBCRYPTO={}",
+        env::var("DEP_WOLFCRYPT_SYS_LIBCRYPTO").unwrap_or_else(|_| panic!(
+            "DEP_WOLFCRYPT_SYS_LIBCRYPTO not set — is wolfcrypt-sys a dependency?"
+        ))
+    );
+    println!(
+        "cargo:VENDORED={}",
+        env::var("DEP_WOLFCRYPT_SYS_VENDORED").unwrap_or_else(|_| panic!(
+            "DEP_WOLFCRYPT_SYS_VENDORED not set — is wolfcrypt-sys a dependency?"
+        ))
+    );
     let version = env::var("DEP_WOLFCRYPT_SYS_VERSION").unwrap_or_else(|_| "unknown".to_string());
     println!("cargo:VERSION={version}");
     println!("cargo:rustc-env=WOLFSSL_VERSION={version}");

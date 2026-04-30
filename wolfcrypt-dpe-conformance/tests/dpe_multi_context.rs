@@ -5,7 +5,7 @@ mod helpers;
 use caliptra_cfi_lib::CfiCounter;
 use caliptra_dpe::commands::{
     CertifyKeyFlags, CertifyKeyP384Cmd, CommandExecution, DeriveContextCmd, DeriveContextFlags,
-    InitCtxCmd, SignP384Cmd, SignFlags,
+    InitCtxCmd, SignFlags, SignP384Cmd,
 };
 use caliptra_dpe::context::ContextHandle;
 use caliptra_dpe::dpe_instance::DpeInstance;
@@ -55,11 +55,21 @@ fn derive_chain_sign_leaf() {
         digest: [0xBB; 48],
     };
     let result = sign_cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "Sign with leaf of chain failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Sign with leaf of chain failed: {:?}",
+        result.err()
+    );
     match result.unwrap() {
         Response::Sign(SignResp::P384(resp)) => {
-            assert!(resp.sig_r.iter().any(|&b| b != 0), "sig_r should be non-zero");
-            assert!(resp.sig_s.iter().any(|&b| b != 0), "sig_s should be non-zero");
+            assert!(
+                resp.sig_r.iter().any(|&b| b != 0),
+                "sig_r should be non-zero"
+            );
+            assert!(
+                resp.sig_s.iter().any(|&b| b != 0),
+                "sig_s should be non-zero"
+            );
         }
         _ => panic!("Expected Sign P384, got unexpected response"),
     }
@@ -68,8 +78,7 @@ fn derive_chain_sign_leaf() {
 #[test]
 fn derive_chain_certify_each() {
     CfiCounter::reset_for_test();
-    let (mut dpe, mut state) =
-        dpe_harness::new_dpe_wolf(Support::AUTO_INIT | Support::X509);
+    let (mut dpe, mut state) = dpe_harness::new_dpe_wolf(Support::AUTO_INIT | Support::X509);
     let mut env = dpe_harness::make_wolf_env(&mut state);
 
     // Build a chain of 3 levels using MAKE_DEFAULT + INPUT_ALLOW_X509.
@@ -154,7 +163,11 @@ fn measurement_accumulation() {
         digest: [0xDD; 48],
     };
     let result = sign_cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "Sign after accumulation failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Sign after accumulation failed: {:?}",
+        result.err()
+    );
 
     // Compare with a single-level derivation to prove accumulation matters.
     CfiCounter::reset_for_test();
@@ -206,7 +219,10 @@ fn derive_siblings_independent() {
     let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384).unwrap();
 
     // Create a simulation parent.
-    let parent = match InitCtxCmd::new_simulation().execute(&mut dpe, &mut env, LOCALITY).unwrap() {
+    let parent = match InitCtxCmd::new_simulation()
+        .execute(&mut dpe, &mut env, LOCALITY)
+        .unwrap()
+    {
         Response::InitCtx(resp) => resp.handle,
         _ => panic!("Expected InitCtx, got unexpected response"),
     };

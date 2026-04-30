@@ -23,10 +23,7 @@ mod evp_pkey_tests {
             let ret = wolfcrypt_evp_pkey_set_raw(pkey, data.as_ptr(), data.len() as c_int);
             assert_eq!(ret, 1, "set_raw should return 1 on success");
 
-            assert_eq!(
-                wolfcrypt_evp_pkey_get_pkey_sz(pkey),
-                data.len() as c_int
-            );
+            assert_eq!(wolfcrypt_evp_pkey_get_pkey_sz(pkey), data.len() as c_int);
 
             let ptr = wolfcrypt_evp_pkey_get_pkey_ptr(pkey);
             assert!(!ptr.is_null());
@@ -54,10 +51,7 @@ mod evp_pkey_tests {
                 1
             );
 
-            assert_eq!(
-                wolfcrypt_evp_pkey_get_pkey_sz(pkey),
-                second.len() as c_int
-            );
+            assert_eq!(wolfcrypt_evp_pkey_get_pkey_sz(pkey), second.len() as c_int);
             let ptr = wolfcrypt_evp_pkey_get_pkey_ptr(pkey);
             let stored = slice::from_raw_parts(ptr, second.len());
             assert_eq!(stored, &second);
@@ -199,10 +193,9 @@ mod ec_fix_tests {
         0x02, 0x01, 0x01, // INTEGER 1 (version)
         0x04, 0x20, // OCTET STRING, length 32
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // private key = 1
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-        0xA0, 0x0A, // context [0], length 10
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xA0,
+        0x0A, // context [0], length 10
         0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07, // OID P-256
     ];
 
@@ -532,21 +525,35 @@ mod wolfcrypt_native_tests {
 
             let ret = wc_AesGcmEncrypt(
                 &mut aes,
-                ciphertext.as_mut_ptr(), plaintext.as_ptr(), plaintext.len() as u32,
-                iv.as_ptr(), iv.len() as u32,
-                tag.as_mut_ptr(), tag.len() as u32,
-                aad.as_ptr(), aad.len() as u32,
+                ciphertext.as_mut_ptr(),
+                plaintext.as_ptr(),
+                plaintext.len() as u32,
+                iv.as_ptr(),
+                iv.len() as u32,
+                tag.as_mut_ptr(),
+                tag.len() as u32,
+                aad.as_ptr(),
+                aad.len() as u32,
             );
             assert_eq!(ret, 0, "wc_AesGcmEncrypt failed: {ret}");
-            assert_ne!(&ciphertext[..], &plaintext[..], "ciphertext should differ from plaintext");
+            assert_ne!(
+                &ciphertext[..],
+                &plaintext[..],
+                "ciphertext should differ from plaintext"
+            );
 
             let mut decrypted = [0u8; 15];
             let ret = wc_AesGcmDecrypt(
                 &mut aes,
-                decrypted.as_mut_ptr(), ciphertext.as_ptr(), ciphertext.len() as u32,
-                iv.as_ptr(), iv.len() as u32,
-                tag.as_ptr(), tag.len() as u32,
-                aad.as_ptr(), aad.len() as u32,
+                decrypted.as_mut_ptr(),
+                ciphertext.as_ptr(),
+                ciphertext.len() as u32,
+                iv.as_ptr(),
+                iv.len() as u32,
+                tag.as_ptr(),
+                tag.len() as u32,
+                aad.as_ptr(),
+                aad.len() as u32,
             );
             assert_eq!(ret, 0, "wc_AesGcmDecrypt failed: {ret}");
             assert_eq!(&decrypted[..], &plaintext[..]);
@@ -569,30 +576,40 @@ mod wolfcrypt_native_tests {
 
             // Set key for CTR encrypt (CTR uses AES_ENCRYPT for both directions)
             let ret = wc_AesSetKey(
-                &mut aes, key.as_ptr(), key.len() as u32,
-                iv.as_ptr(), AES_ENCRYPT,
+                &mut aes,
+                key.as_ptr(),
+                key.len() as u32,
+                iv.as_ptr(),
+                AES_ENCRYPT,
             );
             assert_eq!(ret, 0, "wc_AesSetKey failed: {ret}");
 
             let mut ciphertext = [0u8; 16];
             let ret = wc_AesCtrEncrypt(
-                &mut aes, ciphertext.as_mut_ptr(),
-                plaintext.as_ptr(), plaintext.len() as u32,
+                &mut aes,
+                ciphertext.as_mut_ptr(),
+                plaintext.as_ptr(),
+                plaintext.len() as u32,
             );
             assert_eq!(ret, 0, "wc_AesCtrEncrypt (encrypt) failed: {ret}");
             assert_ne!(&ciphertext[..], &plaintext[..], "ciphertext should differ");
 
             // Re-init with same key/IV to decrypt (CTR is its own inverse)
             let ret = wc_AesSetKey(
-                &mut aes, key.as_ptr(), key.len() as u32,
-                iv.as_ptr(), AES_ENCRYPT,
+                &mut aes,
+                key.as_ptr(),
+                key.len() as u32,
+                iv.as_ptr(),
+                AES_ENCRYPT,
             );
             assert_eq!(ret, 0, "wc_AesSetKey (decrypt) failed: {ret}");
 
             let mut decrypted = [0u8; 16];
             let ret = wc_AesCtrEncrypt(
-                &mut aes, decrypted.as_mut_ptr(),
-                ciphertext.as_ptr(), ciphertext.len() as u32,
+                &mut aes,
+                decrypted.as_mut_ptr(),
+                ciphertext.as_ptr(),
+                ciphertext.len() as u32,
             );
             assert_eq!(ret, 0, "wc_AesCtrEncrypt (decrypt) failed: {ret}");
             assert_eq!(&decrypted[..], &plaintext[..]);
@@ -619,8 +636,10 @@ mod wolfcrypt_native_tests {
             let mut sig_len: u32 = sig.len() as u32;
 
             let ret = wc_ed25519_sign_msg(
-                msg.as_ptr(), msg.len() as u32,
-                sig.as_mut_ptr(), &mut sig_len,
+                msg.as_ptr(),
+                msg.len() as u32,
+                sig.as_mut_ptr(),
+                &mut sig_len,
                 &mut key,
             );
             assert_eq!(ret, 0, "wc_ed25519_sign_msg failed: {ret}");
@@ -628,8 +647,10 @@ mod wolfcrypt_native_tests {
 
             let mut verify_res: core::ffi::c_int = 0;
             let ret = wc_ed25519_verify_msg(
-                sig.as_ptr(), sig_len,
-                msg.as_ptr(), msg.len() as u32,
+                sig.as_ptr(),
+                sig_len,
+                msg.as_ptr(),
+                msg.len() as u32,
                 &mut verify_res,
                 &mut key,
             );

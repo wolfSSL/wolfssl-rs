@@ -9,8 +9,7 @@
 #![cfg(all(feature = "cryptocb", wolfssl_cryptocb))]
 
 use wolfcrypt::cryptocb::{
-    CryptoCallbackResult, CryptoCallbacks, RngRequest,
-    register_device, unregister_device,
+    register_device, unregister_device, CryptoCallbackResult, CryptoCallbacks, RngRequest,
 };
 
 use core::sync::atomic::{AtomicU32, Ordering};
@@ -25,7 +24,9 @@ struct CountingRng {
 
 impl CountingRng {
     fn new() -> Self {
-        Self { count: AtomicU32::new(0) }
+        Self {
+            count: AtomicU32::new(0),
+        }
     }
 
     fn call_count(&self) -> u32 {
@@ -80,9 +81,18 @@ fn result_codes() {
     // We can't call to_c directly (it's private), but we can verify
     // the constants used.
     assert_eq!(CryptoCallbackResult::Success, CryptoCallbackResult::Success);
-    assert_eq!(CryptoCallbackResult::NotAvailable, CryptoCallbackResult::NotAvailable);
-    assert_ne!(CryptoCallbackResult::Success, CryptoCallbackResult::NotAvailable);
-    assert_ne!(CryptoCallbackResult::Success, CryptoCallbackResult::Error(-1));
+    assert_eq!(
+        CryptoCallbackResult::NotAvailable,
+        CryptoCallbackResult::NotAvailable
+    );
+    assert_ne!(
+        CryptoCallbackResult::Success,
+        CryptoCallbackResult::NotAvailable
+    );
+    assert_ne!(
+        CryptoCallbackResult::Success,
+        CryptoCallbackResult::Error(-1)
+    );
 }
 
 /// The CryptoCallbacks trait has default methods that return NotAvailable.

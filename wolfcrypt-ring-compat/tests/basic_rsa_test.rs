@@ -190,4 +190,3 @@ fn test_signature_rsa_primitive_verification() {
     let result = public_key.verify(&signature::RSA_PKCS1_2048_8192_SHA256, &msg, &sig);
     assert!(result.is_ok());
 }
-

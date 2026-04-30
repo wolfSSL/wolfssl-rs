@@ -18,8 +18,8 @@ fn same_seed_same_signature() {
     let seed: [u8; 32] = rng.gen();
     let msg = b"ed25519 deterministic signature test";
 
-    let wolf_sk = wolfcrypt::Ed25519SigningKey::from_seed(&seed)
-        .expect("wolf: from_seed should succeed");
+    let wolf_sk =
+        wolfcrypt::Ed25519SigningKey::from_seed(&seed).expect("wolf: from_seed should succeed");
     let dalek_sk = ed25519_dalek::SigningKey::from_bytes(&seed);
 
     let wolf_sig: ed25519::Signature = WolfSigner::sign(&wolf_sk, msg);
@@ -37,8 +37,8 @@ fn same_seed_same_pubkey() {
     let mut rng = rand::thread_rng();
     let seed: [u8; 32] = rng.gen();
 
-    let wolf_sk = wolfcrypt::Ed25519SigningKey::from_seed(&seed)
-        .expect("wolf: from_seed should succeed");
+    let wolf_sk =
+        wolfcrypt::Ed25519SigningKey::from_seed(&seed).expect("wolf: from_seed should succeed");
     let dalek_sk = ed25519_dalek::SigningKey::from_bytes(&seed);
 
     let wolf_vk = wolf_sk.verifying_key();
@@ -57,8 +57,8 @@ fn wolf_sign_dalek_verify() {
     let seed: [u8; 32] = rng.gen();
     let msg = b"wolf signs, dalek verifies";
 
-    let wolf_sk = wolfcrypt::Ed25519SigningKey::from_seed(&seed)
-        .expect("wolf: from_seed should succeed");
+    let wolf_sk =
+        wolfcrypt::Ed25519SigningKey::from_seed(&seed).expect("wolf: from_seed should succeed");
 
     let wolf_sig: ed25519::Signature = WolfSigner::sign(&wolf_sk, msg);
 
@@ -83,9 +83,8 @@ fn dalek_sign_wolf_verify() {
     let dalek_sig = DalekSigner::sign(&dalek_sk, msg);
 
     let dalek_vk = dalek_sk.verifying_key();
-    let wolf_vk =
-        wolfcrypt::Ed25519VerifyingKey::from_bytes(&dalek_vk.to_bytes())
-            .expect("wolf: should accept dalek public key bytes");
+    let wolf_vk = wolfcrypt::Ed25519VerifyingKey::from_bytes(&dalek_vk.to_bytes())
+        .expect("wolf: should accept dalek public key bytes");
 
     let wolf_sig = ed25519::Signature::from_bytes(&dalek_sig.to_bytes());
 
@@ -125,19 +124,14 @@ fn random_seeds() {
         );
 
         // Cross-verify: dalek verifies wolf sig
-        let dalek_sig_from_wolf =
-            ed25519_dalek::Signature::from_bytes(&wolf_sig.to_bytes());
+        let dalek_sig_from_wolf = ed25519_dalek::Signature::from_bytes(&wolf_sig.to_bytes());
         DalekVerifier::verify(&dalek_vk, &msg_bytes, &dalek_sig_from_wolf)
-            .unwrap_or_else(|e| {
-                panic!("ed25519 round {i}: dalek must verify wolf signature: {e}")
-            });
+            .unwrap_or_else(|e| panic!("ed25519 round {i}: dalek must verify wolf signature: {e}"));
 
         // Cross-verify: wolf verifies dalek sig
         let wolf_sig_from_dalek = ed25519::Signature::from_bytes(&dalek_sig.to_bytes());
         WolfVerifier::verify(&wolf_vk, &msg_bytes, &wolf_sig_from_dalek)
-            .unwrap_or_else(|e| {
-                panic!("ed25519 round {i}: wolf must verify dalek signature: {e}")
-            });
+            .unwrap_or_else(|e| panic!("ed25519 round {i}: wolf must verify dalek signature: {e}"));
     }
 }
 
@@ -149,8 +143,8 @@ fn tampered_message_both_reject() {
     let mut tampered_msg = msg.to_vec();
     tampered_msg[0] ^= 0xFF;
 
-    let wolf_sk = wolfcrypt::Ed25519SigningKey::from_seed(&seed)
-        .expect("wolf: from_seed should succeed");
+    let wolf_sk =
+        wolfcrypt::Ed25519SigningKey::from_seed(&seed).expect("wolf: from_seed should succeed");
     let dalek_sk = ed25519_dalek::SigningKey::from_bytes(&seed);
 
     let wolf_sig: ed25519::Signature = WolfSigner::sign(&wolf_sk, msg);
@@ -179,8 +173,8 @@ fn tampered_signature_both_reject() {
     let seed: [u8; 32] = rng.gen();
     let msg = b"message for signature tamper test";
 
-    let wolf_sk = wolfcrypt::Ed25519SigningKey::from_seed(&seed)
-        .expect("wolf: from_seed should succeed");
+    let wolf_sk =
+        wolfcrypt::Ed25519SigningKey::from_seed(&seed).expect("wolf: from_seed should succeed");
     let dalek_sk = ed25519_dalek::SigningKey::from_bytes(&seed);
 
     let wolf_sig: ed25519::Signature = WolfSigner::sign(&wolf_sk, msg);
@@ -268,8 +262,8 @@ fn deterministic() {
     let msg = b"determinism check: sign twice, get same result";
 
     // Wolf: sign twice
-    let wolf_sk = wolfcrypt::Ed25519SigningKey::from_seed(&seed)
-        .expect("wolf: from_seed should succeed");
+    let wolf_sk =
+        wolfcrypt::Ed25519SigningKey::from_seed(&seed).expect("wolf: from_seed should succeed");
     let wolf_sig1: ed25519::Signature = WolfSigner::sign(&wolf_sk, msg);
     let wolf_sig2: ed25519::Signature = WolfSigner::sign(&wolf_sk, msg);
     assert_eq!(

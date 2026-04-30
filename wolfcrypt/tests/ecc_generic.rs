@@ -17,7 +17,8 @@ use wolfcrypt::rand::WolfRng;
 fn generate_p256_and_check_key() {
     let mut rng = WolfRng::new().unwrap();
     let mut key = EccKey::generate(EccCurveId::SecP256R1, &mut rng).unwrap();
-    key.check_key().expect("generated P-256 key must pass check_key");
+    key.check_key()
+        .expect("generated P-256 key must pass check_key");
 }
 
 // ================================================================
@@ -90,7 +91,11 @@ fn public_key_x963_export_import_roundtrip() {
     let pub_bytes = key.export_public_x963().unwrap();
 
     // Uncompressed P-256 X9.63: 1 (0x04) + 32 + 32 = 65 bytes.
-    assert_eq!(pub_bytes.len(), 65, "P-256 X9.63 public key must be 65 bytes");
+    assert_eq!(
+        pub_bytes.len(),
+        65,
+        "P-256 X9.63 public key must be 65 bytes"
+    );
     assert_eq!(pub_bytes[0], 0x04, "X9.63 uncompressed marker must be 0x04");
 
     // Re-import the public key and verify a signature produced by the original.
@@ -99,7 +104,10 @@ fn public_key_x963_export_import_roundtrip() {
 
     let mut imported = EccKey::from_public_x963(&pub_bytes).unwrap();
     let valid = imported.verify_hash(&sig, &hash).unwrap();
-    assert!(valid, "imported public key must verify original key's signature");
+    assert!(
+        valid,
+        "imported public key must verify original key's signature"
+    );
 }
 
 // ================================================================
@@ -117,11 +125,16 @@ fn private_and_public_import_roundtrip() {
     // Re-import both components.
     let mut reimported =
         EccKey::from_private_and_public(EccCurveId::SecP256R1, &priv_bytes, &pub_bytes).unwrap();
-    reimported.check_key().expect("reimported key must pass check_key");
+    reimported
+        .check_key()
+        .expect("reimported key must pass check_key");
 
     // Verify that the reimported key can sign and the original can verify.
     let hash: [u8; 32] = [0x99; 32];
     let sig = reimported.sign_hash(&hash, &mut rng).unwrap();
     let valid = original.verify_hash(&sig, &hash).unwrap();
-    assert!(valid, "reimported key's signature must verify with original key");
+    assert!(
+        valid,
+        "reimported key's signature must verify with original key"
+    );
 }

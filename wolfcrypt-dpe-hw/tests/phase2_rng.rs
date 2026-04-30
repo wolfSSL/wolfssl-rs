@@ -19,7 +19,7 @@ mod tests {
     use core::sync::atomic::Ordering;
 
     use wolfcrypt_dpe_hw::{
-        trng_dispatch_count, reset_trng_dispatch_count, HW_DEVICE_ID, INJECT_TRNG_ERROR,
+        reset_trng_dispatch_count, trng_dispatch_count, HW_DEVICE_ID, INJECT_TRNG_ERROR,
     };
 
     // -----------------------------------------------------------------------
@@ -59,11 +59,8 @@ mod tests {
             return (init_rc, vec![]);
         }
         let mut output = vec![0u8; sz];
-        let gen_rc = wolfcrypt_sys::wc_RNG_GenerateBlock(
-            &mut rng,
-            output.as_mut_ptr(),
-            output.len() as u32,
-        );
+        let gen_rc =
+            wolfcrypt_sys::wc_RNG_GenerateBlock(&mut rng, output.as_mut_ptr(), output.len() as u32);
         wolfcrypt_sys::wc_FreeRng(&mut rng);
         (gen_rc, output)
     }
@@ -149,9 +146,11 @@ mod tests {
 
         // Use INVALID_DEVID (-2) so wolfSSL takes the software DRBG path.
         // Our CryptoCb callback is NOT invoked on this path.
-        let (rc, _output) =
-            unsafe { rng_generate(wolfcrypt_sys::INVALID_DEVID, 32) };
-        assert_eq!(rc, 0, "wc_RNG_GenerateBlock(INVALID_DEVID) must succeed: {rc}");
+        let (rc, _output) = unsafe { rng_generate(wolfcrypt_sys::INVALID_DEVID, 32) };
+        assert_eq!(
+            rc, 0,
+            "wc_RNG_GenerateBlock(INVALID_DEVID) must succeed: {rc}"
+        );
 
         assert_eq!(
             trng_dispatch_count(),
@@ -184,7 +183,10 @@ mod tests {
         // This routes wc_RNG_GenerateBlock through CryptoCb → dispatch_rng.
         let before = trng_dispatch_count();
         let (rc, _buf) = unsafe { rng_generate(HW_DEVICE_ID, 64) };
-        assert_eq!(rc, 0, "wc_RNG_GenerateBlock (HW_DEVICE_ID path) failed: {rc}");
+        assert_eq!(
+            rc, 0,
+            "wc_RNG_GenerateBlock (HW_DEVICE_ID path) failed: {rc}"
+        );
 
         assert_eq!(
             trng_dispatch_count(),

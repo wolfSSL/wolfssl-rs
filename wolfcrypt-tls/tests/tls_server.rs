@@ -43,8 +43,7 @@ fn mtls_both_sides_authenticated() {
 
     let cfg = client_config(true);
     let stream = TcpStream::connect(format!("127.0.0.1:{port}")).unwrap();
-    let mut tls =
-        TlsClient::new(cfg, "localhost", stream).expect("mTLS handshake should succeed");
+    let mut tls = TlsClient::new(cfg, "localhost", stream).expect("mTLS handshake should succeed");
 
     let msg = b"mutual auth verified data 0xDEADBEEF";
     tls.write_all(msg).unwrap();

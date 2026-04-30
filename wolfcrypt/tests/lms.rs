@@ -117,16 +117,14 @@ mod signing {
     #[test]
     fn sign_then_verify() {
         let mut rng = WolfRng::new().expect("RNG init");
-        let mut sk = LmsSigningKey::generate(TEST_PARAMS, &mut rng)
-            .expect("keygen");
+        let mut sk = LmsSigningKey::generate(TEST_PARAMS, &mut rng).expect("keygen");
 
         let msg = b"LMS round-trip test";
         let sig = sk.sign(msg).expect("sign");
 
         // Export public key and verify with a separate verifying key.
         let pub_bytes = sk.export_public().expect("export pub");
-        let vk = LmsVerifyingKey::from_public_bytes(TEST_PARAMS, &pub_bytes)
-            .expect("import pub");
+        let vk = LmsVerifyingKey::from_public_bytes(TEST_PARAMS, &pub_bytes).expect("import pub");
         vk.verify(msg, &sig).expect("verify must succeed");
     }
 
@@ -134,14 +132,12 @@ mod signing {
     #[test]
     fn verify_wrong_message_fails() {
         let mut rng = WolfRng::new().expect("RNG init");
-        let mut sk = LmsSigningKey::generate(TEST_PARAMS, &mut rng)
-            .expect("keygen");
+        let mut sk = LmsSigningKey::generate(TEST_PARAMS, &mut rng).expect("keygen");
 
         let sig = sk.sign(b"correct message").expect("sign");
 
         let pub_bytes = sk.export_public().expect("export pub");
-        let vk = LmsVerifyingKey::from_public_bytes(TEST_PARAMS, &pub_bytes)
-            .expect("import pub");
+        let vk = LmsVerifyingKey::from_public_bytes(TEST_PARAMS, &pub_bytes).expect("import pub");
 
         let result = vk.verify(b"wrong message", &sig);
         assert!(result.is_err(), "wrong message must not verify");
@@ -151,8 +147,10 @@ mod signing {
     #[test]
     fn remaining_signatures_positive() {
         let mut rng = WolfRng::new().expect("RNG init");
-        let sk = LmsSigningKey::generate(TEST_PARAMS, &mut rng)
-            .expect("keygen");
-        assert!(sk.remaining_signatures() > 0, "freshly generated key should have sigs left");
+        let sk = LmsSigningKey::generate(TEST_PARAMS, &mut rng).expect("keygen");
+        assert!(
+            sk.remaining_signatures() > 0,
+            "freshly generated key should have sigs left"
+        );
     }
 }

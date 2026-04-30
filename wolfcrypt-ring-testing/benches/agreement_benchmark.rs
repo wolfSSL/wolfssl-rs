@@ -1,5 +1,5 @@
-use wolfcrypt_ring_compat::{test, test_file};
 use criterion::{criterion_group, criterion_main, Criterion};
+use wolfcrypt_ring_compat::{test, test_file};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 enum Curve {

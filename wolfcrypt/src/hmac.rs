@@ -58,10 +58,11 @@ macro_rules! impl_hmac {
         impl $name {
             fn init_with_key(key: &[u8]) -> Self {
                 // SAFETY: key pointer and length are correct from the slice reference.
-                let ctx = unsafe {
-                    $new_fn(key.as_ptr(), key.len() as u32)
-                };
-                assert!(!ctx.is_null(), concat!(stringify!($name), ": wolfcrypt_hmac_*_new returned NULL"));
+                let ctx = unsafe { $new_fn(key.as_ptr(), key.len() as u32) };
+                assert!(
+                    !ctx.is_null(),
+                    concat!(stringify!($name), ": wolfcrypt_hmac_*_new returned NULL")
+                );
                 Self { ctx }
             }
         }
@@ -82,13 +83,12 @@ macro_rules! impl_hmac {
             fn update(&mut self, data: &[u8]) {
                 // SAFETY: ctx is valid; data pointer and length are correct.
                 let rc = unsafe {
-                    wolfcrypt_rs::wolfcrypt_hmac_update(
-                        self.ctx,
-                        data.as_ptr(),
-                        data.len() as u32,
-                    )
+                    wolfcrypt_rs::wolfcrypt_hmac_update(self.ctx, data.as_ptr(), data.len() as u32)
                 };
-                assert_eq!(rc, 0, concat!(stringify!($name), ": wolfcrypt_hmac_update failed"));
+                assert_eq!(
+                    rc, 0,
+                    concat!(stringify!($name), ": wolfcrypt_hmac_update failed")
+                );
             }
         }
 
@@ -96,10 +96,11 @@ macro_rules! impl_hmac {
         impl FixedOutput for $name {
             fn finalize_into(mut self, out: &mut GenericArray<u8, Self::OutputSize>) {
                 // SAFETY: out is exactly OutputSize bytes; ctx is valid.
-                let rc = unsafe {
-                    wolfcrypt_rs::wolfcrypt_hmac_final(self.ctx, out.as_mut_ptr())
-                };
-                assert_eq!(rc, 0, concat!(stringify!($name), ": wolfcrypt_hmac_final failed"));
+                let rc = unsafe { wolfcrypt_rs::wolfcrypt_hmac_final(self.ctx, out.as_mut_ptr()) };
+                assert_eq!(
+                    rc, 0,
+                    concat!(stringify!($name), ": wolfcrypt_hmac_final failed")
+                );
                 // Prevent Drop from double-freeing.
                 let ctx = self.ctx;
                 self.ctx = core::ptr::null_mut();

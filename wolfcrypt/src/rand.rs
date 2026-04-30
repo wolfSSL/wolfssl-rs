@@ -46,7 +46,6 @@ impl WolfRng {
         check(rc, "wc_InitRng_ex")?;
         Ok(Self { rng })
     }
-
 }
 
 impl Drop for WolfRng {

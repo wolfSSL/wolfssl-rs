@@ -47,20 +47,12 @@ impl KeyIvInit for WolfChaCha20 {
         let mut ctx = wolfcrypt_rs::ChaCha::zeroed();
 
         let rc = unsafe {
-            wolfcrypt_rs::wc_Chacha_SetKey(
-                &mut ctx as *mut wolfcrypt_rs::ChaCha,
-                key.as_ptr(),
-                32,
-            )
+            wolfcrypt_rs::wc_Chacha_SetKey(&mut ctx as *mut wolfcrypt_rs::ChaCha, key.as_ptr(), 32)
         };
         assert_eq!(rc, 0, "wc_Chacha_SetKey failed (invalid key length)");
 
         let rc = unsafe {
-            wolfcrypt_rs::wc_Chacha_SetIV(
-                &mut ctx as *mut wolfcrypt_rs::ChaCha,
-                nonce.as_ptr(),
-                0,
-            )
+            wolfcrypt_rs::wc_Chacha_SetIV(&mut ctx as *mut wolfcrypt_rs::ChaCha, nonce.as_ptr(), 0)
         };
         assert_eq!(rc, 0, "wc_Chacha_SetIV failed (invalid IV)");
 

@@ -2,7 +2,7 @@
 //!
 //! Edwards Digital Signature Algorithm (EdDSA) over Curve25519.
 
-use crate::{Error, Result, public::Ed25519PublicKey};
+use crate::{public::Ed25519PublicKey, Error, Result};
 use core::fmt;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
 use subtle::{Choice, ConstantTimeEq};
@@ -35,8 +35,7 @@ impl Ed25519PrivateKey {
     #[allow(unused_variables)]
     pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
         use rand_core::Rng;
-        let mut wc_rng = wolfcrypt::rand::WolfRng::new()
-            .expect("wolfCrypt RNG init failed");
+        let mut wc_rng = wolfcrypt::rand::WolfRng::new().expect("wolfCrypt RNG init failed");
         let mut key_bytes = [0u8; Self::BYTE_SIZE];
         wc_rng.fill_bytes(&mut key_bytes);
         Self(key_bytes)

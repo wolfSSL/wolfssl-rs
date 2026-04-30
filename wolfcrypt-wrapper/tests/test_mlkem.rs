@@ -67,12 +67,30 @@ fn test_size_queries() {
     for key_type in [MlKem::TYPE_512, MlKem::TYPE_768, MlKem::TYPE_1024] {
         let key = MlKem::new(key_type).expect("Error with new()");
         let pub_size = key.public_key_size().expect("Error with public_key_size()");
-        let priv_size = key.private_key_size().expect("Error with private_key_size()");
-        let ct_size = key.cipher_text_size().expect("Error with cipher_text_size()");
-        let ss_size = key.shared_secret_size().expect("Error with shared_secret_size()");
-        assert!(pub_size > 0, "public_key_size must be positive for key_type {}", key_type);
-        assert!(priv_size > 0, "private_key_size must be positive for key_type {}", key_type);
-        assert!(ct_size > 0, "cipher_text_size must be positive for key_type {}", key_type);
+        let priv_size = key
+            .private_key_size()
+            .expect("Error with private_key_size()");
+        let ct_size = key
+            .cipher_text_size()
+            .expect("Error with cipher_text_size()");
+        let ss_size = key
+            .shared_secret_size()
+            .expect("Error with shared_secret_size()");
+        assert!(
+            pub_size > 0,
+            "public_key_size must be positive for key_type {}",
+            key_type
+        );
+        assert!(
+            priv_size > 0,
+            "private_key_size must be positive for key_type {}",
+            key_type
+        );
+        assert!(
+            ct_size > 0,
+            "cipher_text_size must be positive for key_type {}",
+            key_type
+        );
         assert_eq!(
             ss_size,
             MlKem::SHARED_SECRET_SIZE,
@@ -89,11 +107,15 @@ fn test_size_queries() {
 fn test_encap_decap_type512() {
     common::setup();
     let mut rng = RNG::new().expect("Error creating RNG");
-    let mut key = MlKem::generate(MlKem::TYPE_512, &mut rng)
-        .expect("Error with generate() TYPE_512");
+    let mut key =
+        MlKem::generate(MlKem::TYPE_512, &mut rng).expect("Error with generate() TYPE_512");
 
-    let ct_size = key.cipher_text_size().expect("Error with cipher_text_size()");
-    let ss_size = key.shared_secret_size().expect("Error with shared_secret_size()");
+    let ct_size = key
+        .cipher_text_size()
+        .expect("Error with cipher_text_size()");
+    let ss_size = key
+        .shared_secret_size()
+        .expect("Error with shared_secret_size()");
 
     let mut ct = vec![0u8; ct_size];
     let mut ss_enc = vec![0u8; ss_size];
@@ -104,7 +126,10 @@ fn test_encap_decap_type512() {
     key.decapsulate(&mut ss_dec, &ct)
         .expect("Error with decapsulate()");
 
-    assert_eq!(ss_enc, ss_dec, "Shared secrets must match after encap/decap");
+    assert_eq!(
+        ss_enc, ss_dec,
+        "Shared secrets must match after encap/decap"
+    );
 }
 
 /// Encapsulate and decapsulate with ML-KEM-768, verifying that both sides
@@ -115,11 +140,15 @@ fn test_encap_decap_type512() {
 fn test_encap_decap_type768() {
     common::setup();
     let mut rng = RNG::new().expect("Error creating RNG");
-    let mut key = MlKem::generate(MlKem::TYPE_768, &mut rng)
-        .expect("Error with generate() TYPE_768");
+    let mut key =
+        MlKem::generate(MlKem::TYPE_768, &mut rng).expect("Error with generate() TYPE_768");
 
-    let ct_size = key.cipher_text_size().expect("Error with cipher_text_size()");
-    let ss_size = key.shared_secret_size().expect("Error with shared_secret_size()");
+    let ct_size = key
+        .cipher_text_size()
+        .expect("Error with cipher_text_size()");
+    let ss_size = key
+        .shared_secret_size()
+        .expect("Error with shared_secret_size()");
 
     let mut ct = vec![0u8; ct_size];
     let mut ss_enc = vec![0u8; ss_size];
@@ -130,7 +159,10 @@ fn test_encap_decap_type768() {
     key.decapsulate(&mut ss_dec, &ct)
         .expect("Error with decapsulate()");
 
-    assert_eq!(ss_enc, ss_dec, "Shared secrets must match after encap/decap");
+    assert_eq!(
+        ss_enc, ss_dec,
+        "Shared secrets must match after encap/decap"
+    );
 
     // Tamper with the cipher text. ML-KEM uses implicit rejection, so
     // decapsulation succeeds but returns a different (pseudorandom) secret.
@@ -139,7 +171,10 @@ fn test_encap_decap_type768() {
     let mut ss_tampered = vec![0u8; ss_size];
     key.decapsulate(&mut ss_tampered, &ct_tampered)
         .expect("Error with decapsulate() on tampered ct");
-    assert_ne!(ss_enc, ss_tampered, "Tampered ct must yield different shared secret");
+    assert_ne!(
+        ss_enc, ss_tampered,
+        "Tampered ct must yield different shared secret"
+    );
 }
 
 /// Encapsulate and decapsulate with ML-KEM-1024, verifying that both sides
@@ -149,11 +184,15 @@ fn test_encap_decap_type768() {
 fn test_encap_decap_type1024() {
     common::setup();
     let mut rng = RNG::new().expect("Error creating RNG");
-    let mut key = MlKem::generate(MlKem::TYPE_1024, &mut rng)
-        .expect("Error with generate() TYPE_1024");
+    let mut key =
+        MlKem::generate(MlKem::TYPE_1024, &mut rng).expect("Error with generate() TYPE_1024");
 
-    let ct_size = key.cipher_text_size().expect("Error with cipher_text_size()");
-    let ss_size = key.shared_secret_size().expect("Error with shared_secret_size()");
+    let ct_size = key
+        .cipher_text_size()
+        .expect("Error with cipher_text_size()");
+    let ss_size = key
+        .shared_secret_size()
+        .expect("Error with shared_secret_size()");
 
     let mut ct = vec![0u8; ct_size];
     let mut ss_enc = vec![0u8; ss_size];
@@ -164,7 +203,10 @@ fn test_encap_decap_type1024() {
     key.decapsulate(&mut ss_dec, &ct)
         .expect("Error with decapsulate()");
 
-    assert_eq!(ss_enc, ss_dec, "Shared secrets must match after encap/decap");
+    assert_eq!(
+        ss_enc, ss_dec,
+        "Shared secrets must match after encap/decap"
+    );
 }
 
 /// Verify that `generate_with_random()` is deterministic: the same random
@@ -180,18 +222,26 @@ fn test_generate_with_random_determinism() {
     let key2 = MlKem::generate_with_random(MlKem::TYPE_768, &rand)
         .expect("Error with generate_with_random() second call");
 
-    let pub_size = key1.public_key_size().expect("Error with public_key_size()");
+    let pub_size = key1
+        .public_key_size()
+        .expect("Error with public_key_size()");
     let mut pub1 = vec![0u8; pub_size];
     let mut pub2 = vec![0u8; pub_size];
-    key1.encode_public_key(&mut pub1).expect("Error with encode_public_key() key1");
-    key2.encode_public_key(&mut pub2).expect("Error with encode_public_key() key2");
+    key1.encode_public_key(&mut pub1)
+        .expect("Error with encode_public_key() key1");
+    key2.encode_public_key(&mut pub2)
+        .expect("Error with encode_public_key() key2");
     assert_eq!(pub1, pub2, "Same random must yield same public key");
 
-    let priv_size = key1.private_key_size().expect("Error with private_key_size()");
+    let priv_size = key1
+        .private_key_size()
+        .expect("Error with private_key_size()");
     let mut priv1 = vec![0u8; priv_size];
     let mut priv2 = vec![0u8; priv_size];
-    key1.encode_private_key(&mut priv1).expect("Error with encode_private_key() key1");
-    key2.encode_private_key(&mut priv2).expect("Error with encode_private_key() key2");
+    key1.encode_private_key(&mut priv1)
+        .expect("Error with encode_private_key() key1");
+    key2.encode_private_key(&mut priv2)
+        .expect("Error with encode_private_key() key2");
     assert_eq!(priv1, priv2, "Same random must yield same private key");
 }
 
@@ -206,8 +256,12 @@ fn test_encapsulate_with_random_determinism() {
     let mut key = MlKem::generate_with_random(MlKem::TYPE_768, &key_rand)
         .expect("Error with generate_with_random()");
 
-    let ct_size = key.cipher_text_size().expect("Error with cipher_text_size()");
-    let ss_size = key.shared_secret_size().expect("Error with shared_secret_size()");
+    let ct_size = key
+        .cipher_text_size()
+        .expect("Error with cipher_text_size()");
+    let ss_size = key
+        .shared_secret_size()
+        .expect("Error with shared_secret_size()");
 
     let mut ct1 = vec![0u8; ct_size];
     let mut ss1 = vec![0u8; ss_size];
@@ -226,7 +280,10 @@ fn test_encapsulate_with_random_determinism() {
     let mut ss_dec = vec![0u8; ss_size];
     key.decapsulate(&mut ss_dec, &ct1)
         .expect("Error with decapsulate()");
-    assert_eq!(ss1, ss_dec, "Shared secret from encapsulate must match decapsulate");
+    assert_eq!(
+        ss1, ss_dec,
+        "Shared secret from encapsulate must match decapsulate"
+    );
 }
 
 /// Encode and decode the public key for ML-KEM-768, verifying the round-trip
@@ -236,25 +293,32 @@ fn test_encapsulate_with_random_determinism() {
 fn test_encode_decode_public_key() {
     common::setup();
     let mut rng = RNG::new().expect("Error creating RNG");
-    let mut key = MlKem::generate(MlKem::TYPE_768, &mut rng)
-        .expect("Error with generate()");
+    let mut key = MlKem::generate(MlKem::TYPE_768, &mut rng).expect("Error with generate()");
 
     let pub_size = key.public_key_size().expect("Error with public_key_size()");
-    let ct_size = key.cipher_text_size().expect("Error with cipher_text_size()");
-    let ss_size = key.shared_secret_size().expect("Error with shared_secret_size()");
+    let ct_size = key
+        .cipher_text_size()
+        .expect("Error with cipher_text_size()");
+    let ss_size = key
+        .shared_secret_size()
+        .expect("Error with shared_secret_size()");
 
     let mut pub_buf = vec![0u8; pub_size];
-    let written = key.encode_public_key(&mut pub_buf)
+    let written = key
+        .encode_public_key(&mut pub_buf)
         .expect("Error with encode_public_key()");
     assert_eq!(written, pub_size);
 
     // Re-import public key and encapsulate.
     let mut pub_key = MlKem::new(MlKem::TYPE_768).expect("Error with new()");
-    pub_key.decode_public_key(&pub_buf).expect("Error with decode_public_key()");
+    pub_key
+        .decode_public_key(&pub_buf)
+        .expect("Error with decode_public_key()");
 
     let mut ct = vec![0u8; ct_size];
     let mut ss_enc = vec![0u8; ss_size];
-    pub_key.encapsulate(&mut ct, &mut ss_enc, &mut rng)
+    pub_key
+        .encapsulate(&mut ct, &mut ss_enc, &mut rng)
         .expect("Error with encapsulate() via imported public key");
 
     // Decapsulate with the original full key pair.
@@ -262,7 +326,10 @@ fn test_encode_decode_public_key() {
     key.decapsulate(&mut ss_dec, &ct)
         .expect("Error with decapsulate()");
 
-    assert_eq!(ss_enc, ss_dec, "Shared secrets must match after public key import");
+    assert_eq!(
+        ss_enc, ss_dec,
+        "Shared secrets must match after public key import"
+    );
 }
 
 /// Encode and decode the private key for ML-KEM-768, verifying that
@@ -272,15 +339,21 @@ fn test_encode_decode_public_key() {
 fn test_encode_decode_private_key() {
     common::setup();
     let mut rng = RNG::new().expect("Error creating RNG");
-    let mut key = MlKem::generate(MlKem::TYPE_768, &mut rng)
-        .expect("Error with generate()");
+    let mut key = MlKem::generate(MlKem::TYPE_768, &mut rng).expect("Error with generate()");
 
-    let priv_size = key.private_key_size().expect("Error with private_key_size()");
-    let ct_size = key.cipher_text_size().expect("Error with cipher_text_size()");
-    let ss_size = key.shared_secret_size().expect("Error with shared_secret_size()");
+    let priv_size = key
+        .private_key_size()
+        .expect("Error with private_key_size()");
+    let ct_size = key
+        .cipher_text_size()
+        .expect("Error with cipher_text_size()");
+    let ss_size = key
+        .shared_secret_size()
+        .expect("Error with shared_secret_size()");
 
     let mut priv_buf = vec![0u8; priv_size];
-    let written = key.encode_private_key(&mut priv_buf)
+    let written = key
+        .encode_private_key(&mut priv_buf)
         .expect("Error with encode_private_key()");
     assert_eq!(written, priv_size);
 
@@ -292,13 +365,19 @@ fn test_encode_decode_private_key() {
 
     // Re-import private key and decapsulate.
     let mut priv_key = MlKem::new(MlKem::TYPE_768).expect("Error with new()");
-    priv_key.decode_private_key(&priv_buf).expect("Error with decode_private_key()");
+    priv_key
+        .decode_private_key(&priv_buf)
+        .expect("Error with decode_private_key()");
 
     let mut ss_dec = vec![0u8; ss_size];
-    priv_key.decapsulate(&mut ss_dec, &ct)
+    priv_key
+        .decapsulate(&mut ss_dec, &ct)
         .expect("Error with decapsulate() via imported private key");
 
-    assert_eq!(ss_enc, ss_dec, "Shared secrets must match after private key import");
+    assert_eq!(
+        ss_enc, ss_dec,
+        "Shared secrets must match after private key import"
+    );
 }
 
 /// Verify that encapsulate/decapsulate round-trips work across all three
@@ -310,11 +389,14 @@ fn test_encap_decap_all_types() {
     let mut rng = RNG::new().expect("Error creating RNG");
 
     for key_type in [MlKem::TYPE_512, MlKem::TYPE_768, MlKem::TYPE_1024] {
-        let mut key = MlKem::generate(key_type, &mut rng)
-            .expect("Error with generate()");
+        let mut key = MlKem::generate(key_type, &mut rng).expect("Error with generate()");
 
-        let ct_size = key.cipher_text_size().expect("Error with cipher_text_size()");
-        let ss_size = key.shared_secret_size().expect("Error with shared_secret_size()");
+        let ct_size = key
+            .cipher_text_size()
+            .expect("Error with cipher_text_size()");
+        let ss_size = key
+            .shared_secret_size()
+            .expect("Error with shared_secret_size()");
 
         let mut ct = vec![0u8; ct_size];
         let mut ss_enc = vec![0u8; ss_size];

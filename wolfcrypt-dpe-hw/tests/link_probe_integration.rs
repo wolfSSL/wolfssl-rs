@@ -78,7 +78,11 @@ fn main() {
 
         // --- dispatch_cipher: wc_AesInit + wc_AesGcmSetKey + encrypt + free -
         let mut aes: wolfcrypt_sys::Aes = core::mem::zeroed();
-        wolfcrypt_sys::wc_AesInit(&mut aes, core::ptr::null_mut(), wolfcrypt_dpe_hw::HW_DEVICE_ID);
+        wolfcrypt_sys::wc_AesInit(
+            &mut aes,
+            core::ptr::null_mut(),
+            wolfcrypt_dpe_hw::HW_DEVICE_ID,
+        );
         let aes_key = [0x00u8; 32];
         let rc = wolfcrypt_sys::wc_AesGcmSetKey(&mut aes, aes_key.as_ptr(), 32);
         assert_eq!(rc, 0, "wc_AesGcmSetKey failed: {rc}");
@@ -88,10 +92,15 @@ fn main() {
         let mut tag = [0u8; 16];
         let rc = wolfcrypt_sys::wc_AesGcmEncrypt(
             &mut aes,
-            ct.as_mut_ptr(), pt.as_ptr(), 16,
-            iv.as_ptr(), 12,
-            tag.as_mut_ptr(), 16,
-            core::ptr::null(), 0,
+            ct.as_mut_ptr(),
+            pt.as_ptr(),
+            16,
+            iv.as_ptr(),
+            12,
+            tag.as_mut_ptr(),
+            16,
+            core::ptr::null(),
+            0,
         );
         assert_eq!(rc, 0, "wc_AesGcmEncrypt failed: {rc}");
         wolfcrypt_sys::wc_AesFree(&mut aes);
@@ -109,7 +118,10 @@ fn main() {
 
     println!("link_probe_integration PASSED — all dispatch module symbols link and execute");
     std::fs::write(
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../audit/phase5_link_probe.txt"),
+        concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../audit/phase5_link_probe.txt"
+        ),
         "PASS: all dispatch module symbols link without macro-expansion headers\n\
          Verified: wc_Hash_ex, wc_HmacInit, wc_InitRng_ex, wc_AesGcmEncrypt, wc_ecc_init_ex\n",
     )

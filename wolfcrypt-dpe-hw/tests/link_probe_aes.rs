@@ -4,7 +4,10 @@
 
 fn main() {
     let init_rc = unsafe { wolfcrypt_sys::wolfCrypt_Init() };
-    assert!(init_rc == 0 || init_rc == 1, "wolfCrypt_Init failed: {init_rc}");
+    assert!(
+        init_rc == 0 || init_rc == 1,
+        "wolfCrypt_Init failed: {init_rc}"
+    );
 
     // Call wc_AesGcmEncrypt with zero-length input to verify the symbol links.
     let mut aes: wolfcrypt_sys::Aes = unsafe { core::mem::zeroed() };
@@ -12,7 +15,11 @@ fn main() {
     let iv = [0u8; 12];
     let mut tag = [0u8; 16];
     let rc = unsafe {
-        wolfcrypt_sys::wc_AesInit(&mut aes, core::ptr::null_mut(), wolfcrypt_sys::INVALID_DEVID);
+        wolfcrypt_sys::wc_AesInit(
+            &mut aes,
+            core::ptr::null_mut(),
+            wolfcrypt_sys::INVALID_DEVID,
+        );
         wolfcrypt_sys::wc_AesGcmSetKey(&mut aes, key.as_ptr(), key.len() as u32);
         wolfcrypt_sys::wc_AesGcmEncrypt(
             &mut aes,

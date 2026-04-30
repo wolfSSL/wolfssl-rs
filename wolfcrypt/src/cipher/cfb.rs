@@ -199,30 +199,42 @@ macro_rules! impl_aes_cfb_dec {
 // ---------------------------------------------------------------------------
 
 impl_aes_cfb_enc!(
-    Aes128CfbEnc, typenum::U16, 16u32,
+    Aes128CfbEnc,
+    typenum::U16,
+    16u32,
     "AES-128 CFB-128 encryption, implementing `StreamCipher` and `KeyIvInit`."
 );
 impl_aes_cfb_dec!(
-    Aes128CfbDec, typenum::U16, 16u32,
+    Aes128CfbDec,
+    typenum::U16,
+    16u32,
     "AES-128 CFB-128 decryption, implementing `StreamCipher` and `KeyIvInit`."
 );
 
 #[cfg(wolfssl_aes_192)]
 impl_aes_cfb_enc!(
-    Aes192CfbEnc, typenum::U24, 24u32,
+    Aes192CfbEnc,
+    typenum::U24,
+    24u32,
     "AES-192 CFB-128 encryption, implementing `StreamCipher` and `KeyIvInit`."
 );
 #[cfg(wolfssl_aes_192)]
 impl_aes_cfb_dec!(
-    Aes192CfbDec, typenum::U24, 24u32,
+    Aes192CfbDec,
+    typenum::U24,
+    24u32,
     "AES-192 CFB-128 decryption, implementing `StreamCipher` and `KeyIvInit`."
 );
 
 impl_aes_cfb_enc!(
-    Aes256CfbEnc, typenum::U32, 32u32,
+    Aes256CfbEnc,
+    typenum::U32,
+    32u32,
     "AES-256 CFB-128 encryption, implementing `StreamCipher` and `KeyIvInit`."
 );
 impl_aes_cfb_dec!(
-    Aes256CfbDec, typenum::U32, 32u32,
+    Aes256CfbDec,
+    typenum::U32,
+    32u32,
     "AES-256 CFB-128 decryption, implementing `StreamCipher` and `KeyIvInit`."
 );

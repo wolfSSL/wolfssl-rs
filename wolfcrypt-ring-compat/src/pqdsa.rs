@@ -8,14 +8,12 @@ pub(crate) mod signature;
 
 use crate::error::Unspecified;
 use crate::wolfcrypt_rs::{
-    wc_dilithium_key,
-    wc_dilithium_init, wc_dilithium_free, wc_dilithium_set_level,
-    wc_dilithium_import_public, wc_dilithium_verify_ctx_msg,
+    wc_dilithium_free, wc_dilithium_import_public, wc_dilithium_init, wc_dilithium_key,
+    wc_dilithium_set_level, wc_dilithium_verify_ctx_msg, DILITHIUM_ML_DSA_44_KEY_SIZE,
+    DILITHIUM_ML_DSA_44_PUB_KEY_SIZE, DILITHIUM_ML_DSA_44_SIG_SIZE, DILITHIUM_ML_DSA_65_KEY_SIZE,
+    DILITHIUM_ML_DSA_65_PUB_KEY_SIZE, DILITHIUM_ML_DSA_65_SIG_SIZE, DILITHIUM_ML_DSA_87_KEY_SIZE,
+    DILITHIUM_ML_DSA_87_PUB_KEY_SIZE, DILITHIUM_ML_DSA_87_SIG_SIZE, DILITHIUM_SEED_SIZE,
     WC_ML_DSA_44, WC_ML_DSA_65, WC_ML_DSA_87,
-    DILITHIUM_ML_DSA_44_PUB_KEY_SIZE, DILITHIUM_ML_DSA_44_KEY_SIZE, DILITHIUM_ML_DSA_44_SIG_SIZE,
-    DILITHIUM_ML_DSA_65_PUB_KEY_SIZE, DILITHIUM_ML_DSA_65_KEY_SIZE, DILITHIUM_ML_DSA_65_SIG_SIZE,
-    DILITHIUM_ML_DSA_87_PUB_KEY_SIZE, DILITHIUM_ML_DSA_87_KEY_SIZE, DILITHIUM_ML_DSA_87_SIG_SIZE,
-    DILITHIUM_SEED_SIZE,
 };
 
 /// Identifies which ML-DSA parameter set is in use.
@@ -106,11 +104,7 @@ pub(crate) fn verify_pqdsa_sig_native(
             return Err(Unspecified);
         }
 
-        let rc = wc_dilithium_import_public(
-            public_key.as_ptr(),
-            public_key.len() as u32,
-            &mut key,
-        );
+        let rc = wc_dilithium_import_public(public_key.as_ptr(), public_key.len() as u32, &mut key);
         if rc != 0 {
             wc_dilithium_free(&mut key);
             return Err(Unspecified);
@@ -122,8 +116,8 @@ pub(crate) fn verify_pqdsa_sig_native(
         let rc = wc_dilithium_verify_ctx_msg(
             signature.as_ptr(),
             signature.len() as u32,
-            core::ptr::null(),  // empty context
-            0,                  // context length = 0
+            core::ptr::null(), // empty context
+            0,                 // context length = 0
             msg.as_ptr(),
             msg.len() as u32,
             &mut res,

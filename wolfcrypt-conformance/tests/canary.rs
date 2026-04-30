@@ -9,8 +9,8 @@
 #[cfg(wolfssl_openssl_extra)]
 #[test]
 fn digest_comparison_detects_difference() {
-    use wolfcrypt::Sha256 as WolfSha256;
     use digest::Digest;
+    use wolfcrypt::Sha256 as WolfSha256;
 
     let h1 = WolfSha256::digest(b"A");
     let h2 = sha2::Sha256::digest(b"B");
@@ -24,8 +24,8 @@ fn digest_comparison_detects_difference() {
 #[cfg(wolfssl_openssl_extra)]
 #[test]
 fn digest_flip_detected() {
-    use wolfcrypt::Sha256 as WolfSha256;
     use digest::Digest;
+    use wolfcrypt::Sha256 as WolfSha256;
 
     let hash = WolfSha256::digest(b"canary flip test");
     let mut flipped = hash.to_vec();
@@ -40,10 +40,10 @@ fn digest_flip_detected() {
 #[cfg(wolfssl_aes_gcm)]
 #[test]
 fn aead_wrong_key_decrypt_fails() {
-    use wolfcrypt::Aes128Gcm;
     use aead::{Aead, KeyInit};
     use generic_array::GenericArray;
     use rand::RngCore;
+    use wolfcrypt::Aes128Gcm;
 
     let mut rng = rand::thread_rng();
 
@@ -74,10 +74,10 @@ fn aead_wrong_key_decrypt_fails() {
 #[cfg(wolfssl_aes_gcm)]
 #[test]
 fn aead_ct_not_pt() {
-    use wolfcrypt::Aes128Gcm;
     use aead::{Aead, KeyInit};
     use generic_array::GenericArray;
     use rand::RngCore;
+    use wolfcrypt::Aes128Gcm;
 
     let mut rng = rand::thread_rng();
 
@@ -104,8 +104,8 @@ fn aead_ct_not_pt() {
 #[cfg(all(wolfssl_openssl_extra, wolfssl_hmac))]
 #[test]
 fn hmac_key_matters() {
-    use wolfcrypt::WolfHmacSha256;
     use hmac::Mac;
+    use wolfcrypt::WolfHmacSha256;
 
     let key_a = b"canary key AAAA AAAA AAAA AAAA AA";
     let key_b = b"canary key BBBB BBBB BBBB BBBB BB";
@@ -131,15 +131,14 @@ fn hmac_key_matters() {
 #[cfg(wolfssl_ed25519)]
 #[test]
 fn signature_not_message() {
-    use wolfcrypt::Ed25519SigningKey;
     use rand::Rng;
+    use wolfcrypt::Ed25519SigningKey;
 
     let mut rng = rand::thread_rng();
     let seed: [u8; 32] = rng.gen();
     let msg = b"the signature should not equal this message";
 
-    let sk = Ed25519SigningKey::from_seed(&seed)
-        .expect("canary: Ed25519 from_seed must succeed");
+    let sk = Ed25519SigningKey::from_seed(&seed).expect("canary: Ed25519 from_seed must succeed");
 
     use signature::Signer as _;
     let sig: ed25519::Signature = sk.sign(msg);
@@ -154,8 +153,8 @@ fn signature_not_message() {
 #[cfg(all(wolfssl_openssl_extra, wolfssl_ecc))]
 #[test]
 fn ecdsa_signature_varies() {
-    use wolfcrypt::{EcdsaSigningKey, EcdsaSignature, P256};
     use signature::Signer as _;
+    use wolfcrypt::{EcdsaSignature, EcdsaSigningKey, P256};
 
     let sk = EcdsaSigningKey::<P256>::generate()
         .expect("canary: ECDSA P-256 key generation must succeed");
@@ -174,8 +173,8 @@ fn ecdsa_signature_varies() {
 
 #[test]
 fn rng_not_zeros() {
-    use wolfcrypt::WolfRng;
     use rand_core::Rng;
+    use wolfcrypt::WolfRng;
 
     let mut rng = WolfRng::new().expect("canary: WolfRng::new must succeed");
     let mut buf = [0u8; 32];
@@ -189,8 +188,8 @@ fn rng_not_zeros() {
 
 #[test]
 fn rng_not_constant() {
-    use wolfcrypt::WolfRng;
     use rand_core::Rng;
+    use wolfcrypt::WolfRng;
 
     let mut rng = WolfRng::new().expect("canary: WolfRng::new must succeed");
     let mut buf1 = [0u8; 32];

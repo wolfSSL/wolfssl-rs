@@ -94,7 +94,8 @@ macro_rules! impl_tls_io {
                     return Ok(0);
                 }
                 // Clamp to c_int::MAX to avoid silent truncation on 64-bit.
-                let len = std::cmp::min(buf.len(), core::ffi::c_int::MAX as usize) as core::ffi::c_int;
+                let len =
+                    std::cmp::min(buf.len(), core::ffi::c_int::MAX as usize) as core::ffi::c_int;
                 // SAFETY: ssl is valid (created by wolfSSL_new, not yet freed).
                 let ret = unsafe {
                     wolfcrypt_sys::wolfSSL_read(
@@ -117,7 +118,10 @@ macro_rules! impl_tls_io {
                         }
                         _ => Err(std::io::Error::new(
                             std::io::ErrorKind::Other,
-                            format!("wolfSSL_read: {} (error {err})", $crate::error::error_string(err)),
+                            format!(
+                                "wolfSSL_read: {} (error {err})",
+                                $crate::error::error_string(err)
+                            ),
                         )),
                     }
                 }
@@ -130,7 +134,8 @@ macro_rules! impl_tls_io {
                     return Ok(0);
                 }
                 // Clamp to c_int::MAX to avoid silent truncation on 64-bit.
-                let len = std::cmp::min(buf.len(), core::ffi::c_int::MAX as usize) as core::ffi::c_int;
+                let len =
+                    std::cmp::min(buf.len(), core::ffi::c_int::MAX as usize) as core::ffi::c_int;
                 // SAFETY: ssl is valid, buf is a valid slice.
                 let ret = unsafe {
                     wolfcrypt_sys::wolfSSL_write(
@@ -151,7 +156,10 @@ macro_rules! impl_tls_io {
                         }
                         _ => Err(std::io::Error::new(
                             std::io::ErrorKind::Other,
-                            format!("wolfSSL_write: {} (error {err})", $crate::error::error_string(err)),
+                            format!(
+                                "wolfSSL_write: {} (error {err})",
+                                $crate::error::error_string(err)
+                            ),
                         )),
                     }
                 }
@@ -195,7 +203,9 @@ impl Drop for SslGuard {
     fn drop(&mut self) {
         // SAFETY: the WOLFSSL pointer was created by wolfSSL_new and has
         // not been freed (into_raw was not called).
-        unsafe { wolfcrypt_sys::wolfSSL_free(self.0); }
+        unsafe {
+            wolfcrypt_sys::wolfSSL_free(self.0);
+        }
     }
 }
 
@@ -227,10 +237,7 @@ pub fn ensure_init() {
     INIT.call_once(|| {
         // SAFETY: wolfSSL_Init is safe to call once at startup.
         let ret = unsafe { wolfSSL_Init() };
-        assert!(
-            ret >= 0,
-            "wolfSSL_Init failed with code {ret}"
-        );
+        assert!(ret >= 0, "wolfSSL_Init failed with code {ret}");
     });
 }
 

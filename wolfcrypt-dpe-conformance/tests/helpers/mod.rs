@@ -4,8 +4,8 @@ pub mod dpe_harness;
 pub mod x509_parser;
 
 use caliptra_dpe_crypto::{
-    Crypto, CryptoSuite, Digest, PubKey, Sha256, Sha384, Signature,
     ecdsa::{EcdsaPubKey, EcdsaSignature},
+    Crypto, CryptoSuite, Digest, PubKey, Sha256, Sha384, Signature,
 };
 use rand::RngCore;
 
@@ -115,8 +115,7 @@ pub fn verify_p384_signature(
     use p384::ecdsa::{signature::hazmat::PrehashVerifier, Signature, VerifyingKey};
     let vk = VerifyingKey::from_sec1_bytes(pubkey_uncompressed)
         .map_err(|e| format!("P384 VerifyingKey: {e}"))?;
-    let sig = Signature::from_slice(sig_r_s)
-        .map_err(|e| format!("P384 Signature: {e}"))?;
+    let sig = Signature::from_slice(sig_r_s).map_err(|e| format!("P384 Signature: {e}"))?;
     vk.verify_prehash(message_digest, &sig)
         .map_err(|e| format!("P384 verify: {e}"))
 }
@@ -130,8 +129,7 @@ pub fn verify_p256_signature(
     use p256::ecdsa::{signature::hazmat::PrehashVerifier, Signature, VerifyingKey};
     let vk = VerifyingKey::from_sec1_bytes(pubkey_uncompressed)
         .map_err(|e| format!("P256 VerifyingKey: {e}"))?;
-    let sig = Signature::from_slice(sig_r_s)
-        .map_err(|e| format!("P256 Signature: {e}"))?;
+    let sig = Signature::from_slice(sig_r_s).map_err(|e| format!("P256 Signature: {e}"))?;
     vk.verify_prehash(message_digest, &sig)
         .map_err(|e| format!("P256 verify: {e}"))
 }

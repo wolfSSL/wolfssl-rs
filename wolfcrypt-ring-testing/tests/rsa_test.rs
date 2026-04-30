@@ -1,10 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0 OR ISC
 
+use openssl::rsa::{Padding, Rsa};
 use wolfcrypt_ring_compat::rsa::{
     Pkcs1PrivateDecryptingKey, Pkcs1PublicEncryptingKey, PrivateDecryptingKey, PublicEncryptingKey,
 };
-use openssl::rsa::{Padding, Rsa};
 
 #[test]
 fn rsa2048_pkcs1_openssl_interop() {

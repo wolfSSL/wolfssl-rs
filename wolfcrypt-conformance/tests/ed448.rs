@@ -48,8 +48,7 @@ fn tampered_signature_rejected() {
     let sig: Ed448Signature = sk.sign(msg);
     let mut sig_bytes = sig.to_bytes();
     sig_bytes[20] ^= 0x01;
-    let tampered_sig =
-        Ed448Signature::from_bytes(&sig_bytes);
+    let tampered_sig = Ed448Signature::from_bytes(&sig_bytes);
 
     let result = vk.verify(msg, &tampered_sig);
     assert!(

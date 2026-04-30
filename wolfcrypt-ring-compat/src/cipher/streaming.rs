@@ -1,15 +1,15 @@
-use crate::wolfcrypt_rs::{
-    EVP_CIPHER_CTX_new, EVP_CIPHER_iv_length_raw, EVP_CIPHER_key_length, EVP_DecryptFinal_ex,
-    EVP_DecryptInit_ex, EVP_DecryptUpdate, EVP_EncryptFinal_ex, EVP_EncryptInit_ex,
-    EVP_EncryptUpdate, EVP_CIPHER, EVP_CIPHER_CTX,
-    EVP_aes_128_cfb128, EVP_aes_192_cfb128, EVP_aes_256_cfb128,
-};
 use crate::cipher::{
     Algorithm, DecryptionContext, EncryptionContext, OperatingMode, UnboundCipherKey,
 };
 use crate::error::Unspecified;
 use crate::fips::indicator_check;
 use crate::ptr::LcPtr;
+use crate::wolfcrypt_rs::{
+    EVP_CIPHER_CTX_new, EVP_CIPHER_iv_length_raw, EVP_CIPHER_key_length, EVP_DecryptFinal_ex,
+    EVP_DecryptInit_ex, EVP_DecryptUpdate, EVP_EncryptFinal_ex, EVP_EncryptInit_ex,
+    EVP_EncryptUpdate, EVP_aes_128_cfb128, EVP_aes_192_cfb128, EVP_aes_256_cfb128, EVP_CIPHER,
+    EVP_CIPHER_CTX,
+};
 use core::ptr::{null, null_mut};
 
 #[cfg(not(feature = "std"))]
@@ -509,7 +509,8 @@ impl StreamingDecryptingKey {
 
         // Save any excess output to the overflow buffer
         if copy_len < evp_outlen {
-            self.overflow_buf.extend_from_slice(&tmp[copy_len..evp_outlen]);
+            self.overflow_buf
+                .extend_from_slice(&tmp[copy_len..evp_outlen]);
         }
 
         self.output_generated += written;
@@ -611,11 +612,7 @@ impl StreamingDecryptingKey {
 
         // SAFETY: cipher_ctx is valid; tmp buffer is at least 2 * block_len bytes.
         if 1 != indicator_check!(unsafe {
-            EVP_DecryptFinal_ex(
-                self.cipher_ctx.as_mut_ptr(),
-                tmp.as_mut_ptr(),
-                &mut outlen,
-            )
+            EVP_DecryptFinal_ex(self.cipher_ctx.as_mut_ptr(), tmp.as_mut_ptr(), &mut outlen)
         }) {
             return Err(Unspecified);
         }

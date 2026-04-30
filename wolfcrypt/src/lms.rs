@@ -21,10 +21,9 @@ use alloc::vec::Vec;
 
 use crate::error::{check, len_as_c_int, WolfCryptError};
 use wolfcrypt_rs::{
-    wc_LmsKey_ExportPubRaw, wc_LmsKey_Free, wc_LmsKey_GetPrivLen,
-    wc_LmsKey_GetPubLen, wc_LmsKey_GetSigLen, wc_LmsKey_ImportPubRaw,
-    wc_LmsKey_Init, wc_LmsKey_MakeKey, wc_LmsKey_SetContext,
-    wc_LmsKey_SetParameters, wc_LmsKey_SetReadCb, wc_LmsKey_SetWriteCb,
+    wc_LmsKey_ExportPubRaw, wc_LmsKey_Free, wc_LmsKey_GetPrivLen, wc_LmsKey_GetPubLen,
+    wc_LmsKey_GetSigLen, wc_LmsKey_ImportPubRaw, wc_LmsKey_Init, wc_LmsKey_MakeKey,
+    wc_LmsKey_SetContext, wc_LmsKey_SetParameters, wc_LmsKey_SetReadCb, wc_LmsKey_SetWriteCb,
     wc_LmsKey_Sign, wc_LmsKey_SigsLeft, wc_LmsKey_Verify, WcLmsKey,
 };
 
@@ -51,16 +50,32 @@ impl LmsParams {
     /// LMS with 1 level, height 5, Winternitz 8 — 32 signatures.
     ///
     /// Fastest key generation; useful for testing.
-    pub const L1_H5_W8: Self = Self { levels: 1, height: 5, winternitz: 8 };
+    pub const L1_H5_W8: Self = Self {
+        levels: 1,
+        height: 5,
+        winternitz: 8,
+    };
 
     /// LMS with 1 level, height 10, Winternitz 4 — 1024 signatures.
-    pub const L1_H10_W4: Self = Self { levels: 1, height: 10, winternitz: 4 };
+    pub const L1_H10_W4: Self = Self {
+        levels: 1,
+        height: 10,
+        winternitz: 4,
+    };
 
     /// LMS with 2 levels, height 5, Winternitz 8 — 1024 signatures.
-    pub const L2_H5_W8: Self = Self { levels: 2, height: 5, winternitz: 8 };
+    pub const L2_H5_W8: Self = Self {
+        levels: 2,
+        height: 5,
+        winternitz: 8,
+    };
 
     /// LMS with 2 levels, height 10, Winternitz 4 — 1048576 signatures.
-    pub const L2_H10_W4: Self = Self { levels: 2, height: 10, winternitz: 4 };
+    pub const L2_H10_W4: Self = Self {
+        levels: 2,
+        height: 10,
+        winternitz: 4,
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -95,16 +110,11 @@ impl LmsVerifyingKey {
     ///
     /// The byte length must match what wolfCrypt expects for the given
     /// parameters (queried via `wc_LmsKey_GetPubLen`).
-    pub fn from_public_bytes(
-        params: LmsParams,
-        pub_key: &[u8],
-    ) -> Result<Self, WolfCryptError> {
+    pub fn from_public_bytes(params: LmsParams, pub_key: &[u8]) -> Result<Self, WolfCryptError> {
         let mut key = WcLmsKey::zeroed();
 
         // SAFETY: `key` is zeroed; `wc_LmsKey_Init` fully initialises it.
-        let rc = unsafe {
-            wc_LmsKey_Init(&mut key, core::ptr::null_mut(), -1)
-        };
+        let rc = unsafe { wc_LmsKey_Init(&mut key, core::ptr::null_mut(), -1) };
         check(rc, "wc_LmsKey_Init")?;
 
         // SAFETY: `key` is initialised.
@@ -131,16 +141,13 @@ impl LmsVerifyingKey {
         }
 
         // SAFETY: `key` has parameters set, `pub_key` has the correct length.
-        let rc = unsafe {
-            wc_LmsKey_ImportPubRaw(
-                &mut key,
-                pub_key.as_ptr(),
-                expected_len,
-            )
-        };
+        let rc = unsafe { wc_LmsKey_ImportPubRaw(&mut key, pub_key.as_ptr(), expected_len) };
         if rc != 0 {
             unsafe { wc_LmsKey_Free(&mut key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_LmsKey_ImportPubRaw" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_LmsKey_ImportPubRaw",
+            });
         }
 
         Ok(Self {
@@ -189,13 +196,7 @@ impl LmsVerifyingKey {
         // wolfCrypt requires `*mut` for verify but does not logically modify
         // the key. `sig` and `msg` are valid slices.
         let rc = unsafe {
-            wc_LmsKey_Verify(
-                self.key.get(),
-                sig.as_ptr(),
-                sig_len,
-                msg.as_ptr(),
-                msg_len,
-            )
+            wc_LmsKey_Verify(self.key.get(), sig.as_ptr(), sig_len, msg.as_ptr(), msg_len)
         };
         check(rc, "wc_LmsKey_Verify")
     }
@@ -207,13 +208,8 @@ impl LmsVerifyingKey {
         let mut out_len = pub_len as u32;
 
         // SAFETY: `self.key` is initialised with a valid public key.
-        let rc = unsafe {
-            wc_LmsKey_ExportPubRaw(
-                &*self.key.get(),
-                buf.as_mut_ptr(),
-                &mut out_len,
-            )
-        };
+        let rc =
+            unsafe { wc_LmsKey_ExportPubRaw(&*self.key.get(), buf.as_mut_ptr(), &mut out_len) };
         check(rc, "wc_LmsKey_ExportPubRaw")?;
         buf.truncate(out_len as usize);
         Ok(buf)
@@ -247,11 +243,7 @@ struct PrivKeyStore {
 ///
 /// `context` must point to a live `PrivKeyStore` (guaranteed by
 /// `LmsSigningKey`'s invariant).
-unsafe extern "C" fn lms_write_cb(
-    priv_: *const u8,
-    priv_sz: u32,
-    context: *mut c_void,
-) -> c_int {
+unsafe extern "C" fn lms_write_cb(priv_: *const u8, priv_sz: u32, context: *mut c_void) -> c_int {
     let store = unsafe { &mut *(context as *mut PrivKeyStore) };
     let src = unsafe { core::slice::from_raw_parts(priv_, priv_sz as usize) };
     store.data.resize(src.len(), 0);
@@ -264,11 +256,7 @@ unsafe extern "C" fn lms_write_cb(
 /// # Safety
 ///
 /// `context` must point to a live `PrivKeyStore`.
-unsafe extern "C" fn lms_read_cb(
-    priv_: *mut u8,
-    priv_sz: u32,
-    context: *mut c_void,
-) -> c_int {
+unsafe extern "C" fn lms_read_cb(priv_: *mut u8, priv_sz: u32, context: *mut c_void) -> c_int {
     let store = unsafe { &*(context as *const PrivKeyStore) };
     if store.data.len() != priv_sz as usize {
         return -1; // size mismatch
@@ -320,7 +308,10 @@ impl LmsSigningKey {
         };
         if rc != 0 {
             unsafe { wc_LmsKey_Free(&mut key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_LmsKey_SetParameters" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_LmsKey_SetParameters",
+            });
         }
 
         // Allocate stable storage for the private key callbacks.
@@ -331,24 +322,36 @@ impl LmsSigningKey {
         let rc = unsafe { wc_LmsKey_SetWriteCb(&mut key, Some(lms_write_cb)) };
         if rc != 0 {
             unsafe { wc_LmsKey_Free(&mut key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_LmsKey_SetWriteCb" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_LmsKey_SetWriteCb",
+            });
         }
         let rc = unsafe { wc_LmsKey_SetReadCb(&mut key, Some(lms_read_cb)) };
         if rc != 0 {
             unsafe { wc_LmsKey_Free(&mut key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_LmsKey_SetReadCb" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_LmsKey_SetReadCb",
+            });
         }
         let rc = unsafe { wc_LmsKey_SetContext(&mut key, ctx_ptr) };
         if rc != 0 {
             unsafe { wc_LmsKey_Free(&mut key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_LmsKey_SetContext" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_LmsKey_SetContext",
+            });
         }
 
         // Generate the key pair.
         let rc = unsafe { wc_LmsKey_MakeKey(&mut key, &mut rng.rng) };
         if rc != 0 {
             unsafe { wc_LmsKey_Free(&mut key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_LmsKey_MakeKey" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_LmsKey_MakeKey",
+            });
         }
 
         Ok(Self {
@@ -391,9 +394,8 @@ impl LmsSigningKey {
 
         let mut buf = vec![0u8; pub_len as usize];
         let mut out_len = pub_len;
-        let rc = unsafe {
-            wc_LmsKey_ExportPubRaw(&*self.key.get(), buf.as_mut_ptr(), &mut out_len)
-        };
+        let rc =
+            unsafe { wc_LmsKey_ExportPubRaw(&*self.key.get(), buf.as_mut_ptr(), &mut out_len) };
         check(rc, "wc_LmsKey_ExportPubRaw")?;
         buf.truncate(out_len as usize);
         Ok(buf)

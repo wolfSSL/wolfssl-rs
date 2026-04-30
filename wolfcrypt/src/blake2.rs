@@ -12,9 +12,9 @@
 //! so these types expose a standalone API similar to [`crate::hkdf`].
 
 #[cfg(any(wolfssl_blake2b, wolfssl_blake2s))]
-use alloc::vec::Vec;
-#[cfg(any(wolfssl_blake2b, wolfssl_blake2s))]
 use crate::error::{check, len_as_u32, WolfCryptError};
+#[cfg(any(wolfssl_blake2b, wolfssl_blake2s))]
+use alloc::vec::Vec;
 
 // ============================================================
 // Blake2b
@@ -80,7 +80,10 @@ impl Blake2b {
             )
         };
         check(rc, "wc_InitBlake2b")?;
-        Ok(Self { ctx, digest_size: digest_size as u32 })
+        Ok(Self {
+            ctx,
+            digest_size: digest_size as u32,
+        })
     }
 
     /// Create a new keyed Blake2b hasher (MAC mode).
@@ -103,7 +106,10 @@ impl Blake2b {
             )
         };
         check(rc, "wc_InitBlake2b_WithKey")?;
-        Ok(Self { ctx, digest_size: digest_size as u32 })
+        Ok(Self {
+            ctx,
+            digest_size: digest_size as u32,
+        })
     }
 
     /// Feed data into the hasher.
@@ -200,7 +206,10 @@ impl Blake2s {
             )
         };
         check(rc, "wc_InitBlake2s")?;
-        Ok(Self { ctx, digest_size: digest_size as u32 })
+        Ok(Self {
+            ctx,
+            digest_size: digest_size as u32,
+        })
     }
 
     /// Create a new keyed Blake2s hasher (MAC mode).
@@ -223,7 +232,10 @@ impl Blake2s {
             )
         };
         check(rc, "wc_InitBlake2s_WithKey")?;
-        Ok(Self { ctx, digest_size: digest_size as u32 })
+        Ok(Self {
+            ctx,
+            digest_size: digest_size as u32,
+        })
     }
 
     /// Feed data into the hasher.

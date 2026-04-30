@@ -126,7 +126,10 @@ fn generate_fips_aliases() -> Result<()> {
             // _ex suffix changed to Ex before _fips
             ("wc_InitRsaKey_ex", "wc_InitRsaKeyEx_fips"),
             ("wc_RsaPublicEncrypt_ex", "wc_RsaPublicEncryptEx_fips"),
-            ("wc_RsaPrivateDecryptInline_ex", "wc_RsaPrivateDecryptInlineEx_fips"),
+            (
+                "wc_RsaPrivateDecryptInline_ex",
+                "wc_RsaPrivateDecryptInlineEx_fips",
+            ),
             ("wc_RsaPrivateDecrypt_ex", "wc_RsaPrivateDecryptEx_fips"),
             ("wc_RsaPSS_Sign_ex", "wc_RsaPSS_SignEx_fips"),
             ("wc_RsaPSS_VerifyInline_ex", "wc_RsaPSS_VerifyInlineEx_fips"),
@@ -135,7 +138,6 @@ fn generate_fips_aliases() -> Result<()> {
             ("wc_DhSetKey_ex", "wc_DhSetKeyEx_fips"),
             ("wc_DhCheckPubKey_ex", "wc_DhCheckPubKeyEx_fips"),
             ("wc_DhCheckPrivKey_ex", "wc_DhCheckPrivKeyEx_fips"),
-
             // Name change
             ("wc_PRF_TLS", "wc_PRF_TLSv12_fips"),
         ];
@@ -155,12 +157,12 @@ fn generate_fips_aliases() -> Result<()> {
         if non_fips_re.is_match(&binding) {
             // Add any new known names defined with both a _fips suffix and not
             // here. Warn if any new ones are discovered.
-            let known_both = &[
-                "wc_AesGcmEncrypt",
-                "wc_AesCcmEncrypt",
-            ];
+            let known_both = &["wc_AesGcmEncrypt", "wc_AesCcmEncrypt"];
             if !known_both.contains(&base_name) {
-                println!("cargo:warning=Skipping FIPS symbols alias for {}", base_name);
+                println!(
+                    "cargo:warning=Skipping FIPS symbols alias for {}",
+                    base_name
+                );
             }
         } else {
             // Only alias if the base name doesn't already exist
@@ -226,14 +228,22 @@ fn scan_cfg() -> Result<()> {
 
     /* chacha20_poly1305 */
     check_cfg(&binding, "wc_ChaCha20Poly1305_Encrypt", "chacha20_poly1305");
-    check_cfg(&binding, "wc_XChaCha20Poly1305_Encrypt", "xchacha20_poly1305");
+    check_cfg(
+        &binding,
+        "wc_XChaCha20Poly1305_Encrypt",
+        "xchacha20_poly1305",
+    );
 
     /* cmac */
     check_cfg(&binding, "wc_InitCmac", "cmac");
 
     /* curve25519 */
     check_cfg(&binding, "wc_curve25519_make_pub", "curve25519");
-    check_cfg(&binding, "wc_curve25519_make_pub_blind", "curve25519_blinding");
+    check_cfg(
+        &binding,
+        "wc_curve25519_make_pub_blind",
+        "curve25519_blinding",
+    );
 
     /* dh */
     check_cfg(&binding, "wc_InitDhKey", "dh");
@@ -246,24 +256,44 @@ fn scan_cfg() -> Result<()> {
 
     /* ecc */
     check_cfg(&binding, "wc_ecc_init", "ecc");
-    check_cfg(&binding, "wc_ecc_export_point_der_compressed", "ecc_comp_key");
+    check_cfg(
+        &binding,
+        "wc_ecc_export_point_der_compressed",
+        "ecc_comp_key",
+    );
     check_cfg(&binding, "wc_ecc_shared_secret", "ecc_dh");
     check_cfg(&binding, "wc_ecc_sign_hash", "ecc_sign");
     check_cfg(&binding, "wc_ecc_verify_hash", "ecc_verify");
     check_cfg(&binding, "wc_ecc_export_x963", "ecc_export");
     check_cfg(&binding, "wc_ecc_import_x963", "ecc_import");
     if check_cfg(&binding, "ecc_curve_ids_ECC_CURVE_INVALID", "ecc_curve_ids") {
-        check_cfg(&binding, "ecc_curve_ids_ECC_SM2P256V1", "ecc_curve_sm2p256v1");
+        check_cfg(
+            &binding,
+            "ecc_curve_ids_ECC_SM2P256V1",
+            "ecc_curve_sm2p256v1",
+        );
         check_cfg(&binding, "ecc_curve_ids_ECC_X25519", "ecc_curve_25519");
         check_cfg(&binding, "ecc_curve_ids_ECC_X448", "ecc_curve_448");
         check_cfg(&binding, "ecc_curve_ids_ECC_SAKKE_1", "ecc_curve_sakke");
-        check_cfg(&binding, "ecc_curve_ids_ECC_CURVE_CUSTOM", "ecc_custom_curves");
+        check_cfg(
+            &binding,
+            "ecc_curve_ids_ECC_CURVE_CUSTOM",
+            "ecc_custom_curves",
+        );
     } else {
-        check_cfg(&binding, "ecc_curve_id_ECC_SM2P256V1", "ecc_curve_sm2p256v1");
+        check_cfg(
+            &binding,
+            "ecc_curve_id_ECC_SM2P256V1",
+            "ecc_curve_sm2p256v1",
+        );
         check_cfg(&binding, "ecc_curve_id_ECC_X25519", "ecc_curve_25519");
         check_cfg(&binding, "ecc_curve_id_ECC_X448", "ecc_curve_448");
         check_cfg(&binding, "ecc_curve_id_ECC_SAKKE_1", "ecc_curve_sakke");
-        check_cfg(&binding, "ecc_curve_id_ECC_CURVE_CUSTOM", "ecc_custom_curves");
+        check_cfg(
+            &binding,
+            "ecc_curve_id_ECC_CURVE_CUSTOM",
+            "ecc_custom_curves",
+        );
     }
 
     /* ed25519 */
@@ -272,7 +302,11 @@ fn scan_cfg() -> Result<()> {
     check_cfg(&binding, "wc_ed25519_export_public", "ed25519_export");
     check_cfg(&binding, "wc_ed25519_sign_msg", "ed25519_sign");
     check_cfg(&binding, "wc_ed25519_verify_msg_ex", "ed25519_verify");
-    check_cfg(&binding, "wc_ed25519_verify_msg_init", "ed25519_streaming_verify");
+    check_cfg(
+        &binding,
+        "wc_ed25519_verify_msg_init",
+        "ed25519_streaming_verify",
+    );
 
     /* ed448 */
     check_cfg(&binding, "wc_ed448_init", "ed448");
@@ -280,7 +314,11 @@ fn scan_cfg() -> Result<()> {
     check_cfg(&binding, "wc_ed448_export_public", "ed448_export");
     check_cfg(&binding, "wc_ed448_sign_msg", "ed448_sign");
     check_cfg(&binding, "wc_ed448_verify_msg_ex", "ed448_verify");
-    check_cfg(&binding, "wc_ed448_verify_msg_init", "ed448_streaming_verify");
+    check_cfg(
+        &binding,
+        "wc_ed448_verify_msg_init",
+        "ed448_streaming_verify",
+    );
 
     /* fips */
     check_cfg(&binding, "wc_SetSeed_Cb_fips", "fips");
@@ -324,9 +362,17 @@ fn scan_cfg() -> Result<()> {
     /* dilithium / ML-DSA */
     check_cfg(&binding, "wc_dilithium_init", "dilithium");
     check_cfg(&binding, "wc_dilithium_make_key", "dilithium_make_key");
-    check_cfg(&binding, "wc_dilithium_make_key_from_seed", "dilithium_make_key_from_seed");
+    check_cfg(
+        &binding,
+        "wc_dilithium_make_key_from_seed",
+        "dilithium_make_key_from_seed",
+    );
     check_cfg(&binding, "wc_dilithium_sign_ctx_msg", "dilithium_sign");
-    check_cfg(&binding, "wc_dilithium_sign_ctx_msg_with_seed", "dilithium_sign_with_seed");
+    check_cfg(
+        &binding,
+        "wc_dilithium_sign_ctx_msg_with_seed",
+        "dilithium_sign_with_seed",
+    );
     check_cfg(&binding, "wc_dilithium_verify_ctx_msg", "dilithium_verify");
     check_cfg(&binding, "wc_dilithium_import_public", "dilithium_import");
     check_cfg(&binding, "wc_dilithium_export_public", "dilithium_export");
@@ -343,8 +389,16 @@ fn scan_cfg() -> Result<()> {
     /* lms / HSS */
     check_cfg(&binding, "wc_LmsKey_Init", "lms");
     check_cfg(&binding, "wc_LmsKey_MakeKey", "lms_make_key");
-    check_cfg(&binding, "wc_LmsParm_WC_LMS_PARM_L1_H5_W1", "lms_sha256_256");
-    check_cfg(&binding, "wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W1", "lms_sha256_192");
+    check_cfg(
+        &binding,
+        "wc_LmsParm_WC_LMS_PARM_L1_H5_W1",
+        "lms_sha256_256",
+    );
+    check_cfg(
+        &binding,
+        "wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W1",
+        "lms_sha256_192",
+    );
 
     /* sha */
     check_cfg(&binding, "wc_InitSha", "sha");
@@ -352,8 +406,16 @@ fn scan_cfg() -> Result<()> {
     check_cfg(&binding, "wc_InitSha256", "sha256");
     check_cfg(&binding, "wc_InitSha384", "sha384");
     check_cfg(&binding, "wc_InitSha512", "sha512");
-    check_cfg(&binding, "wc_HashType_WC_HASH_TYPE_SHA512_224", "sha512_224");
-    check_cfg(&binding, "wc_HashType_WC_HASH_TYPE_SHA512_256", "sha512_256");
+    check_cfg(
+        &binding,
+        "wc_HashType_WC_HASH_TYPE_SHA512_224",
+        "sha512_224",
+    );
+    check_cfg(
+        &binding,
+        "wc_HashType_WC_HASH_TYPE_SHA512_256",
+        "sha512_256",
+    );
     check_cfg(&binding, "wc_InitSha3_224", "sha3");
     check_cfg(&binding, "wc_InitShake128", "shake128");
     check_cfg(&binding, "wc_InitShake256", "shake256");

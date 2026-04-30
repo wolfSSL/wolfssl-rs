@@ -50,10 +50,14 @@ mod hw_aes;
 mod hw_pk;
 
 // Re-export TRNG counter accessors and the error injection hook.
-#[cfg(feature = "caliptra-2x")]
-pub use hw_rng::{trng_dispatch_count, reset_trng_dispatch_count};
-#[cfg(all(feature = "caliptra-2x", not(target_arch = "riscv32"), feature = "testing-hooks"))]
+#[cfg(all(
+    feature = "caliptra-2x",
+    not(target_arch = "riscv32"),
+    feature = "testing-hooks"
+))]
 pub use hw_rng::INJECT_TRNG_ERROR;
+#[cfg(feature = "caliptra-2x")]
+pub use hw_rng::{reset_trng_dispatch_count, trng_dispatch_count};
 
 // Re-export AES dispatch counter accessors.
 #[cfg(all(feature = "caliptra-2x", not(target_arch = "riscv32")))]
@@ -61,7 +65,9 @@ pub use hw_aes::{aes_dispatch_count, reset_aes_dispatch_count};
 
 // Re-export ECC and ML-DSA dispatch counter accessors.
 #[cfg(all(feature = "caliptra-2x", not(target_arch = "riscv32")))]
-pub use hw_pk::{ecc_dispatch_count, reset_ecc_dispatch_count, mldsa_dispatch_count, reset_mldsa_dispatch_count};
+pub use hw_pk::{
+    ecc_dispatch_count, mldsa_dispatch_count, reset_ecc_dispatch_count, reset_mldsa_dispatch_count,
+};
 
 // ---------------------------------------------------------------------------
 // Public constants

@@ -233,14 +233,14 @@
 //!     sign_and_verify_rsa(&private_key_path, &public_key_path).unwrap()
 //! }
 //! ```
-use crate::wolfcrypt_rs::EVP_PKEY;
 pub use crate::rsa::signature::{RsaEncoding, RsaSignatureEncoding};
 pub use crate::rsa::{
     KeyPair as RsaKeyPair, PublicKey as RsaSubjectPublicKey,
     PublicKeyComponents as RsaPublicKeyComponents, RsaParameters,
 };
-use core::fmt::{Debug, Formatter};
+use crate::wolfcrypt_rs::EVP_PKEY;
 use core::any::{Any, TypeId};
+use core::fmt::{Debug, Formatter};
 #[cfg(feature = "ring-sig-verify")]
 use untrusted::Input;
 

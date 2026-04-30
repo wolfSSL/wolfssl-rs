@@ -8,11 +8,11 @@ pub mod pkcs1;
 
 use super::key::{generate_rsa_key, is_rsa_key};
 use super::{encoding, KeySize};
-use crate::wolfcrypt_rs::{EVP_PKEY, EVP_PKEY_RSA};
 use crate::encoding::{AsDer, Pkcs8V1Der, PublicKeyX509Der};
 use crate::error::{KeyRejected, Unspecified};
 use crate::pkcs8::Version;
 use crate::ptr::LcPtr;
+use crate::wolfcrypt_rs::{EVP_PKEY, EVP_PKEY_RSA};
 use core::fmt::Debug;
 
 /// RSA Encryption Algorithm Identifier

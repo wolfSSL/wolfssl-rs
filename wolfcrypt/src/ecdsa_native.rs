@@ -20,17 +20,13 @@ use core::marker::PhantomData;
 
 use generic_array::GenericArray;
 
-use crate::error::WolfCryptError;
+use crate::error::{len_as_u32, WolfCryptError};
 
 use wolfcrypt_rs::{
-    WC_RNG, wc_InitRng, wc_FreeRng,
-    wc_ecc_key,
-    wc_ecc_key_new, wc_ecc_key_free,
-    wc_ecc_make_key_ex, wc_ecc_set_rng,
-    wc_ecc_import_private_key_ex, wc_ecc_import_x963, wc_ecc_export_x963,
-    wc_ecc_sign_hash, wc_ecc_verify_hash,
-    wc_ecc_sig_to_rs, wc_ecc_rs_raw_to_sig,
-    ECC_SECP256R1,
+    wc_FreeRng, wc_InitRng, wc_ecc_export_x963, wc_ecc_import_private_key_ex, wc_ecc_import_x963,
+    wc_ecc_key, wc_ecc_key_free, wc_ecc_key_new, wc_ecc_make_key_ex, wc_ecc_make_pub,
+    wc_ecc_rs_raw_to_sig, wc_ecc_set_rng, wc_ecc_sig_to_rs, wc_ecc_sign_hash, wc_ecc_verify_hash,
+    ECC_SECP256R1, WC_RNG,
 };
 
 #[cfg(wolfssl_ecc_p384)]
@@ -90,7 +86,10 @@ impl EcdsaCurve for P256 {
             wolfcrypt_rs::wc_Sha256Hash(msg.as_ptr(), msg.len() as u32, hash.as_mut_ptr())
         };
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_Sha256Hash" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_Sha256Hash",
+            });
         }
         Ok(hash)
     }
@@ -118,7 +117,10 @@ impl EcdsaCurve for P384 {
             wolfcrypt_rs::wc_Sha384Hash(msg.as_ptr(), msg.len() as u32, hash.as_mut_ptr())
         };
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_Sha384Hash" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_Sha384Hash",
+            });
         }
         Ok(hash)
     }
@@ -149,7 +151,10 @@ impl EcdsaCurve for P521 {
             wolfcrypt_rs::wc_Sha512Hash(msg.as_ptr(), msg.len() as u32, hash.as_mut_ptr())
         };
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_Sha512Hash" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_Sha512Hash",
+            });
         }
         Ok(hash)
     }
@@ -195,7 +200,10 @@ impl<C: EcdsaCurve> EcdsaSignature<C> {
 
 impl<C: EcdsaCurve> Clone for EcdsaSignature<C> {
     fn clone(&self) -> Self {
-        Self { bytes: self.bytes.clone(), _curve: PhantomData }
+        Self {
+            bytes: self.bytes.clone(),
+            _curve: PhantomData,
+        }
     }
 }
 
@@ -252,13 +260,19 @@ fn der_to_fixed_rs<C: EcdsaCurve>(
 
     let rc = unsafe {
         wc_ecc_sig_to_rs(
-            der.as_ptr(), der_len,
-            r.as_mut_ptr(), &mut r_len,
-            s.as_mut_ptr(), &mut s_len,
+            der.as_ptr(),
+            der_len,
+            r.as_mut_ptr(),
+            &mut r_len,
+            s.as_mut_ptr(),
+            &mut s_len,
         )
     };
     if rc != 0 {
-        return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_sig_to_rs" });
+        return Err(WolfCryptError::Ffi {
+            code: rc,
+            func: "wc_ecc_sig_to_rs",
+        });
     }
 
     // wc_ecc_sig_to_rs returns r and s stripped of leading zeros.
@@ -319,21 +333,28 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         let rc = unsafe { wc_InitRng(&mut rng) };
         if rc != 0 {
             unsafe { wc_ecc_key_free(key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_InitRng",
+            });
         }
 
         // SAFETY: key and rng are both initialised; FIELD_SIZE matches CURVE_ID.
-        let rc = unsafe {
-            wc_ecc_make_key_ex(&mut rng, C::FIELD_SIZE as c_int, key, C::CURVE_ID)
-        };
+        let rc = unsafe { wc_ecc_make_key_ex(&mut rng, C::FIELD_SIZE as c_int, key, C::CURVE_ID) };
         // Always free the RNG, success or failure.
         unsafe { wc_FreeRng(&mut rng) };
         if rc != 0 {
             unsafe { wc_ecc_key_free(key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_make_key_ex" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_ecc_make_key_ex",
+            });
         }
 
-        Ok(Self { key: UnsafeCell::new(key), _curve: PhantomData })
+        Ok(Self {
+            key: UnsafeCell::new(key),
+            _curve: PhantomData,
+        })
     }
 
     /// Construct a signing key from raw private-key scalar bytes and an
@@ -351,16 +372,25 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         }
         let rc = unsafe {
             wc_ecc_import_private_key_ex(
-                priv_bytes.as_ptr(), priv_bytes.len() as u32,
-                pub_bytes.as_ptr(), pub_bytes.len() as u32,
-                key, C::CURVE_ID,
+                priv_bytes.as_ptr(),
+                priv_bytes.len() as u32,
+                pub_bytes.as_ptr(),
+                pub_bytes.len() as u32,
+                key,
+                C::CURVE_ID,
             )
         };
         if rc != 0 {
             unsafe { wc_ecc_key_free(key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_import_private_key_ex" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_ecc_import_private_key_ex",
+            });
         }
-        Ok(Self { key: UnsafeCell::new(key), _curve: PhantomData })
+        Ok(Self {
+            key: UnsafeCell::new(key),
+            _curve: PhantomData,
+        })
     }
 
     /// Construct a signing key from raw private-key scalar bytes only.
@@ -375,16 +405,36 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         }
         let rc = unsafe {
             wc_ecc_import_private_key_ex(
-                priv_bytes.as_ptr(), priv_bytes.len() as u32,
-                core::ptr::null(), 0,
-                key, C::CURVE_ID,
+                priv_bytes.as_ptr(),
+                priv_bytes.len() as u32,
+                core::ptr::null(),
+                0,
+                key,
+                C::CURVE_ID,
             )
         };
         if rc != 0 {
             unsafe { wc_ecc_key_free(key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_import_private_key_ex" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_ecc_import_private_key_ex",
+            });
         }
-        Ok(Self { key: UnsafeCell::new(key), _curve: PhantomData })
+        // wc_ecc_import_private_key_ex with NULL public key leaves the key in
+        // ECC_PRIVATEKEY_ONLY state, which blocks export and verify operations.
+        // Derive the public point now so the full key is immediately usable.
+        let rc = unsafe { wc_ecc_make_pub(key, core::ptr::null_mut()) };
+        if rc != 0 {
+            unsafe { wc_ecc_key_free(key) };
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_ecc_make_pub",
+            });
+        }
+        Ok(Self {
+            key: UnsafeCell::new(key),
+            _curve: PhantomData,
+        })
     }
 
     /// Return the corresponding verifying (public) key.
@@ -394,7 +444,10 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         let mut sz = buf.len() as u32;
         let rc = unsafe { wc_ecc_export_x963(key, buf.as_mut_ptr(), &mut sz) };
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_export_x963" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_ecc_export_x963",
+            });
         }
         buf.truncate(sz as usize);
         EcdsaVerifyingKey::from_uncompressed_point(&buf)
@@ -419,14 +472,20 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         let mut rng = WC_RNG::zeroed();
         let rc = unsafe { wc_InitRng(&mut rng) };
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng (sign)" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_InitRng (sign)",
+            });
         }
 
         // Attach the RNG to the key so internal timing-resistant code can use it.
         let rc = unsafe { wc_ecc_set_rng(key, &mut rng) };
         if rc != 0 {
             unsafe { wc_FreeRng(&mut rng) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_set_rng" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_ecc_set_rng",
+            });
         }
 
         // SAFETY: hash is HASH_LEN bytes; key holds the private key; rng is live.
@@ -437,8 +496,10 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         // wolfCrypt accepts the same object for both roles; this is intentional.
         let rc = unsafe {
             wc_ecc_sign_hash(
-                hash.as_ptr(), hash.len() as u32,
-                der.as_mut_ptr(), &mut der_len,
+                hash.as_ptr(),
+                hash.len() as u32,
+                der.as_mut_ptr(),
+                &mut der_len,
                 &mut rng,
                 key,
             )
@@ -446,18 +507,25 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         // Always free the RNG regardless of outcome.
         unsafe { wc_FreeRng(&mut rng) };
         if rc != 0 {
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_sign_hash" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_ecc_sign_hash",
+            });
         }
 
         let combined = der_to_fixed_rs::<C>(&der, der_len)?;
-        Ok(EcdsaSignature { bytes: combined, _curve: PhantomData })
+        Ok(EcdsaSignature {
+            bytes: combined,
+            _curve: PhantomData,
+        })
     }
 }
 
 impl<C: EcdsaCurve> signature_trait::Signer<EcdsaSignature<C>> for EcdsaSigningKey<C> {
     fn try_sign(&self, msg: &[u8]) -> Result<EcdsaSignature<C>, signature_trait::Error> {
         let hash = C::hash_message(msg).map_err(|_| signature_trait::Error::new())?;
-        self.sign_prehash(&hash).map_err(|_| signature_trait::Error::new())
+        self.sign_prehash(&hash)
+            .map_err(|_| signature_trait::Error::new())
     }
 }
 
@@ -494,12 +562,13 @@ impl<C: EcdsaCurve> EcdsaVerifyingKey<C> {
         if key.is_null() {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
-        let rc = unsafe {
-            wc_ecc_import_x963(bytes.as_ptr(), bytes.len() as u32, key)
-        };
+        let rc = unsafe { wc_ecc_import_x963(bytes.as_ptr(), bytes.len() as u32, key) };
         if rc != 0 {
             unsafe { wc_ecc_key_free(key) };
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_import_x963" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_ecc_import_x963",
+            });
         }
         Ok(Self {
             key: UnsafeCell::new(key),
@@ -511,6 +580,51 @@ impl<C: EcdsaCurve> EcdsaVerifyingKey<C> {
     /// Return the uncompressed public point bytes (0x04 || x || y).
     pub fn as_bytes(&self) -> &[u8] {
         &self.pub_bytes
+    }
+}
+
+impl<C: EcdsaCurve> EcdsaVerifyingKey<C> {
+    /// Verify a DER-encoded ECDSA signature against a pre-computed hash.
+    ///
+    /// `hash` must be exactly `C::HASH_LEN` bytes (32 for P-256).
+    /// `sig_der` must be a DER-encoded ECDSA signature
+    /// (SEQUENCE { INTEGER r, INTEGER s }).
+    ///
+    /// Returns `Ok(())` if the signature is valid, or an error if the
+    /// signature is invalid or if the FFI call fails.
+    ///
+    /// This is the symmetric counterpart to [`EcdsaSigningKey::sign_prehash`].
+    pub fn verify_prehash(&self, hash: &[u8], sig_der: &[u8]) -> Result<(), WolfCryptError> {
+        if hash.len() != C::HASH_LEN {
+            return Err(WolfCryptError::INVALID_INPUT);
+        }
+        if sig_der.is_empty() {
+            return Err(WolfCryptError::INVALID_INPUT);
+        }
+        let key = unsafe { *self.key.get() };
+        let mut res: c_int = 0;
+        // SAFETY: sig_der and hash are non-empty slices; key holds a valid
+        // public key imported during construction; res is a local c_int.
+        let rc = unsafe {
+            wc_ecc_verify_hash(
+                sig_der.as_ptr(),
+                len_as_u32(sig_der.len()),
+                hash.as_ptr(),
+                len_as_u32(hash.len()),
+                &mut res,
+                key,
+            )
+        };
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_ecc_verify_hash",
+            });
+        }
+        if res != 1 {
+            return Err(WolfCryptError::SigInvalid);
+        }
+        Ok(())
     }
 }
 
@@ -531,9 +645,12 @@ impl<C: EcdsaCurve> signature_trait::Verifier<EcdsaSignature<C>> for EcdsaVerify
 
         let rc = unsafe {
             wc_ecc_rs_raw_to_sig(
-                r.as_ptr(), r.len() as u32,
-                s.as_ptr(), s.len() as u32,
-                der.as_mut_ptr(), &mut der_len,
+                r.as_ptr(),
+                r.len() as u32,
+                s.as_ptr(),
+                s.len() as u32,
+                der.as_mut_ptr(),
+                &mut der_len,
             )
         };
         if rc != 0 {
@@ -543,9 +660,12 @@ impl<C: EcdsaCurve> signature_trait::Verifier<EcdsaSignature<C>> for EcdsaVerify
         let mut res: c_int = 0;
         let rc = unsafe {
             wc_ecc_verify_hash(
-                der.as_ptr(), der_len,
-                hash.as_ptr(), hash.len() as u32,
-                &mut res, key,
+                der.as_ptr(),
+                der_len,
+                hash.as_ptr(),
+                hash.len() as u32,
+                &mut res,
+                key,
             )
         };
         if rc != 0 || res != 1 {

@@ -12,15 +12,29 @@ fn test_sha() {
         assert_eq!(hash, *expected_hash);
     }
 
-    test1(&mut sha, b"", b"\xda\x39\xa3\xee\x5e\x6b\x4b\x0d\x32\x55\xbf\xef\x95\x60\x18\x90\xaf\xd8\x07\x09");
+    test1(
+        &mut sha,
+        b"",
+        b"\xda\x39\xa3\xee\x5e\x6b\x4b\x0d\x32\x55\xbf\xef\x95\x60\x18\x90\xaf\xd8\x07\x09",
+    );
 
-    test1(&mut sha, b"abc", b"\xA9\x99\x3E\x36\x47\x06\x81\x6A\xBA\x3E\x25\x71\x78\x50\xC2\x6C\x9C\xD0\xD8\x9D");
+    test1(
+        &mut sha,
+        b"abc",
+        b"\xA9\x99\x3E\x36\x47\x06\x81\x6A\xBA\x3E\x25\x71\x78\x50\xC2\x6C\x9C\xD0\xD8\x9D",
+    );
 
-    test1(&mut sha, b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
-        b"\x84\x98\x3E\x44\x1C\x3B\xD2\x6E\xBA\xAE\x4A\xA1\xF9\x51\x29\xE5\xE5\x46\x70\xF1");
+    test1(
+        &mut sha,
+        b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
+        b"\x84\x98\x3E\x44\x1C\x3B\xD2\x6E\xBA\xAE\x4A\xA1\xF9\x51\x29\xE5\xE5\x46\x70\xF1",
+    );
 
-    test1(&mut sha, b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        b"\x00\x98\xBA\x82\x4B\x5C\x16\x42\x7B\xD7\xA1\x12\x2A\x5A\x44\x2A\x25\xEC\x64\x4D");
+    test1(
+        &mut sha,
+        b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        b"\x00\x98\xBA\x82\x4B\x5C\x16\x42\x7B\xD7\xA1\x12\x2A\x5A\x44\x2A\x25\xEC\x64\x4D",
+    );
 
     test1(&mut sha, b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         b"\xAD\x5B\x3F\xDB\xCB\x52\x67\x78\xC2\x83\x9D\x2F\x15\x1E\xA7\x53\x99\x5E\x26\xA0");
@@ -253,7 +267,8 @@ fn test_shake128_absorb_squeeze() {
         sha.init().expect("Error with init()");
         sha.absorb(input).expect("Error with absorb()");
         let mut squeeze_out = vec![0u8; expected_squeeze_out.len()];
-        sha.squeeze_blocks(&mut squeeze_out).expect("Error with squeeze_blocks()");
+        sha.squeeze_blocks(&mut squeeze_out)
+            .expect("Error with squeeze_blocks()");
         assert_eq!(squeeze_out, *expected_squeeze_out);
     }
 
@@ -315,7 +330,8 @@ fn test_shake256_absorb_squeeze() {
         sha.init().expect("Error with init()");
         sha.absorb(input).expect("Error with absorb()");
         let mut squeeze_out = vec![0u8; expected_squeeze_out.len()];
-        sha.squeeze_blocks(&mut squeeze_out).expect("Error with squeeze_blocks()");
+        sha.squeeze_blocks(&mut squeeze_out)
+            .expect("Error with squeeze_blocks()");
         assert_eq!(squeeze_out, *expected_squeeze_out);
     }
 

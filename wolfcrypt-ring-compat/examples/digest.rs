@@ -7,8 +7,8 @@
 //! ```
 //! > cargo run --example digest -- -d sha256 LICENSE
 //! ```
-use ring::{digest, test};
 use clap::{Parser, ValueEnum};
+use ring::{digest, test};
 use std::fs::File;
 use std::io::{Read, Result};
 

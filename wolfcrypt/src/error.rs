@@ -21,6 +21,9 @@ pub enum WolfCryptError {
     AllocFailed,
     /// Caller-supplied input has the wrong length or format.
     InvalidInput,
+    /// Signature verification completed without error but the signature did
+    /// not verify (bad signature, wrong key, or tampered data).
+    SigInvalid,
 }
 
 impl WolfCryptError {
@@ -35,6 +38,7 @@ impl fmt::Display for WolfCryptError {
         match *self {
             Self::AllocFailed => write!(f, "wolfCrypt allocation failed"),
             Self::InvalidInput => write!(f, "invalid input length or format"),
+            Self::SigInvalid => write!(f, "signature verification failed"),
             Self::Ffi { code, func } => write!(f, "{func} failed: wolfCrypt error {code}"),
         }
     }
@@ -45,7 +49,11 @@ impl fmt::Display for WolfCryptError {
 /// `func` is the C function name, included in the error for diagnostics.
 #[inline]
 pub(crate) fn check(rc: i32, func: &'static str) -> Result<(), WolfCryptError> {
-    if rc == 0 { Ok(()) } else { Err(WolfCryptError::Ffi { code: rc, func }) }
+    if rc == 0 {
+        Ok(())
+    } else {
+        Err(WolfCryptError::Ffi { code: rc, func })
+    }
 }
 
 /// Cast a `usize` length to `u32` for wolfCrypt FFI calls.

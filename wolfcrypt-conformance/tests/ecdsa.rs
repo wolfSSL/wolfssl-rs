@@ -318,13 +318,13 @@ ecdsa_cross!(
 // Write the cross-validation tests directly.
 #[cfg(all(wolfssl_ecc, wolfssl_ecc_p521, wolfssl_sha512))]
 mod p521_cross {
-    use wolfcrypt::{EcdsaSigningKey, EcdsaVerifyingKey, EcdsaSignature, P521};
     use signature::{Signer, Verifier};
+    use wolfcrypt::{EcdsaSignature, EcdsaSigningKey, EcdsaVerifyingKey, P521};
 
     #[test]
     fn wolf_sign_pure_verify() {
-        let wolf_sk = EcdsaSigningKey::<P521>::generate()
-            .expect("p521: wolf key generation should succeed");
+        let wolf_sk =
+            EcdsaSigningKey::<P521>::generate().expect("p521: wolf key generation should succeed");
         let wolf_vk = wolf_sk.verifying_key().unwrap();
         let msg = b"p521: wolf signs, pure verifies";
 
@@ -339,7 +339,8 @@ mod p521_cross {
         let pure_sig = p521::ecdsa::Signature::from_slice(wolf_sig.as_bytes())
             .expect("p521: pure must accept wolf signature bytes");
 
-        pure_vk.verify(msg, &pure_sig)
+        pure_vk
+            .verify(msg, &pure_sig)
             .expect("p521: pure must verify wolf-generated signature");
     }
 
@@ -364,14 +365,15 @@ mod p521_cross {
         let wolf_sig = EcdsaSignature::<P521>::from_bytes(sig_bytes.as_ref())
             .expect("p521: wolf must accept pure signature bytes");
 
-        wolf_vk.verify(msg, &wolf_sig)
+        wolf_vk
+            .verify(msg, &wolf_sig)
             .expect("p521: wolf must verify pure-generated signature");
     }
 
     #[test]
     fn pubkey_export_import_round_trip() {
-        let wolf_sk = EcdsaSigningKey::<P521>::generate()
-            .expect("p521: wolf key generation should succeed");
+        let wolf_sk =
+            EcdsaSigningKey::<P521>::generate().expect("p521: wolf key generation should succeed");
         let wolf_vk = wolf_sk.verifying_key().unwrap();
         let wolf_pub_bytes: &[u8] = wolf_vk.as_bytes();
 
@@ -382,16 +384,15 @@ mod p521_cross {
         let re_exported: &[u8] = point.as_bytes();
 
         assert_eq!(
-            wolf_pub_bytes,
-            re_exported,
+            wolf_pub_bytes, re_exported,
             "p521: public key must survive wolf->pure->re-export round trip"
         );
     }
 
     #[test]
     fn tampered_message_both_reject() {
-        let wolf_sk = EcdsaSigningKey::<P521>::generate()
-            .expect("p521: wolf key generation should succeed");
+        let wolf_sk =
+            EcdsaSigningKey::<P521>::generate().expect("p521: wolf key generation should succeed");
         let wolf_vk = wolf_sk.verifying_key().unwrap();
         let msg = b"original p521 message";
         let mut tampered = msg.to_vec();
@@ -401,7 +402,10 @@ mod p521_cross {
 
         // Wolf must reject
         let wolf_result = wolf_vk.verify(&tampered, &wolf_sig);
-        assert!(wolf_result.is_err(), "p521: wolf must reject tampered message");
+        assert!(
+            wolf_result.is_err(),
+            "p521: wolf must reject tampered message"
+        );
 
         // Pure must reject
         let pure_vk = p521::ecdsa::VerifyingKey::from_sec1_bytes(wolf_vk.as_bytes())
@@ -409,15 +413,18 @@ mod p521_cross {
         let pure_sig = p521::ecdsa::Signature::from_slice(wolf_sig.as_bytes())
             .expect("p521: pure must accept wolf signature bytes");
         let pure_result = pure_vk.verify(&tampered, &pure_sig);
-        assert!(pure_result.is_err(), "p521: pure must reject tampered message");
+        assert!(
+            pure_result.is_err(),
+            "p521: pure must reject tampered message"
+        );
     }
 
     #[test]
     fn wrong_key_both_reject() {
-        let wolf_sk_a = EcdsaSigningKey::<P521>::generate()
-            .expect("p521: wolf keygen(a) should succeed");
-        let wolf_sk_b = EcdsaSigningKey::<P521>::generate()
-            .expect("p521: wolf keygen(b) should succeed");
+        let wolf_sk_a =
+            EcdsaSigningKey::<P521>::generate().expect("p521: wolf keygen(a) should succeed");
+        let wolf_sk_b =
+            EcdsaSigningKey::<P521>::generate().expect("p521: wolf keygen(b) should succeed");
         let wolf_vk_b = wolf_sk_b.verifying_key().unwrap();
         let msg = b"p521 wrong key rejection";
 
@@ -425,7 +432,10 @@ mod p521_cross {
 
         // Wolf: verify with wrong key
         let wolf_result = wolf_vk_b.verify(msg, &wolf_sig);
-        assert!(wolf_result.is_err(), "p521: wolf must reject with wrong key");
+        assert!(
+            wolf_result.is_err(),
+            "p521: wolf must reject with wrong key"
+        );
 
         // Pure: verify with wrong key
         let pure_vk_b = p521::ecdsa::VerifyingKey::from_sec1_bytes(wolf_vk_b.as_bytes())
@@ -433,7 +443,10 @@ mod p521_cross {
         let pure_sig = p521::ecdsa::Signature::from_slice(wolf_sig.as_bytes())
             .expect("p521: pure must accept wolf signature bytes");
         let pure_result = pure_vk_b.verify(msg, &pure_sig);
-        assert!(pure_result.is_err(), "p521: pure must reject with wrong key");
+        assert!(
+            pure_result.is_err(),
+            "p521: pure must reject with wrong key"
+        );
     }
 
     #[test]
@@ -442,8 +455,8 @@ mod p521_cross {
 
         let mut rng = rand::thread_rng();
 
-        let wolf_sk = EcdsaSigningKey::<P521>::generate()
-            .expect("p521: wolf key generation should succeed");
+        let wolf_sk =
+            EcdsaSigningKey::<P521>::generate().expect("p521: wolf key generation should succeed");
         let wolf_vk = wolf_sk.verifying_key().unwrap();
 
         let pure_vk = p521::ecdsa::VerifyingKey::from_sec1_bytes(wolf_vk.as_bytes())
@@ -470,15 +483,10 @@ mod p521_cross {
 
             // Pure sign -> wolf verify
             let pure_sig2: p521::ecdsa::Signature = WS::sign(&pure_sk, &msg);
-            let wolf_sig2 = EcdsaSignature::<P521>::from_bytes(
-                pure_sig2.to_bytes().as_ref(),
-            )
-            .unwrap_or_else(|e| {
-                panic!("p521 round {i}: wolf must parse pure sig: {e}")
-            });
-            WV::verify(&wolf_vk_from_pure, &msg, &wolf_sig2).unwrap_or_else(|e| {
-                panic!("p521 round {i}: wolf must verify pure sig: {e}")
-            });
+            let wolf_sig2 = EcdsaSignature::<P521>::from_bytes(pure_sig2.to_bytes().as_ref())
+                .unwrap_or_else(|e| panic!("p521 round {i}: wolf must parse pure sig: {e}"));
+            WV::verify(&wolf_vk_from_pure, &msg, &wolf_sig2)
+                .unwrap_or_else(|e| panic!("p521 round {i}: wolf must verify pure sig: {e}"));
         }
     }
 }

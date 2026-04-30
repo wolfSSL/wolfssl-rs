@@ -32,12 +32,10 @@ use crate::error::{check, len_as_u32, WolfCryptError};
 use crate::rand::WolfRng;
 use wolfcrypt_rs::{
     wc_ecc_check_key, wc_ecc_export_private_only, wc_ecc_export_x963,
-    wc_ecc_get_curve_size_from_id, wc_ecc_import_private_key,
-    wc_ecc_import_private_key_ex, wc_ecc_import_x963,
-    wc_ecc_init_ex, wc_ecc_key_free, wc_ecc_key_new, wc_ecc_make_key_ex,
-    wc_ecc_shared_secret, wc_ecc_sign_hash, wc_ecc_verify_hash,
-    ECC_SECP256K1, ECC_SECP256R1, ECC_SECP384R1, ECC_SECP521R1,
-    wc_ecc_key,
+    wc_ecc_get_curve_size_from_id, wc_ecc_import_private_key, wc_ecc_import_private_key_ex,
+    wc_ecc_import_x963, wc_ecc_init_ex, wc_ecc_key, wc_ecc_key_free, wc_ecc_key_new,
+    wc_ecc_make_key_ex, wc_ecc_shared_secret, wc_ecc_sign_hash, wc_ecc_verify_hash, ECC_SECP256K1,
+    ECC_SECP256R1, ECC_SECP384R1, ECC_SECP521R1,
 };
 
 /// Supported ECC curve IDs.
@@ -120,9 +118,7 @@ impl EccKey {
         }
 
         // SAFETY: `key` is initialised.  `rng.rng` is a valid WC_RNG.
-        let rc = unsafe {
-            wc_ecc_make_key_ex(&mut rng.rng, key_size, key, curve as i32)
-        };
+        let rc = unsafe { wc_ecc_make_key_ex(&mut rng.rng, key_size, key, curve as i32) };
         if rc != 0 {
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
@@ -171,10 +167,7 @@ impl EccKey {
     ///
     /// wolfCrypt derives the public point internally (pub = priv * G),
     /// so only the private scalar and curve ID are needed.
-    pub fn from_private(
-        curve: EccCurveId,
-        priv_key: &[u8],
-    ) -> Result<Self, WolfCryptError> {
+    pub fn from_private(curve: EccCurveId, priv_key: &[u8]) -> Result<Self, WolfCryptError> {
         let key = Self::alloc_and_init()?;
 
         // Pass NULL/0 for the public key — wolfCrypt will compute it
@@ -205,9 +198,7 @@ impl EccKey {
         let key = Self::alloc_and_init()?;
 
         // SAFETY: `key` is initialised.  `pub_key` is a valid slice.
-        let rc = unsafe {
-            wc_ecc_import_x963(pub_key.as_ptr(), len_as_u32(pub_key.len()), key)
-        };
+        let rc = unsafe { wc_ecc_import_x963(pub_key.as_ptr(), len_as_u32(pub_key.len()), key) };
         if rc != 0 {
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
@@ -226,9 +217,7 @@ impl EccKey {
 
         // SAFETY: `self.key` is a valid, initialised key.  `buf` is large
         // enough for any supported curve.  `out_len` receives the actual size.
-        let rc = unsafe {
-            wc_ecc_export_x963(self.key, buf.as_mut_ptr(), &mut out_len)
-        };
+        let rc = unsafe { wc_ecc_export_x963(self.key, buf.as_mut_ptr(), &mut out_len) };
         check(rc, "wc_ecc_export_x963")?;
 
         buf.truncate(out_len as usize);
@@ -241,9 +230,7 @@ impl EccKey {
         let mut out_len: u32 = buf.len() as u32;
 
         // SAFETY: `self.key` is a valid key with a private component.
-        let rc = unsafe {
-            wc_ecc_export_private_only(self.key, buf.as_mut_ptr(), &mut out_len)
-        };
+        let rc = unsafe { wc_ecc_export_private_only(self.key, buf.as_mut_ptr(), &mut out_len) };
         check(rc, "wc_ecc_export_private_only")?;
 
         buf.truncate(out_len as usize);
@@ -259,9 +246,8 @@ impl EccKey {
         let mut out_len: u32 = buf.len() as u32;
 
         // SAFETY: both keys are valid and initialised.
-        let rc = unsafe {
-            wc_ecc_shared_secret(self.key, peer.key, buf.as_mut_ptr(), &mut out_len)
-        };
+        let rc =
+            unsafe { wc_ecc_shared_secret(self.key, peer.key, buf.as_mut_ptr(), &mut out_len) };
         check(rc, "wc_ecc_shared_secret")?;
 
         buf.truncate(out_len as usize);
@@ -271,11 +257,7 @@ impl EccKey {
     /// Sign a message hash with this key's private component.
     ///
     /// Returns a DER-encoded ECDSA signature.
-    pub fn sign_hash(
-        &mut self,
-        hash: &[u8],
-        rng: &mut WolfRng,
-    ) -> Result<Vec<u8>, WolfCryptError> {
+    pub fn sign_hash(&mut self, hash: &[u8], rng: &mut WolfRng) -> Result<Vec<u8>, WolfCryptError> {
         let mut buf = vec![0u8; MAX_DER_SIG_SIZE];
         let mut out_len: u32 = buf.len() as u32;
 
@@ -373,10 +355,7 @@ pub fn ecc_sig_der_to_rs(
 }
 
 /// Convert raw (r, s) byte arrays to a DER-encoded ECDSA signature.
-pub fn ecc_sig_rs_to_der(
-    r: &[u8],
-    s: &[u8],
-) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
+pub fn ecc_sig_rs_to_der(r: &[u8], s: &[u8]) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
     // Max DER signature: ~140 bytes for P-521 (SEQUENCE { INTEGER(66+1), INTEGER(66+1) } + overhead)
     let mut out = [0u8; 144];
     let mut out_len = out.len() as u32;

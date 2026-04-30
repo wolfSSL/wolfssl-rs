@@ -105,10 +105,7 @@ macro_rules! impl_aes_ecb_enc {
         impl BlockCipher for $name {}
 
         impl BlockEncrypt for $name {
-            fn encrypt_with_backend(
-                &self,
-                f: impl BlockClosure<BlockSize = Self::BlockSize>,
-            ) {
+            fn encrypt_with_backend(&self, f: impl BlockClosure<BlockSize = Self::BlockSize>) {
                 f.call(&mut AesEcbEncBackend(&self.aes));
             }
         }
@@ -169,10 +166,7 @@ macro_rules! impl_aes_ecb_dec {
         impl BlockCipher for $name {}
 
         impl BlockDecrypt for $name {
-            fn decrypt_with_backend(
-                &self,
-                f: impl BlockClosure<BlockSize = Self::BlockSize>,
-            ) {
+            fn decrypt_with_backend(&self, f: impl BlockClosure<BlockSize = Self::BlockSize>) {
                 f.call(&mut AesEcbDecBackend(&self.aes));
             }
         }

@@ -33,7 +33,8 @@ fn aes_keywrap() {
                         tc.comment,
                     );
                     assert_eq!(
-                        wrapped.unwrap(), ct,
+                        wrapped.unwrap(),
+                        ct,
                         "tc {}: wrapped ciphertext mismatch for valid vector, comment: {}",
                         tc.tc_id,
                         tc.comment,
@@ -80,13 +81,9 @@ fn aes_keywrap() {
         }
     }
 
-    assert!(
-        valid_count > 0,
-        "no valid AES-WRAP vectors were exercised",
-    );
+    assert!(valid_count > 0, "no valid AES-WRAP vectors were exercised",);
     assert!(
         invalid_count > 0,
         "no invalid AES-WRAP vectors were exercised",
     );
-
 }

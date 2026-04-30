@@ -4,7 +4,7 @@ mod helpers;
 
 use caliptra_cfi_lib::CfiCounter;
 use caliptra_dpe::commands::{
-    CommandExecution, DeriveContextCmd, DeriveContextFlags, DestroyCtxCmd, SignP384Cmd, SignFlags,
+    CommandExecution, DeriveContextCmd, DeriveContextFlags, DestroyCtxCmd, SignFlags, SignP384Cmd,
 };
 use caliptra_dpe::context::ContextHandle;
 use caliptra_dpe::dpe_instance::DpeInstance;
@@ -128,7 +128,10 @@ fn sign_after_destroy_fails() {
         digest: [0xFF; 48],
     };
     let result = sign_cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_err(), "Expected error signing with destroyed handle");
+    assert!(
+        result.is_err(),
+        "Expected error signing with destroyed handle"
+    );
 }
 
 #[test]
@@ -145,7 +148,10 @@ fn sign_invalid_handle_fails() {
         digest: [0xAA; 48],
     };
     let result = sign_cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_err(), "Expected error signing with invalid handle");
+    assert!(
+        result.is_err(),
+        "Expected error signing with invalid handle"
+    );
 }
 
 #[test]
@@ -182,12 +188,24 @@ fn sign_same_context_twice_succeeds() {
     let child = derive_from_default(&mut dpe, &mut env, [0x42; 48]);
 
     let (r_a, s_a, handle_after) = sign_p384(&mut dpe, &mut env, child, [0xAA; 48], [0xBB; 48]);
-    assert!(r_a.iter().any(|&b| b != 0), "First sig_r should be non-zero");
-    assert!(s_a.iter().any(|&b| b != 0), "First sig_s should be non-zero");
+    assert!(
+        r_a.iter().any(|&b| b != 0),
+        "First sig_r should be non-zero"
+    );
+    assert!(
+        s_a.iter().any(|&b| b != 0),
+        "First sig_s should be non-zero"
+    );
 
     let (r_b, s_b, _) = sign_p384(&mut dpe, &mut env, handle_after, [0xAA; 48], [0xBB; 48]);
-    assert!(r_b.iter().any(|&b| b != 0), "Second sig_r should be non-zero");
-    assert!(s_b.iter().any(|&b| b != 0), "Second sig_s should be non-zero");
+    assert!(
+        r_b.iter().any(|&b| b != 0),
+        "Second sig_r should be non-zero"
+    );
+    assert!(
+        s_b.iter().any(|&b| b != 0),
+        "Second sig_s should be non-zero"
+    );
 }
 
 #[test]

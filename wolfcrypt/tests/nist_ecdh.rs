@@ -84,7 +84,11 @@ fn p256_public_key_export_import_round_trip() {
     let exported = checker_pub.as_bytes();
 
     // Verify uncompressed point format: 0x04 prefix, 65 bytes total.
-    assert_eq!(exported.len(), 65, "P-256 uncompressed point must be 65 bytes");
+    assert_eq!(
+        exported.len(),
+        65,
+        "P-256 uncompressed point must be 65 bytes"
+    );
     assert_eq!(exported[0], 0x04, "uncompressed point must start with 0x04");
 
     // Re-import from bytes.
@@ -96,7 +100,9 @@ fn p256_public_key_export_import_round_trip() {
     let peer_pub = peer.public_key().expect("export peer pub");
 
     let shared_a = checker.diffie_hellman(&peer_pub).expect("DH checker*peer");
-    let shared_b = peer.diffie_hellman(&reimported).expect("DH peer*checker(reimported)");
+    let shared_b = peer
+        .diffie_hellman(&reimported)
+        .expect("DH peer*checker(reimported)");
 
     assert_eq!(
         shared_a.as_bytes(),
@@ -199,7 +205,11 @@ fn p384_public_key_export_import_round_trip() {
     let exported = checker_pub.as_bytes();
 
     // Verify uncompressed point format: 0x04 prefix, 97 bytes total.
-    assert_eq!(exported.len(), 97, "P-384 uncompressed point must be 97 bytes");
+    assert_eq!(
+        exported.len(),
+        97,
+        "P-384 uncompressed point must be 97 bytes"
+    );
     assert_eq!(exported[0], 0x04, "uncompressed point must start with 0x04");
 
     // Re-import from bytes.
@@ -211,7 +221,9 @@ fn p384_public_key_export_import_round_trip() {
     let peer_pub = peer.public_key().expect("export peer pub");
 
     let shared_a = checker.diffie_hellman(&peer_pub).expect("DH checker*peer");
-    let shared_b = peer.diffie_hellman(&reimported).expect("DH peer*checker(reimported)");
+    let shared_b = peer
+        .diffie_hellman(&reimported)
+        .expect("DH peer*checker(reimported)");
 
     assert_eq!(
         shared_a.as_bytes(),

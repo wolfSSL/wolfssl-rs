@@ -11,10 +11,10 @@
 use cipher_trait::generic_array::GenericArray;
 use cipher_trait::inout::InOut;
 use cipher_trait::{
-    Block, BlockBackend, BlockClosure, BlockDecryptMut, BlockEncryptMut,
-    BlockSizeUser, IvSizeUser, KeyIvInit, KeySizeUser, ParBlocksSizeUser,
+    Block, BlockBackend, BlockClosure, BlockDecryptMut, BlockEncryptMut, BlockSizeUser, IvSizeUser,
+    KeyIvInit, KeySizeUser, ParBlocksSizeUser,
 };
-use typenum::{U1, U8, U24};
+use typenum::{U1, U24, U8};
 
 pub use cipher_trait;
 
@@ -65,9 +65,7 @@ impl BlockSizeUser for DesEde3CbcEnc {
 impl KeyIvInit for DesEde3CbcEnc {
     fn new(key: &GenericArray<u8, U24>, iv: &GenericArray<u8, U8>) -> Self {
         // SAFETY: key is 24 bytes, iv is 8 bytes.
-        let ctx = unsafe {
-            wolfcrypt_rs::wolfcrypt_des3_enc_new(key.as_ptr(), iv.as_ptr())
-        };
+        let ctx = unsafe { wolfcrypt_rs::wolfcrypt_des3_enc_new(key.as_ptr(), iv.as_ptr()) };
         assert!(!ctx.is_null(), "wolfcrypt_des3_enc_new returned null");
         Self { ctx }
     }
@@ -107,10 +105,7 @@ impl BlockBackend for DesEde3CbcEncBackend {
 
 #[cfg(wolfssl_des3)]
 impl BlockEncryptMut for DesEde3CbcEnc {
-    fn encrypt_with_backend_mut(
-        &mut self,
-        f: impl BlockClosure<BlockSize = Self::BlockSize>,
-    ) {
+    fn encrypt_with_backend_mut(&mut self, f: impl BlockClosure<BlockSize = Self::BlockSize>) {
         f.call(&mut DesEde3CbcEncBackend(self.ctx));
     }
 }
@@ -162,9 +157,7 @@ impl BlockSizeUser for DesEde3CbcDec {
 impl KeyIvInit for DesEde3CbcDec {
     fn new(key: &GenericArray<u8, U24>, iv: &GenericArray<u8, U8>) -> Self {
         // SAFETY: key is 24 bytes, iv is 8 bytes.
-        let ctx = unsafe {
-            wolfcrypt_rs::wolfcrypt_des3_dec_new(key.as_ptr(), iv.as_ptr())
-        };
+        let ctx = unsafe { wolfcrypt_rs::wolfcrypt_des3_dec_new(key.as_ptr(), iv.as_ptr()) };
         assert!(!ctx.is_null(), "wolfcrypt_des3_dec_new returned null");
         Self { ctx }
     }
@@ -204,10 +197,7 @@ impl BlockBackend for DesEde3CbcDecBackend {
 
 #[cfg(wolfssl_des3)]
 impl BlockDecryptMut for DesEde3CbcDec {
-    fn decrypt_with_backend_mut(
-        &mut self,
-        f: impl BlockClosure<BlockSize = Self::BlockSize>,
-    ) {
+    fn decrypt_with_backend_mut(&mut self, f: impl BlockClosure<BlockSize = Self::BlockSize>) {
         f.call(&mut DesEde3CbcDecBackend(self.ctx));
     }
 }

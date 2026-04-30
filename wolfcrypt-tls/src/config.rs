@@ -3,9 +3,9 @@ use std::sync::Arc;
 use wolfcrypt_sys::*;
 
 use crate::certificate::{Certificate, PrivateKey, RootCertStore};
+use crate::ensure_init;
 use crate::error::{expect_wolfssl_success, Result, TlsError};
 use crate::protocol::{self, ProtocolVersion};
-use crate::ensure_init;
 
 /// Shared inner state for a TLS client configuration.
 ///
@@ -97,8 +97,9 @@ impl TlsClientConfigBuilder {
             .ok_or(TlsError::InvalidConfig("root certificates are required"))?;
 
         // SAFETY: wolfSSL_Init has been called via ensure_init().
-        let method =
-            unsafe { protocol::resolve_method(protocol::Side::Client, self.protocol_versions.as_deref())? };
+        let method = unsafe {
+            protocol::resolve_method(protocol::Side::Client, self.protocol_versions.as_deref())?
+        };
 
         // SAFETY: method is a valid pointer from wolf*_method().
         let ctx = unsafe { wolfSSL_CTX_new(method) };
@@ -130,11 +131,7 @@ impl TlsClientConfigBuilder {
         // SAFETY: inner.ctx was created by wolfSSL_CTX_new above and is
         // owned by CtxInner (freed on drop, which has not run yet).
         unsafe {
-            wolfSSL_CTX_set_verify(
-                inner.ctx,
-                WOLFSSL_VERIFY_PEER as core::ffi::c_int,
-                None,
-            );
+            wolfSSL_CTX_set_verify(inner.ctx, WOLFSSL_VERIFY_PEER as core::ffi::c_int, None);
         }
 
         // Load client certificate and key for mTLS.
@@ -174,9 +171,7 @@ mod tests {
 
     #[test]
     fn builder_without_root_certs_fails() {
-        let result = TlsClientConfig::builder()
-            .with_no_client_auth()
-            .build();
+        let result = TlsClientConfig::builder().with_no_client_auth().build();
         assert!(result.is_err());
     }
 }

@@ -33,14 +33,12 @@ use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 
 use spin::Mutex;
 
-use sha2::Digest as _;
 use hmac::Mac as _;
+use sha2::Digest as _;
 
 use wolfcrypt_sys::{
-    wc_HashType_WC_HASH_TYPE_SHA256,
-    wc_HashType_WC_HASH_TYPE_SHA384,
+    wc_CryptoInfo, wc_HashType_WC_HASH_TYPE_SHA256, wc_HashType_WC_HASH_TYPE_SHA384,
     wc_HashType_WC_HASH_TYPE_SHA512,
-    wc_CryptoInfo,
 };
 
 // ---------------------------------------------------------------------------
@@ -168,7 +166,9 @@ pub(crate) unsafe fn dispatch_hash(info: &mut wc_CryptoInfo) -> c_int {
         0 // success, no output written
     } else {
         // ---- Final call -------------------------------------------------
-        let state = HW_HASH_STATE.lock().take()
+        let state = HW_HASH_STATE
+            .lock()
+            .take()
             .unwrap_or_else(|| make_hash_state(hash_type));
 
         hash_finalize(state, digest_ptr.cast::<u8>());
@@ -256,11 +256,7 @@ pub(crate) unsafe fn dispatch_hmac(info: &mut wc_CryptoInfo) -> c_int {
         let result_bytes = result.into_bytes();
         // SAFETY: digest_ptr points to a buffer of at least 48 bytes,
         // guaranteed by wolfSSL (HMAC-SHA-384 output is exactly 48 bytes).
-        core::ptr::copy_nonoverlapping(
-            result_bytes.as_ptr(),
-            digest_ptr.cast::<u8>(),
-            48,
-        );
+        core::ptr::copy_nonoverlapping(result_bytes.as_ptr(), digest_ptr.cast::<u8>(), 48);
 
         HASH_DISPATCH_COUNT.fetch_add(1, Relaxed);
         0
@@ -276,7 +272,9 @@ fn make_hash_state(hash_type: u32) -> HwHashState {
         x if x == wc_HashType_WC_HASH_TYPE_SHA256 => HwHashState::Sha256(sha2::Sha256::new()),
         x if x == wc_HashType_WC_HASH_TYPE_SHA384 => HwHashState::Sha384(sha2::Sha384::new()),
         x if x == wc_HashType_WC_HASH_TYPE_SHA512 => HwHashState::Sha512(sha2::Sha512::new()),
-        _ => unreachable!("dispatch_hash must filter hash_type to {{6,7,8}} before calling make_hash_state"),
+        _ => unreachable!(
+            "dispatch_hash must filter hash_type to {{6,7,8}} before calling make_hash_state"
+        ),
     }
 }
 

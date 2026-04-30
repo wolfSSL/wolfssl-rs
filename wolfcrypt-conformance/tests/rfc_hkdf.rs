@@ -23,8 +23,7 @@ struct HkdfVector {
 const TC1_IKM: [u8; 22] = hex!("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
 const TC1_SALT: [u8; 13] = hex!("000102030405060708090a0b0c");
 const TC1_INFO: [u8; 10] = hex!("f0f1f2f3f4f5f6f7f8f9");
-const TC1_PRK: [u8; 32] =
-    hex!("077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5");
+const TC1_PRK: [u8; 32] = hex!("077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5");
 const TC1_OKM: [u8; 42] = hex!(
     "3cb25f25faacd57a90434f64d0362f2a"
     "2d2d0a90cf1a5a4c5db02d56ecc4c5bf"
@@ -53,8 +52,7 @@ const TC2_INFO: [u8; 80] = hex!(
     "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
     "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"
 );
-const TC2_PRK: [u8; 32] =
-    hex!("06a6b88c5853361a06104c9ceb35b45cef760014904671014a193f40c15fc244");
+const TC2_PRK: [u8; 32] = hex!("06a6b88c5853361a06104c9ceb35b45cef760014904671014a193f40c15fc244");
 const TC2_OKM: [u8; 82] = hex!(
     "b11e398dc80327a1c8e7f78c596a4934"
     "4f012eda2d4efad8a050cc4c19afa97c"
@@ -66,8 +64,7 @@ const TC2_OKM: [u8; 82] = hex!(
 
 // --- Test Case 3: Zero-length salt and info (SHA-256) ---
 const TC3_IKM: [u8; 22] = hex!("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
-const TC3_PRK: [u8; 32] =
-    hex!("19ef24a32c717b167f33a91d6f648bdf96596776afdb6377ac434c1c293ccb04");
+const TC3_PRK: [u8; 32] = hex!("19ef24a32c717b167f33a91d6f648bdf96596776afdb6377ac434c1c293ccb04");
 const TC3_OKM: [u8; 42] = hex!(
     "8da4e775a563c18f715f802a063c5a31"
     "b8a11f5c5ee1879ec3454e5f3c738d2d"
@@ -116,12 +113,7 @@ fn rfc5869_wolf_extract_prk() {
             Some(v.salt)
         };
         let (prk, _hkdf) = WolfHkdfSha256::extract(salt_opt, v.ikm);
-        assert_eq!(
-            prk.as_slice(),
-            v.prk,
-            "{}: wolf PRK mismatch",
-            v.name
-        );
+        assert_eq!(prk.as_slice(), v.prk, "{}: wolf PRK mismatch", v.name);
     }
 }
 
@@ -138,12 +130,7 @@ fn rfc5869_wolf_expand_okm() {
         let mut okm = vec![0u8; v.l];
         hkdf.expand(v.info, &mut okm)
             .unwrap_or_else(|e| panic!("{}: wolf expand failed: {e}", v.name));
-        assert_eq!(
-            &okm,
-            v.okm,
-            "{}: wolf OKM mismatch",
-            v.name
-        );
+        assert_eq!(&okm, v.okm, "{}: wolf OKM mismatch", v.name);
     }
 }
 
@@ -180,8 +167,7 @@ fn rfc5869_pure_expand_okm() {
         hkdf.expand(v.info, &mut okm)
             .unwrap_or_else(|e| panic!("{}: pure expand failed: {e}", v.name));
         assert_eq!(
-            &okm,
-            v.okm,
+            &okm, v.okm,
             "{}: pure OKM mismatch (vector sanity check)",
             v.name
         );
@@ -241,8 +227,7 @@ fn rfc5869_new_constructor() {
             .expand(v.info, &mut okm)
             .unwrap_or_else(|e| panic!("{}: wolf new+expand failed: {e}", v.name));
         assert_eq!(
-            &okm,
-            v.okm,
+            &okm, v.okm,
             "{}: OKM from new() constructor must match RFC vector",
             v.name
         );
@@ -260,8 +245,7 @@ fn rfc5869_from_prk() {
             .expand(v.info, &mut okm)
             .unwrap_or_else(|e| panic!("{}: wolf from_prk+expand failed: {e}", v.name));
         assert_eq!(
-            &okm,
-            v.okm,
+            &okm, v.okm,
             "{}: OKM from from_prk() must match RFC vector",
             v.name
         );

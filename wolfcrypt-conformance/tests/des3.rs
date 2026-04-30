@@ -2,7 +2,7 @@ mod helpers;
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_des3))]
 mod des3_cbc {
-    use super::helpers::{random_bytes, encrypt_blocks_with, decrypt_blocks_with};
+    use super::helpers::{decrypt_blocks_with, encrypt_blocks_with, random_bytes};
     use rand::thread_rng;
 
     type WolfEnc = wolfcrypt::DesEde3CbcEnc;
@@ -27,10 +27,7 @@ mod des3_cbc {
         let wolf_ct = encrypt_blocks_with::<WolfEnc>(&key, &iv, &pt);
         let pure_ct = encrypt_blocks_with::<PureEnc>(&key, &iv, &pt);
 
-        assert_eq!(
-            wolf_ct, pure_ct,
-            "3DES-CBC single-block encrypt mismatch"
-        );
+        assert_eq!(wolf_ct, pure_ct, "3DES-CBC single-block encrypt mismatch");
     }
 
     #[test]
@@ -43,10 +40,7 @@ mod des3_cbc {
         let wolf_ct = encrypt_blocks_with::<WolfEnc>(&key, &iv, &pt);
         let pure_ct = encrypt_blocks_with::<PureEnc>(&key, &iv, &pt);
 
-        assert_eq!(
-            wolf_ct, pure_ct,
-            "3DES-CBC multi-block encrypt mismatch"
-        );
+        assert_eq!(wolf_ct, pure_ct, "3DES-CBC multi-block encrypt mismatch");
     }
 
     #[test]

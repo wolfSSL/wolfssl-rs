@@ -1,54 +1,35 @@
-use crate::wolfcrypt_rs::{
-    CRYPTO_memcmp,
-    EC25519_LITTLE_ENDIAN,
-    ENGINE,
-    EVP_DigestSignInit, EVP_DigestSignUpdate, EVP_DigestSignFinal,
-    EVP_DigestVerifyInit, EVP_DigestUpdate, EVP_DigestVerifyFinal,
-    EVP_PKEY_CTX_new,
-    EVP_PKEY_bits, EVP_PKEY_cmp,
-    EVP_PKEY_get0_RSA,
-    ED25519_KEY_SIZE,
-    EVP_PKEY_id, EVP_PKEY_new_mac_key, EVP_PKEY_sign,
-    EVP_PKEY_sign_init, EVP_PKEY_up_ref, EVP_PKEY_verify, EVP_PKEY_verify_init,
-    EVP_PKEY, EVP_PKEY_CTX, EVP_PKEY_ED25519,
-    EVP_PKEY_EC, EVP_PKEY_RSA,
-    EVP_PKEY_free, EVP_PKEY_new, EVP_PKEY_set1_EC_KEY,
-    NID_ED25519, NID_X25519,
-    OPENSSL_free, OPENSSL_malloc,
-    RSA,
-    WC_CURVE25519_KEY_ALLOC_SIZE,
-    WC_ED25519_KEY_ALLOC_SIZE,
-    WC_EVP_PKEY_OP_DERIVE,
-    WC_RNG, wc_curve25519_key, wc_ed25519_key,
-    d2i_PrivateKey, d2i_PUBKEY,
-    wc_InitRng, wc_FreeRng,
-    i2d_PrivateKey, i2d_PUBKEY,
-    wc_Ed25519KeyToDer, wc_Ed25519PrivateKeyDecode, wc_Ed25519PrivateKeyToDer,
-    wc_EccPublicKeyDerSize, wc_EccPublicKeyToDer,
-    wc_curve25519_export_key_raw_ex, wc_curve25519_free, wc_curve25519_import_private_ex,
-    wc_curve25519_import_private_raw_ex, wc_curve25519_import_public_ex,
-    wc_curve25519_init, wc_curve25519_set_rng,
-    wc_curve25519_shared_secret_ex,
-    wc_curve25519_make_key,
-    wc_ed25519_export_private_only, wc_ed25519_export_public, wc_ed25519_free, wc_ed25519_import_private_key,
-    wc_ed25519_import_private_only, wc_ed25519_init, wc_ed25519_make_public,
-    wc_ed25519_make_key,
-    wc_ed25519_import_public, wc_ed25519_sign_msg, wc_ed25519_verify_msg,
-    wc_ForceZero,
-    wolfcrypt_evp_pkey_ctx_get_op, wolfcrypt_evp_pkey_ctx_get_pkey,
-    wolfcrypt_evp_pkey_ctx_get_peer_key, wolfcrypt_evp_pkey_ctx_set_op,
-    wolfcrypt_evp_pkey_ctx_set_peer_key,
-    wolfcrypt_evp_pkey_get_ecc, wolfcrypt_evp_pkey_get_ecc_internal,
-    wolfcrypt_evp_pkey_get_pkey_ptr, wolfcrypt_evp_pkey_get_pkey_sz, wolfcrypt_evp_pkey_get_type,
-    wolfcrypt_evp_pkey_set_raw, wolfcrypt_evp_pkey_set_type,
-};
+use crate::digest;
 use crate::digest::digest_ctx::DigestContext;
 use crate::digest::Digest;
 use crate::error::{KeyRejected, Unspecified};
 use crate::fips::indicator_check;
 use crate::pkcs8::Version;
 use crate::ptr::{ConstPointer, LcPtr};
-use crate::digest;
+use crate::wolfcrypt_rs::{
+    d2i_PUBKEY, d2i_PrivateKey, i2d_PUBKEY, i2d_PrivateKey, wc_EccPublicKeyDerSize,
+    wc_EccPublicKeyToDer, wc_Ed25519KeyToDer, wc_Ed25519PrivateKeyDecode,
+    wc_Ed25519PrivateKeyToDer, wc_ForceZero, wc_FreeRng, wc_InitRng,
+    wc_curve25519_export_key_raw_ex, wc_curve25519_free, wc_curve25519_import_private_ex,
+    wc_curve25519_import_private_raw_ex, wc_curve25519_import_public_ex, wc_curve25519_init,
+    wc_curve25519_key, wc_curve25519_make_key, wc_curve25519_set_rng,
+    wc_curve25519_shared_secret_ex, wc_ed25519_export_private_only, wc_ed25519_export_public,
+    wc_ed25519_free, wc_ed25519_import_private_key, wc_ed25519_import_private_only,
+    wc_ed25519_import_public, wc_ed25519_init, wc_ed25519_key, wc_ed25519_make_key,
+    wc_ed25519_make_public, wc_ed25519_sign_msg, wc_ed25519_verify_msg,
+    wolfcrypt_evp_pkey_ctx_get_op, wolfcrypt_evp_pkey_ctx_get_peer_key,
+    wolfcrypt_evp_pkey_ctx_get_pkey, wolfcrypt_evp_pkey_ctx_set_op,
+    wolfcrypt_evp_pkey_ctx_set_peer_key, wolfcrypt_evp_pkey_get_ecc,
+    wolfcrypt_evp_pkey_get_ecc_internal, wolfcrypt_evp_pkey_get_pkey_ptr,
+    wolfcrypt_evp_pkey_get_pkey_sz, wolfcrypt_evp_pkey_get_type, wolfcrypt_evp_pkey_set_raw,
+    wolfcrypt_evp_pkey_set_type, CRYPTO_memcmp, EVP_DigestSignFinal, EVP_DigestSignInit,
+    EVP_DigestSignUpdate, EVP_DigestUpdate, EVP_DigestVerifyFinal, EVP_DigestVerifyInit,
+    EVP_PKEY_CTX_new, EVP_PKEY_bits, EVP_PKEY_cmp, EVP_PKEY_free, EVP_PKEY_get0_RSA, EVP_PKEY_id,
+    EVP_PKEY_new, EVP_PKEY_new_mac_key, EVP_PKEY_set1_EC_KEY, EVP_PKEY_sign, EVP_PKEY_sign_init,
+    EVP_PKEY_up_ref, EVP_PKEY_verify, EVP_PKEY_verify_init, OPENSSL_free, OPENSSL_malloc,
+    EC25519_LITTLE_ENDIAN, ED25519_KEY_SIZE, ENGINE, EVP_PKEY, EVP_PKEY_CTX, EVP_PKEY_EC,
+    EVP_PKEY_ED25519, EVP_PKEY_RSA, NID_ED25519, NID_X25519, RSA, WC_CURVE25519_KEY_ALLOC_SIZE,
+    WC_ED25519_KEY_ALLOC_SIZE, WC_EVP_PKEY_OP_DERIVE, WC_RNG,
+};
 use core::ffi::{c_int, c_long, c_void};
 use core::ptr::{null, null_mut};
 use zeroize::Zeroize;
@@ -80,7 +61,10 @@ mod rng_cache {
 
     impl ThreadRng {
         const fn new() -> Self {
-            Self { rng: WC_RNG::zeroed(), initialized: false }
+            Self {
+                rng: WC_RNG::zeroed(),
+                initialized: false,
+            }
         }
     }
 
@@ -88,7 +72,9 @@ mod rng_cache {
         fn drop(&mut self) {
             if self.initialized {
                 // SAFETY: rng was fully initialized by a successful wc_InitRng call.
-                unsafe { wc_FreeRng(&mut self.rng); }
+                unsafe {
+                    wc_FreeRng(&mut self.rng);
+                }
                 self.initialized = false;
             }
         }
@@ -183,7 +169,10 @@ impl ConstPointer<'_, EVP_PKEY> {
             return Err(KeyRejected::wrong_algorithm());
         }
 
-        let bits: c_int = self.key_size_bits().try_into().map_err(|_| KeyRejected::too_large())?;
+        let bits: c_int = self
+            .key_size_bits()
+            .try_into()
+            .map_err(|_| KeyRejected::too_large())?;
         if bits < ED25519_MIN_BITS {
             return Err(KeyRejected::too_small());
         }
@@ -405,7 +394,8 @@ impl LcPtr<EVP_PKEY> {
             // Extract raw private seed (32 bytes) and public key (32 bytes)
             let mut priv_seed = [0u8; 32];
             let mut pub_key = [0u8; 32];
-            self.as_const().marshal_raw_private_to_buffer(&mut priv_seed)?;
+            self.as_const()
+                .marshal_raw_private_to_buffer(&mut priv_seed)?;
             self.as_const().marshal_raw_public_to_buffer(&mut pub_key)?;
 
             let mut signature = vec![0u8; 64];
@@ -414,7 +404,9 @@ impl LcPtr<EVP_PKEY> {
                 wc_ed25519_sign_msg_wrapper(&priv_seed, &pub_key, message, &mut signature)
             };
             // SAFETY: pointer and length derived from a valid stack array.
-            unsafe { wc_ForceZero(priv_seed.as_mut_ptr() as *mut c_void, priv_seed.len()); }
+            unsafe {
+                wc_ForceZero(priv_seed.as_mut_ptr() as *mut c_void, priv_seed.len());
+            }
             if sig_len == 0 {
                 return Err(Unspecified);
             }
@@ -451,9 +443,7 @@ impl LcPtr<EVP_PKEY> {
         // Determine the maximum length of the signature.
         let mut sig_len = 0;
         // SAFETY: md_ctx is valid; null output queries the required signature length.
-        if 1 != unsafe {
-            EVP_DigestSignFinal(md_ctx.as_mut_ptr(), null_mut(), &mut sig_len)
-        } {
+        if 1 != unsafe { EVP_DigestSignFinal(md_ctx.as_mut_ptr(), null_mut(), &mut sig_len) } {
             return Err(Unspecified);
         }
         if sig_len == 0 {
@@ -738,11 +728,15 @@ unsafe fn marshal_ed25519_private_key(
 ) -> Result<(), Unspecified> {
     let pkey_sz = wolfcrypt_evp_pkey_get_pkey_sz(key);
     let pkey_ptr = wolfcrypt_evp_pkey_get_pkey_ptr(key);
-    if pkey_ptr.is_null() || pkey_sz != 64 { return Err(Unspecified); }
+    if pkey_ptr.is_null() || pkey_sz != 64 {
+        return Err(Unspecified);
+    }
 
     // Create a temporary ed25519_key and import our [seed(32)|pub(32)] material
     let ed_key = OPENSSL_malloc(WC_ED25519_KEY_ALLOC_SIZE) as *mut wc_ed25519_key;
-    if ed_key.is_null() { return Err(Unspecified); }
+    if ed_key.is_null() {
+        return Err(Unspecified);
+    }
     core::ptr::write_bytes(ed_key as *mut u8, 0, WC_ED25519_KEY_ALLOC_SIZE);
 
     if wc_ed25519_init(ed_key) != 0 {
@@ -761,7 +755,8 @@ unsafe fn marshal_ed25519_private_key(
     let der_func = if include_public {
         wc_Ed25519KeyToDer as unsafe extern "C" fn(*const wc_ed25519_key, *mut u8, u32) -> c_int
     } else {
-        wc_Ed25519PrivateKeyToDer as unsafe extern "C" fn(*const wc_ed25519_key, *mut u8, u32) -> c_int
+        wc_Ed25519PrivateKeyToDer
+            as unsafe extern "C" fn(*const wc_ed25519_key, *mut u8, u32) -> c_int
     };
 
     let der_len = der_func(ed_key, core::ptr::null_mut(), 0);
@@ -778,14 +773,21 @@ unsafe fn marshal_ed25519_private_key(
     wc_ed25519_free(ed_key);
     OPENSSL_free(ed_key as *mut c_void);
 
-    if actual <= 0 { return Err(Unspecified); }
+    if actual <= 0 {
+        return Err(Unspecified);
+    }
     buf.extend_from_slice(&tmp[..actual as usize]);
     Ok(())
 }
 
 /// evp_marshal_private_key: serialize a private key to PKCS#8 v1 DER.
-pub(crate) unsafe fn evp_marshal_private_key(buf: &mut Vec<u8>, key: *const EVP_PKEY) -> Result<(), Unspecified> {
-    if key.is_null() { return Err(Unspecified); }
+pub(crate) unsafe fn evp_marshal_private_key(
+    buf: &mut Vec<u8>,
+    key: *const EVP_PKEY,
+) -> Result<(), Unspecified> {
+    if key.is_null() {
+        return Err(Unspecified);
+    }
     let type_ = wolfcrypt_evp_pkey_get_type(key);
 
     // Ed25519: produce PKCS#8 v1 PrivateKeyInfo via wolfCrypt's ASN.1 engine
@@ -818,7 +820,9 @@ pub(crate) unsafe fn evp_marshal_private_key(buf: &mut Vec<u8>, key: *const EVP_
     // Default: use i2d_PrivateKey
     let mut der: *mut u8 = core::ptr::null_mut();
     let der_len = i2d_PrivateKey(key, &mut der);
-    if der_len <= 0 || der.is_null() { return Err(Unspecified); }
+    if der_len <= 0 || der.is_null() {
+        return Err(Unspecified);
+    }
     let slice = core::slice::from_raw_parts(der, der_len as usize);
     buf.extend_from_slice(slice);
     OPENSSL_free(der as *mut c_void);
@@ -828,8 +832,13 @@ pub(crate) unsafe fn evp_marshal_private_key(buf: &mut Vec<u8>, key: *const EVP_
 /// evp_marshal_private_key_v2: PKCS#8 v2 (RFC 5958 OneAsymmetricKey) with
 /// public key for Ed25519. v2 differs from v1 by setting version=1 and
 /// appending the optional publicKey field.
-pub(crate) unsafe fn evp_marshal_private_key_v2(buf: &mut Vec<u8>, key: *const EVP_PKEY) -> Result<(), Unspecified> {
-    if key.is_null() { return Err(Unspecified); }
+pub(crate) unsafe fn evp_marshal_private_key_v2(
+    buf: &mut Vec<u8>,
+    key: *const EVP_PKEY,
+) -> Result<(), Unspecified> {
+    if key.is_null() {
+        return Err(Unspecified);
+    }
     let type_ = wolfcrypt_evp_pkey_get_type(key);
 
     // Ed25519: produce PKCS#8 v2 OneAsymmetricKey (with embedded public key)
@@ -843,25 +852,35 @@ pub(crate) unsafe fn evp_marshal_private_key_v2(buf: &mut Vec<u8>, key: *const E
 }
 
 /// evp_marshal_public_key: serialize a public key to SubjectPublicKeyInfo DER.
-pub(crate) unsafe fn evp_marshal_public_key(buf: &mut Vec<u8>, key: *const EVP_PKEY) -> Result<(), Unspecified> {
-    if key.is_null() { return Err(Unspecified); }
+pub(crate) unsafe fn evp_marshal_public_key(
+    buf: &mut Vec<u8>,
+    key: *const EVP_PKEY,
+) -> Result<(), Unspecified> {
+    if key.is_null() {
+        return Err(Unspecified);
+    }
     let type_ = wolfcrypt_evp_pkey_get_type(key);
 
     // X25519/Ed25519: build SubjectPublicKeyInfo manually
     if type_ == NID_X25519 || type_ == NID_ED25519 {
         let pkey_sz = wolfcrypt_evp_pkey_get_pkey_sz(key);
         let pkey_ptr = wolfcrypt_evp_pkey_get_pkey_ptr(key);
-        if pkey_ptr.is_null() { return Err(Unspecified); }
+        if pkey_ptr.is_null() {
+            return Err(Unspecified);
+        }
 
-        let pub_raw = if pkey_sz == 64 { pkey_ptr.add(32) }
-                      else if pkey_sz == 32 { pkey_ptr }
-                      else { return Err(Unspecified); };
+        let pub_raw = if pkey_sz == 64 {
+            pkey_ptr.add(32)
+        } else if pkey_sz == 32 {
+            pkey_ptr
+        } else {
+            return Err(Unspecified);
+        };
 
         // OID last byte: X25519=0x6e, Ed25519=0x70
         let oid_byte: u8 = if type_ == NID_X25519 { 0x6e } else { 0x70 };
         let spki: [u8; SPKI_25519_PREFIX_LEN] = [
-            0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, oid_byte,
-            0x03, 0x21, 0x00,
+            0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, oid_byte, 0x03, 0x21, 0x00,
         ];
         buf.extend_from_slice(&spki);
         buf.extend_from_slice(core::slice::from_raw_parts(pub_raw, 32));
@@ -895,7 +914,9 @@ pub(crate) unsafe fn evp_marshal_public_key(buf: &mut Vec<u8>, key: *const EVP_P
     // RSA: use i2d_PUBKEY
     let mut der: *mut u8 = core::ptr::null_mut();
     let der_len = i2d_PUBKEY(key, &mut der);
-    if der_len <= 0 || der.is_null() { return Err(Unspecified); }
+    if der_len <= 0 || der.is_null() {
+        return Err(Unspecified);
+    }
     let slice = core::slice::from_raw_parts(der, der_len as usize);
     buf.extend_from_slice(slice);
     OPENSSL_free(der as *mut c_void);
@@ -934,10 +955,20 @@ pub(crate) unsafe fn evp_parse_private_key(data: &[u8]) -> *mut EVP_PKEY {
 
     // Try EC then RSA
     let mut p = data.as_ptr();
-    let mut pkey = d2i_PrivateKey(EVP_PKEY_EC, core::ptr::null_mut(), &mut p, data.len() as c_long);
+    let mut pkey = d2i_PrivateKey(
+        EVP_PKEY_EC,
+        core::ptr::null_mut(),
+        &mut p,
+        data.len() as c_long,
+    );
     if pkey.is_null() {
         p = data.as_ptr();
-        pkey = d2i_PrivateKey(EVP_PKEY_RSA, core::ptr::null_mut(), &mut p, data.len() as c_long);
+        pkey = d2i_PrivateKey(
+            EVP_PKEY_RSA,
+            core::ptr::null_mut(),
+            &mut p,
+            data.len() as c_long,
+        );
     }
     pkey
 }
@@ -956,7 +987,9 @@ unsafe fn parse_ed25519_pkcs8_wc(data: &[u8]) -> Option<*mut EVP_PKEY> {
 
     // Allocate and initialize a temporary ed25519_key for decoding
     let ed_key = OPENSSL_malloc(WC_ED25519_KEY_ALLOC_SIZE) as *mut wc_ed25519_key;
-    if ed_key.is_null() { return None; }
+    if ed_key.is_null() {
+        return None;
+    }
     core::ptr::write_bytes(ed_key as *mut u8, 0, WC_ED25519_KEY_ALLOC_SIZE);
 
     if wc_ed25519_init(ed_key) != 0 {
@@ -970,7 +1003,9 @@ unsafe fn parse_ed25519_pkcs8_wc(data: &[u8]) -> Option<*mut EVP_PKEY> {
     // handled by parse_ed25519_pkcs8_seed which validates the structure.
     // v1: 30 2e 02 01 00 ... → version byte at offset content_start + 2
     let (content_start, _) = read_der_length(d, 1, dlen)?;
-    if content_start + 3 > dlen { return None; }
+    if content_start + 3 > dlen {
+        return None;
+    }
     if *d.add(content_start + 2) != 0x00 {
         // version != 0 → not v1, fall through to seed-extraction fallback
         OPENSSL_free(ed_key as *mut c_void);
@@ -1000,11 +1035,13 @@ unsafe fn parse_ed25519_pkcs8_wc(data: &[u8]) -> Option<*mut EVP_PKEY> {
     OPENSSL_free(ed_key as *mut c_void);
 
     // Build EVP_PKEY — derives the public key from the seed
-    let pkey = EVP_PKEY_new_raw_private_key(NID_ED25519, core::ptr::null_mut(),
-        priv_seed.as_ptr(), 32);
+    let pkey =
+        EVP_PKEY_new_raw_private_key(NID_ED25519, core::ptr::null_mut(), priv_seed.as_ptr(), 32);
     // Securely wipe private seed (resists dead-store elimination)
     wc_ForceZero(priv_seed.as_mut_ptr() as *mut c_void, priv_seed.len());
-    if pkey.is_null() { return None; }
+    if pkey.is_null() {
+        return None;
+    }
 
     Some(pkey)
 }
@@ -1036,27 +1073,47 @@ unsafe fn parse_ed25519_pkcs8_seed(data: &[u8]) -> Option<*mut EVP_PKEY> {
     let dlen = data.len();
 
     // Must start with SEQUENCE
-    if dlen < 16 || *d != 0x30 { return None; }
+    if dlen < 16 || *d != 0x30 {
+        return None;
+    }
 
     // Read outer SEQUENCE length to determine total consumed bytes
     let (content_start, seq_len) = read_der_length(d, 1, dlen)?;
     let total_consumed = content_start + seq_len;
-    if total_consumed > dlen { return None; }
+    if total_consumed > dlen {
+        return None;
+    }
 
     // Find the Ed25519 OID. It's in the AlgorithmIdentifier after the version.
     // Version is 3 bytes (02 01 xx), AlgID starts with SEQUENCE (30 05).
     // OID offset varies with the SEQUENCE length encoding.
     let oid_off = content_start + 3 + 2; // past version + AlgID SEQUENCE header
-    if oid_off + ED25519_OID.len() > total_consumed { return None; }
-    if !ED25519_OID.iter().enumerate().all(|(i, &b)| *d.add(oid_off + i) == b) { return None; }
+    if oid_off + ED25519_OID.len() > total_consumed {
+        return None;
+    }
+    if !ED25519_OID
+        .iter()
+        .enumerate()
+        .all(|(i, &b)| *d.add(oid_off + i) == b)
+    {
+        return None;
+    }
 
     // Seed is after the OID: OCTET STRING(34) { OCTET STRING(32) { seed } }
     // That's: 04 22 04 20 <32 bytes seed>
     let priv_off = oid_off + ED25519_OID.len();
-    if priv_off + 4 + 32 > total_consumed { return None; }
-    if *d.add(priv_off) != 0x04 { return None; }     // outer OCTET STRING
-    if *d.add(priv_off + 2) != 0x04 { return None; } // inner OCTET STRING
-    if *d.add(priv_off + 3) != 0x20 { return None; } // inner length = 32
+    if priv_off + 4 + 32 > total_consumed {
+        return None;
+    }
+    if *d.add(priv_off) != 0x04 {
+        return None;
+    } // outer OCTET STRING
+    if *d.add(priv_off + 2) != 0x04 {
+        return None;
+    } // inner OCTET STRING
+    if *d.add(priv_off + 3) != 0x20 {
+        return None;
+    } // inner length = 32
     let seed = d.add(priv_off + 4);
 
     // Check for optional fields after the private key OCTET STRING.
@@ -1075,16 +1132,30 @@ unsafe fn parse_ed25519_pkcs8_seed(data: &[u8]) -> Option<*mut EVP_PKEY> {
         let tag = *d.add(pos);
         if tag == 0x81 {
             // Implicit [1]: 81 21 00 <32 bytes> (total 35 bytes)
-            if pos + 35 != total_consumed { return None; }
-            if *d.add(pos + 1) != 0x21 { return None; }
-            if *d.add(pos + 2) != 0x00 { return None; } // BIT STRING unused-bits
+            if pos + 35 != total_consumed {
+                return None;
+            }
+            if *d.add(pos + 1) != 0x21 {
+                return None;
+            }
+            if *d.add(pos + 2) != 0x00 {
+                return None;
+            } // BIT STRING unused-bits
             embedded_pub = d.add(pos + 3);
         } else if tag == 0xa1 {
             // Explicit [1] { BIT STRING }: a1 23 03 21 00 <32 bytes> (total 37 bytes)
-            if pos + 37 != total_consumed { return None; }
-            if *d.add(pos + 2) != 0x03 { return None; } // BIT STRING tag
-            if *d.add(pos + 3) != 0x21 { return None; }
-            if *d.add(pos + 4) != 0x00 { return None; } // unused-bits
+            if pos + 37 != total_consumed {
+                return None;
+            }
+            if *d.add(pos + 2) != 0x03 {
+                return None;
+            } // BIT STRING tag
+            if *d.add(pos + 3) != 0x21 {
+                return None;
+            }
+            if *d.add(pos + 4) != 0x00 {
+                return None;
+            } // unused-bits
             embedded_pub = d.add(pos + 5);
         } else {
             return None; // unknown trailing data
@@ -1092,7 +1163,9 @@ unsafe fn parse_ed25519_pkcs8_seed(data: &[u8]) -> Option<*mut EVP_PKEY> {
     }
 
     let pkey = EVP_PKEY_new_raw_private_key(NID_ED25519, core::ptr::null_mut(), seed, 32);
-    if pkey.is_null() { return None; }
+    if pkey.is_null() {
+        return None;
+    }
 
     // If an embedded public key is present, verify it matches the derived key.
     if !embedded_pub.is_null() {
@@ -1116,15 +1189,21 @@ unsafe fn parse_ed25519_pkcs8_seed(data: &[u8]) -> Option<*mut EVP_PKEY> {
 
 /// Read a DER length at the given position. Returns (new_pos, length) or None.
 unsafe fn read_der_length(d: *const u8, pos: usize, limit: usize) -> Option<(usize, usize)> {
-    if pos >= limit { return None; }
+    if pos >= limit {
+        return None;
+    }
     let b = *d.add(pos);
     if b < 0x80 {
         Some((pos + 1, b as usize))
     } else if b == 0x81 {
-        if pos + 1 >= limit { return None; }
+        if pos + 1 >= limit {
+            return None;
+        }
         Some((pos + 2, *d.add(pos + 1) as usize))
     } else if b == 0x82 {
-        if pos + 2 >= limit { return None; }
+        if pos + 2 >= limit {
+            return None;
+        }
         let len = (*d.add(pos + 1) as usize) << 8 | *d.add(pos + 2) as usize;
         Some((pos + 3, len))
     } else {
@@ -1143,9 +1222,16 @@ pub(crate) unsafe fn evp_parse_public_key(data: &[u8]) -> *mut EVP_PKEY {
     let dlen = data.len();
 
     // Check for X25519 SPKI (OID 2b 65 6e): 30 2a 30 05 06 03 2b 65 6e 03 21 00 <32>
-    if dlen >= 44 && *d == 0x30 && *d.add(1) == 0x2a && *d.add(2) == 0x30
-        && *d.add(4) == 0x06 && *d.add(5) == 0x03
-        && *d.add(6) == 0x2b && *d.add(7) == 0x65 && *d.add(8) == 0x6e {
+    if dlen >= 44
+        && *d == 0x30
+        && *d.add(1) == 0x2a
+        && *d.add(2) == 0x30
+        && *d.add(4) == 0x06
+        && *d.add(5) == 0x03
+        && *d.add(6) == 0x2b
+        && *d.add(7) == 0x65
+        && *d.add(8) == 0x6e
+    {
         if *d.add(9) != 0x03 || *d.add(10) != 0x21 || *d.add(11) != 0x00 {
             return core::ptr::null_mut();
         }
@@ -1153,9 +1239,16 @@ pub(crate) unsafe fn evp_parse_public_key(data: &[u8]) -> *mut EVP_PKEY {
     }
 
     // Check for Ed25519 SPKI (OID 2b 65 70): 30 2a 30 05 06 03 2b 65 70 03 21 00 <32>
-    if dlen >= 44 && *d == 0x30 && *d.add(1) == 0x2a && *d.add(2) == 0x30
-        && *d.add(4) == 0x06 && *d.add(5) == 0x03
-        && *d.add(6) == 0x2b && *d.add(7) == 0x65 && *d.add(8) == 0x70 {
+    if dlen >= 44
+        && *d == 0x30
+        && *d.add(1) == 0x2a
+        && *d.add(2) == 0x30
+        && *d.add(4) == 0x06
+        && *d.add(5) == 0x03
+        && *d.add(6) == 0x2b
+        && *d.add(7) == 0x65
+        && *d.add(8) == 0x70
+    {
         return EVP_PKEY_new_raw_public_key(NID_ED25519, core::ptr::null_mut(), d.add(12), 32);
     }
 
@@ -1181,7 +1274,9 @@ pub(crate) unsafe fn EVP_PKEY_new_raw_private_key(
         // Use wolfCrypt's import path which handles RFC 7748 clamping
         // internally (curve25519_priv_clamp in wc_curve25519_import_private_ex).
         let c25519 = OPENSSL_malloc(WC_CURVE25519_KEY_ALLOC_SIZE) as *mut wc_curve25519_key;
-        if c25519.is_null() { return core::ptr::null_mut(); }
+        if c25519.is_null() {
+            return core::ptr::null_mut();
+        }
         core::ptr::write_bytes(c25519 as *mut u8, 0, WC_CURVE25519_KEY_ALLOC_SIZE);
 
         if wc_curve25519_init(c25519) != 0 {
@@ -1214,8 +1309,10 @@ pub(crate) unsafe fn EVP_PKEY_new_raw_private_key(
         let mut pub_len: u32 = 32;
         let ret = wc_curve25519_export_key_raw_ex(
             c25519,
-            priv_key.as_mut_ptr(), &mut priv_len,
-            pub_key.as_mut_ptr(), &mut pub_len,
+            priv_key.as_mut_ptr(),
+            &mut priv_len,
+            pub_key.as_mut_ptr(),
+            &mut pub_len,
             EC25519_LITTLE_ENDIAN,
         );
         wc_curve25519_free(c25519);
@@ -1374,24 +1471,32 @@ pub(crate) unsafe fn EVP_PKEY_get_raw_public_key(
     let ptr = wolfcrypt_evp_pkey_get_pkey_ptr(pkey);
 
     if (type_ == NID_X25519 || type_ == NID_ED25519) && pkey_sz == 64 {
-        if ptr.is_null() { return 0; }
+        if ptr.is_null() {
+            return 0;
+        }
         if out.is_null() {
             *out_len = 32;
             return 1;
         }
-        if *out_len < 32 { return 0; }
+        if *out_len < 32 {
+            return 0;
+        }
         core::ptr::copy_nonoverlapping(ptr.add(32), out, 32);
         *out_len = 32;
         return 1;
     }
 
     if (type_ == NID_X25519 || type_ == NID_ED25519) && pkey_sz == 32 {
-        if ptr.is_null() { return 0; }
+        if ptr.is_null() {
+            return 0;
+        }
         if out.is_null() {
             *out_len = 32;
             return 1;
         }
-        if *out_len < 32 { return 0; }
+        if *out_len < 32 {
+            return 0;
+        }
         core::ptr::copy_nonoverlapping(ptr, out, 32);
         *out_len = 32;
         return 1;
@@ -1402,11 +1507,15 @@ pub(crate) unsafe fn EVP_PKEY_get_raw_public_key(
 /// EVP_PKEY_keygen_init: returns success for Ed25519/X25519.
 #[allow(non_snake_case)]
 pub(crate) unsafe fn EVP_PKEY_keygen_init(ctx: *mut EVP_PKEY_CTX) -> c_int {
-    if ctx.is_null() { return 0; }
+    if ctx.is_null() {
+        return 0;
+    }
     let pkey = wolfcrypt_evp_pkey_ctx_get_pkey(ctx);
     if !pkey.is_null() {
         let t = wolfcrypt_evp_pkey_get_type(pkey);
-        if t == NID_ED25519 || t == NID_X25519 { return 1; }
+        if t == NID_ED25519 || t == NID_X25519 {
+            return 1;
+        }
     }
     crate::wolfcrypt_rs::EVP_PKEY_keygen_init(ctx)
 }
@@ -1414,27 +1523,49 @@ pub(crate) unsafe fn EVP_PKEY_keygen_init(ctx: *mut EVP_PKEY_CTX) -> c_int {
 /// EVP_PKEY_keygen: for Ed25519/X25519 uses wolfCrypt directly.
 #[allow(non_snake_case)]
 pub(crate) unsafe fn EVP_PKEY_keygen(ctx: *mut EVP_PKEY_CTX, ppkey: *mut *mut EVP_PKEY) -> c_int {
-    if ctx.is_null() || ppkey.is_null() { return 0; }
+    if ctx.is_null() || ppkey.is_null() {
+        return 0;
+    }
     let ctx_pkey = wolfcrypt_evp_pkey_ctx_get_pkey(ctx);
-    if ctx_pkey.is_null() { return 0; }
+    if ctx_pkey.is_null() {
+        return 0;
+    }
     let type_ = wolfcrypt_evp_pkey_get_type(ctx_pkey);
 
     if type_ == NID_X25519 {
         let c25519 = OPENSSL_malloc(WC_CURVE25519_KEY_ALLOC_SIZE) as *mut wc_curve25519_key;
-        if c25519.is_null() { return 0; }
+        if c25519.is_null() {
+            return 0;
+        }
         core::ptr::write_bytes(c25519 as *mut u8, 0, WC_CURVE25519_KEY_ALLOC_SIZE);
         let rng = get_thread_rng();
-        if rng.is_null() { OPENSSL_free(c25519 as *mut c_void); return 0; }
-        if wc_curve25519_init(c25519) != 0 { OPENSSL_free(c25519 as *mut c_void); return 0; }
-        if wc_curve25519_make_key(rng, 32, c25519) != 0 {
-            wc_curve25519_free(c25519); OPENSSL_free(c25519 as *mut c_void); return 0;
+        if rng.is_null() {
+            OPENSSL_free(c25519 as *mut c_void);
+            return 0;
         }
-        let mut priv_key = [0u8; 32]; let mut pub_key = [0u8; 32];
-        let mut priv_len: u32 = 32; let mut pub_len: u32 = 32;
+        if wc_curve25519_init(c25519) != 0 {
+            OPENSSL_free(c25519 as *mut c_void);
+            return 0;
+        }
+        if wc_curve25519_make_key(rng, 32, c25519) != 0 {
+            wc_curve25519_free(c25519);
+            OPENSSL_free(c25519 as *mut c_void);
+            return 0;
+        }
+        let mut priv_key = [0u8; 32];
+        let mut pub_key = [0u8; 32];
+        let mut priv_len: u32 = 32;
+        let mut pub_len: u32 = 32;
         let ret = wc_curve25519_export_key_raw_ex(
-            c25519, priv_key.as_mut_ptr(), &mut priv_len,
-            pub_key.as_mut_ptr(), &mut pub_len, EC25519_LITTLE_ENDIAN);
-        wc_curve25519_free(c25519); OPENSSL_free(c25519 as *mut c_void);
+            c25519,
+            priv_key.as_mut_ptr(),
+            &mut priv_len,
+            pub_key.as_mut_ptr(),
+            &mut pub_len,
+            EC25519_LITTLE_ENDIAN,
+        );
+        wc_curve25519_free(c25519);
+        OPENSSL_free(c25519 as *mut c_void);
         if ret != 0 {
             wc_ForceZero(priv_key.as_mut_ptr() as *mut c_void, priv_key.len());
             return 0;
@@ -1458,19 +1589,34 @@ pub(crate) unsafe fn EVP_PKEY_keygen(ctx: *mut EVP_PKEY_CTX, ppkey: *mut *mut EV
 
     if type_ == NID_ED25519 {
         let ed_key = OPENSSL_malloc(WC_ED25519_KEY_ALLOC_SIZE) as *mut wc_ed25519_key;
-        if ed_key.is_null() { return 0; }
+        if ed_key.is_null() {
+            return 0;
+        }
         core::ptr::write_bytes(ed_key as *mut u8, 0, WC_ED25519_KEY_ALLOC_SIZE);
         let rng = get_thread_rng();
-        if rng.is_null() { OPENSSL_free(ed_key as *mut c_void); return 0; }
-        if wc_ed25519_init(ed_key) != 0 { OPENSSL_free(ed_key as *mut c_void); return 0; }
-        if wc_ed25519_make_key(rng, ED25519_KEY_SIZE as c_int, ed_key) != 0 {
-            wc_ed25519_free(ed_key); OPENSSL_free(ed_key as *mut c_void); return 0;
+        if rng.is_null() {
+            OPENSSL_free(ed_key as *mut c_void);
+            return 0;
         }
-        let mut priv_seed = [0u8; 32]; let mut pub_key = [0u8; 32];
-        let mut priv_len: u32 = 32; let mut pub_len: u32 = 32;
+        if wc_ed25519_init(ed_key) != 0 {
+            OPENSSL_free(ed_key as *mut c_void);
+            return 0;
+        }
+        if wc_ed25519_make_key(rng, ED25519_KEY_SIZE as c_int, ed_key) != 0 {
+            wc_ed25519_free(ed_key);
+            OPENSSL_free(ed_key as *mut c_void);
+            return 0;
+        }
+        let mut priv_seed = [0u8; 32];
+        let mut pub_key = [0u8; 32];
+        let mut priv_len: u32 = 32;
+        let mut pub_len: u32 = 32;
         let mut ret = wc_ed25519_export_private_only(ed_key, priv_seed.as_mut_ptr(), &mut priv_len);
-        if ret == 0 { ret = wc_ed25519_export_public(ed_key, pub_key.as_mut_ptr(), &mut pub_len); }
-        wc_ed25519_free(ed_key); OPENSSL_free(ed_key as *mut c_void);
+        if ret == 0 {
+            ret = wc_ed25519_export_public(ed_key, pub_key.as_mut_ptr(), &mut pub_len);
+        }
+        wc_ed25519_free(ed_key);
+        OPENSSL_free(ed_key as *mut c_void);
         if ret != 0 {
             wc_ForceZero(priv_seed.as_mut_ptr() as *mut c_void, priv_seed.len());
             return 0;
@@ -1498,7 +1644,9 @@ pub(crate) unsafe fn EVP_PKEY_keygen(ctx: *mut EVP_PKEY_CTX, ppkey: *mut *mut EV
 /// EVP_PKEY_derive_init: for X25519 manually sets the op type.
 #[allow(non_snake_case)]
 pub(crate) unsafe fn EVP_PKEY_derive_init(ctx: *mut EVP_PKEY_CTX) -> c_int {
-    if ctx.is_null() { return 0; }
+    if ctx.is_null() {
+        return 0;
+    }
     let pkey = wolfcrypt_evp_pkey_ctx_get_pkey(ctx);
     if !pkey.is_null() && wolfcrypt_evp_pkey_get_type(pkey) == NID_X25519 {
         wolfcrypt_evp_pkey_ctx_set_peer_key(ctx, core::ptr::null_mut());
@@ -1510,11 +1658,18 @@ pub(crate) unsafe fn EVP_PKEY_derive_init(ctx: *mut EVP_PKEY_CTX) -> c_int {
 
 /// EVP_PKEY_derive_set_peer: for X25519 manually manages the peer key.
 #[allow(non_snake_case)]
-pub(crate) unsafe fn EVP_PKEY_derive_set_peer(ctx: *mut EVP_PKEY_CTX, peer: *mut EVP_PKEY) -> c_int {
-    if ctx.is_null() || peer.is_null() { return 0; }
+pub(crate) unsafe fn EVP_PKEY_derive_set_peer(
+    ctx: *mut EVP_PKEY_CTX,
+    peer: *mut EVP_PKEY,
+) -> c_int {
+    if ctx.is_null() || peer.is_null() {
+        return 0;
+    }
     let pkey = wolfcrypt_evp_pkey_ctx_get_pkey(ctx);
     if !pkey.is_null() && wolfcrypt_evp_pkey_get_type(pkey) == NID_X25519 {
-        if wolfcrypt_evp_pkey_ctx_get_op(ctx) != WC_EVP_PKEY_OP_DERIVE { return 0; }
+        if wolfcrypt_evp_pkey_ctx_get_op(ctx) != WC_EVP_PKEY_OP_DERIVE {
+            return 0;
+        }
         wolfcrypt_evp_pkey_ctx_set_peer_key(ctx, peer);
         return 1;
     }
@@ -1523,73 +1678,124 @@ pub(crate) unsafe fn EVP_PKEY_derive_set_peer(ctx: *mut EVP_PKEY_CTX, peer: *mut
 
 /// EVP_PKEY_derive: for X25519 uses wc_curve25519_shared_secret_ex.
 #[allow(non_snake_case)]
-pub(crate) unsafe fn EVP_PKEY_derive(ctx: *mut EVP_PKEY_CTX, key: *mut u8, keylen: *mut usize) -> c_int {
-    if ctx.is_null() || keylen.is_null() { return 0; }
+pub(crate) unsafe fn EVP_PKEY_derive(
+    ctx: *mut EVP_PKEY_CTX,
+    key: *mut u8,
+    keylen: *mut usize,
+) -> c_int {
+    if ctx.is_null() || keylen.is_null() {
+        return 0;
+    }
     let pkey = wolfcrypt_evp_pkey_ctx_get_pkey(ctx);
-    if pkey.is_null() { return 0; }
+    if pkey.is_null() {
+        return 0;
+    }
     if wolfcrypt_evp_pkey_get_type(pkey) != NID_X25519 {
         return crate::wolfcrypt_rs::EVP_PKEY_derive(ctx, key, keylen);
     }
 
     let peer_key = wolfcrypt_evp_pkey_ctx_get_peer_key(ctx);
-    if peer_key.is_null() { return 0; }
+    if peer_key.is_null() {
+        return 0;
+    }
     let peer_ptr = wolfcrypt_evp_pkey_get_pkey_ptr(peer_key);
-    if peer_ptr.is_null() { return 0; }
-    if key.is_null() { *keylen = 32; return 1; }
-    if *keylen < 32 { return 0; }
+    if peer_ptr.is_null() {
+        return 0;
+    }
+    if key.is_null() {
+        *keylen = 32;
+        return 1;
+    }
+    if *keylen < 32 {
+        return 0;
+    }
 
     let pkey_sz = wolfcrypt_evp_pkey_get_pkey_sz(pkey);
     let pkey_ptr = wolfcrypt_evp_pkey_get_pkey_ptr(pkey);
-    if pkey_sz != 64 || pkey_ptr.is_null() { return 0; }
+    if pkey_sz != 64 || pkey_ptr.is_null() {
+        return 0;
+    }
 
     let peer_sz = wolfcrypt_evp_pkey_get_pkey_sz(peer_key);
-    let peer_pub_raw = if peer_sz == 64 { peer_ptr.add(32) }
-                       else if peer_sz == 32 { peer_ptr }
-                       else { return 0; };
+    let peer_pub_raw = if peer_sz == 64 {
+        peer_ptr.add(32)
+    } else if peer_sz == 32 {
+        peer_ptr
+    } else {
+        return 0;
+    };
 
     let priv_c25519 = OPENSSL_malloc(WC_CURVE25519_KEY_ALLOC_SIZE) as *mut wc_curve25519_key;
     let peer_c25519 = OPENSSL_malloc(WC_CURVE25519_KEY_ALLOC_SIZE) as *mut wc_curve25519_key;
     if priv_c25519.is_null() || peer_c25519.is_null() {
-        if !priv_c25519.is_null() { OPENSSL_free(priv_c25519 as *mut c_void); }
-        if !peer_c25519.is_null() { OPENSSL_free(peer_c25519 as *mut c_void); }
+        if !priv_c25519.is_null() {
+            OPENSSL_free(priv_c25519 as *mut c_void);
+        }
+        if !peer_c25519.is_null() {
+            OPENSSL_free(peer_c25519 as *mut c_void);
+        }
         return 0;
     }
     core::ptr::write_bytes(priv_c25519 as *mut u8, 0, WC_CURVE25519_KEY_ALLOC_SIZE);
     core::ptr::write_bytes(peer_c25519 as *mut u8, 0, WC_CURVE25519_KEY_ALLOC_SIZE);
 
     let cleanup = || {
-        wc_curve25519_free(priv_c25519); wc_curve25519_free(peer_c25519);
-        OPENSSL_free(priv_c25519 as *mut c_void); OPENSSL_free(peer_c25519 as *mut c_void);
+        wc_curve25519_free(priv_c25519);
+        wc_curve25519_free(peer_c25519);
+        OPENSSL_free(priv_c25519 as *mut c_void);
+        OPENSSL_free(peer_c25519 as *mut c_void);
     };
 
     if wc_curve25519_init(priv_c25519) != 0 || wc_curve25519_init(peer_c25519) != 0 {
-        cleanup(); return 0;
+        cleanup();
+        return 0;
     }
 
     let mut ret = wc_curve25519_import_private_raw_ex(
-        pkey_ptr, 32, pkey_ptr.add(32), 32,
-        priv_c25519, EC25519_LITTLE_ENDIAN);
+        pkey_ptr,
+        32,
+        pkey_ptr.add(32),
+        32,
+        priv_c25519,
+        EC25519_LITTLE_ENDIAN,
+    );
     if ret == 0 {
         let mut peer_pub_masked = [0u8; 32];
         core::ptr::copy_nonoverlapping(peer_pub_raw, peer_pub_masked.as_mut_ptr(), 32);
         peer_pub_masked[31] &= 0x7f;
         ret = wc_curve25519_import_public_ex(
-            peer_pub_masked.as_ptr(), 32, peer_c25519, EC25519_LITTLE_ENDIAN);
+            peer_pub_masked.as_ptr(),
+            32,
+            peer_c25519,
+            EC25519_LITTLE_ENDIAN,
+        );
     }
     if ret == 0 {
         let derive_rng = get_thread_rng();
-        if derive_rng.is_null() { ret = -1; }
-        else {
+        if derive_rng.is_null() {
+            ret = -1;
+        } else {
             // Set RNG for blinding (required when WOLFSSL_CURVE25519_BLINDING is enabled)
             wc_curve25519_set_rng(priv_c25519, derive_rng);
             let mut out_len: u32 = 32;
             ret = wc_curve25519_shared_secret_ex(
-                priv_c25519, peer_c25519, key, &mut out_len, EC25519_LITTLE_ENDIAN);
-            if ret == 0 { *keylen = out_len as usize; }
+                priv_c25519,
+                peer_c25519,
+                key,
+                &mut out_len,
+                EC25519_LITTLE_ENDIAN,
+            );
+            if ret == 0 {
+                *keylen = out_len as usize;
+            }
         }
     }
     cleanup();
-    if ret == 0 { 1 } else { 0 }
+    if ret == 0 {
+        1
+    } else {
+        0
+    }
 }
 
 #[allow(non_snake_case)]
@@ -1628,11 +1834,7 @@ unsafe fn wc_ed25519_sign_msg_wrapper(
         return 0;
     }
 
-    if wc_ed25519_import_private_key(
-        priv_seed.as_ptr(), 32,
-        pub_key.as_ptr(), 32,
-        ed_key,
-    ) != 0 {
+    if wc_ed25519_import_private_key(priv_seed.as_ptr(), 32, pub_key.as_ptr(), 32, ed_key) != 0 {
         wc_ed25519_free(ed_key);
         OPENSSL_free(ed_key as *mut c_void);
         return 0;
@@ -1640,25 +1842,27 @@ unsafe fn wc_ed25519_sign_msg_wrapper(
 
     let mut sig_len: u32 = sig_out.len() as u32;
     let ret = wc_ed25519_sign_msg(
-        msg.as_ptr(), msg.len() as u32,
-        sig_out.as_mut_ptr(), &mut sig_len,
+        msg.as_ptr(),
+        msg.len() as u32,
+        sig_out.as_mut_ptr(),
+        &mut sig_len,
         ed_key,
     );
 
     wc_ed25519_free(ed_key);
     OPENSSL_free(ed_key as *mut c_void);
 
-    if ret != 0 { 0 } else { sig_len as usize }
+    if ret != 0 {
+        0
+    } else {
+        sig_len as usize
+    }
 }
 
 /// Helper: verify an Ed25519 signature via wolfCrypt directly.
 /// Heap-allocates ed25519_key, imports public key, calls wc_ed25519_verify_msg, frees.
 /// Returns true if the signature is valid.
-unsafe fn wc_ed25519_verify_msg_wrapper(
-    pub_key: &[u8],
-    msg: &[u8],
-    sig: &[u8],
-) -> bool {
+unsafe fn wc_ed25519_verify_msg_wrapper(pub_key: &[u8], msg: &[u8], sig: &[u8]) -> bool {
     if pub_key.len() != 32 {
         return false;
     }
@@ -1681,8 +1885,10 @@ unsafe fn wc_ed25519_verify_msg_wrapper(
 
     let mut verified: c_int = 0;
     let ret = wc_ed25519_verify_msg(
-        sig.as_ptr(), sig.len() as u32,
-        msg.as_ptr(), msg.len() as u32,
+        sig.as_ptr(),
+        sig.len() as u32,
+        msg.as_ptr(),
+        msg.len() as u32,
         &mut verified,
         ed_key,
     );

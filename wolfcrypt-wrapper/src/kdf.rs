@@ -23,9 +23,9 @@ This module provides a Rust wrapper for the wolfCrypt library's Key Derivation
 Function (KDF) functionality.
 */
 
-use crate::sys;
 #[cfg(all(hmac, kdf_tls13))]
 use crate::hmac::HMAC;
+use crate::sys;
 
 #[cfg(kdf_srtp)]
 pub const SRTP_LABEL_ENCRYPTION: u8 = sys::WC_SRTP_LABEL_ENCRYPTION as u8;
@@ -81,7 +81,13 @@ pub const SRTP_LABEL_HDR_SALT: u8 = sys::WC_SRTP_LABEL_HDR_SALT as u8;
 /// }
 /// ```
 #[cfg(kdf_pbkdf2)]
-pub fn pbkdf2(password: &[u8], salt: &[u8], iterations: i32, typ: i32, out: &mut [u8]) -> Result<(), i32> {
+pub fn pbkdf2(
+    password: &[u8],
+    salt: &[u8],
+    iterations: i32,
+    typ: i32,
+    out: &mut [u8],
+) -> Result<(), i32> {
     pbkdf2_ex(password, salt, iterations, typ, None, None, out)
 }
 
@@ -125,7 +131,15 @@ pub fn pbkdf2(password: &[u8], salt: &[u8], iterations: i32, typ: i32, out: &mut
 /// }
 /// ```
 #[cfg(kdf_pbkdf2)]
-pub fn pbkdf2_ex(password: &[u8], salt: &[u8], iterations: i32, typ: i32, heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>, out: &mut [u8]) -> Result<(), i32> {
+pub fn pbkdf2_ex(
+    password: &[u8],
+    salt: &[u8],
+    iterations: i32,
+    typ: i32,
+    heap: Option<*mut core::ffi::c_void>,
+    dev_id: Option<i32>,
+    out: &mut [u8],
+) -> Result<(), i32> {
     let password_size = password.len() as i32;
     let salt_size = salt.len() as i32;
     let out_size = out.len() as i32;
@@ -138,8 +152,18 @@ pub fn pbkdf2_ex(password: &[u8], salt: &[u8], iterations: i32, typ: i32, heap: 
         None => sys::INVALID_DEVID,
     };
     let rc = unsafe {
-        sys::wc_PBKDF2_ex(out.as_mut_ptr(), password.as_ptr(), password_size,
-            salt.as_ptr(), salt_size, iterations, out_size, typ, heap, dev_id)
+        sys::wc_PBKDF2_ex(
+            out.as_mut_ptr(),
+            password.as_ptr(),
+            password_size,
+            salt.as_ptr(),
+            salt_size,
+            iterations,
+            out_size,
+            typ,
+            heap,
+            dev_id,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -194,7 +218,14 @@ pub fn pbkdf2_ex(password: &[u8], salt: &[u8], iterations: i32, typ: i32, heap: 
 /// }
 /// ```
 #[cfg(kdf_pkcs12)]
-pub fn pkcs12_pbkdf(password: &[u8], salt: &[u8], iterations: i32, typ: i32, id: i32, out: &mut [u8]) -> Result<(), i32> {
+pub fn pkcs12_pbkdf(
+    password: &[u8],
+    salt: &[u8],
+    iterations: i32,
+    typ: i32,
+    id: i32,
+    out: &mut [u8],
+) -> Result<(), i32> {
     pkcs12_pbkdf_ex(password, salt, iterations, typ, id, None, out)
 }
 
@@ -247,7 +278,15 @@ pub fn pkcs12_pbkdf(password: &[u8], salt: &[u8], iterations: i32, typ: i32, id:
 /// }
 /// ```
 #[cfg(kdf_pkcs12)]
-pub fn pkcs12_pbkdf_ex(password: &[u8], salt: &[u8], iterations: i32, typ: i32, id: i32, heap: Option<*mut core::ffi::c_void>, out: &mut [u8]) -> Result<(), i32> {
+pub fn pkcs12_pbkdf_ex(
+    password: &[u8],
+    salt: &[u8],
+    iterations: i32,
+    typ: i32,
+    id: i32,
+    heap: Option<*mut core::ffi::c_void>,
+    out: &mut [u8],
+) -> Result<(), i32> {
     let password_size = password.len() as i32;
     let salt_size = salt.len() as i32;
     let out_size = out.len() as i32;
@@ -256,8 +295,18 @@ pub fn pkcs12_pbkdf_ex(password: &[u8], salt: &[u8], iterations: i32, typ: i32, 
         None => core::ptr::null_mut(),
     };
     let rc = unsafe {
-        sys::wc_PKCS12_PBKDF_ex(out.as_mut_ptr(), password.as_ptr(), password_size,
-            salt.as_ptr(), salt_size, iterations, out_size, typ, id, heap)
+        sys::wc_PKCS12_PBKDF_ex(
+            out.as_mut_ptr(),
+            password.as_ptr(),
+            password_size,
+            salt.as_ptr(),
+            salt_size,
+            iterations,
+            out_size,
+            typ,
+            id,
+            heap,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -294,7 +343,12 @@ pub fn pkcs12_pbkdf_ex(password: &[u8], salt: &[u8], iterations: i32, typ: i32, 
 /// }
 /// ```
 #[cfg(all(hmac, kdf_tls13))]
-pub fn tls13_hkdf_extract(typ: i32, salt: Option<&[u8]>, key: Option<&mut [u8]>, out: &mut [u8]) -> Result<(), i32> {
+pub fn tls13_hkdf_extract(
+    typ: i32,
+    salt: Option<&[u8]>,
+    key: Option<&mut [u8]>,
+    out: &mut [u8],
+) -> Result<(), i32> {
     tls13_hkdf_extract_ex(typ, salt, key, out, None, None)
 }
 
@@ -330,7 +384,14 @@ pub fn tls13_hkdf_extract(typ: i32, salt: Option<&[u8]>, key: Option<&mut [u8]>,
 /// }
 /// ```
 #[cfg(all(hmac, kdf_tls13))]
-pub fn tls13_hkdf_extract_ex(typ: i32, salt: Option<&[u8]>, key: Option<&mut [u8]>, out: &mut [u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<(), i32> {
+pub fn tls13_hkdf_extract_ex(
+    typ: i32,
+    salt: Option<&[u8]>,
+    key: Option<&mut [u8]>,
+    out: &mut [u8],
+    heap: Option<*mut core::ffi::c_void>,
+    dev_id: Option<i32>,
+) -> Result<(), i32> {
     let mut salt_ptr = core::ptr::null();
     let mut salt_size = 0u32;
     if let Some(salt) = salt {
@@ -358,8 +419,16 @@ pub fn tls13_hkdf_extract_ex(typ: i32, salt: Option<&[u8]>, key: Option<&mut [u8
         None => sys::INVALID_DEVID,
     };
     let rc = unsafe {
-        sys::wc_Tls13_HKDF_Extract_ex(out.as_mut_ptr(), salt_ptr, salt_size,
-            ikm_ptr, ikm_size, typ, heap, dev_id)
+        sys::wc_Tls13_HKDF_Extract_ex(
+            out.as_mut_ptr(),
+            salt_ptr,
+            salt_size,
+            ikm_ptr,
+            ikm_size,
+            typ,
+            heap,
+            dev_id,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -417,7 +486,14 @@ pub fn tls13_hkdf_extract_ex(typ: i32, salt: Option<&[u8]>, key: Option<&mut [u8
 /// }
 /// ```
 #[cfg(all(hmac, kdf_tls13))]
-pub fn tls13_hkdf_expand_label(typ: i32, key: &[u8], protocol: &[u8], label: &[u8], info: &[u8], out: &mut [u8]) -> Result<(), i32> {
+pub fn tls13_hkdf_expand_label(
+    typ: i32,
+    key: &[u8],
+    protocol: &[u8],
+    label: &[u8],
+    info: &[u8],
+    out: &mut [u8],
+) -> Result<(), i32> {
     tls13_hkdf_expand_label_ex(typ, key, protocol, label, info, out, None, None)
 }
 
@@ -475,7 +551,16 @@ pub fn tls13_hkdf_expand_label(typ: i32, key: &[u8], protocol: &[u8], label: &[u
 /// ```
 #[cfg(all(hmac, kdf_tls13))]
 #[allow(clippy::too_many_arguments)]
-pub fn tls13_hkdf_expand_label_ex(typ: i32, key: &[u8], protocol: &[u8], label: &[u8], info: &[u8], out: &mut [u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<(), i32> {
+pub fn tls13_hkdf_expand_label_ex(
+    typ: i32,
+    key: &[u8],
+    protocol: &[u8],
+    label: &[u8],
+    info: &[u8],
+    out: &mut [u8],
+    heap: Option<*mut core::ffi::c_void>,
+    dev_id: Option<i32>,
+) -> Result<(), i32> {
     let key_size = key.len() as u32;
     let protocol_size = protocol.len() as u32;
     let label_size = label.len() as u32;
@@ -490,10 +575,21 @@ pub fn tls13_hkdf_expand_label_ex(typ: i32, key: &[u8], protocol: &[u8], label: 
         None => sys::INVALID_DEVID,
     };
     let rc = unsafe {
-        sys::wc_Tls13_HKDF_Expand_Label_ex(out.as_mut_ptr(), out_size,
-            key.as_ptr(), key_size, protocol.as_ptr(), protocol_size,
-            label.as_ptr(), label_size, info.as_ptr(), info_size, typ,
-            heap, dev_id)
+        sys::wc_Tls13_HKDF_Expand_Label_ex(
+            out.as_mut_ptr(),
+            out_size,
+            key.as_ptr(),
+            key_size,
+            protocol.as_ptr(),
+            protocol_size,
+            label.as_ptr(),
+            label_size,
+            info.as_ptr(),
+            info_size,
+            typ,
+            heap,
+            dev_id,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -532,16 +628,31 @@ pub fn tls13_hkdf_expand_label_ex(typ: i32, key: &[u8], protocol: &[u8], label: 
 /// }
 /// ```
 #[cfg(kdf_ssh)]
-pub fn ssh_kdf(typ: i32, key_id: u8, k: &[u8], h: &[u8], session_id: &[u8], key: &mut [u8]) -> Result<(), i32> {
+pub fn ssh_kdf(
+    typ: i32,
+    key_id: u8,
+    k: &[u8],
+    h: &[u8],
+    session_id: &[u8],
+    key: &mut [u8],
+) -> Result<(), i32> {
     let key_size = key.len() as u32;
     let k_size = k.len() as u32;
     let h_size = h.len() as u32;
     let session_size = session_id.len() as u32;
     let rc = unsafe {
-        sys::wc_SSH_KDF(typ as u8, key_id,
-            key.as_mut_ptr(), key_size,
-            k.as_ptr(), k_size, h.as_ptr(), h_size,
-            session_id.as_ptr(), session_size)
+        sys::wc_SSH_KDF(
+            typ as u8,
+            key_id,
+            key.as_mut_ptr(),
+            key_size,
+            k.as_ptr(),
+            k_size,
+            h.as_ptr(),
+            h_size,
+            session_id.as_ptr(),
+            session_size,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -584,17 +695,35 @@ pub fn ssh_kdf(typ: i32, key_id: u8, k: &[u8], h: &[u8], session_id: &[u8], key:
 /// }
 /// ```
 #[cfg(kdf_srtp)]
-pub fn srtp_kdf(key: &[u8], salt: &[u8], kdr_index: i32, idx: &[u8],
-        key1: &mut [u8], key2: &mut [u8], key3: &mut [u8]) -> Result<(), i32> {
+pub fn srtp_kdf(
+    key: &[u8],
+    salt: &[u8],
+    kdr_index: i32,
+    idx: &[u8],
+    key1: &mut [u8],
+    key2: &mut [u8],
+    key3: &mut [u8],
+) -> Result<(), i32> {
     let key_size = key.len() as u32;
     let salt_size = salt.len() as u32;
     let key1_size = key1.len() as u32;
     let key2_size = key2.len() as u32;
     let key3_size = key3.len() as u32;
     let rc = unsafe {
-        sys::wc_SRTP_KDF(key.as_ptr(), key_size, salt.as_ptr(), salt_size,
-            kdr_index, idx.as_ptr(), key1.as_mut_ptr(), key1_size,
-            key2.as_mut_ptr(), key2_size, key3.as_mut_ptr(), key3_size)
+        sys::wc_SRTP_KDF(
+            key.as_ptr(),
+            key_size,
+            salt.as_ptr(),
+            salt_size,
+            kdr_index,
+            idx.as_ptr(),
+            key1.as_mut_ptr(),
+            key1_size,
+            key2.as_mut_ptr(),
+            key2_size,
+            key3.as_mut_ptr(),
+            key3_size,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -634,14 +763,29 @@ pub fn srtp_kdf(key: &[u8], salt: &[u8], kdr_index: i32, idx: &[u8],
 /// }
 /// ```
 #[cfg(kdf_srtp)]
-pub fn srtp_kdf_label(key: &[u8], salt: &[u8], kdr_index: i32, idx: &[u8],
-        label: u8, keyout: &mut [u8]) -> Result<(), i32> {
+pub fn srtp_kdf_label(
+    key: &[u8],
+    salt: &[u8],
+    kdr_index: i32,
+    idx: &[u8],
+    label: u8,
+    keyout: &mut [u8],
+) -> Result<(), i32> {
     let key_size = key.len() as u32;
     let salt_size = salt.len() as u32;
     let keyout_size = keyout.len() as u32;
     let rc = unsafe {
-        sys::wc_SRTP_KDF_label(key.as_ptr(), key_size, salt.as_ptr(), salt_size,
-            kdr_index, idx.as_ptr(), label, keyout.as_mut_ptr(), keyout_size)
+        sys::wc_SRTP_KDF_label(
+            key.as_ptr(),
+            key_size,
+            salt.as_ptr(),
+            salt_size,
+            kdr_index,
+            idx.as_ptr(),
+            label,
+            keyout.as_mut_ptr(),
+            keyout_size,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -684,17 +828,35 @@ pub fn srtp_kdf_label(key: &[u8], salt: &[u8], kdr_index: i32, idx: &[u8],
 /// }
 /// ```
 #[cfg(kdf_srtp)]
-pub fn srtcp_kdf(key: &[u8], salt: &[u8], kdr_index: i32, idx: &[u8],
-        key1: &mut [u8], key2: &mut [u8], key3: &mut [u8]) -> Result<(), i32> {
+pub fn srtcp_kdf(
+    key: &[u8],
+    salt: &[u8],
+    kdr_index: i32,
+    idx: &[u8],
+    key1: &mut [u8],
+    key2: &mut [u8],
+    key3: &mut [u8],
+) -> Result<(), i32> {
     let key_size = key.len() as u32;
     let salt_size = salt.len() as u32;
     let key1_size = key1.len() as u32;
     let key2_size = key2.len() as u32;
     let key3_size = key3.len() as u32;
     let rc = unsafe {
-        sys::wc_SRTCP_KDF(key.as_ptr(), key_size, salt.as_ptr(), salt_size,
-            kdr_index, idx.as_ptr(), key1.as_mut_ptr(), key1_size,
-            key2.as_mut_ptr(), key2_size, key3.as_mut_ptr(), key3_size)
+        sys::wc_SRTCP_KDF(
+            key.as_ptr(),
+            key_size,
+            salt.as_ptr(),
+            salt_size,
+            kdr_index,
+            idx.as_ptr(),
+            key1.as_mut_ptr(),
+            key1_size,
+            key2.as_mut_ptr(),
+            key2_size,
+            key3.as_mut_ptr(),
+            key3_size,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -734,14 +896,29 @@ pub fn srtcp_kdf(key: &[u8], salt: &[u8], kdr_index: i32, idx: &[u8],
 /// }
 /// ```
 #[cfg(kdf_srtp)]
-pub fn srtcp_kdf_label(key: &[u8], salt: &[u8], kdr_index: i32, idx: &[u8],
-        label: u8, keyout: &mut [u8]) -> Result<(), i32> {
+pub fn srtcp_kdf_label(
+    key: &[u8],
+    salt: &[u8],
+    kdr_index: i32,
+    idx: &[u8],
+    label: u8,
+    keyout: &mut [u8],
+) -> Result<(), i32> {
     let key_size = key.len() as u32;
     let salt_size = salt.len() as u32;
     let keyout_size = keyout.len() as u32;
     let rc = unsafe {
-        sys::wc_SRTCP_KDF_label(key.as_ptr(), key_size, salt.as_ptr(), salt_size,
-            kdr_index, idx.as_ptr(), label, keyout.as_mut_ptr(), keyout_size)
+        sys::wc_SRTCP_KDF_label(
+            key.as_ptr(),
+            key_size,
+            salt.as_ptr(),
+            salt_size,
+            kdr_index,
+            idx.as_ptr(),
+            label,
+            keyout.as_mut_ptr(),
+            keyout_size,
+        )
     };
     if rc != 0 {
         return Err(rc);

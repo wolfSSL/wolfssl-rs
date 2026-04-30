@@ -55,24 +55,15 @@ use p384::ecdsa::signature::hazmat::{PrehashSigner, PrehashVerifier};
 use zeroize::Zeroize;
 
 use wolfcrypt_sys::{
-    wc_CryptoInfo,
-    wc_PkType_WC_PK_TYPE_ECDSA_SIGN,
-    wc_PkType_WC_PK_TYPE_ECDSA_VERIFY,
-    wc_PkType_WC_PK_TYPE_ECDH,
-    ecc_curve_ids_ECC_SECP384R1,
+    ecc_curve_ids_ECC_SECP384R1, wc_CryptoInfo, wc_PkType_WC_PK_TYPE_ECDH,
+    wc_PkType_WC_PK_TYPE_ECDSA_SIGN, wc_PkType_WC_PK_TYPE_ECDSA_VERIFY, wc_ecc_export_private_only,
+    wc_ecc_export_public_raw, wc_ecc_rs_raw_to_sig, wc_ecc_sig_to_rs,
     wolfSSL_ErrorCodes_VERIFY_SIGN_ERROR,
-    wc_ecc_export_private_only,
-    wc_ecc_export_public_raw,
-    wc_ecc_rs_raw_to_sig,
-    wc_ecc_sig_to_rs,
 };
 
 // PQC pk-type constants only exist when wolfSSL is built with HAVE_DILITHIUM.
 #[cfg(wolfssl_dilithium)]
-use wolfcrypt_sys::{
-    wc_PkType_WC_PK_TYPE_PQC_SIG_SIGN,
-    wc_PkType_WC_PK_TYPE_PQC_SIG_VERIFY,
-};
+use wolfcrypt_sys::{wc_PkType_WC_PK_TYPE_PQC_SIG_SIGN, wc_PkType_WC_PK_TYPE_PQC_SIG_VERIFY};
 
 // ---------------------------------------------------------------------------
 // ECC dispatch counter
@@ -199,9 +190,7 @@ unsafe fn dispatch_ecc384_sign(
     }
     // Verify this is a P-384 key.
     // dp->id == 15 means ECC_SECP384R1 (from generated ecc_curve_ids constants).
-    if (*key).dp.is_null()
-        || (*(*key).dp).id != ecc_curve_ids_ECC_SECP384R1 as i32
-    {
+    if (*key).dp.is_null() || (*(*key).dp).id != ecc_curve_ids_ECC_SECP384R1 as i32 {
         return crate::CRYPTOCB_UNAVAILABLE;
     }
     // Verify hash length: must be exactly 48 bytes (SHA-384 digest size).
@@ -220,11 +209,7 @@ unsafe fn dispatch_ecc384_sign(
     // Zeroized after use to avoid leaving key material on the stack.
     let mut priv_bytes = [0u8; 48];
     let mut priv_len: wolfcrypt_sys::word32 = 48;
-    let rc = wc_ecc_export_private_only(
-        key as *mut _,
-        priv_bytes.as_mut_ptr(),
-        &mut priv_len,
-    );
+    let rc = wc_ecc_export_private_only(key as *mut _, priv_bytes.as_mut_ptr(), &mut priv_len);
     if rc != 0 || priv_len != 48 {
         priv_bytes.zeroize();
         return crate::CRYPTOCB_UNAVAILABLE;
@@ -233,14 +218,13 @@ unsafe fn dispatch_ecc384_sign(
     // Build p384 signing key from the 48 big-endian private key bytes.
     // FieldBytes is GenericArray<u8, U48> — the conversion is infallible for
     // valid 48-byte slices.
-    let secret_key =
-        match p384::SecretKey::from_bytes(p384::FieldBytes::from_slice(&priv_bytes)) {
-            Ok(k) => k,
-            Err(_) => {
-                priv_bytes.zeroize();
-                return crate::CRYPTOCB_UNAVAILABLE;
-            }
-        };
+    let secret_key = match p384::SecretKey::from_bytes(p384::FieldBytes::from_slice(&priv_bytes)) {
+        Ok(k) => k,
+        Err(_) => {
+            priv_bytes.zeroize();
+            return crate::CRYPTOCB_UNAVAILABLE;
+        }
+    };
     priv_bytes.zeroize();
 
     let signing_key = p384::ecdsa::SigningKey::from(&secret_key);
@@ -305,9 +289,7 @@ unsafe fn dispatch_ecc384_verify(
     if key.is_null() || res.is_null() {
         return crate::CRYPTOCB_UNAVAILABLE;
     }
-    if (*key).dp.is_null()
-        || (*(*key).dp).id != ecc_curve_ids_ECC_SECP384R1 as i32
-    {
+    if (*key).dp.is_null() || (*(*key).dp).id != ecc_curve_ids_ECC_SECP384R1 as i32 {
         return crate::CRYPTOCB_UNAVAILABLE;
     }
     // Hash length: must be exactly 48 bytes.
@@ -432,14 +414,11 @@ unsafe fn dispatch_ecdh384(
         return crate::CRYPTOCB_UNAVAILABLE;
     }
     // Both keys must be P-384.
-    if (*private_key).dp.is_null()
-        || (*(*private_key).dp).id != ecc_curve_ids_ECC_SECP384R1 as i32
+    if (*private_key).dp.is_null() || (*(*private_key).dp).id != ecc_curve_ids_ECC_SECP384R1 as i32
     {
         return crate::CRYPTOCB_UNAVAILABLE;
     }
-    if (*public_key).dp.is_null()
-        || (*(*public_key).dp).id != ecc_curve_ids_ECC_SECP384R1 as i32
-    {
+    if (*public_key).dp.is_null() || (*(*public_key).dp).id != ecc_curve_ids_ECC_SECP384R1 as i32 {
         return crate::CRYPTOCB_UNAVAILABLE;
     }
 
@@ -474,14 +453,13 @@ unsafe fn dispatch_ecdh384(
     }
 
     // Build p384 private key.
-    let secret_key =
-        match p384::SecretKey::from_bytes(p384::FieldBytes::from_slice(&priv_bytes)) {
-            Ok(k) => k,
-            Err(_) => {
-                priv_bytes.zeroize();
-                return crate::CRYPTOCB_UNAVAILABLE;
-            }
-        };
+    let secret_key = match p384::SecretKey::from_bytes(p384::FieldBytes::from_slice(&priv_bytes)) {
+        Ok(k) => k,
+        Err(_) => {
+            priv_bytes.zeroize();
+            return crate::CRYPTOCB_UNAVAILABLE;
+        }
+    };
     priv_bytes.zeroize();
 
     // Build uncompressed SEC1 public key for peer: 0x04 || Qx || Qy.
@@ -497,10 +475,8 @@ unsafe fn dispatch_ecdh384(
 
     // Compute ECDH shared secret: x-coordinate of private_key * peer_public_key.
     // The result is the 48-byte big-endian x-coordinate of the product point.
-    let shared = p384::ecdh::diffie_hellman(
-        secret_key.to_nonzero_scalar(),
-        peer_pub_key.as_affine(),
-    );
+    let shared =
+        p384::ecdh::diffie_hellman(secret_key.to_nonzero_scalar(), peer_pub_key.as_affine());
     let shared_bytes = shared.raw_secret_bytes(); // &FieldBytes = 48 bytes
 
     // Write the shared secret to the output buffer.

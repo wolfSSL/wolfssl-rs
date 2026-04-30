@@ -61,9 +61,9 @@ assert_eq!(ss_alice, ss_bob);
 
 #![cfg(mlkem)]
 
-use crate::sys;
 #[cfg(random)]
 use crate::random::RNG;
+use crate::sys;
 
 /// Rust wrapper for a wolfSSL `MlKemKey` object.
 ///
@@ -464,12 +464,7 @@ impl MlKem {
     /// }
     /// ```
     #[cfg(random)]
-    pub fn encapsulate(
-        &mut self,
-        ct: &mut [u8],
-        ss: &mut [u8],
-        rng: &mut RNG,
-    ) -> Result<(), i32> {
+    pub fn encapsulate(&mut self, ct: &mut [u8], ss: &mut [u8], rng: &mut RNG) -> Result<(), i32> {
         // Verify the cipher text length is as expected based on the parameter
         // set (key type) in use.
         let expected_ct_size = self.cipher_text_size()?;
@@ -609,12 +604,7 @@ impl MlKem {
             return Err(sys::wolfCrypt_ErrorCodes_BUFFER_E);
         }
         let rc = unsafe {
-            sys::wc_MlKemKey_Decapsulate(
-                self.ws_key,
-                ss.as_mut_ptr(),
-                ct.as_ptr(),
-                ct.len() as u32,
-            )
+            sys::wc_MlKemKey_Decapsulate(self.ws_key, ss.as_mut_ptr(), ct.as_ptr(), ct.len() as u32)
         };
         if rc != 0 {
             return Err(rc);

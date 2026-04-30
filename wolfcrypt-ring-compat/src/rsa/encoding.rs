@@ -2,12 +2,12 @@
 ///
 /// PKCS #1: RSA Cryptography Specifications Version 2.2
 pub(in crate::rsa) mod rfc8017 {
-    use crate::wolfcrypt_rs::{
-        EVP_PKEY_assign_RSA, EVP_PKEY_new, d2i_RSAPrivateKey, d2i_RSAPublicKey,
-        i2d_RSAPublicKey, EVP_PKEY,
-    };
     use crate::error::{KeyRejected, Unspecified};
     use crate::ptr::{DetachableLcPtr, LcPtr};
+    use crate::wolfcrypt_rs::{
+        d2i_RSAPrivateKey, d2i_RSAPublicKey, i2d_RSAPublicKey, EVP_PKEY_assign_RSA, EVP_PKEY_new,
+        EVP_PKEY,
+    };
     use core::ptr::null_mut;
 
     #[cfg(not(feature = "std"))]
@@ -85,11 +85,11 @@ pub(in crate::rsa) mod rfc8017 {
 ///
 /// Encodings that use the `SubjectPublicKeyInfo` structure.
 pub(in crate::rsa) mod rfc5280 {
-    use crate::wolfcrypt_rs::{EVP_PKEY, EVP_PKEY_RSA, EVP_PKEY_RSA_PSS};
     use crate::buffer::Buffer;
     use crate::encoding::PublicKeyX509Der;
     use crate::error::{KeyRejected, Unspecified};
     use crate::ptr::LcPtr;
+    use crate::wolfcrypt_rs::{EVP_PKEY, EVP_PKEY_RSA, EVP_PKEY_RSA_PSS};
 
     pub(in crate::rsa) fn encode_public_key_der(
         key: &LcPtr<EVP_PKEY>,

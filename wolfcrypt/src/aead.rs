@@ -180,16 +180,28 @@ macro_rules! impl_aes_gcm {
 }
 
 #[cfg(wolfssl_aes_gcm)]
-impl_aes_gcm!(Aes128Gcm, typenum::U16, 16,
-    "AES-128-GCM AEAD cipher, implementing `AeadInPlace` and `KeyInit`.");
+impl_aes_gcm!(
+    Aes128Gcm,
+    typenum::U16,
+    16,
+    "AES-128-GCM AEAD cipher, implementing `AeadInPlace` and `KeyInit`."
+);
 
 #[cfg(all(wolfssl_aes_gcm, wolfssl_aes_192))]
-impl_aes_gcm!(Aes192Gcm, typenum::U24, 24,
-    "AES-192-GCM AEAD cipher, implementing `AeadInPlace` and `KeyInit`.");
+impl_aes_gcm!(
+    Aes192Gcm,
+    typenum::U24,
+    24,
+    "AES-192-GCM AEAD cipher, implementing `AeadInPlace` and `KeyInit`."
+);
 
 #[cfg(wolfssl_aes_gcm)]
-impl_aes_gcm!(Aes256Gcm, U32, 32,
-    "AES-256-GCM AEAD cipher, implementing `AeadInPlace` and `KeyInit`.");
+impl_aes_gcm!(
+    Aes256Gcm,
+    U32,
+    32,
+    "AES-256-GCM AEAD cipher, implementing `AeadInPlace` and `KeyInit`."
+);
 
 // ---------------------------------------------------------------------------
 // ChaCha20-Poly1305
@@ -320,9 +332,7 @@ impl AeadInPlace for ChaCha20Poly1305 {
         // Finalize: compute the authentication tag.
         // SAFETY: `aead` has been through Init+UpdateAad+UpdateData.
         // `tag` is exactly 16 bytes.
-        let rc = unsafe {
-            wolfcrypt_rs::wc_ChaCha20Poly1305_Final(&mut aead, tag.as_mut_ptr())
-        };
+        let rc = unsafe { wolfcrypt_rs::wc_ChaCha20Poly1305_Final(&mut aead, tag.as_mut_ptr()) };
         if rc != 0 {
             return Err(aead_trait::Error);
         }
@@ -403,10 +413,7 @@ impl AeadInPlace for ChaCha20Poly1305 {
 
         // Constant-time tag comparison via wolfCrypt.
         let rc = unsafe {
-            wolfcrypt_rs::wc_ChaCha20Poly1305_CheckTag(
-                computed_tag.as_ptr(),
-                tag.as_ptr(),
-            )
+            wolfcrypt_rs::wc_ChaCha20Poly1305_CheckTag(computed_tag.as_ptr(), tag.as_ptr())
         };
         if rc != 0 {
             zeroize::Zeroize::zeroize(buffer);

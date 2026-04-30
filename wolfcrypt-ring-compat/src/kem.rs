@@ -45,17 +45,14 @@ use alloc::borrow::Cow;
 use core::cmp::Ordering;
 use core::fmt::{Debug, Formatter};
 use wolfcrypt_rs::{
-    MlKemKey, WC_RNG,
-    wc_MlKemKey_New, wc_MlKemKey_Delete, wc_MlKemKey_MakeKey,
-    wc_MlKemKey_Encapsulate, wc_MlKemKey_Decapsulate,
-    wc_MlKemKey_EncodePublicKey, wc_MlKemKey_EncodePrivateKey,
-    wc_MlKemKey_DecodePublicKey, wc_MlKemKey_DecodePrivateKey,
-    wc_InitRng, wc_FreeRng,
-    WC_ML_KEM_512, WC_ML_KEM_768, WC_ML_KEM_1024,
-    WC_ML_KEM_SS_SZ,
-    WC_ML_KEM_512_PUBLIC_KEY_SIZE, WC_ML_KEM_512_PRIVATE_KEY_SIZE, WC_ML_KEM_512_CIPHER_TEXT_SIZE,
-    WC_ML_KEM_768_PUBLIC_KEY_SIZE, WC_ML_KEM_768_PRIVATE_KEY_SIZE, WC_ML_KEM_768_CIPHER_TEXT_SIZE,
-    WC_ML_KEM_1024_PUBLIC_KEY_SIZE, WC_ML_KEM_1024_PRIVATE_KEY_SIZE, WC_ML_KEM_1024_CIPHER_TEXT_SIZE,
+    wc_FreeRng, wc_InitRng, wc_MlKemKey_Decapsulate, wc_MlKemKey_DecodePrivateKey,
+    wc_MlKemKey_DecodePublicKey, wc_MlKemKey_Delete, wc_MlKemKey_Encapsulate,
+    wc_MlKemKey_EncodePrivateKey, wc_MlKemKey_EncodePublicKey, wc_MlKemKey_MakeKey,
+    wc_MlKemKey_New, MlKemKey, WC_ML_KEM_1024, WC_ML_KEM_1024_CIPHER_TEXT_SIZE,
+    WC_ML_KEM_1024_PRIVATE_KEY_SIZE, WC_ML_KEM_1024_PUBLIC_KEY_SIZE, WC_ML_KEM_512,
+    WC_ML_KEM_512_CIPHER_TEXT_SIZE, WC_ML_KEM_512_PRIVATE_KEY_SIZE, WC_ML_KEM_512_PUBLIC_KEY_SIZE,
+    WC_ML_KEM_768, WC_ML_KEM_768_CIPHER_TEXT_SIZE, WC_ML_KEM_768_PRIVATE_KEY_SIZE,
+    WC_ML_KEM_768_PUBLIC_KEY_SIZE, WC_ML_KEM_SS_SZ, WC_RNG,
 };
 use zeroize::Zeroize;
 
@@ -208,9 +205,7 @@ impl OwnedMlKemKey {
     /// Allocate a new ML-KEM key for the given type.
     fn new(wc_type: core::ffi::c_int) -> Result<Self, Unspecified> {
         // SAFETY: wc_MlKemKey_New allocates a new key; null_mut() and INVALID_DEVID are valid args.
-        let ptr = unsafe {
-            wc_MlKemKey_New(wc_type, core::ptr::null_mut(), INVALID_DEVID)
-        };
+        let ptr = unsafe { wc_MlKemKey_New(wc_type, core::ptr::null_mut(), INVALID_DEVID) };
         if ptr.is_null() {
             return Err(Unspecified);
         }
@@ -381,15 +376,11 @@ where
             Ordering::Greater => return Err(KeyRejected::too_large()),
             Ordering::Equal => {}
         }
-        let key = OwnedMlKemKey::new(alg.id.wc_type())
-            .map_err(|_| KeyRejected::unexpected_error())?;
+        let key =
+            OwnedMlKemKey::new(alg.id.wc_type()).map_err(|_| KeyRejected::unexpected_error())?;
         // SAFETY: key is valid from OwnedMlKemKey::new; pointer and length derived from a valid Rust slice.
         let rc = unsafe {
-            wc_MlKemKey_DecodePrivateKey(
-                key.as_mut_ptr(),
-                bytes.as_ptr(),
-                bytes.len() as u32,
-            )
+            wc_MlKemKey_DecodePrivateKey(key.as_mut_ptr(), bytes.as_ptr(), bytes.len() as u32)
         };
         if rc != 0 {
             return Err(KeyRejected::unexpected_error());
@@ -409,9 +400,7 @@ where
         let key = OwnedMlKemKey::new(alg.id.wc_type())?;
         let mut rng = ScopedRng::new()?;
         // SAFETY: key and rng are valid; initialized by their respective constructors above.
-        let rc = unsafe {
-            wc_MlKemKey_MakeKey(key.as_mut_ptr(), rng.as_mut_ptr())
-        };
+        let rc = unsafe { wc_MlKemKey_MakeKey(key.as_mut_ptr(), rng.as_mut_ptr()) };
         if rc != 0 {
             return Err(Unspecified);
         }
@@ -441,11 +430,7 @@ where
         let mut buf = vec![0u8; size];
         // SAFETY: self.key is valid; buf is a freshly allocated buffer of the correct size.
         let rc = unsafe {
-            wc_MlKemKey_EncodePrivateKey(
-                self.key.as_mut_ptr(),
-                buf.as_mut_ptr(),
-                size as u32,
-            )
+            wc_MlKemKey_EncodePrivateKey(self.key.as_mut_ptr(), buf.as_mut_ptr(), size as u32)
         };
         if rc != 0 {
             return Err(Unspecified);
@@ -472,11 +457,7 @@ where
         let mut pub_bytes = vec![0u8; size];
         // SAFETY: self.key is valid with public component; buf is correctly sized.
         let rc = unsafe {
-            wc_MlKemKey_EncodePublicKey(
-                self.key.as_mut_ptr(),
-                pub_bytes.as_mut_ptr(),
-                size as u32,
-            )
+            wc_MlKemKey_EncodePublicKey(self.key.as_mut_ptr(), pub_bytes.as_mut_ptr(), size as u32)
         };
         if rc != 0 {
             return Err(Unspecified);
@@ -617,11 +598,7 @@ where
         let mut buf = vec![0u8; size];
         // SAFETY: self.key is valid; buf is a freshly allocated buffer of the correct size.
         let rc = unsafe {
-            wc_MlKemKey_EncodePublicKey(
-                self.key.as_mut_ptr(),
-                buf.as_mut_ptr(),
-                size as u32,
-            )
+            wc_MlKemKey_EncodePublicKey(self.key.as_mut_ptr(), buf.as_mut_ptr(), size as u32)
         };
         if rc != 0 {
             return Err(Unspecified);
@@ -645,15 +622,11 @@ where
             Ordering::Greater => return Err(KeyRejected::too_large()),
             Ordering::Equal => {}
         }
-        let key = OwnedMlKemKey::new(alg.id.wc_type())
-            .map_err(|_| KeyRejected::unexpected_error())?;
+        let key =
+            OwnedMlKemKey::new(alg.id.wc_type()).map_err(|_| KeyRejected::unexpected_error())?;
         // SAFETY: key is valid from OwnedMlKemKey::new; pointer and length derived from a valid Rust slice.
         let rc = unsafe {
-            wc_MlKemKey_DecodePublicKey(
-                key.as_mut_ptr(),
-                bytes.as_ptr(),
-                bytes.len() as u32,
-            )
+            wc_MlKemKey_DecodePublicKey(key.as_mut_ptr(), bytes.as_ptr(), bytes.len() as u32)
         };
         if rc != 0 {
             return Err(KeyRejected::unexpected_error());

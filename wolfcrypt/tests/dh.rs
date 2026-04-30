@@ -21,7 +21,10 @@ fn dh_ffdhe2048_round_trip() {
     let bob_pub = bob.public_key_bytes();
 
     // Public keys should be non-trivial.
-    assert!(!alice_pub.iter().all(|&b| b == 0), "Alice pub key is all zeros");
+    assert!(
+        !alice_pub.iter().all(|&b| b == 0),
+        "Alice pub key is all zeros"
+    );
     assert!(!bob_pub.iter().all(|&b| b == 0), "Bob pub key is all zeros");
 
     let alice_secret = alice
@@ -31,10 +34,7 @@ fn dh_ffdhe2048_round_trip() {
         .compute_shared_secret(&alice_pub)
         .expect("Bob compute failed");
 
-    assert_eq!(
-        alice_secret, bob_secret,
-        "Shared secrets must match"
-    );
+    assert_eq!(alice_secret, bob_secret, "Shared secrets must match");
     assert!(
         !alice_secret.iter().all(|&b| b == 0),
         "Shared secret is all zeros"
@@ -88,7 +88,11 @@ fn dh_shared_secret_length() {
         .expect("compute failed");
 
     // FFDHE2048 → 2048-bit prime → 256 bytes.
-    assert_eq!(secret.len(), 256, "FFDHE2048 shared secret should be 256 bytes");
+    assert_eq!(
+        secret.len(),
+        256,
+        "FFDHE2048 shared secret should be 256 bytes"
+    );
 }
 
 /// Two independent key generations should produce different public keys

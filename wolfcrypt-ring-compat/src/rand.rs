@@ -25,9 +25,9 @@
 //! let random_array = rand::generate(&rng).unwrap();
 //! let more_rand_bytes: [u8; 64] = random_array.expose();
 //! ```
-use crate::wolfcrypt_rs::RAND_bytes;
 use crate::error::Unspecified;
 use crate::fips::indicator_check;
+use crate::wolfcrypt_rs::RAND_bytes;
 use core::fmt::Debug;
 
 /// Re-exports of sealed traits for development testing.
@@ -204,7 +204,9 @@ impl sealed::SecureRandom for SystemRandom {
 /// `error::Unspecified` if unable to fill `dest`.
 pub fn fill(dest: &mut [u8]) -> Result<(), Unspecified> {
     // SAFETY: dest pointer and length derived from a valid Rust slice.
-    if 1 != indicator_check!(unsafe { RAND_bytes(dest.as_mut_ptr(), dest.len() as core::ffi::c_int) }) {
+    if 1 != indicator_check!(unsafe {
+        RAND_bytes(dest.as_mut_ptr(), dest.len() as core::ffi::c_int)
+    }) {
         return Err(Unspecified);
     }
     Ok(())

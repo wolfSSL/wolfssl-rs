@@ -1,3 +1,4 @@
+use paste::paste;
 use ring::cipher::{
     DecryptingKey, DecryptionContext, EncryptingKey, EncryptionContext, OperatingMode,
     PaddedBlockDecryptingKey, PaddedBlockEncryptingKey, StreamingDecryptingKey,
@@ -6,7 +7,6 @@ use ring::cipher::{
 use ring::iv::{FixedLength, IV_LEN_128_BIT};
 use ring::test;
 use ring::test::from_hex;
-use paste::paste;
 
 fn step_encrypt(
     mut encrypting_key: StreamingEncryptingKey,

@@ -49,9 +49,10 @@ macro_rules! sign_cross_tests {
                 let pub_bytes = helpers::pubkey_to_uncompressed(&wolf_pub);
                 let sig_bytes = helpers::sig_to_fixed(&sig);
 
-                $verify_fn(&pub_bytes, &digest_bytes, &sig_bytes).expect(
-                    concat!($variant, ": wolf signature failed independent verification"),
-                );
+                $verify_fn(&pub_bytes, &digest_bytes, &sig_bytes).expect(concat!(
+                    $variant,
+                    ": wolf signature failed independent verification"
+                ));
             }
 
             #[test]
@@ -64,8 +65,7 @@ macro_rules! sign_cross_tests {
                 let mut refb = $new_ref();
 
                 let ref_cdi = refb.derive_cdi(&measurement, cdi_info).unwrap();
-                let (ref_priv, ref_pub) =
-                    refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
+                let (ref_priv, ref_pub) = refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
 
                 let digest = refb.hash(b"message to verify").unwrap();
                 let digest_bytes = digest.as_slice().to_vec();
@@ -78,9 +78,10 @@ macro_rules! sign_cross_tests {
                 let pub_bytes = helpers::pubkey_to_uncompressed(&ref_pub);
                 let sig_bytes = helpers::sig_to_fixed(&sig);
 
-                $verify_fn(&pub_bytes, &digest_bytes, &sig_bytes).expect(
-                    concat!($variant, ": ref signature failed independent verification"),
-                );
+                $verify_fn(&pub_bytes, &digest_bytes, &sig_bytes).expect(concat!(
+                    $variant,
+                    ": ref signature failed independent verification"
+                ));
             }
 
             #[test]
@@ -137,12 +138,10 @@ macro_rules! sign_cross_tests {
                 let pub_bytes = helpers::pubkey_to_uncompressed(&wolf_pub);
                 let sig_bytes = helpers::sig_to_fixed(&sig);
 
-                $verify_fn(&pub_bytes, &digest_bytes, &sig_bytes).expect(
-                    concat!(
-                        $variant,
-                        ": wolf sign_with_derived roundtrip verification failed"
-                    ),
-                );
+                $verify_fn(&pub_bytes, &digest_bytes, &sig_bytes).expect(concat!(
+                    $variant,
+                    ": wolf sign_with_derived roundtrip verification failed"
+                ));
             }
 
             #[test]
@@ -163,22 +162,13 @@ macro_rules! sign_cross_tests {
 
                 let (wolf_priv, wolf_pub) =
                     wolf.derive_key_pair(&wolf_cdi, label, kp_info).unwrap();
-                let (ref_priv, ref_pub) =
-                    refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
+                let (ref_priv, ref_pub) = refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
 
                 let wolf_sig = wolf
-                    .sign_with_derived(
-                        &SignData::Raw(raw_data),
-                        &wolf_priv,
-                        &wolf_pub,
-                    )
+                    .sign_with_derived(&SignData::Raw(raw_data), &wolf_priv, &wolf_pub)
                     .unwrap();
                 let ref_sig = refb
-                    .sign_with_derived(
-                        &SignData::Raw(raw_data),
-                        &ref_priv,
-                        &ref_pub,
-                    )
+                    .sign_with_derived(&SignData::Raw(raw_data), &ref_priv, &ref_pub)
                     .unwrap();
 
                 // Both should produce identical pub keys
@@ -195,15 +185,17 @@ macro_rules! sign_cross_tests {
 
                 // Verify wolf signature independently
                 let wolf_sig_bytes = helpers::sig_to_fixed(&wolf_sig);
-                $verify_fn(&pub_bytes, &expected_digest, &wolf_sig_bytes).expect(
-                    concat!($variant, ": wolf raw signature failed independent verification"),
-                );
+                $verify_fn(&pub_bytes, &expected_digest, &wolf_sig_bytes).expect(concat!(
+                    $variant,
+                    ": wolf raw signature failed independent verification"
+                ));
 
                 // Verify ref signature independently
                 let ref_sig_bytes = helpers::sig_to_fixed(&ref_sig);
-                $verify_fn(&pub_bytes, &expected_digest, &ref_sig_bytes).expect(
-                    concat!($variant, ": ref raw signature failed independent verification"),
-                );
+                $verify_fn(&pub_bytes, &expected_digest, &ref_sig_bytes).expect(concat!(
+                    $variant,
+                    ": ref raw signature failed independent verification"
+                ));
             }
 
             #[test]
@@ -221,8 +213,7 @@ macro_rules! sign_cross_tests {
 
                 let (wolf_priv, wolf_pub) =
                     wolf.derive_key_pair(&wolf_cdi, label, kp_info).unwrap();
-                let (ref_priv, ref_pub) =
-                    refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
+                let (ref_priv, ref_pub) = refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
 
                 // Compute digest using wolf backend (both produce the same hash)
                 let digest_wolf = wolf.hash(b"cross-verify digest data").unwrap();
@@ -230,39 +221,27 @@ macro_rules! sign_cross_tests {
                 let digest_bytes = digest_wolf.as_slice().to_vec();
 
                 let wolf_sig = wolf
-                    .sign_with_derived(
-                        &SignData::Digest(digest_wolf),
-                        &wolf_priv,
-                        &wolf_pub,
-                    )
+                    .sign_with_derived(&SignData::Digest(digest_wolf), &wolf_priv, &wolf_pub)
                     .unwrap();
                 let ref_sig = refb
-                    .sign_with_derived(
-                        &SignData::Digest(digest_ref),
-                        &ref_priv,
-                        &ref_pub,
-                    )
+                    .sign_with_derived(&SignData::Digest(digest_ref), &ref_priv, &ref_pub)
                     .unwrap();
 
                 let pub_bytes = helpers::pubkey_to_uncompressed(&wolf_pub);
 
                 // Verify wolf signature independently
                 let wolf_sig_bytes = helpers::sig_to_fixed(&wolf_sig);
-                $verify_fn(&pub_bytes, &digest_bytes, &wolf_sig_bytes).expect(
-                    concat!(
-                        $variant,
-                        ": wolf digest signature failed independent verification"
-                    ),
-                );
+                $verify_fn(&pub_bytes, &digest_bytes, &wolf_sig_bytes).expect(concat!(
+                    $variant,
+                    ": wolf digest signature failed independent verification"
+                ));
 
                 // Verify ref signature independently
                 let ref_sig_bytes = helpers::sig_to_fixed(&ref_sig);
-                $verify_fn(&pub_bytes, &digest_bytes, &ref_sig_bytes).expect(
-                    concat!(
-                        $variant,
-                        ": ref digest signature failed independent verification"
-                    ),
-                );
+                $verify_fn(&pub_bytes, &digest_bytes, &ref_sig_bytes).expect(concat!(
+                    $variant,
+                    ": ref digest signature failed independent verification"
+                ));
             }
 
             #[test]
@@ -281,11 +260,9 @@ macro_rules! sign_cross_tests {
 
                 let (wolf_priv, wolf_pub) =
                     wolf.derive_key_pair(&wolf_cdi, label, kp_info).unwrap();
-                let (ref_priv, ref_pub) =
-                    refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
+                let (ref_priv, ref_pub) = refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
 
-                let wolf_result =
-                    wolf.sign_with_derived(&mu_data, &wolf_priv, &wolf_pub);
+                let wolf_result = wolf.sign_with_derived(&mu_data, &wolf_priv, &wolf_pub);
                 match wolf_result {
                     Err(CryptoError::MismatchedAlgorithm) => {}
                     Err(e) => panic!(
@@ -299,18 +276,14 @@ macro_rules! sign_cross_tests {
                 }
 
                 let mu_data2 = SignData::Mu(Mu([0xAAu8; 64]));
-                let ref_result =
-                    refb.sign_with_derived(&mu_data2, &ref_priv, &ref_pub);
+                let ref_result = refb.sign_with_derived(&mu_data2, &ref_priv, &ref_pub);
                 match ref_result {
                     Err(CryptoError::MismatchedAlgorithm) => {}
                     Err(e) => panic!(
                         "{}: ref SignData::Mu expected MismatchedAlgorithm, got {:?}",
                         $variant, e
                     ),
-                    Ok(_) => panic!(
-                        "{}: ref SignData::Mu should return error, got Ok",
-                        $variant
-                    ),
+                    Ok(_) => panic!("{}: ref SignData::Mu should return error, got Ok", $variant),
                 }
             }
 
@@ -331,8 +304,7 @@ macro_rules! sign_cross_tests {
 
                 let (wolf_priv, wolf_pub) =
                     wolf.derive_key_pair(&wolf_cdi, label, kp_info).unwrap();
-                let (ref_priv, ref_pub) =
-                    refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
+                let (ref_priv, ref_pub) = refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
 
                 // Public keys MUST match (deterministic HKDF derivation)
                 let pub_bytes = helpers::pubkey_to_uncompressed(&wolf_pub);
@@ -348,30 +320,20 @@ macro_rules! sign_cross_tests {
                 let digest_bytes = digest_wolf.as_slice().to_vec();
 
                 let wolf_sig = wolf
-                    .sign_with_derived(
-                        &SignData::Digest(digest_wolf),
-                        &wolf_priv,
-                        &wolf_pub,
-                    )
+                    .sign_with_derived(&SignData::Digest(digest_wolf), &wolf_priv, &wolf_pub)
                     .unwrap();
                 let ref_sig = refb
-                    .sign_with_derived(
-                        &SignData::Digest(digest_ref),
-                        &ref_priv,
-                        &ref_pub,
-                    )
+                    .sign_with_derived(&SignData::Digest(digest_ref), &ref_priv, &ref_pub)
                     .unwrap();
 
                 // Cross-verify: both signatures valid for shared public key
                 let wolf_sig_bytes = helpers::sig_to_fixed(&wolf_sig);
                 let ref_sig_bytes = helpers::sig_to_fixed(&ref_sig);
 
-                $verify_fn(&pub_bytes, &digest_bytes, &wolf_sig_bytes).expect(
-                    &format!("{}: wolf signature must verify", $variant),
-                );
-                $verify_fn(&pub_bytes, &digest_bytes, &ref_sig_bytes).expect(
-                    &format!("{}: ref signature must verify", $variant),
-                );
+                $verify_fn(&pub_bytes, &digest_bytes, &wolf_sig_bytes)
+                    .expect(&format!("{}: wolf signature must verify", $variant));
+                $verify_fn(&pub_bytes, &digest_bytes, &ref_sig_bytes)
+                    .expect(&format!("{}: ref signature must verify", $variant));
             }
 
             #[test]
@@ -391,18 +353,10 @@ macro_rules! sign_cross_tests {
                 let digest2 = wolf.hash(b"message two").unwrap();
 
                 let sig1 = wolf
-                    .sign_with_derived(
-                        &SignData::Digest(digest1),
-                        &wolf_priv,
-                        &wolf_pub,
-                    )
+                    .sign_with_derived(&SignData::Digest(digest1), &wolf_priv, &wolf_pub)
                     .unwrap();
                 let sig2 = wolf
-                    .sign_with_derived(
-                        &SignData::Digest(digest2),
-                        &wolf_priv,
-                        &wolf_pub,
-                    )
+                    .sign_with_derived(&SignData::Digest(digest2), &wolf_priv, &wolf_pub)
                     .unwrap();
 
                 assert_ne!(
@@ -461,19 +415,15 @@ macro_rules! sign_cross_tests {
                 let cdi1 = wolf.derive_cdi(&m1, cdi_info).unwrap();
                 let cdi2 = wolf.derive_cdi(&m2, cdi_info).unwrap();
 
-                let (priv_a, pub_a) =
-                    wolf.derive_key_pair(&cdi1, label, kp_info).unwrap();
-                let (_, pub_b) =
-                    wolf.derive_key_pair(&cdi2, label, kp_info).unwrap();
+                let (priv_a, pub_a) = wolf.derive_key_pair(&cdi1, label, kp_info).unwrap();
+                let (_, pub_b) = wolf.derive_key_pair(&cdi2, label, kp_info).unwrap();
 
                 let digest = wolf.hash(b"wrong key test").unwrap();
                 let digest_bytes = digest.as_slice().to_vec();
                 let sign_data = SignData::Digest(digest);
 
                 // Sign with key A
-                let sig = wolf
-                    .sign_with_derived(&sign_data, &priv_a, &pub_a)
-                    .unwrap();
+                let sig = wolf.sign_with_derived(&sign_data, &priv_a, &pub_a).unwrap();
 
                 // Verify with key B -> should fail
                 let pub_b_bytes = helpers::pubkey_to_uncompressed(&pub_b);
@@ -505,8 +455,7 @@ macro_rules! sign_cross_tests {
 
                 let (wolf_priv, wolf_pub) =
                     wolf.derive_key_pair(&wolf_cdi, label, kp_info).unwrap();
-                let (ref_priv, ref_pub) =
-                    refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
+                let (ref_priv, ref_pub) = refb.derive_key_pair(&ref_cdi, label, kp_info).unwrap();
 
                 let pub_bytes = helpers::pubkey_to_uncompressed(&wolf_pub);
 
@@ -519,36 +468,24 @@ macro_rules! sign_cross_tests {
                     let digest_bytes = digest_wolf.as_slice().to_vec();
 
                     let wolf_sig = wolf
-                        .sign_with_derived(
-                            &SignData::Digest(digest_wolf),
-                            &wolf_priv,
-                            &wolf_pub,
-                        )
+                        .sign_with_derived(&SignData::Digest(digest_wolf), &wolf_priv, &wolf_pub)
                         .unwrap();
                     let ref_sig = refb
-                        .sign_with_derived(
-                            &SignData::Digest(digest_ref),
-                            &ref_priv,
-                            &ref_pub,
-                        )
+                        .sign_with_derived(&SignData::Digest(digest_ref), &ref_priv, &ref_pub)
                         .unwrap();
 
                     let wolf_sig_bytes = helpers::sig_to_fixed(&wolf_sig);
                     let ref_sig_bytes = helpers::sig_to_fixed(&ref_sig);
 
                     // Both signatures must verify against the shared public key
-                    $verify_fn(&pub_bytes, &digest_bytes, &wolf_sig_bytes).expect(
-                        &format!(
-                            "{}: wolf signature verification failed at iteration {}",
-                            $variant, i
-                        ),
-                    );
-                    $verify_fn(&pub_bytes, &digest_bytes, &ref_sig_bytes).expect(
-                        &format!(
-                            "{}: ref signature verification failed at iteration {}",
-                            $variant, i
-                        ),
-                    );
+                    $verify_fn(&pub_bytes, &digest_bytes, &wolf_sig_bytes).expect(&format!(
+                        "{}: wolf signature verification failed at iteration {}",
+                        $variant, i
+                    ));
+                    $verify_fn(&pub_bytes, &digest_bytes, &ref_sig_bytes).expect(&format!(
+                        "{}: ref signature verification failed at iteration {}",
+                        $variant, i
+                    ));
                 }
             }
         }

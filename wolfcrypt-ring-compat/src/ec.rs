@@ -4,22 +4,22 @@
 // SPDX-License-Identifier: MIT
 
 // wolfSSL's EC_KEY_check_key performs FIPS-level validation
+use crate::ec::signature::AlgorithmID;
+use crate::error::{KeyRejected, Unspecified};
+use crate::fips::indicator_check;
+use crate::ptr::{ConstPointer, LcPtr};
+use crate::signature::Signature;
 use crate::wolfcrypt_rs::EC_KEY_check_key;
+use crate::wolfcrypt_rs::ECDSA_SIG;
 use crate::wolfcrypt_rs::{
     d2i_ECDSA_SIG, ECDSA_SIG_get0, EC_GROUP_get_curve_name, EC_GROUP_new_by_curve_name,
     EC_KEY_get0_group, EVP_PKEY_CTX_set_ec_paramgen_curve_nid, EVP_PKEY_get0_EC_KEY,
     NID_X9_62_prime256v1, NID_secp224r1, NID_secp256k1, NID_secp384r1, NID_secp521r1, BIGNUM,
     EC_GROUP, EC_KEY, EVP_PKEY, EVP_PKEY_EC,
 };
-use spin::Once;
-use crate::wolfcrypt_rs::ECDSA_SIG;
-use crate::ec::signature::AlgorithmID;
-use crate::error::{KeyRejected, Unspecified};
-use crate::fips::indicator_check;
-use crate::ptr::{ConstPointer, LcPtr};
-use crate::signature::Signature;
 use core::ffi::c_int;
 use core::ptr::null;
+use spin::Once;
 
 pub(crate) mod encoding;
 pub(crate) mod key_pair;
@@ -104,31 +104,41 @@ unsafe impl Sync for SyncGroupPtr {}
 fn ec_group_p224() -> *const EC_GROUP {
     static GROUP: Once<SyncGroupPtr> = Once::new();
     // SAFETY: EC_GROUP_new_by_curve_name returns an immutable group or null.
-    GROUP.call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_secp224r1) })).0
+    GROUP
+        .call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_secp224r1) }))
+        .0
 }
 
 fn ec_group_p256() -> *const EC_GROUP {
     static GROUP: Once<SyncGroupPtr> = Once::new();
     // SAFETY: EC_GROUP_new_by_curve_name returns an immutable group or null.
-    GROUP.call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1) })).0
+    GROUP
+        .call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1) }))
+        .0
 }
 
 fn ec_group_p384() -> *const EC_GROUP {
     static GROUP: Once<SyncGroupPtr> = Once::new();
     // SAFETY: EC_GROUP_new_by_curve_name returns an immutable group or null.
-    GROUP.call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_secp384r1) })).0
+    GROUP
+        .call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_secp384r1) }))
+        .0
 }
 
 fn ec_group_p521() -> *const EC_GROUP {
     static GROUP: Once<SyncGroupPtr> = Once::new();
     // SAFETY: EC_GROUP_new_by_curve_name returns an immutable group or null.
-    GROUP.call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_secp521r1) })).0
+    GROUP
+        .call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_secp521r1) }))
+        .0
 }
 
 fn ec_group_secp256k1() -> *const EC_GROUP {
     static GROUP: Once<SyncGroupPtr> = Once::new();
     // SAFETY: EC_GROUP_new_by_curve_name returns an immutable group or null.
-    GROUP.call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_secp256k1) })).0
+    GROUP
+        .call_once(|| SyncGroupPtr(unsafe { EC_GROUP_new_by_curve_name(NID_secp256k1) }))
+        .0
 }
 
 #[inline]

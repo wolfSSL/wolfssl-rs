@@ -3,13 +3,13 @@
 // Modifications copyright wolfSSL Inc.
 // SPDX-License-Identifier: MIT
 
-use crate::wolfcrypt_rs::{
-    AES_cbc_encrypt, AES_cfb128_encrypt, AES_ecb_encrypt, AES_DECRYPT,
-    AES_ENCRYPT, AES_KEY, WcAes, wc_AesSetIV, wc_AesCtrEncrypt,
-};
 use crate::cipher::block::Block;
 use crate::error::Unspecified;
 use crate::fips::indicator_check;
+use crate::wolfcrypt_rs::{
+    wc_AesCtrEncrypt, wc_AesSetIV, AES_cbc_encrypt, AES_cfb128_encrypt, AES_ecb_encrypt, WcAes,
+    AES_DECRYPT, AES_ENCRYPT, AES_KEY,
+};
 use zeroize::Zeroize;
 
 use super::{DecryptionContext, EncryptionContext, OperatingMode, SymmetricCipherKey};
@@ -285,7 +285,12 @@ fn aes_ctr128_encrypt(key: &AES_KEY, iv: &mut [u8], block_buffer: &mut [u8], in_
         // to wc_AesSetIV / wc_AesCtrEncrypt which operate on the embedded Aes.
         let aes_ptr = &mut aes_copy as *mut AES_KEY as *mut WcAes;
         wc_AesSetIV(aes_ptr, iv.as_ptr());
-        wc_AesCtrEncrypt(aes_ptr, in_out.as_mut_ptr(), in_out.as_ptr(), in_out.len() as u32);
+        wc_AesCtrEncrypt(
+            aes_ptr,
+            in_out.as_mut_ptr(),
+            in_out.as_ptr(),
+            in_out.len() as u32,
+        );
     });
 
     Zeroize::zeroize(block_buffer);

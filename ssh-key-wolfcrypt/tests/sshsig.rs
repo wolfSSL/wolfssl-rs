@@ -317,7 +317,9 @@ fn verify_ed25519() {
 
     // invalid message
     assert!(
-        verifying_key.verify(NAMESPACE_EXAMPLE, b"bogus!", &signature).is_err(),
+        verifying_key
+            .verify(NAMESPACE_EXAMPLE, b"bogus!", &signature)
+            .is_err(),
         "verification should fail with wrong message",
     );
 }
@@ -342,7 +344,9 @@ fn verify_sk_ed25519() {
 
     // invalid message
     assert!(
-        verifying_key.verify(NAMESPACE_EXAMPLE, b"bogus!", &signature).is_err(),
+        verifying_key
+            .verify(NAMESPACE_EXAMPLE, b"bogus!", &signature)
+            .is_err(),
         "verification should fail with wrong message",
     );
 }

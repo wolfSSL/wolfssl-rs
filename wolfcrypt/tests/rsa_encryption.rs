@@ -53,7 +53,10 @@ fn oaep_ciphertext_is_randomized() {
 
     let ct1 = sk.encrypt_oaep(plaintext).unwrap();
     let ct2 = sk.encrypt_oaep(plaintext).unwrap();
-    assert_ne!(ct1, ct2, "OAEP ciphertexts should differ due to randomized padding");
+    assert_ne!(
+        ct1, ct2,
+        "OAEP ciphertexts should differ due to randomized padding"
+    );
 }
 
 // ===========================================================================
@@ -81,7 +84,10 @@ fn pkcs1v15_wrong_key_rejected() {
 
     let ciphertext = sk_a.encrypt_pkcs1v15(plaintext).unwrap();
     let result = sk_b.decrypt_pkcs1v15(&ciphertext);
-    assert!(result.is_err(), "PKCS#1v1.5 decryption with wrong key should fail");
+    assert!(
+        result.is_err(),
+        "PKCS#1v1.5 decryption with wrong key should fail"
+    );
 }
 
 // ===========================================================================
@@ -106,7 +112,10 @@ fn oaep_max_plaintext_size() {
     // 246 bytes exceeds the modulus capacity and must fail.
     let pt_246 = vec![0x42u8; 246];
     let result = sk.encrypt_oaep(&pt_246);
-    assert!(result.is_err(), "OAEP with 246-byte plaintext on 2048-bit key should fail");
+    assert!(
+        result.is_err(),
+        "OAEP with 246-byte plaintext on 2048-bit key should fail"
+    );
 }
 
 // ===========================================================================

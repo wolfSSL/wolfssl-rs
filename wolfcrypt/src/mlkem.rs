@@ -18,25 +18,22 @@
 
 use alloc::vec;
 use alloc::vec::Vec;
-use core::marker::PhantomData;
 use core::ffi::c_int;
+use core::marker::PhantomData;
 use core::ptr;
 
 use zeroize::ZeroizeOnDrop;
 
 use crate::error::{check, len_as_u32, WolfCryptError};
 use wolfcrypt_rs::{
-    wc_FreeRng, wc_InitRng,
-    wc_MlKemKey_Decapsulate, wc_MlKemKey_Delete, wc_MlKemKey_Encapsulate,
-    wc_MlKemKey_DecodePublicKey, wc_MlKemKey_EncodePublicKey,
-    wc_MlKemKey_EncodePrivateKey,
-    wc_MlKemKey_MakeKey, wc_MlKemKey_New,
-    MlKemKey, WC_RNG, INVALID_DEVID,
-    WC_ML_KEM_512, WC_ML_KEM_768, WC_ML_KEM_1024,
-    WC_ML_KEM_SS_SZ,
-    WC_ML_KEM_512_PUBLIC_KEY_SIZE, WC_ML_KEM_512_PRIVATE_KEY_SIZE, WC_ML_KEM_512_CIPHER_TEXT_SIZE,
-    WC_ML_KEM_768_PUBLIC_KEY_SIZE, WC_ML_KEM_768_PRIVATE_KEY_SIZE, WC_ML_KEM_768_CIPHER_TEXT_SIZE,
-    WC_ML_KEM_1024_PUBLIC_KEY_SIZE, WC_ML_KEM_1024_PRIVATE_KEY_SIZE, WC_ML_KEM_1024_CIPHER_TEXT_SIZE,
+    wc_FreeRng, wc_InitRng, wc_MlKemKey_Decapsulate, wc_MlKemKey_DecodePrivateKey,
+    wc_MlKemKey_DecodePublicKey, wc_MlKemKey_Delete, wc_MlKemKey_Encapsulate,
+    wc_MlKemKey_EncodePrivateKey, wc_MlKemKey_EncodePublicKey, wc_MlKemKey_MakeKey,
+    wc_MlKemKey_New, MlKemKey, INVALID_DEVID, WC_ML_KEM_1024, WC_ML_KEM_1024_CIPHER_TEXT_SIZE,
+    WC_ML_KEM_1024_PRIVATE_KEY_SIZE, WC_ML_KEM_1024_PUBLIC_KEY_SIZE, WC_ML_KEM_512,
+    WC_ML_KEM_512_CIPHER_TEXT_SIZE, WC_ML_KEM_512_PRIVATE_KEY_SIZE, WC_ML_KEM_512_PUBLIC_KEY_SIZE,
+    WC_ML_KEM_768, WC_ML_KEM_768_CIPHER_TEXT_SIZE, WC_ML_KEM_768_PRIVATE_KEY_SIZE,
+    WC_ML_KEM_768_PUBLIC_KEY_SIZE, WC_ML_KEM_SS_SZ, WC_RNG,
 };
 
 // ---------------------------------------------------------------------------
@@ -139,9 +136,7 @@ impl<L: MlKemLevel> MlKemDecapsulationKey<L> {
     pub fn generate() -> Result<Self, WolfCryptError> {
         // Allocate key on the heap via wolfCrypt.
         // SAFETY: `wc_MlKemKey_New` returns a heap-allocated key or null.
-        let key = unsafe {
-            wc_MlKemKey_New(L::TYPE, ptr::null_mut(), INVALID_DEVID)
-        };
+        let key = unsafe { wc_MlKemKey_New(L::TYPE, ptr::null_mut(), INVALID_DEVID) };
         if key.is_null() {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
@@ -152,8 +147,13 @@ impl<L: MlKemLevel> MlKemDecapsulationKey<L> {
         let rc = unsafe { wc_InitRng(&mut rng) };
         if rc != 0 {
             // Clean up the key on failure.
-            unsafe { wc_MlKemKey_Delete(key, ptr::null_mut()); }
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng" });
+            unsafe {
+                wc_MlKemKey_Delete(key, ptr::null_mut());
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_InitRng",
+            });
         }
 
         // Generate the keypair.
@@ -165,10 +165,17 @@ impl<L: MlKemLevel> MlKemDecapsulationKey<L> {
                 wc_FreeRng(&mut rng);
                 wc_MlKemKey_Delete(key, ptr::null_mut());
             }
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_MlKemKey_MakeKey" });
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_MlKemKey_MakeKey",
+            });
         }
 
-        Ok(Self { key, rng, _level: PhantomData })
+        Ok(Self {
+            key,
+            rng,
+            _level: PhantomData,
+        })
     }
 
     /// Return the corresponding encapsulation (public) key.
@@ -209,6 +216,52 @@ impl<L: MlKemLevel> MlKemDecapsulationKey<L> {
         };
         check(rc, "wc_MlKemKey_EncodePrivateKey")?;
         Ok(zeroize::Zeroizing::new(sk_buf))
+    }
+
+    /// Load an ML-KEM decapsulation key from stored private key bytes.
+    ///
+    /// `bytes` must be exactly `L::SK_SIZE` bytes as produced by
+    /// [`private_key_bytes`](Self::private_key_bytes).
+    pub fn from_private_bytes(bytes: &[u8]) -> Result<Self, WolfCryptError> {
+        if bytes.len() != L::SK_SIZE {
+            return Err(WolfCryptError::INVALID_INPUT);
+        }
+
+        let key = unsafe { wc_MlKemKey_New(L::TYPE, ptr::null_mut(), INVALID_DEVID) };
+        if key.is_null() {
+            return Err(WolfCryptError::ALLOC_FAILED);
+        }
+
+        // SAFETY: `key` is a valid heap-allocated MlKemKey; `bytes` is SK_SIZE bytes.
+        let rc =
+            unsafe { wc_MlKemKey_DecodePrivateKey(key, bytes.as_ptr(), len_as_u32(bytes.len())) };
+        if rc != 0 {
+            unsafe {
+                wc_MlKemKey_Delete(key, ptr::null_mut());
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_MlKemKey_DecodePrivateKey",
+            });
+        }
+
+        let mut rng = WC_RNG::zeroed();
+        let rc = unsafe { wc_InitRng(&mut rng) };
+        if rc != 0 {
+            unsafe {
+                wc_MlKemKey_Delete(key, ptr::null_mut());
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_InitRng",
+            });
+        }
+
+        Ok(Self {
+            key,
+            rng,
+            _level: PhantomData,
+        })
     }
 
     /// Decapsulate a ciphertext to recover the shared secret.
@@ -271,9 +324,7 @@ impl<L: MlKemLevel> MlKemEncapsulationKey<L> {
         }
 
         // Allocate a fresh key object.
-        let key = unsafe {
-            wc_MlKemKey_New(L::TYPE, ptr::null_mut(), INVALID_DEVID)
-        };
+        let key = unsafe { wc_MlKemKey_New(L::TYPE, ptr::null_mut(), INVALID_DEVID) };
         if key.is_null() {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
@@ -281,23 +332,36 @@ impl<L: MlKemLevel> MlKemEncapsulationKey<L> {
         // Import the public key bytes.
         // SAFETY: `key` is a valid heap-allocated MlKemKey, `bytes` is
         // `L::PK_SIZE` bytes.
-        let rc = unsafe {
-            wc_MlKemKey_DecodePublicKey(key, bytes.as_ptr(), len_as_u32(bytes.len()))
-        };
+        let rc =
+            unsafe { wc_MlKemKey_DecodePublicKey(key, bytes.as_ptr(), len_as_u32(bytes.len())) };
         if rc != 0 {
-            unsafe { wc_MlKemKey_Delete(key, ptr::null_mut()); }
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_MlKemKey_DecodePublicKey" });
+            unsafe {
+                wc_MlKemKey_Delete(key, ptr::null_mut());
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_MlKemKey_DecodePublicKey",
+            });
         }
 
         // Initialise RNG for encapsulation.
         let mut rng = WC_RNG::zeroed();
         let rc = unsafe { wc_InitRng(&mut rng) };
         if rc != 0 {
-            unsafe { wc_MlKemKey_Delete(key, ptr::null_mut()); }
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng" });
+            unsafe {
+                wc_MlKemKey_Delete(key, ptr::null_mut());
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_InitRng",
+            });
         }
 
-        Ok(Self { key, rng, _level: PhantomData })
+        Ok(Self {
+            key,
+            rng,
+            _level: PhantomData,
+        })
     }
 
     /// Export the raw public key bytes.
@@ -326,12 +390,7 @@ impl<L: MlKemLevel> MlKemEncapsulationKey<L> {
         // SAFETY: `self.key` has a decoded public key. `ct` is `L::CT_SIZE`
         // bytes, `ss` is 32 bytes, `self.rng` is initialised.
         let rc = unsafe {
-            wc_MlKemKey_Encapsulate(
-                self.key,
-                ct.as_mut_ptr(),
-                ss.as_mut_ptr(),
-                &mut self.rng,
-            )
+            wc_MlKemKey_Encapsulate(self.key, ct.as_mut_ptr(), ss.as_mut_ptr(), &mut self.rng)
         };
         check(rc, "wc_MlKemKey_Encapsulate")?;
 

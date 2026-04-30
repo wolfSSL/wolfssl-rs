@@ -1,5 +1,5 @@
-use crate::cipher::chacha;
 use crate::cipher::aes::{AES_128_KEY_LEN, AES_192_KEY_LEN, AES_256_KEY_LEN};
+use crate::cipher::chacha;
 use crate::error::Unspecified;
 use crate::wolfcrypt_rs::{
     wc_AesDelete, wc_AesGcmDecrypt, wc_AesGcmEncrypt, wc_AesGcmSetKey, wc_AesNew,
@@ -66,7 +66,10 @@ impl AeadCtx {
     #[inline]
     pub(crate) fn key(&self) -> &AeadKey {
         match self {
-            AeadCtx::AES_128_GCM(k) | AeadCtx::AES_192_GCM(k) | AeadCtx::AES_256_GCM(k) | AeadCtx::CHACHA20_POLY1305(k) => k,
+            AeadCtx::AES_128_GCM(k)
+            | AeadCtx::AES_192_GCM(k)
+            | AeadCtx::AES_256_GCM(k)
+            | AeadCtx::CHACHA20_POLY1305(k) => k,
         }
     }
 
@@ -88,9 +91,12 @@ impl AeadCtx {
         // SAFETY: wc_AesNew allocates an AES context; all pointers from valid Rust slices.
         unsafe {
             let aes = wc_AesNew(core::ptr::null_mut(), INVALID_DEVID, core::ptr::null_mut());
-            if aes.is_null() { return Err(Unspecified); }
+            if aes.is_null() {
+                return Err(Unspecified);
+            }
             if wc_AesGcmSetKey(aes, k.key.as_ptr(), k.key_len as u32) != 0 {
-                wc_AesDelete(aes, core::ptr::null_mut()); return Err(Unspecified);
+                wc_AesDelete(aes, core::ptr::null_mut());
+                return Err(Unspecified);
             }
             let mut full_tag = [0u8; AES_GCM_TAG_LEN];
             let ret = wc_AesGcmEncrypt(
@@ -106,7 +112,9 @@ impl AeadCtx {
                 ad.len() as u32,
             );
             wc_AesDelete(aes, core::ptr::null_mut());
-            if ret != 0 { return Err(Unspecified); }
+            if ret != 0 {
+                return Err(Unspecified);
+            }
             let copy_len = core::cmp::min(k.tag_len, tag_out.len());
             tag_out[..copy_len].copy_from_slice(&full_tag[..copy_len]);
             Ok(())
@@ -126,9 +134,12 @@ impl AeadCtx {
         // SAFETY: wc_AesNew allocates an AES context; all pointers from valid Rust slices.
         unsafe {
             let aes = wc_AesNew(core::ptr::null_mut(), INVALID_DEVID, core::ptr::null_mut());
-            if aes.is_null() { return Err(Unspecified); }
+            if aes.is_null() {
+                return Err(Unspecified);
+            }
             if wc_AesGcmSetKey(aes, k.key.as_ptr(), k.key_len as u32) != 0 {
-                wc_AesDelete(aes, core::ptr::null_mut()); return Err(Unspecified);
+                wc_AesDelete(aes, core::ptr::null_mut());
+                return Err(Unspecified);
             }
             let mut full_tag = [0u8; AES_GCM_TAG_LEN];
             let copy_len = core::cmp::min(tag.len(), AES_GCM_TAG_LEN);
@@ -146,7 +157,11 @@ impl AeadCtx {
                 ad.len() as u32,
             );
             wc_AesDelete(aes, core::ptr::null_mut());
-            if ret != 0 { Err(Unspecified) } else { Ok(()) }
+            if ret != 0 {
+                Err(Unspecified)
+            } else {
+                Ok(())
+            }
         }
     }
 
@@ -174,7 +189,9 @@ impl AeadCtx {
                 full_tag.as_mut_ptr(),
             )
         };
-        if ret != 0 { return Err(Unspecified); }
+        if ret != 0 {
+            return Err(Unspecified);
+        }
         let copy_len = core::cmp::min(k.tag_len, tag_out.len());
         tag_out[..copy_len].copy_from_slice(&full_tag[..copy_len]);
         Ok(())
@@ -203,7 +220,11 @@ impl AeadCtx {
                 in_out.as_mut_ptr(),
             )
         };
-        if ret != 0 { Err(Unspecified) } else { Ok(()) }
+        if ret != 0 {
+            Err(Unspecified)
+        } else {
+            Ok(())
+        }
     }
 
     /// Seal (encrypt + authenticate) dispatching on algorithm.
@@ -257,7 +278,13 @@ impl AeadCtx {
         let tag_len = self.tag_len();
         if extra_in.is_empty() {
             // No extra input — seal in_out, write tag to extra_out_and_tag
-            self.seal(nonce, in_out, in_out.len(), ad, &mut extra_out_and_tag[..tag_len])
+            self.seal(
+                nonce,
+                in_out,
+                in_out.len(),
+                ad,
+                &mut extra_out_and_tag[..tag_len],
+            )
         } else {
             // Combine [in_out || extra_in], encrypt together, split output
             let total = in_out.len() + extra_in.len();
@@ -309,7 +336,9 @@ impl Drop for AeadKey {
         // Use write_volatile to prevent the compiler from optimizing this away.
         for byte in self.key.iter_mut() {
             // SAFETY: byte points to a valid element within the key array.
-            unsafe { core::ptr::write_volatile(byte, 0); }
+            unsafe {
+                core::ptr::write_volatile(byte, 0);
+            }
         }
         self.key_len = 0;
     }

@@ -114,9 +114,6 @@ pub fn parse_cavp(contents: &str) -> Vec<CavpTestCase> {
         });
     }
 
-    assert!(
-        !cases.is_empty(),
-        "CAVP file contained zero test cases"
-    );
+    assert!(!cases.is_empty(), "CAVP file contained zero test cases");
     cases
 }

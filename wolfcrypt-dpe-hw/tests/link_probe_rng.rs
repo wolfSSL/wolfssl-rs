@@ -22,11 +22,8 @@ fn main() {
         let init_rc = wolfcrypt_sys::wc_InitRng(&mut rng);
         assert_eq!(init_rc, 0, "wc_InitRng failed: {init_rc}");
 
-        let gen_rc = wolfcrypt_sys::wc_RNG_GenerateBlock(
-            &mut rng,
-            output.as_mut_ptr(),
-            output.len() as u32,
-        );
+        let gen_rc =
+            wolfcrypt_sys::wc_RNG_GenerateBlock(&mut rng, output.as_mut_ptr(), output.len() as u32);
 
         wolfcrypt_sys::wc_FreeRng(&mut rng);
         gen_rc
@@ -44,5 +41,8 @@ fn main() {
     );
     fs::write(audit_path, &result)
         .unwrap_or_else(|e| eprintln!("warning: could not write audit file: {e}"));
-    println!("link_probe_rng: PASS (rc={rc}, output[0]={:#04x})", output[0]);
+    println!(
+        "link_probe_rng: PASS (rc={rc}, output[0]={:#04x})",
+        output[0]
+    );
 }

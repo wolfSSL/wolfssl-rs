@@ -10,10 +10,8 @@ use wolfcrypt_dpe::{WolfCryptDpe, WolfCryptDpe256};
 fn sha256_empty_message() {
     // NIST FIPS 180-4, Section B.1 (SHA-256, empty message)
     // Also: https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/SHA256.pdf
-    let expected = hex::decode(
-        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    )
-    .unwrap();
+    let expected =
+        hex::decode("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855").unwrap();
 
     let mut dpe = WolfCryptDpe256::new_p256();
     let digest = dpe.hash(b"").unwrap();
@@ -26,10 +24,8 @@ fn sha256_empty_message() {
 #[test]
 fn sha256_abc() {
     // NIST FIPS 180-4, Section B.1 (SHA-256, "abc")
-    let expected = hex::decode(
-        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-    )
-    .unwrap();
+    let expected =
+        hex::decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad").unwrap();
 
     let mut dpe = WolfCryptDpe256::new_p256();
     let digest = dpe.hash(b"abc").unwrap();
@@ -43,10 +39,8 @@ fn sha256_abc() {
 fn sha256_448bit() {
     // NIST FIPS 180-4, Section B.2 (SHA-256, 448-bit message)
     // "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
-    let expected = hex::decode(
-        "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
-    )
-    .unwrap();
+    let expected =
+        hex::decode("248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1").unwrap();
 
     let mut dpe = WolfCryptDpe256::new_p256();
     let digest = dpe

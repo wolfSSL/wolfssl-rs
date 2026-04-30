@@ -56,9 +56,7 @@ impl BLAKE2b {
     pub fn new(digest_size: usize) -> Result<Self, i32> {
         let digest_size = digest_size as u32;
         let mut wc_blake2b: MaybeUninit<sys::Blake2b> = MaybeUninit::uninit();
-        let rc = unsafe {
-            sys::wc_InitBlake2b(wc_blake2b.as_mut_ptr(), digest_size)
-        };
+        let rc = unsafe { sys::wc_InitBlake2b(wc_blake2b.as_mut_ptr(), digest_size) };
         if rc != 0 {
             return Err(rc);
         }
@@ -91,8 +89,12 @@ impl BLAKE2b {
         let mut wc_blake2b: MaybeUninit<sys::Blake2b> = MaybeUninit::uninit();
         let key_size = key.len() as u32;
         let rc = unsafe {
-            sys::wc_InitBlake2b_WithKey(wc_blake2b.as_mut_ptr(), digest_size,
-                key.as_ptr(), key_size)
+            sys::wc_InitBlake2b_WithKey(
+                wc_blake2b.as_mut_ptr(),
+                digest_size,
+                key.as_ptr(),
+                key_size,
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -125,9 +127,7 @@ impl BLAKE2b {
     /// ```
     pub fn update(&mut self, data: &[u8]) -> Result<(), i32> {
         let data_size = data.len() as u32;
-        let rc = unsafe {
-            sys::wc_Blake2bUpdate(&mut self.wc_blake2b, data.as_ptr(), data_size)
-        };
+        let rc = unsafe { sys::wc_Blake2bUpdate(&mut self.wc_blake2b, data.as_ptr(), data_size) };
         if rc != 0 {
             return Err(rc);
         }
@@ -157,16 +157,14 @@ impl BLAKE2b {
     /// ```
     pub fn finalize(&mut self, hash: &mut [u8]) -> Result<(), i32> {
         let hash_size = hash.len() as u32;
-        let rc = unsafe {
-            sys::wc_Blake2bFinal(&mut self.wc_blake2b, hash.as_mut_ptr(), hash_size)
-        };
+        let rc =
+            unsafe { sys::wc_Blake2bFinal(&mut self.wc_blake2b, hash.as_mut_ptr(), hash_size) };
         if rc != 0 {
             return Err(rc);
         }
         Ok(())
     }
 }
-
 
 /// Context for HMAC-BLAKE2b computation.
 #[cfg(blake2b_hmac)]
@@ -199,9 +197,8 @@ impl BLAKE2bHmac {
     /// ```
     pub fn new(key: &[u8]) -> Result<Self, i32> {
         let mut wc_blake2b: MaybeUninit<sys::Blake2b> = MaybeUninit::uninit();
-        let rc = unsafe {
-            sys::wc_Blake2bHmacInit(wc_blake2b.as_mut_ptr(), key.as_ptr(), key.len())
-        };
+        let rc =
+            unsafe { sys::wc_Blake2bHmacInit(wc_blake2b.as_mut_ptr(), key.as_ptr(), key.len()) };
         if rc != 0 {
             return Err(rc);
         }
@@ -234,9 +231,8 @@ impl BLAKE2bHmac {
     /// hmac_blake2b.update(&data).expect("Error with update()");
     /// ```
     pub fn update(&mut self, data: &[u8]) -> Result<(), i32> {
-        let rc = unsafe {
-            sys::wc_Blake2bHmacUpdate(&mut self.wc_blake2b, data.as_ptr(), data.len())
-        };
+        let rc =
+            unsafe { sys::wc_Blake2bHmacUpdate(&mut self.wc_blake2b, data.as_ptr(), data.len()) };
         if rc != 0 {
             return Err(rc);
         }
@@ -269,8 +265,13 @@ impl BLAKE2bHmac {
     /// ```
     pub fn finalize(&mut self, key: &[u8], mac: &mut [u8; Self::DIGEST_SIZE]) -> Result<(), i32> {
         let rc = unsafe {
-            sys::wc_Blake2bHmacFinal(&mut self.wc_blake2b,
-                key.as_ptr(), key.len(), mac.as_mut_ptr(), mac.len())
+            sys::wc_Blake2bHmacFinal(
+                &mut self.wc_blake2b,
+                key.as_ptr(),
+                key.len(),
+                mac.as_mut_ptr(),
+                mac.len(),
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -294,8 +295,14 @@ impl BLAKE2bHmac {
     /// library error code value.
     pub fn hmac(data: &[u8], key: &[u8], out: &mut [u8; Self::DIGEST_SIZE]) -> Result<(), i32> {
         let rc = unsafe {
-            sys::wc_Blake2bHmac(data.as_ptr(), data.len(), key.as_ptr(),
-                key.len(), out.as_mut_ptr(), out.len())
+            sys::wc_Blake2bHmac(
+                data.as_ptr(),
+                data.len(),
+                key.as_ptr(),
+                key.len(),
+                out.as_mut_ptr(),
+                out.len(),
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -303,7 +310,6 @@ impl BLAKE2bHmac {
         Ok(())
     }
 }
-
 
 /// Context for BLAKE2s computation.
 #[cfg(blake2s)]
@@ -333,9 +339,7 @@ impl BLAKE2s {
     pub fn new(digest_size: usize) -> Result<Self, i32> {
         let digest_size = digest_size as u32;
         let mut wc_blake2s: MaybeUninit<sys::Blake2s> = MaybeUninit::uninit();
-        let rc = unsafe {
-            sys::wc_InitBlake2s(wc_blake2s.as_mut_ptr(), digest_size)
-        };
+        let rc = unsafe { sys::wc_InitBlake2s(wc_blake2s.as_mut_ptr(), digest_size) };
         if rc != 0 {
             return Err(rc);
         }
@@ -368,8 +372,12 @@ impl BLAKE2s {
         let mut wc_blake2s: MaybeUninit<sys::Blake2s> = MaybeUninit::uninit();
         let key_size = key.len() as u32;
         let rc = unsafe {
-            sys::wc_InitBlake2s_WithKey(wc_blake2s.as_mut_ptr(), digest_size,
-                key.as_ptr(), key_size)
+            sys::wc_InitBlake2s_WithKey(
+                wc_blake2s.as_mut_ptr(),
+                digest_size,
+                key.as_ptr(),
+                key_size,
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -402,9 +410,7 @@ impl BLAKE2s {
     /// ```
     pub fn update(&mut self, data: &[u8]) -> Result<(), i32> {
         let data_size = data.len() as u32;
-        let rc = unsafe {
-            sys::wc_Blake2sUpdate(&mut self.wc_blake2s, data.as_ptr(), data_size)
-        };
+        let rc = unsafe { sys::wc_Blake2sUpdate(&mut self.wc_blake2s, data.as_ptr(), data_size) };
         if rc != 0 {
             return Err(rc);
         }
@@ -434,16 +440,14 @@ impl BLAKE2s {
     /// ```
     pub fn finalize(&mut self, hash: &mut [u8]) -> Result<(), i32> {
         let hash_size = hash.len() as u32;
-        let rc = unsafe {
-            sys::wc_Blake2sFinal(&mut self.wc_blake2s, hash.as_mut_ptr(), hash_size)
-        };
+        let rc =
+            unsafe { sys::wc_Blake2sFinal(&mut self.wc_blake2s, hash.as_mut_ptr(), hash_size) };
         if rc != 0 {
             return Err(rc);
         }
         Ok(())
     }
 }
-
 
 /// Context for HMAC-BLAKE2s computation.
 #[cfg(blake2s_hmac)]
@@ -476,9 +480,8 @@ impl BLAKE2sHmac {
     /// ```
     pub fn new(key: &[u8]) -> Result<Self, i32> {
         let mut wc_blake2s: MaybeUninit<sys::Blake2s> = MaybeUninit::uninit();
-        let rc = unsafe {
-            sys::wc_Blake2sHmacInit(wc_blake2s.as_mut_ptr(), key.as_ptr(), key.len())
-        };
+        let rc =
+            unsafe { sys::wc_Blake2sHmacInit(wc_blake2s.as_mut_ptr(), key.as_ptr(), key.len()) };
         if rc != 0 {
             return Err(rc);
         }
@@ -511,9 +514,8 @@ impl BLAKE2sHmac {
     /// hmac_blake2s.update(&data).expect("Error with update()");
     /// ```
     pub fn update(&mut self, data: &[u8]) -> Result<(), i32> {
-        let rc = unsafe {
-            sys::wc_Blake2sHmacUpdate(&mut self.wc_blake2s, data.as_ptr(), data.len())
-        };
+        let rc =
+            unsafe { sys::wc_Blake2sHmacUpdate(&mut self.wc_blake2s, data.as_ptr(), data.len()) };
         if rc != 0 {
             return Err(rc);
         }
@@ -546,8 +548,13 @@ impl BLAKE2sHmac {
     /// ```
     pub fn finalize(&mut self, key: &[u8], mac: &mut [u8; Self::DIGEST_SIZE]) -> Result<(), i32> {
         let rc = unsafe {
-            sys::wc_Blake2sHmacFinal(&mut self.wc_blake2s,
-                key.as_ptr(), key.len(), mac.as_mut_ptr(), mac.len())
+            sys::wc_Blake2sHmacFinal(
+                &mut self.wc_blake2s,
+                key.as_ptr(),
+                key.len(),
+                mac.as_mut_ptr(),
+                mac.len(),
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -571,8 +578,14 @@ impl BLAKE2sHmac {
     /// library error code value.
     pub fn hmac(data: &[u8], key: &[u8], out: &mut [u8; Self::DIGEST_SIZE]) -> Result<(), i32> {
         let rc = unsafe {
-            sys::wc_Blake2sHmac(data.as_ptr(), data.len(), key.as_ptr(),
-                key.len(), out.as_mut_ptr(), out.len())
+            sys::wc_Blake2sHmac(
+                data.as_ptr(),
+                data.len(),
+                key.as_ptr(),
+                key.len(),
+                out.as_mut_ptr(),
+                out.len(),
+            )
         };
         if rc != 0 {
             return Err(rc);

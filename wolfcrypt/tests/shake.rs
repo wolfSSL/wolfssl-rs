@@ -21,9 +21,8 @@ fn shake128_empty_nist_vector() {
     let mut out = [0u8; 32];
     xof.finalize(&mut out).expect("finalize failed");
 
-    let expected = hex_literal::hex!(
-        "7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26"
-    );
+    let expected =
+        hex_literal::hex!("7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26");
     assert_eq!(out, expected, "SHAKE128 empty-input NIST vector mismatch");
 }
 
@@ -55,7 +54,10 @@ fn shake128_squeeze_blocks_rejects_unaligned() {
     xof.absorb(b"test").expect("absorb failed");
     let mut bad = [0u8; 100]; // 100 is not a multiple of 168
     let result = xof.squeeze_blocks(&mut bad);
-    assert!(result.is_err(), "squeeze_blocks should reject non-block-aligned length");
+    assert!(
+        result.is_err(),
+        "squeeze_blocks should reject non-block-aligned length"
+    );
 }
 
 /// SHAKE128 squeeze_blocks with a valid block-aligned buffer.
@@ -66,7 +68,10 @@ fn shake128_squeeze_blocks_valid() {
     let mut out = [0u8; Shake128::BLOCK_SIZE];
     xof.squeeze_blocks(&mut out).expect("squeeze_blocks failed");
     // Output should be non-trivial (not all zeros after hashing).
-    assert!(!out.iter().all(|&b| b == 0), "squeeze output should not be all zeros");
+    assert!(
+        !out.iter().all(|&b| b == 0),
+        "squeeze output should not be all zeros"
+    );
 }
 
 // ---------- SHAKE256 tests ----------
@@ -86,9 +91,8 @@ mod shake256_tests {
         let mut out = [0u8; 32];
         xof.finalize(&mut out).expect("finalize failed");
 
-        let expected = hex_literal::hex!(
-            "46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762f"
-        );
+        let expected =
+            hex_literal::hex!("46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762f");
         assert_eq!(out, expected, "SHAKE256 empty-input NIST vector mismatch");
     }
 
@@ -118,7 +122,10 @@ mod shake256_tests {
         xof.absorb(b"test").expect("absorb failed");
         let mut bad = [0u8; 100]; // 100 is not a multiple of 136
         let result = xof.squeeze_blocks(&mut bad);
-        assert!(result.is_err(), "squeeze_blocks should reject non-block-aligned length");
+        assert!(
+            result.is_err(),
+            "squeeze_blocks should reject non-block-aligned length"
+        );
     }
 
     /// SHAKE256 squeeze_blocks with a valid block-aligned buffer.
@@ -128,6 +135,9 @@ mod shake256_tests {
         xof.absorb(b"").expect("absorb failed");
         let mut out = [0u8; Shake256::BLOCK_SIZE];
         xof.squeeze_blocks(&mut out).expect("squeeze_blocks failed");
-        assert!(!out.iter().all(|&b| b == 0), "squeeze output should not be all zeros");
+        assert!(
+            !out.iter().all(|&b| b == 0),
+            "squeeze output should not be all zeros"
+        );
     }
 }

@@ -10,21 +10,21 @@
 // naming conventions. Also the standard camelCase names are used for `KeyPair`
 // components.
 
+mod encoding;
 /// RSA encryption (OAEP and PKCS#1 v1.5).
 pub mod encryption;
-mod encoding;
 pub(crate) mod key;
 pub(crate) mod signature;
 
+pub use self::encryption::oaep::{
+    OaepPrivateDecryptingKey, OaepPublicEncryptingKey, OAEP_SHA1_MGF1SHA1, OAEP_SHA256_MGF1SHA256,
+    OAEP_SHA384_MGF1SHA384, OAEP_SHA512_MGF1SHA512,
+};
+pub use self::encryption::pkcs1::{Pkcs1PrivateDecryptingKey, Pkcs1PublicEncryptingKey};
+pub use self::encryption::{EncryptionAlgorithmId, PrivateDecryptingKey, PublicEncryptingKey};
 pub use self::key::{KeyPair, KeySize, PublicKey, PublicKeyComponents};
 #[allow(clippy::module_name_repetitions)]
 pub use self::signature::RsaParameters;
-pub use self::encryption::{EncryptionAlgorithmId, PrivateDecryptingKey, PublicEncryptingKey};
-pub use self::encryption::oaep::{
-    OaepPrivateDecryptingKey, OaepPublicEncryptingKey, OAEP_SHA1_MGF1SHA1,
-    OAEP_SHA256_MGF1SHA256, OAEP_SHA384_MGF1SHA384, OAEP_SHA512_MGF1SHA512,
-};
-pub use self::encryption::pkcs1::{Pkcs1PrivateDecryptingKey, Pkcs1PublicEncryptingKey};
 
 pub(crate) use self::signature::RsaVerificationAlgorithmId;
 
@@ -35,9 +35,9 @@ mod tests {
 
     mod encryption_tests {
         use super::super::encryption::{
+            oaep::{OaepPrivateDecryptingKey, OaepPublicEncryptingKey, OAEP_SHA256_MGF1SHA256},
+            pkcs1::{Pkcs1PrivateDecryptingKey, Pkcs1PublicEncryptingKey},
             PrivateDecryptingKey,
-            oaep::{OaepPublicEncryptingKey, OaepPrivateDecryptingKey, OAEP_SHA256_MGF1SHA256},
-            pkcs1::{Pkcs1PublicEncryptingKey, Pkcs1PrivateDecryptingKey},
         };
         use super::super::KeySize;
 
@@ -108,12 +108,7 @@ mod tests {
                 .unwrap();
 
             let mut decrypted = vec![0u8; oaep_priv_wrong.min_output_size()];
-            let result = oaep_priv_wrong.decrypt(
-                &OAEP_SHA256_MGF1SHA256,
-                ct,
-                &mut decrypted,
-                None,
-            );
+            let result = oaep_priv_wrong.decrypt(&OAEP_SHA256_MGF1SHA256, ct, &mut decrypted, None);
             assert!(result.is_err(), "decrypting with wrong key must fail");
         }
 
@@ -139,12 +134,8 @@ mod tests {
             corrupted[mid] ^= 0x42;
 
             let mut decrypted = vec![0u8; oaep_priv.min_output_size()];
-            let result = oaep_priv.decrypt(
-                &OAEP_SHA256_MGF1SHA256,
-                &corrupted,
-                &mut decrypted,
-                None,
-            );
+            let result =
+                oaep_priv.decrypt(&OAEP_SHA256_MGF1SHA256, &corrupted, &mut decrypted, None);
             assert!(result.is_err(), "corrupted ciphertext must fail to decrypt");
         }
 

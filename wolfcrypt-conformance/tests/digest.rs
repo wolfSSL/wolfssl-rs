@@ -224,18 +224,58 @@ macro_rules! digest_equiv {
 
 digest_equiv!(sha1, wolfcrypt::Sha1, sha1::Sha1, [wolfssl_openssl_extra]);
 
-digest_equiv!(sha224, wolfcrypt::Sha224, sha2::Sha224, [wolfssl_openssl_extra, wolfssl_sha224]);
+digest_equiv!(
+    sha224,
+    wolfcrypt::Sha224,
+    sha2::Sha224,
+    [wolfssl_openssl_extra, wolfssl_sha224]
+);
 
-digest_equiv!(sha256, wolfcrypt::Sha256, sha2::Sha256, [wolfssl_openssl_extra]);
+digest_equiv!(
+    sha256,
+    wolfcrypt::Sha256,
+    sha2::Sha256,
+    [wolfssl_openssl_extra]
+);
 
-digest_equiv!(sha384, wolfcrypt::Sha384, sha2::Sha384, [wolfssl_openssl_extra, wolfssl_sha384]);
+digest_equiv!(
+    sha384,
+    wolfcrypt::Sha384,
+    sha2::Sha384,
+    [wolfssl_openssl_extra, wolfssl_sha384]
+);
 
-digest_equiv!(sha512, wolfcrypt::Sha512, sha2::Sha512, [wolfssl_openssl_extra, wolfssl_sha512]);
+digest_equiv!(
+    sha512,
+    wolfcrypt::Sha512,
+    sha2::Sha512,
+    [wolfssl_openssl_extra, wolfssl_sha512]
+);
 
-digest_equiv!(sha512_256, wolfcrypt::Sha512_256, sha2::Sha512_256, [wolfssl_openssl_extra, wolfssl_sha512]);
+digest_equiv!(
+    sha512_256,
+    wolfcrypt::Sha512_256,
+    sha2::Sha512_256,
+    [wolfssl_openssl_extra, wolfssl_sha512]
+);
 
-digest_equiv!(sha3_256, wolfcrypt::Sha3_256, sha3::Sha3_256, [wolfssl_openssl_extra, wolfssl_sha3]);
+digest_equiv!(
+    sha3_256,
+    wolfcrypt::Sha3_256,
+    sha3::Sha3_256,
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
 
-digest_equiv!(sha3_384, wolfcrypt::Sha3_384, sha3::Sha3_384, [wolfssl_openssl_extra, wolfssl_sha3]);
+digest_equiv!(
+    sha3_384,
+    wolfcrypt::Sha3_384,
+    sha3::Sha3_384,
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
 
-digest_equiv!(sha3_512, wolfcrypt::Sha3_512, sha3::Sha3_512, [wolfssl_openssl_extra, wolfssl_sha3]);
+digest_equiv!(
+    sha3_512,
+    wolfcrypt::Sha3_512,
+    sha3::Sha3_512,
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);

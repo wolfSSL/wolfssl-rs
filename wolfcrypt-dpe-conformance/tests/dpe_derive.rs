@@ -4,7 +4,7 @@ mod helpers;
 
 use caliptra_cfi_lib::CfiCounter;
 use caliptra_dpe::commands::{
-    CommandExecution, DeriveContextCmd, DeriveContextFlags, InitCtxCmd, SignP384Cmd, SignFlags,
+    CommandExecution, DeriveContextCmd, DeriveContextFlags, InitCtxCmd, SignFlags, SignP384Cmd,
 };
 use caliptra_dpe::context::ContextHandle;
 use caliptra_dpe::dpe_instance::{DpeEnv, DpeInstance};
@@ -62,7 +62,11 @@ fn derive_with_measurement() {
         svn: 0,
     };
     let result = cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "DeriveContext with measurement failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "DeriveContext with measurement failed: {:?}",
+        result.err()
+    );
 }
 
 #[test]
@@ -109,7 +113,11 @@ fn derive_chain_3_levels() {
         svn: 0,
     };
     let result = cmd3.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "Third level derive failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Third level derive failed: {:?}",
+        result.err()
+    );
 }
 
 #[test]
@@ -129,7 +137,10 @@ fn derive_without_retain_destroys_parent() {
         digest: [0xCC; 48],
     };
     let result = sign_cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_err(), "Expected error using consumed default handle");
+    assert!(
+        result.is_err(),
+        "Expected error using consumed default handle"
+    );
 }
 
 #[test]
@@ -147,7 +158,11 @@ fn derive_with_tci_type() {
         svn: 0,
     };
     let result = cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "DeriveContext with tci_type failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "DeriveContext with tci_type failed: {:?}",
+        result.err()
+    );
 }
 
 #[test]
@@ -176,7 +191,10 @@ fn derive_multiple_from_retained_parent() {
     let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384).unwrap();
 
     // Create a simulation parent context.
-    let parent = match InitCtxCmd::new_simulation().execute(&mut dpe, &mut env, LOCALITY).unwrap() {
+    let parent = match InitCtxCmd::new_simulation()
+        .execute(&mut dpe, &mut env, LOCALITY)
+        .unwrap()
+    {
         Response::InitCtx(resp) => resp.handle,
         _ => panic!("Expected InitCtx, got unexpected response"),
     };
@@ -191,7 +209,11 @@ fn derive_multiple_from_retained_parent() {
         svn: 0,
     };
     let resp1 = cmd1.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(resp1.is_ok(), "First derive from retained parent failed: {:?}", resp1.err());
+    assert!(
+        resp1.is_ok(),
+        "First derive from retained parent failed: {:?}",
+        resp1.err()
+    );
     let parent_after = match resp1.unwrap() {
         Response::DeriveContext(resp) => resp.parent_handle,
         _ => panic!("Expected DeriveContext, got unexpected response"),
@@ -207,7 +229,11 @@ fn derive_multiple_from_retained_parent() {
         svn: 0,
     };
     let resp2 = cmd2.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(resp2.is_ok(), "Second derive from retained parent failed: {:?}", resp2.err());
+    assert!(
+        resp2.is_ok(),
+        "Second derive from retained parent failed: {:?}",
+        resp2.err()
+    );
 }
 
 #[test]
@@ -235,7 +261,10 @@ fn derive_max_depth_exceeded() {
             }
         }
     }
-    assert!(last_error.is_some(), "Expected MaxTcis error after exhausting slots");
+    assert!(
+        last_error.is_some(),
+        "Expected MaxTcis error after exhausting slots"
+    );
 }
 
 #[test]
@@ -256,7 +285,11 @@ fn derive_recursive_updates_tci() {
         svn: 0,
     };
     let result = cmd.execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "Recursive derive failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Recursive derive failed: {:?}",
+        result.err()
+    );
 }
 
 #[test]

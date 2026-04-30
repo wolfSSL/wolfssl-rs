@@ -3,7 +3,6 @@
 // Modifications copyright wolfSSL Inc.
 // SPDX-License-Identifier: MIT
 
-use crate::wolfcrypt_rs::{EVP_PKEY, EVP_PKEY_EC};
 use crate::digest::Digest;
 use crate::ec::evp_key_generate;
 use crate::ec::signature::{EcdsaSignatureFormat, EcdsaSigningAlgorithm, PublicKey};
@@ -11,6 +10,7 @@ use crate::ec::signature::{EcdsaSignatureFormat, EcdsaSigningAlgorithm, PublicKe
 use crate::ec::validate_ec_evp_key;
 #[cfg(not(feature = "fips"))]
 use crate::ec::verify_evp_key_nid;
+use crate::wolfcrypt_rs::{EVP_PKEY, EVP_PKEY_EC};
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 
@@ -327,9 +327,9 @@ impl AsDer<EcPrivateKeyRfc5915Der<'static>> for PrivateKey<'_> {
 mod tests {
     use crate::encoding::{AsBigEndian, AsDer};
     use crate::signature::{
-        EcdsaKeyPair, KeyPair, ECDSA_P256K1_SHA256_ASN1_SIGNING,
-        ECDSA_P256_SHA256_FIXED_SIGNING, ECDSA_P384_SHA384_FIXED_SIGNING,
-        ECDSA_P384_SHA3_384_FIXED_SIGNING, ECDSA_P521_SHA512_FIXED_SIGNING,
+        EcdsaKeyPair, KeyPair, ECDSA_P256K1_SHA256_ASN1_SIGNING, ECDSA_P256_SHA256_FIXED_SIGNING,
+        ECDSA_P384_SHA384_FIXED_SIGNING, ECDSA_P384_SHA3_384_FIXED_SIGNING,
+        ECDSA_P521_SHA512_FIXED_SIGNING,
     };
 
     #[test]
@@ -417,9 +417,11 @@ mod tests {
         let priv_bytes = key_pair.private_key().as_be_bytes().unwrap();
         let original_pub = key_pair.public_key().as_ref().to_vec();
 
-        let restored =
-            EcdsaKeyPair::from_private_key_bytes(&ECDSA_P256_SHA256_FIXED_SIGNING, priv_bytes.as_ref())
-                .unwrap();
+        let restored = EcdsaKeyPair::from_private_key_bytes(
+            &ECDSA_P256_SHA256_FIXED_SIGNING,
+            priv_bytes.as_ref(),
+        )
+        .unwrap();
 
         assert_eq!(restored.public_key().as_ref(), &original_pub[..]);
     }
@@ -430,9 +432,11 @@ mod tests {
         let priv_bytes = key_pair.private_key().as_be_bytes().unwrap();
         let original_pub = key_pair.public_key().as_ref().to_vec();
 
-        let restored =
-            EcdsaKeyPair::from_private_key_bytes(&ECDSA_P384_SHA384_FIXED_SIGNING, priv_bytes.as_ref())
-                .unwrap();
+        let restored = EcdsaKeyPair::from_private_key_bytes(
+            &ECDSA_P384_SHA384_FIXED_SIGNING,
+            priv_bytes.as_ref(),
+        )
+        .unwrap();
 
         assert_eq!(restored.public_key().as_ref(), &original_pub[..]);
     }
@@ -440,17 +444,17 @@ mod tests {
     #[test]
     fn test_from_private_key_bytes_sign_verify() {
         use crate::rand::SystemRandom;
-        use crate::signature::{
-            UnparsedPublicKey, ECDSA_P256_SHA256_FIXED,
-        };
+        use crate::signature::{UnparsedPublicKey, ECDSA_P256_SHA256_FIXED};
 
         let key_pair = EcdsaKeyPair::generate(&ECDSA_P256_SHA256_FIXED_SIGNING).unwrap();
         let priv_bytes = key_pair.private_key().as_be_bytes().unwrap();
         let pub_bytes = key_pair.public_key().as_ref().to_vec();
 
-        let restored =
-            EcdsaKeyPair::from_private_key_bytes(&ECDSA_P256_SHA256_FIXED_SIGNING, priv_bytes.as_ref())
-                .unwrap();
+        let restored = EcdsaKeyPair::from_private_key_bytes(
+            &ECDSA_P256_SHA256_FIXED_SIGNING,
+            priv_bytes.as_ref(),
+        )
+        .unwrap();
 
         let rng = SystemRandom::new();
         let msg = b"test message for from_private_key_bytes";
@@ -479,11 +483,9 @@ mod tests {
         let original_pub = key_pair.public_key().as_ref().to_vec();
 
         let minimal_der = build_minimal_rfc5915(priv_bytes.as_ref(), &P256_OID);
-        let restored = EcdsaKeyPair::from_private_key_der(
-            &ECDSA_P256_SHA256_FIXED_SIGNING,
-            &minimal_der,
-        )
-        .unwrap();
+        let restored =
+            EcdsaKeyPair::from_private_key_der(&ECDSA_P256_SHA256_FIXED_SIGNING, &minimal_der)
+                .unwrap();
 
         // The reconstructed public key must match the original.
         assert_eq!(restored.public_key().as_ref(), &original_pub[..]);
@@ -496,11 +498,9 @@ mod tests {
         let original_pub = key_pair.public_key().as_ref().to_vec();
 
         let minimal_der = build_minimal_rfc5915(priv_bytes.as_ref(), &P384_OID);
-        let restored = EcdsaKeyPair::from_private_key_der(
-            &ECDSA_P384_SHA384_FIXED_SIGNING,
-            &minimal_der,
-        )
-        .unwrap();
+        let restored =
+            EcdsaKeyPair::from_private_key_der(&ECDSA_P384_SHA384_FIXED_SIGNING, &minimal_der)
+                .unwrap();
 
         assert_eq!(restored.public_key().as_ref(), &original_pub[..]);
     }

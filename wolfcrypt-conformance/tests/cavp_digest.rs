@@ -1,8 +1,8 @@
 #![cfg(wolfssl_openssl_extra)]
 
 mod helpers;
-use helpers::cavp::parse_cavp;
 use digest::Digest;
+use helpers::cavp::parse_cavp;
 
 // ---------------------------------------------------------------------------
 // Macro: SHAVS Short-Message test
@@ -265,55 +265,175 @@ macro_rules! shavs_monte_test_sha3 {
 // ===========================================================================
 // SHA-1
 // ===========================================================================
-shavs_short_msg_test!(sha1_short_msg, wolfcrypt::Sha1, helpers::load_vectors("shavs/SHA1ShortMsg.rsp"), [wolfssl_openssl_extra]);
-shavs_long_msg_test!(sha1_long_msg, wolfcrypt::Sha1, helpers::load_vectors("shavs/SHA1LongMsg.rsp"), [wolfssl_openssl_extra]);
-shavs_monte_test_sha2!(sha1_monte, wolfcrypt::Sha1, helpers::load_vectors("shavs/SHA1Monte.rsp"), [wolfssl_openssl_extra]);
+shavs_short_msg_test!(
+    sha1_short_msg,
+    wolfcrypt::Sha1,
+    helpers::load_vectors("shavs/SHA1ShortMsg.rsp"),
+    [wolfssl_openssl_extra]
+);
+shavs_long_msg_test!(
+    sha1_long_msg,
+    wolfcrypt::Sha1,
+    helpers::load_vectors("shavs/SHA1LongMsg.rsp"),
+    [wolfssl_openssl_extra]
+);
+shavs_monte_test_sha2!(
+    sha1_monte,
+    wolfcrypt::Sha1,
+    helpers::load_vectors("shavs/SHA1Monte.rsp"),
+    [wolfssl_openssl_extra]
+);
 
 // ===========================================================================
 // SHA-224
 // ===========================================================================
-shavs_short_msg_test!(sha224_short_msg, wolfcrypt::Sha224, helpers::load_vectors("shavs/SHA224ShortMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha224]);
-shavs_long_msg_test!(sha224_long_msg, wolfcrypt::Sha224, helpers::load_vectors("shavs/SHA224LongMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha224]);
-shavs_monte_test_sha2!(sha224_monte, wolfcrypt::Sha224, helpers::load_vectors("shavs/SHA224Monte.rsp"), [wolfssl_openssl_extra, wolfssl_sha224]);
+shavs_short_msg_test!(
+    sha224_short_msg,
+    wolfcrypt::Sha224,
+    helpers::load_vectors("shavs/SHA224ShortMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha224]
+);
+shavs_long_msg_test!(
+    sha224_long_msg,
+    wolfcrypt::Sha224,
+    helpers::load_vectors("shavs/SHA224LongMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha224]
+);
+shavs_monte_test_sha2!(
+    sha224_monte,
+    wolfcrypt::Sha224,
+    helpers::load_vectors("shavs/SHA224Monte.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha224]
+);
 
 // ===========================================================================
 // SHA-256
 // ===========================================================================
-shavs_short_msg_test!(sha256_short_msg, wolfcrypt::Sha256, helpers::load_vectors("shavs/SHA256ShortMsg.rsp"), [wolfssl_openssl_extra]);
-shavs_long_msg_test!(sha256_long_msg, wolfcrypt::Sha256, helpers::load_vectors("shavs/SHA256LongMsg.rsp"), [wolfssl_openssl_extra]);
-shavs_monte_test_sha2!(sha256_monte, wolfcrypt::Sha256, helpers::load_vectors("shavs/SHA256Monte.rsp"), [wolfssl_openssl_extra]);
+shavs_short_msg_test!(
+    sha256_short_msg,
+    wolfcrypt::Sha256,
+    helpers::load_vectors("shavs/SHA256ShortMsg.rsp"),
+    [wolfssl_openssl_extra]
+);
+shavs_long_msg_test!(
+    sha256_long_msg,
+    wolfcrypt::Sha256,
+    helpers::load_vectors("shavs/SHA256LongMsg.rsp"),
+    [wolfssl_openssl_extra]
+);
+shavs_monte_test_sha2!(
+    sha256_monte,
+    wolfcrypt::Sha256,
+    helpers::load_vectors("shavs/SHA256Monte.rsp"),
+    [wolfssl_openssl_extra]
+);
 
 // ===========================================================================
 // SHA-384
 // ===========================================================================
-shavs_short_msg_test!(sha384_short_msg, wolfcrypt::Sha384, helpers::load_vectors("shavs/SHA384ShortMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha384]);
-shavs_long_msg_test!(sha384_long_msg, wolfcrypt::Sha384, helpers::load_vectors("shavs/SHA384LongMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha384]);
-shavs_monte_test_sha2!(sha384_monte, wolfcrypt::Sha384, helpers::load_vectors("shavs/SHA384Monte.rsp"), [wolfssl_openssl_extra, wolfssl_sha384]);
+shavs_short_msg_test!(
+    sha384_short_msg,
+    wolfcrypt::Sha384,
+    helpers::load_vectors("shavs/SHA384ShortMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha384]
+);
+shavs_long_msg_test!(
+    sha384_long_msg,
+    wolfcrypt::Sha384,
+    helpers::load_vectors("shavs/SHA384LongMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha384]
+);
+shavs_monte_test_sha2!(
+    sha384_monte,
+    wolfcrypt::Sha384,
+    helpers::load_vectors("shavs/SHA384Monte.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha384]
+);
 
 // ===========================================================================
 // SHA-512
 // ===========================================================================
-shavs_short_msg_test!(sha512_short_msg, wolfcrypt::Sha512, helpers::load_vectors("shavs/SHA512ShortMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha512]);
-shavs_long_msg_test!(sha512_long_msg, wolfcrypt::Sha512, helpers::load_vectors("shavs/SHA512LongMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha512]);
-shavs_monte_test_sha2!(sha512_monte, wolfcrypt::Sha512, helpers::load_vectors("shavs/SHA512Monte.rsp"), [wolfssl_openssl_extra, wolfssl_sha512]);
+shavs_short_msg_test!(
+    sha512_short_msg,
+    wolfcrypt::Sha512,
+    helpers::load_vectors("shavs/SHA512ShortMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha512]
+);
+shavs_long_msg_test!(
+    sha512_long_msg,
+    wolfcrypt::Sha512,
+    helpers::load_vectors("shavs/SHA512LongMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha512]
+);
+shavs_monte_test_sha2!(
+    sha512_monte,
+    wolfcrypt::Sha512,
+    helpers::load_vectors("shavs/SHA512Monte.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha512]
+);
 
 // ===========================================================================
 // SHA3-256
 // ===========================================================================
-shavs_short_msg_test!(sha3_256_short_msg, wolfcrypt::Sha3_256, helpers::load_vectors("shavs/SHA3_256ShortMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha3]);
-shavs_long_msg_test!(sha3_256_long_msg, wolfcrypt::Sha3_256, helpers::load_vectors("shavs/SHA3_256LongMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha3]);
-shavs_monte_test_sha3!(sha3_256_monte, wolfcrypt::Sha3_256, helpers::load_vectors("shavs/SHA3_256Monte.rsp"), [wolfssl_openssl_extra, wolfssl_sha3]);
+shavs_short_msg_test!(
+    sha3_256_short_msg,
+    wolfcrypt::Sha3_256,
+    helpers::load_vectors("shavs/SHA3_256ShortMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
+shavs_long_msg_test!(
+    sha3_256_long_msg,
+    wolfcrypt::Sha3_256,
+    helpers::load_vectors("shavs/SHA3_256LongMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
+shavs_monte_test_sha3!(
+    sha3_256_monte,
+    wolfcrypt::Sha3_256,
+    helpers::load_vectors("shavs/SHA3_256Monte.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
 
 // ===========================================================================
 // SHA3-384
 // ===========================================================================
-shavs_short_msg_test!(sha3_384_short_msg, wolfcrypt::Sha3_384, helpers::load_vectors("shavs/SHA3_384ShortMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha3]);
-shavs_long_msg_test!(sha3_384_long_msg, wolfcrypt::Sha3_384, helpers::load_vectors("shavs/SHA3_384LongMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha3]);
-shavs_monte_test_sha3!(sha3_384_monte, wolfcrypt::Sha3_384, helpers::load_vectors("shavs/SHA3_384Monte.rsp"), [wolfssl_openssl_extra, wolfssl_sha3]);
+shavs_short_msg_test!(
+    sha3_384_short_msg,
+    wolfcrypt::Sha3_384,
+    helpers::load_vectors("shavs/SHA3_384ShortMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
+shavs_long_msg_test!(
+    sha3_384_long_msg,
+    wolfcrypt::Sha3_384,
+    helpers::load_vectors("shavs/SHA3_384LongMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
+shavs_monte_test_sha3!(
+    sha3_384_monte,
+    wolfcrypt::Sha3_384,
+    helpers::load_vectors("shavs/SHA3_384Monte.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
 
 // ===========================================================================
 // SHA3-512
 // ===========================================================================
-shavs_short_msg_test!(sha3_512_short_msg, wolfcrypt::Sha3_512, helpers::load_vectors("shavs/SHA3_512ShortMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha3]);
-shavs_long_msg_test!(sha3_512_long_msg, wolfcrypt::Sha3_512, helpers::load_vectors("shavs/SHA3_512LongMsg.rsp"), [wolfssl_openssl_extra, wolfssl_sha3]);
-shavs_monte_test_sha3!(sha3_512_monte, wolfcrypt::Sha3_512, helpers::load_vectors("shavs/SHA3_512Monte.rsp"), [wolfssl_openssl_extra, wolfssl_sha3]);
+shavs_short_msg_test!(
+    sha3_512_short_msg,
+    wolfcrypt::Sha3_512,
+    helpers::load_vectors("shavs/SHA3_512ShortMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
+shavs_long_msg_test!(
+    sha3_512_long_msg,
+    wolfcrypt::Sha3_512,
+    helpers::load_vectors("shavs/SHA3_512LongMsg.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);
+shavs_monte_test_sha3!(
+    sha3_512_monte,
+    wolfcrypt::Sha3_512,
+    helpers::load_vectors("shavs/SHA3_512Monte.rsp"),
+    [wolfssl_openssl_extra, wolfssl_sha3]
+);

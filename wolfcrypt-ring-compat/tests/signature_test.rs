@@ -3,8 +3,8 @@
 // Modifications copyright wolfSSL Inc.
 // SPDX-License-Identifier: MIT
 
-use ring::{rand, signature};
 use ring::signature::KeyPair;
+use ring::{rand, signature};
 
 #[test]
 fn signature_traits() {
@@ -98,7 +98,10 @@ fn verification_algorithm_debug() {
 
     for alg in algs {
         let debug = format!("{:?}", alg);
-        assert!(!debug.is_empty(), "VerificationAlgorithm Debug should not be empty");
+        assert!(
+            !debug.is_empty(),
+            "VerificationAlgorithm Debug should not be empty"
+        );
     }
 }
 

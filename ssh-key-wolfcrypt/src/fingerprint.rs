@@ -3,14 +3,14 @@
 mod randomart;
 
 use self::randomart::Randomart;
-use crate::{Error, HashAlg, Result, public};
+use crate::{public, Error, HashAlg, Result};
 use core::{
     fmt::{self, Display},
     str::{self, FromStr},
 };
 use encoding::{
-    DigestWriter, Encode,
     base64::{Base64Unpadded, Encoding},
+    DigestWriter, Encode,
 };
 use sha2::{Digest, Sha256, Sha512};
 
@@ -21,7 +21,7 @@ const FINGERPRINT_ERR_MSG: &str = "fingerprint encoding error";
 use alloc::string::{String, ToString};
 
 #[cfg(all(feature = "alloc", feature = "serde"))]
-use serde::{Deserialize, Serialize, de, ser};
+use serde::{de, ser, Deserialize, Serialize};
 
 /// SSH public key fingerprints.
 ///

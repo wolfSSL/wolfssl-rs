@@ -36,4 +36,3 @@ pub(crate) fn from_wolfcrypt(e: wolfcrypt::WolfCryptError) -> CryptoError {
     };
     CryptoError::CryptoLibError(ERR_GENERAL | wc_code)
 }
-

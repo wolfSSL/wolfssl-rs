@@ -17,10 +17,15 @@ use caliptra_dpe::{DpeProfile, State};
 use caliptra_dpe_crypto::Crypto;
 
 /// Set up the alias key on a wolf DpeEnv so CertifyKey can sign certificates.
-fn setup_wolf_alias(env: &mut caliptra_dpe::dpe_instance::DpeEnv<'_, helpers::dpe_harness::WolfDpeTypes384>) {
+fn setup_wolf_alias(
+    env: &mut caliptra_dpe::dpe_instance::DpeEnv<'_, helpers::dpe_harness::WolfDpeTypes384>,
+) {
     let measurement = helpers::fixed_measurement_384(0xFF);
     let cdi = env.crypto.derive_cdi(&measurement, b"alias-setup").unwrap();
-    let (priv_key, pub_key) = env.crypto.derive_key_pair(&cdi, b"alias-lbl", b"alias-inf").unwrap();
+    let (priv_key, pub_key) = env
+        .crypto
+        .derive_key_pair(&cdi, b"alias-lbl", b"alias-inf")
+        .unwrap();
     env.crypto.set_alias_key(priv_key, pub_key).unwrap();
 }
 
@@ -72,10 +77,7 @@ fn keypair_comparison_works() {
         .expect("derive_key_pair B should succeed");
     let pk_a = helpers::pubkey_to_uncompressed(&pub_a);
     let pk_b = helpers::pubkey_to_uncompressed(&pub_b);
-    assert_ne!(
-        pk_a, pk_b,
-        "Public keys from different CDIs must differ"
-    );
+    assert_ne!(pk_a, pk_b, "Public keys from different CDIs must differ");
 }
 
 #[test]
@@ -84,8 +86,8 @@ fn signature_not_message() {
     let support = helpers::dpe_harness::DEFAULT_SUPPORT;
     let mut state = State::new(support, caliptra_dpe::DpeFlags::empty());
     let mut env = helpers::dpe_harness::make_wolf_env(&mut state);
-    let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-        .expect("DPE init should succeed");
+    let mut dpe =
+        DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("DPE init should succeed");
 
     let derive_cmd = DeriveContextCmd {
         handle: ContextHandle::default(),
@@ -140,12 +142,12 @@ fn sign_with_alias_requires_setup() {
 fn dpe_init_required() {
     // Create DPE without AUTO_INIT. The default handle should not work for Sign.
     CfiCounter::reset_for_test();
-    let support = helpers::dpe_harness::DEFAULT_SUPPORT
-        .difference(caliptra_dpe::support::Support::AUTO_INIT);
+    let support =
+        helpers::dpe_harness::DEFAULT_SUPPORT.difference(caliptra_dpe::support::Support::AUTO_INIT);
     let mut state = State::new(support, caliptra_dpe::DpeFlags::empty());
     let mut env = helpers::dpe_harness::make_wolf_env(&mut state);
-    let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-        .expect("DPE init should succeed");
+    let mut dpe =
+        DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("DPE init should succeed");
 
     let sign_cmd = SignP384Cmd {
         handle: ContextHandle::default(),
@@ -166,8 +168,8 @@ fn wrong_handle_detected() {
     let support = helpers::dpe_harness::DEFAULT_SUPPORT;
     let mut state = State::new(support, caliptra_dpe::DpeFlags::empty());
     let mut env = helpers::dpe_harness::make_wolf_env(&mut state);
-    let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-        .expect("DPE init should succeed");
+    let mut dpe =
+        DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("DPE init should succeed");
 
     let bad_handle = ContextHandle([0xDE; 16]);
     let sign_cmd = SignP384Cmd {

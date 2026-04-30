@@ -1,6 +1,6 @@
 //! Digital Signature Algorithm (DSA) private keys.
 
-use crate::{Error, Mpint, Result, public::DsaPublicKey};
+use crate::{public::DsaPublicKey, Error, Mpint, Result};
 use core::fmt;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
 use subtle::{Choice, ConstantTimeEq};
@@ -179,4 +179,3 @@ impl fmt::Debug for DsaKeypair {
             .finish_non_exhaustive()
     }
 }
-

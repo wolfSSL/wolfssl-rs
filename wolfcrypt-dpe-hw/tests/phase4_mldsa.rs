@@ -28,7 +28,7 @@
 #[cfg(all(feature = "mldsa87-hw", not(target_arch = "riscv32")))]
 mod tests {
     use wolfcrypt_dpe_hw::{
-        mldsa_dispatch_count, reset_mldsa_dispatch_count, HW_DEVICE_ID, CRYPTOCB_UNAVAILABLE,
+        mldsa_dispatch_count, reset_mldsa_dispatch_count, CRYPTOCB_UNAVAILABLE, HW_DEVICE_ID,
     };
 
     fn setup() {
@@ -114,8 +114,7 @@ mod tests {
 
         // CRYPTOCB_UNAVAILABLE must be -271 (from wolfssl/wolfcrypt/error-crypt.h).
         assert_eq!(
-            CRYPTOCB_UNAVAILABLE,
-            -271,
+            CRYPTOCB_UNAVAILABLE, -271,
             "CRYPTOCB_UNAVAILABLE value mismatch"
         );
 

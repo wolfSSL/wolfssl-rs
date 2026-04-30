@@ -71,11 +71,19 @@ impl AesXts {
         };
         if rc != 0 {
             // Free the already-initialized XtsAes before returning.
-            unsafe { wolfcrypt_rs::wc_AesXtsFree(&mut xts as *mut wolfcrypt_rs::XtsAes); }
-            return Err(WolfCryptError::Ffi { code: rc, func: "wc_AesXtsSetKeyNoInit" });
+            unsafe {
+                wolfcrypt_rs::wc_AesXtsFree(&mut xts as *mut wolfcrypt_rs::XtsAes);
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_AesXtsSetKeyNoInit",
+            });
         }
 
-        Ok(Self { xts, direction: dir })
+        Ok(Self {
+            xts,
+            direction: dir,
+        })
     }
 
     /// Encrypt `input` into `out` using the given `tweak` (data unit number).

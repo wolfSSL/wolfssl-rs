@@ -15,9 +15,9 @@
 
 use std::ptr;
 use wolfcrypt_rs::{
-    wolfcrypt_rsa_export_private_pkcs1, wolfcrypt_rsa_export_public_spki,
-    wolfcrypt_rsa_free, wolfcrypt_rsa_generate, wolfcrypt_rsa_import_private_pkcs1,
-    wolfcrypt_rsa_import_public_spki, wolfcrypt_rsa_key_size_bytes, wolfcrypt_rsa_new,
+    wolfcrypt_rsa_export_private_pkcs1, wolfcrypt_rsa_export_public_spki, wolfcrypt_rsa_free,
+    wolfcrypt_rsa_generate, wolfcrypt_rsa_import_private_pkcs1, wolfcrypt_rsa_import_public_spki,
+    wolfcrypt_rsa_key_size_bytes, wolfcrypt_rsa_new,
 };
 
 // ---------------------------------------------------------------------------
@@ -84,9 +84,16 @@ fn rsa_private_key_roundtrip() {
         assert_eq!(rc, 0, "wolfcrypt_rsa_generate(2048) failed: {rc}");
 
         let der1 = export_private(ctx);
-        assert!(der1.len() > 100, "private key DER suspiciously short: {} B", der1.len());
+        assert!(
+            der1.len() > 100,
+            "private key DER suspiciously short: {} B",
+            der1.len()
+        );
         // PKCS#1 RSAPrivateKey starts with SEQUENCE (0x30).
-        assert_eq!(der1[0], 0x30, "private key DER must start with SEQUENCE tag (0x30)");
+        assert_eq!(
+            der1[0], 0x30,
+            "private key DER must start with SEQUENCE tag (0x30)"
+        );
 
         // Re-import into a fresh context.
         let ctx2 = wolfcrypt_rsa_new();
@@ -96,7 +103,10 @@ fn rsa_private_key_roundtrip() {
 
         // Export again — bytes must be identical.
         let der2 = export_private(ctx2);
-        assert_eq!(der1, der2, "private key DER round-trip produced different bytes");
+        assert_eq!(
+            der1, der2,
+            "private key DER round-trip produced different bytes"
+        );
 
         wolfcrypt_rsa_free(ctx2);
         wolfcrypt_rsa_free(ctx);
@@ -113,8 +123,15 @@ fn rsa_public_key_spki_roundtrip() {
         assert_eq!(rc, 0, "wolfcrypt_rsa_generate(2048) failed: {rc}");
 
         let spki1 = export_public_spki(ctx);
-        assert!(spki1.len() > 20, "public SPKI suspiciously short: {} B", spki1.len());
-        assert_eq!(spki1[0], 0x30, "public SPKI must start with SEQUENCE tag (0x30)");
+        assert!(
+            spki1.len() > 20,
+            "public SPKI suspiciously short: {} B",
+            spki1.len()
+        );
+        assert_eq!(
+            spki1[0], 0x30,
+            "public SPKI must start with SEQUENCE tag (0x30)"
+        );
 
         // Import public key into a fresh context.
         let ctx2 = wolfcrypt_rsa_new();
@@ -124,7 +141,10 @@ fn rsa_public_key_spki_roundtrip() {
 
         // Export again — bytes must be identical.
         let spki2 = export_public_spki(ctx2);
-        assert_eq!(spki1, spki2, "public SPKI round-trip produced different bytes");
+        assert_eq!(
+            spki1, spki2,
+            "public SPKI round-trip produced different bytes"
+        );
 
         wolfcrypt_rsa_free(ctx2);
         wolfcrypt_rsa_free(ctx);

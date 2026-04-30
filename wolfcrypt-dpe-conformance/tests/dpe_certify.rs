@@ -104,7 +104,11 @@ fn certify_returns_valid_der() {
 
     let cert_bytes = resp.cert().unwrap();
     let parsed = x509_parser::parse_cert(cert_bytes);
-    assert!(parsed.is_ok(), "Certificate should parse as valid DER: {:?}", parsed.err());
+    assert!(
+        parsed.is_ok(),
+        "Certificate should parse as valid DER: {:?}",
+        parsed.err()
+    );
 }
 
 #[test]
@@ -161,7 +165,10 @@ fn certify_version_3() {
     let cert_bytes = resp.cert().unwrap();
     let parsed = x509_parser::parse_cert(cert_bytes).unwrap();
     // X.509 v3 is encoded as version=2 in the certificate structure.
-    assert_eq!(parsed.version, 2, "Certificate should be X.509 v3 (encoded as 2)");
+    assert_eq!(
+        parsed.version, 2,
+        "Certificate should be X.509 v3 (encoded as 2)"
+    );
 }
 
 #[test]
@@ -213,8 +220,14 @@ fn certify_key_usage() {
     let parsed = x509_parser::parse_cert(cert_bytes).unwrap();
 
     let ku_ext = x509_parser::get_extension(&parsed, x509_parser::OID_KEY_USAGE);
-    assert!(ku_ext.is_some(), "Certificate should have KeyUsage extension");
-    assert!(ku_ext.unwrap().critical, "KeyUsage extension should be critical");
+    assert!(
+        ku_ext.is_some(),
+        "Certificate should have KeyUsage extension"
+    );
+    assert!(
+        ku_ext.unwrap().critical,
+        "KeyUsage extension should be critical"
+    );
 }
 
 #[test]

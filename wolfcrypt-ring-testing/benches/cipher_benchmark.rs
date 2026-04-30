@@ -1,9 +1,9 @@
+use criterion::{criterion_group, criterion_main, Criterion};
 use wolfcrypt_ring_compat::cipher::{
     DecryptingKey, EncryptingKey, EncryptionContext, OperatingMode, PaddedBlockDecryptingKey,
     PaddedBlockEncryptingKey, UnboundCipherKey, AES_128, AES_256,
 };
 use wolfcrypt_ring_compat::{test, test_file};
-use criterion::{criterion_group, criterion_main, Criterion};
 
 macro_rules! openssl_bench {
     ($group:ident, $openssl: expr, $key:ident, $iv:ident, $data:ident) => {{

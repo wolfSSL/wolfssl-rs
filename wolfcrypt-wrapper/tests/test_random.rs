@@ -37,7 +37,8 @@ fn test_health_test() {
     let seed_a = [42u8, 33, 55, 88];
     let seed_b = [45u8, 10, 20, 30];
     let mut output = [0u8; 128];
-    RNG::health_test(Some(&nonce), &seed_a, Some(&seed_b), &mut output).expect("Error with health_test()");
+    RNG::health_test(Some(&nonce), &seed_a, Some(&seed_b), &mut output)
+        .expect("Error with health_test()");
 }
 
 #[test]
@@ -55,7 +56,9 @@ fn test_rng_generate_byte() {
     let mut rng = RNG::new().expect("Failed to create RNG");
     let mut v: u32 = 0;
     for _i in 0..4 {
-        let byte = rng.generate_byte().expect("Failed to generate a single byte");
+        let byte = rng
+            .generate_byte()
+            .expect("Failed to generate a single byte");
         v = (v << 8) | (byte as u32);
     }
     assert_ne!(v, 0u32);
@@ -67,7 +70,8 @@ fn test_rng_generate_byte() {
 fn test_rng_generate_block_u8() {
     let mut rng = RNG::new().expect("Failed to create RNG");
     let mut buffer = [0u8; 32];
-    rng.generate_block(&mut buffer).expect("Failed to generate a block of bytes");
+    rng.generate_block(&mut buffer)
+        .expect("Failed to generate a block of bytes");
 
     // Check if the buffer has been modified from its initial state.
     let all_zeros = [0u8; 32];
@@ -79,7 +83,8 @@ fn test_rng_generate_block_u8() {
 fn test_rng_generate_block_u32() {
     let mut rng = RNG::new().expect("Failed to create RNG");
     let mut buffer = [0u32; 8];
-    rng.generate_block(&mut buffer).expect("Failed to generate a block of u32");
+    rng.generate_block(&mut buffer)
+        .expect("Failed to generate a block of u32");
 
     // Check if the buffer has been modified.
     let all_zeros = [0u32; 8];

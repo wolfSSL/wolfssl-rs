@@ -89,9 +89,7 @@ impl RNG {
     pub fn new_ex(heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<Self, i32> {
         #[cfg(fips)]
         {
-            let rc = unsafe {
-                sys::wc_SetSeed_Cb_fips(Some(sys::wc_GenerateSeed))
-            };
+            let rc = unsafe { sys::wc_SetSeed_Cb_fips(Some(sys::wc_GenerateSeed)) };
             if rc != 0 {
                 return Err(rc);
             }
@@ -105,9 +103,7 @@ impl RNG {
             Some(dev_id) => dev_id,
             None => sys::INVALID_DEVID,
         };
-        let rc = unsafe {
-            sys::wc_InitRng_ex(&mut (*rng.as_mut_ptr()).wc_rng, heap, dev_id)
-        };
+        let rc = unsafe { sys::wc_InitRng_ex(&mut (*rng.as_mut_ptr()).wc_rng, heap, dev_id) };
         if rc == 0 {
             let rng = unsafe { rng.assume_init() };
             Ok(rng)
@@ -145,12 +141,14 @@ impl RNG {
     ///
     /// A Result which is Ok(RNG) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn new_with_nonce_ex<T>(nonce: &mut [T], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<Self, i32> {
+    pub fn new_with_nonce_ex<T>(
+        nonce: &mut [T],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
         #[cfg(fips)]
         {
-            let rc = unsafe {
-                sys::wc_SetSeed_Cb_fips(Some(sys::wc_GenerateSeed))
-            };
+            let rc = unsafe { sys::wc_SetSeed_Cb_fips(Some(sys::wc_GenerateSeed)) };
             if rc != 0 {
                 return Err(rc);
             }
@@ -204,7 +202,12 @@ impl RNG {
     /// RNG::health_test(Some(&nonce), &seed_a, Some(&seed_b), &mut output).expect("Error with health_test()");
     /// ```
     #[cfg(random_hashdrbg)]
-    pub fn health_test(nonce: Option<&[u8]>, seed_a: &[u8], seed_b: Option<&[u8]>, output: &mut [u8]) -> Result<(), i32> {
+    pub fn health_test(
+        nonce: Option<&[u8]>,
+        seed_a: &[u8],
+        seed_b: Option<&[u8]>,
+        output: &mut [u8],
+    ) -> Result<(), i32> {
         Self::health_test_ex(nonce, seed_a, seed_b, output, None, None)
     }
 
@@ -237,7 +240,14 @@ impl RNG {
     /// RNG::health_test_ex(Some(&nonce), &seed_a, Some(&seed_b), &mut output, None, None).expect("Error with health_test_ex()");
     /// ```
     #[cfg(random_hashdrbg)]
-    pub fn health_test_ex(nonce: Option<&[u8]>, seed_a: &[u8], seed_b: Option<&[u8]>, output: &mut [u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<(), i32> {
+    pub fn health_test_ex(
+        nonce: Option<&[u8]>,
+        seed_a: &[u8],
+        seed_b: Option<&[u8]>,
+        output: &mut [u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<(), i32> {
         let mut nonce_ptr = core::ptr::null();
         let mut nonce_size = 0u32;
         if let Some(nonce) = nonce {
@@ -261,12 +271,19 @@ impl RNG {
             None => sys::INVALID_DEVID,
         };
         let rc = unsafe {
-            sys::wc_RNG_HealthTest_ex(if seed_b_size > 0 {1} else {0},
-                nonce_ptr, nonce_size,
-                seed_a.as_ptr(), seed_a_size,
-                seed_b_ptr, seed_b_size,
-                output.as_mut_ptr(), output_size,
-                heap, dev_id)
+            sys::wc_RNG_HealthTest_ex(
+                if seed_b_size > 0 { 1 } else { 0 },
+                nonce_ptr,
+                nonce_size,
+                seed_a.as_ptr(),
+                seed_a_size,
+                seed_b_ptr,
+                seed_b_size,
+                output.as_mut_ptr(),
+                output_size,
+                heap,
+                dev_id,
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -374,9 +391,7 @@ impl RNG {
     #[cfg(random_hashdrbg)]
     pub fn reseed(&mut self, seed: &[u8]) -> Result<(), i32> {
         let seed_size = seed.len() as u32;
-        let rc = unsafe {
-            sys::wc_RNG_DRBG_Reseed(&mut self.wc_rng, seed.as_ptr(), seed_size)
-        };
+        let rc = unsafe { sys::wc_RNG_DRBG_Reseed(&mut self.wc_rng, seed.as_ptr(), seed_size) };
         if rc != 0 {
             return Err(rc);
         }
@@ -393,6 +408,8 @@ impl Drop for RNG {
     /// struct goes out of scope, automatically cleaning up resources and
     /// preventing memory leaks.
     fn drop(&mut self) {
-        unsafe { sys::wc_FreeRng(&mut self.wc_rng); }
+        unsafe {
+            sys::wc_FreeRng(&mut self.wc_rng);
+        }
     }
 }

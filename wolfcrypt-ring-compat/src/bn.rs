@@ -1,5 +1,5 @@
-use crate::wolfcrypt_rs::{BN_bin2bn, BN_bn2bin, BN_new, BN_num_bytes, BN_set_word, BIGNUM};
 use crate::ptr::{ConstPointer, DetachableLcPtr, LcPtr};
+use crate::wolfcrypt_rs::{BN_bin2bn, BN_bn2bin, BN_new, BN_num_bytes, BN_set_word, BIGNUM};
 use core::ffi::c_int;
 use core::ptr::null_mut;
 

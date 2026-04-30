@@ -83,8 +83,9 @@ impl TlsServerConfigBuilder {
             .ok_or(TlsError::InvalidConfig("server private key is required"))?;
 
         // SAFETY: wolfSSL_Init has been called via ensure_init().
-        let method =
-            unsafe { protocol::resolve_method(protocol::Side::Server, self.protocol_versions.as_deref())? };
+        let method = unsafe {
+            protocol::resolve_method(protocol::Side::Server, self.protocol_versions.as_deref())?
+        };
 
         // SAFETY: method was returned by resolve_method above.
         let ctx = unsafe { wolfSSL_CTX_new(method) };
@@ -133,7 +134,7 @@ impl TlsServerConfigBuilder {
                         inner.ctx,
                         cert_data.as_ptr(),
                         // Certificate/key data is bounded by practical PKI limits (< 1 MB); no runtime clamp needed.
-                    cert_data.len() as core::ffi::c_long,
+                        cert_data.len() as core::ffi::c_long,
                         format.as_c_int(),
                     )
                 };
@@ -144,8 +145,7 @@ impl TlsServerConfigBuilder {
             unsafe {
                 wolfSSL_CTX_set_verify(
                     inner.ctx,
-                    (WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT)
-                        as core::ffi::c_int,
+                    (WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT) as core::ffi::c_int,
                     None,
                 );
             }
@@ -240,9 +240,7 @@ pub struct TlsServer<S> {
 
 impl<S> std::fmt::Debug for TlsServer<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TlsServer")
-            .field("ssl", &self.ssl)
-            .finish()
+        f.debug_struct("TlsServer").field("ssl", &self.ssl).finish()
     }
 }
 

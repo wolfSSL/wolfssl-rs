@@ -8,11 +8,10 @@ use core::cell::UnsafeCell;
 
 use crate::error::{check, len_as_u32, WolfCryptError};
 use wolfcrypt_rs::{
-    wc_ed25519_check_key, wc_ed25519_export_public, wc_ed25519_free,
-    wc_ed25519_import_private_key, wc_ed25519_import_private_only,
-    wc_ed25519_import_public, wc_ed25519_init,
-    wc_ed25519_make_key, wc_ed25519_make_public, wc_ed25519_sign_msg,
-    wc_ed25519_verify_msg, wc_ed25519_key, wc_FreeRng, wc_InitRng, WC_RNG,
+    wc_FreeRng, wc_InitRng, wc_ed25519_check_key, wc_ed25519_export_public, wc_ed25519_free,
+    wc_ed25519_import_private_key, wc_ed25519_import_private_only, wc_ed25519_import_public,
+    wc_ed25519_init, wc_ed25519_key, wc_ed25519_make_key, wc_ed25519_make_public,
+    wc_ed25519_sign_msg, wc_ed25519_verify_msg, WC_RNG,
 };
 
 /// Ed25519 key size in bytes (seed = 32 bytes).
@@ -116,9 +115,7 @@ impl Ed25519SigningKey {
 
         // SAFETY: `key` is initialised, `rng.rng` is a valid WC_RNG.
         // Key size is 32 for Ed25519.
-        let rc = unsafe {
-            wc_ed25519_make_key(&mut rng.rng, ED25519_KEY_SIZE as i32, &mut key)
-        };
+        let rc = unsafe { wc_ed25519_make_key(&mut rng.rng, ED25519_KEY_SIZE as i32, &mut key) };
         check(rc, "wc_ed25519_make_key")?;
 
         // Initialise an internal RNG owned by this signing key for future sign calls.
@@ -148,10 +145,12 @@ impl Ed25519SigningKey {
                 &mut pub_len,
             )
         };
-        assert_eq!(rc, 0, "wc_ed25519_export_public failed (key not initialized)");
+        assert_eq!(
+            rc, 0,
+            "wc_ed25519_export_public failed (key not initialized)"
+        );
 
-        Ed25519VerifyingKey::from_bytes(&pub_buf)
-            .expect("exported public key must be valid")
+        Ed25519VerifyingKey::from_bytes(&pub_buf).expect("exported public key must be valid")
     }
 }
 
@@ -223,9 +222,8 @@ impl Ed25519VerifyingKey {
         check(rc, "wc_ed25519_init")?;
 
         // SAFETY: `key` is initialised. We import exactly 32 bytes of public key.
-        let rc = unsafe {
-            wc_ed25519_import_public(bytes.as_ptr(), ED25519_KEY_SIZE as u32, &mut key)
-        };
+        let rc =
+            unsafe { wc_ed25519_import_public(bytes.as_ptr(), ED25519_KEY_SIZE as u32, &mut key) };
         check(rc, "wc_ed25519_import_public")?;
 
         Ok(Self {
@@ -329,22 +327,29 @@ pub fn ed25519_sign_raw(
 
     let rc = unsafe {
         wc_ed25519_import_private_key(
-            seed.as_ptr(), len_as_u32(seed.len()),
-            pub_key.as_ptr(), len_as_u32(pub_key.len()),
+            seed.as_ptr(),
+            len_as_u32(seed.len()),
+            pub_key.as_ptr(),
+            len_as_u32(pub_key.len()),
             &mut key,
         )
     };
     if rc != 0 {
         unsafe { wc_ed25519_free(&mut key) };
-        return Err(WolfCryptError::Ffi { code: rc, func: "wc_ed25519_import_private_key" });
+        return Err(WolfCryptError::Ffi {
+            code: rc,
+            func: "wc_ed25519_import_private_key",
+        });
     }
 
     let mut sig = [0u8; 64];
     let mut sig_len: u32 = 64;
     let rc = unsafe {
         wc_ed25519_sign_msg(
-            message.as_ptr(), len_as_u32(message.len()),
-            sig.as_mut_ptr(), &mut sig_len,
+            message.as_ptr(),
+            len_as_u32(message.len()),
+            sig.as_mut_ptr(),
+            &mut sig_len,
             &mut key,
         )
     };
@@ -374,22 +379,23 @@ pub fn ed25519_verify_raw(
     let rc = unsafe { wc_ed25519_init(&mut key) };
     check(rc, "wc_ed25519_init")?;
 
-    let rc = unsafe {
-        wc_ed25519_import_public(
-            pub_key.as_ptr(), len_as_u32(pub_key.len()),
-            &mut key,
-        )
-    };
+    let rc =
+        unsafe { wc_ed25519_import_public(pub_key.as_ptr(), len_as_u32(pub_key.len()), &mut key) };
     if rc != 0 {
         unsafe { wc_ed25519_free(&mut key) };
-        return Err(WolfCryptError::Ffi { code: rc, func: "wc_ed25519_import_public" });
+        return Err(WolfCryptError::Ffi {
+            code: rc,
+            func: "wc_ed25519_import_public",
+        });
     }
 
     let mut result: core::ffi::c_int = 0;
     let rc = unsafe {
         wc_ed25519_verify_msg(
-            sig.as_ptr(), len_as_u32(sig.len()),
-            message.as_ptr(), len_as_u32(message.len()),
+            sig.as_ptr(),
+            len_as_u32(sig.len()),
+            message.as_ptr(),
+            len_as_u32(message.len()),
             &mut result,
             &mut key,
         )
@@ -397,5 +403,9 @@ pub fn ed25519_verify_raw(
     unsafe { wc_ed25519_free(&mut key) };
     check(rc, "wc_ed25519_verify_msg")?;
 
-    if result == 1 { Ok(()) } else { Err(WolfCryptError::InvalidInput) }
+    if result == 1 {
+        Ok(())
+    } else {
+        Err(WolfCryptError::InvalidInput)
+    }
 }

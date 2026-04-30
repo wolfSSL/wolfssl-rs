@@ -23,8 +23,7 @@ struct Ed25519Vector {
 // --- Test Vector 1: empty message ---
 const VEC1_SEED: [u8; 32] =
     hex!("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
-const VEC1_PK: [u8; 32] =
-    hex!("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
+const VEC1_PK: [u8; 32] = hex!("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
 const VEC1_SIG: [u8; 64] = hex!(
     "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155"
     "5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b"
@@ -33,8 +32,7 @@ const VEC1_SIG: [u8; 64] = hex!(
 // --- Test Vector 2: 1-byte message (0x72) ---
 const VEC2_SEED: [u8; 32] =
     hex!("4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb");
-const VEC2_PK: [u8; 32] =
-    hex!("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
+const VEC2_PK: [u8; 32] = hex!("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
 const VEC2_MSG: [u8; 1] = hex!("72");
 const VEC2_SIG: [u8; 64] = hex!(
     "92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da"
@@ -44,8 +42,7 @@ const VEC2_SIG: [u8; 64] = hex!(
 // --- Test Vector 3: 2-byte message (0xaf82) ---
 const VEC3_SEED: [u8; 32] =
     hex!("c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7");
-const VEC3_PK: [u8; 32] =
-    hex!("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025");
+const VEC3_PK: [u8; 32] = hex!("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025");
 const VEC3_MSG: [u8; 2] = hex!("af82");
 const VEC3_SIG: [u8; 64] = hex!(
     "6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac"
@@ -55,8 +52,7 @@ const VEC3_SIG: [u8; 64] = hex!(
 // --- Test Vector 4: 1023-byte message ---
 const VEC4_SEED: [u8; 32] =
     hex!("f5e5767cf153319517630f226876b86c8160cc583bc013744c6bf255f5cc0ee5");
-const VEC4_PK: [u8; 32] =
-    hex!("278117fc144c72340f67d0f2316e8386ceffbf2b2428c9c51fef7c597f1d426e");
+const VEC4_PK: [u8; 32] = hex!("278117fc144c72340f67d0f2316e8386ceffbf2b2428c9c51fef7c597f1d426e");
 const VEC4_MSG: [u8; 1023] = hex!(
     "08b8b2b733424243760fe426a4b54908632110a66c2f6591eabd3345e3e4eb98"
     "fa6e264bf09efe12ee50f8f54e9f77b1e355f6c50544e23fb1433ddf73be84d8"
@@ -99,8 +95,7 @@ const VEC4_SIG: [u8; 64] = hex!(
 // --- Test Vector 5: SHA-512("abc") as 64-byte message ---
 const VEC5_SEED: [u8; 32] =
     hex!("833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42");
-const VEC5_PK: [u8; 32] =
-    hex!("ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf");
+const VEC5_PK: [u8; 32] = hex!("ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf");
 const VEC5_MSG: [u8; 64] = hex!(
     "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a"
     "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"

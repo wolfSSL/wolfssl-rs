@@ -234,8 +234,8 @@ fn rfc8032_tampered_message_rejected() {
 /// Verification must fail when using a different vector's public key.
 #[test]
 fn rfc8032_wrong_key_rejected() {
-    let sk1 = Ed448SigningKey::from_seed(&VEC1_SEED)
-        .expect("RFC 8032 vector 1: from_seed must succeed");
+    let sk1 =
+        Ed448SigningKey::from_seed(&VEC1_SEED).expect("RFC 8032 vector 1: from_seed must succeed");
     let sig: Ed448Signature = sk1.sign(&[]);
 
     let wrong_vk = Ed448VerifyingKey::from_bytes(&VEC5_PK)

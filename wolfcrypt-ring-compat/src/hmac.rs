@@ -95,13 +95,12 @@
 //! ```
 //! [RFC 2104]: https://tools.ietf.org/html/rfc2104
 
-use crate::wolfcrypt_rs::{
-    HMAC_CTX_copy, HMAC_CTX_new, HMAC_Final, HMAC_Init_ex, HMAC_Update,
-    HMAC_CTX,
-};
 use crate::error::Unspecified;
 use crate::fips::indicator_check;
 use crate::ptr::LcPtr;
+use crate::wolfcrypt_rs::{
+    HMAC_CTX_copy, HMAC_CTX_new, HMAC_Final, HMAC_Init_ex, HMAC_Update, HMAC_CTX,
+};
 use crate::{constant_time, digest, hkdf};
 use core::ffi::c_uint;
 use core::mem::MaybeUninit;

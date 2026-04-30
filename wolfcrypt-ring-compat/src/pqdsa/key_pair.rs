@@ -1,18 +1,15 @@
 //! ML-DSA key pair implementation using wolfCrypt's native Dilithium API.
 
-use crate::wolfcrypt_rs::{
-    wc_dilithium_key, WC_RNG,
-    wc_dilithium_init, wc_dilithium_free, wc_dilithium_set_level,
-    wc_dilithium_make_key, wc_dilithium_make_key_from_seed,
-    wc_dilithium_sign_ctx_msg,
-    wc_dilithium_export_public, wc_dilithium_export_private,
-    wc_dilithium_import_key,
-    wc_InitRng, wc_FreeRng,
-};
 use crate::error::{KeyRejected, Unspecified};
 use crate::pqdsa::signature::{PqdsaSigningAlgorithm, PublicKey};
 use crate::pqdsa::AlgorithmID;
 use crate::signature::KeyPair;
+use crate::wolfcrypt_rs::{
+    wc_FreeRng, wc_InitRng, wc_dilithium_export_private, wc_dilithium_export_public,
+    wc_dilithium_free, wc_dilithium_import_key, wc_dilithium_init, wc_dilithium_key,
+    wc_dilithium_make_key, wc_dilithium_make_key_from_seed, wc_dilithium_set_level,
+    wc_dilithium_sign_ctx_msg, WC_RNG,
+};
 use core::fmt::{Debug, Formatter};
 
 #[cfg(not(feature = "std"))]
@@ -58,9 +55,7 @@ impl PqdsaPrivateKey<'_> {
     /// for reconstruction. The combined format is used because wolfCrypt requires
     /// both private and public key components for signing operations.
     pub fn as_raw_bytes(&self) -> Result<PqdsaPrivateKeyRaw, Unspecified> {
-        let mut combined = Vec::with_capacity(
-            self.0.priv_key.len() + self.0.pubkey.octets.len()
-        );
+        let mut combined = Vec::with_capacity(self.0.priv_key.len() + self.0.pubkey.octets.len());
         combined.extend_from_slice(&self.0.priv_key);
         combined.extend_from_slice(&self.0.pubkey.octets);
         Ok(PqdsaPrivateKeyRaw(combined.into_boxed_slice()))
@@ -77,7 +72,10 @@ impl AsRef<[u8]> for PqdsaPrivateKeyRaw {
 }
 
 /// Helper: initialize a dilithium_key with the given security level.
-unsafe fn init_dilithium_key(key: &mut wc_dilithium_key, id: &AlgorithmID) -> Result<(), Unspecified> {
+unsafe fn init_dilithium_key(
+    key: &mut wc_dilithium_key,
+    id: &AlgorithmID,
+) -> Result<(), Unspecified> {
     let rc = wc_dilithium_init(key);
     if rc != 0 {
         return Err(Unspecified);
@@ -91,7 +89,10 @@ unsafe fn init_dilithium_key(key: &mut wc_dilithium_key, id: &AlgorithmID) -> Re
 }
 
 /// Helper: export public key bytes from an initialized dilithium_key.
-unsafe fn export_public_key(key: &mut wc_dilithium_key, id: &AlgorithmID) -> Result<Box<[u8]>, Unspecified> {
+unsafe fn export_public_key(
+    key: &mut wc_dilithium_key,
+    id: &AlgorithmID,
+) -> Result<Box<[u8]>, Unspecified> {
     let pub_size = id.pub_key_size_bytes();
     let mut pub_buf = vec![0u8; pub_size];
     let mut pub_len = pub_size as u32;
@@ -103,7 +104,10 @@ unsafe fn export_public_key(key: &mut wc_dilithium_key, id: &AlgorithmID) -> Res
 }
 
 /// Helper: export private key bytes from an initialized dilithium_key.
-unsafe fn export_private_key(key: &mut wc_dilithium_key, id: &AlgorithmID) -> Result<Box<[u8]>, Unspecified> {
+unsafe fn export_private_key(
+    key: &mut wc_dilithium_key,
+    id: &AlgorithmID,
+) -> Result<Box<[u8]>, Unspecified> {
     let priv_size = id.priv_key_size_bytes();
     let mut priv_buf = vec![0u8; priv_size];
     let mut priv_len = priv_size as u32;
@@ -206,8 +210,7 @@ impl PqdsaKeyPair {
         unsafe {
             let mut key = wc_dilithium_key::zeroed();
             let result = (|| -> Result<Self, KeyRejected> {
-                init_dilithium_key(&mut key, id)
-                    .map_err(|_| KeyRejected::unspecified())?;
+                init_dilithium_key(&mut key, id).map_err(|_| KeyRejected::unspecified())?;
 
                 import_key_pair(&mut key, priv_bytes, pub_bytes)
                     .map_err(|_| KeyRejected::unspecified())?;
@@ -248,18 +251,17 @@ impl PqdsaKeyPair {
         unsafe {
             let mut key = wc_dilithium_key::zeroed();
             let result = (|| -> Result<Self, KeyRejected> {
-                init_dilithium_key(&mut key, id)
-                    .map_err(|_| KeyRejected::unspecified())?;
+                init_dilithium_key(&mut key, id).map_err(|_| KeyRejected::unspecified())?;
 
                 let rc = wc_dilithium_make_key_from_seed(&mut key, seed.as_ptr());
                 if rc != 0 {
                     return Err(KeyRejected::unspecified());
                 }
 
-                let pub_bytes = export_public_key(&mut key, id)
-                    .map_err(|_| KeyRejected::unspecified())?;
-                let priv_bytes = export_private_key(&mut key, id)
-                    .map_err(|_| KeyRejected::unspecified())?;
+                let pub_bytes =
+                    export_public_key(&mut key, id).map_err(|_| KeyRejected::unspecified())?;
+                let priv_bytes =
+                    export_private_key(&mut key, id).map_err(|_| KeyRejected::unspecified())?;
 
                 Ok(Self {
                     algorithm,
@@ -298,17 +300,13 @@ impl PqdsaKeyPair {
                 init_dilithium_key(&mut key, id)?;
 
                 // Import both private and public key for signing
-                import_key_pair(
-                    &mut key,
-                    &self.priv_key,
-                    self.pubkey.octets.as_ref(),
-                )?;
+                import_key_pair(&mut key, &self.priv_key, self.pubkey.octets.as_ref())?;
 
                 let mut sig_len = sig_length as u32;
                 // Use FIPS 204 context-aware signing with empty context.
                 let rc = wc_dilithium_sign_ctx_msg(
-                    core::ptr::null(),  // empty context
-                    0,                  // context length = 0
+                    core::ptr::null(), // empty context
+                    0,                 // context length = 0
                     msg.as_ptr(),
                     msg.len() as u32,
                     signature.as_mut_ptr(),

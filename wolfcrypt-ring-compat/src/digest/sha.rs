@@ -239,11 +239,18 @@ fn sha512_256_digest(msg: &[u8], output: &mut [u8]) {
         if ctx.is_null() {
             return;
         }
-        if wolfcrypt_rs::EVP_DigestInit_ex(ctx, wolfcrypt_rs::EVP_sha512_256(), core::ptr::null_mut()) != 1 {
+        if wolfcrypt_rs::EVP_DigestInit_ex(
+            ctx,
+            wolfcrypt_rs::EVP_sha512_256(),
+            core::ptr::null_mut(),
+        ) != 1
+        {
             wolfcrypt_rs::EVP_MD_CTX_free(ctx);
             return;
         }
-        if wolfcrypt_rs::EVP_DigestUpdate(ctx, msg.as_ptr() as *const core::ffi::c_void, msg.len()) != 1 {
+        if wolfcrypt_rs::EVP_DigestUpdate(ctx, msg.as_ptr() as *const core::ffi::c_void, msg.len())
+            != 1
+        {
             wolfcrypt_rs::EVP_MD_CTX_free(ctx);
             return;
         }

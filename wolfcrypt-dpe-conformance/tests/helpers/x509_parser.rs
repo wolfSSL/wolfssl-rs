@@ -49,9 +49,13 @@ pub fn parse_cert(der_bytes: &[u8]) -> Result<ParsedCert, String> {
     let serial_number = tbs.serial_number.as_bytes().to_vec();
 
     // Issuer and Subject as raw DER
-    let issuer_der = tbs.issuer.to_der()
+    let issuer_der = tbs
+        .issuer
+        .to_der()
         .map_err(|e| format!("Issuer DER encode: {e}"))?;
-    let subject_der = tbs.subject.to_der()
+    let subject_der = tbs
+        .subject
+        .to_der()
         .map_err(|e| format!("Subject DER encode: {e}"))?;
 
     // Public key (raw BIT STRING value)
@@ -68,8 +72,7 @@ pub fn parse_cert(der_bytes: &[u8]) -> Result<ParsedCert, String> {
     let signature_bytes = cert.signature.raw_bytes().to_vec();
 
     // TBS certificate DER
-    let tbs_der = tbs.to_der()
-        .map_err(|e| format!("TBS DER encode: {e}"))?;
+    let tbs_der = tbs.to_der().map_err(|e| format!("TBS DER encode: {e}"))?;
 
     // Basic Constraints: CA flag
     let mut is_ca = false;
@@ -123,12 +126,9 @@ pub fn get_extension<'a>(cert: &'a ParsedCert, oid: &str) -> Option<&'a ParsedEx
 
 /// Verify the ECDSA signature on a certificate using an issuer public key.
 /// `issuer_pubkey` is SEC1 uncompressed format (04 || x || y).
-pub fn verify_cert_signature_p384(
-    cert: &ParsedCert,
-    issuer_pubkey: &[u8],
-) -> Result<(), String> {
+pub fn verify_cert_signature_p384(cert: &ParsedCert, issuer_pubkey: &[u8]) -> Result<(), String> {
     use p384::ecdsa::{signature::hazmat::PrehashVerifier, Signature, VerifyingKey};
-    use sha2::{Sha384, Digest};
+    use sha2::{Digest, Sha384};
 
     let vk = VerifyingKey::from_sec1_bytes(issuer_pubkey)
         .map_err(|e| format!("P384 VerifyingKey: {e}"))?;
@@ -144,12 +144,9 @@ pub fn verify_cert_signature_p384(
 }
 
 /// Verify ECDSA-P256-SHA256 cert signature.
-pub fn verify_cert_signature_p256(
-    cert: &ParsedCert,
-    issuer_pubkey: &[u8],
-) -> Result<(), String> {
+pub fn verify_cert_signature_p256(cert: &ParsedCert, issuer_pubkey: &[u8]) -> Result<(), String> {
     use p256::ecdsa::{signature::hazmat::PrehashVerifier, Signature, VerifyingKey};
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
 
     let vk = VerifyingKey::from_sec1_bytes(issuer_pubkey)
         .map_err(|e| format!("P256 VerifyingKey: {e}"))?;

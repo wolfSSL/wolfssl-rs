@@ -117,11 +117,7 @@ fn cavp_cmac_aes256_tests() {
 #[test]
 fn test_sign_to_buffer_basic() {
     // Test sign_to_buffer with all algorithms
-    for algorithm in &[
-        cmac::AES_128,
-        cmac::AES_192,
-        cmac::AES_256,
-    ] {
+    for algorithm in &[cmac::AES_128, cmac::AES_192, cmac::AES_256] {
         let key = cmac::Key::generate(*algorithm).unwrap();
         let data = b"test data for sign_to_buffer";
 
@@ -183,11 +179,7 @@ fn test_sign_to_buffer_empty_data() {
 #[test]
 fn test_context_verify_basic() {
     // Test Context::verify with valid tag
-    for algorithm in &[
-        cmac::AES_128,
-        cmac::AES_192,
-        cmac::AES_256,
-    ] {
+    for algorithm in &[cmac::AES_128, cmac::AES_192, cmac::AES_256] {
         let key = cmac::Key::generate(*algorithm).unwrap();
         let data = b"data to verify";
 

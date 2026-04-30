@@ -17,6 +17,7 @@ fn minimum_test_count() {
     assert!(
         other_tests >= MINIMUM_TESTS,
         "Expected at least {} tests, found {}. Tests may have been deleted.",
-        MINIMUM_TESTS, other_tests
+        MINIMUM_TESTS,
+        other_tests
     );
 }

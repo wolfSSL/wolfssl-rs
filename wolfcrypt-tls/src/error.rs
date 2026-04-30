@@ -170,7 +170,10 @@ mod tests {
         };
         let msg = format!("{err}");
         assert!(msg.contains("-188"), "should contain the error code");
-        assert!(msg.contains("wolfSSL_connect"), "should contain the function name");
+        assert!(
+            msg.contains("wolfSSL_connect"),
+            "should contain the function name"
+        );
         // The reason string must be non-empty and not just "unknown error".
         // wc_GetErrorString(-188) returns something like "ASN no signer..."
         let reason = error_string(-188);

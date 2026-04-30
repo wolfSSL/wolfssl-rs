@@ -19,9 +19,7 @@ use caliptra_dpe_crypto::Crypto;
 /// Extract (pubkey_x, pubkey_y) from a CertifyKey P384 response.
 fn certify_pubkey(resp: Response) -> ([u8; 48], [u8; 48]) {
     match resp {
-        Response::CertifyKey(CertifyKeyResp::P384(r)) => {
-            (r.derived_pubkey_x, r.derived_pubkey_y)
-        }
+        Response::CertifyKey(CertifyKeyResp::P384(r)) => (r.derived_pubkey_x, r.derived_pubkey_y),
         _ => panic!("Expected CertifyKey P384 response"),
     }
 }
@@ -36,10 +34,15 @@ fn sign_rs(resp: Response) -> ([u8; 48], [u8; 48]) {
 
 /// Set up the alias key on a wolf DpeEnv so CertifyKey can sign certificates.
 /// Uses a deterministic key derived from a fixed measurement.
-fn setup_wolf_alias(env: &mut caliptra_dpe::dpe_instance::DpeEnv<'_, helpers::dpe_harness::WolfDpeTypes384>) {
+fn setup_wolf_alias(
+    env: &mut caliptra_dpe::dpe_instance::DpeEnv<'_, helpers::dpe_harness::WolfDpeTypes384>,
+) {
     let measurement = helpers::fixed_measurement_384(0xFF);
     let cdi = env.crypto.derive_cdi(&measurement, b"alias-setup").unwrap();
-    let (priv_key, pub_key) = env.crypto.derive_key_pair(&cdi, b"alias-lbl", b"alias-inf").unwrap();
+    let (priv_key, pub_key) = env
+        .crypto
+        .derive_key_pair(&cdi, b"alias-lbl", b"alias-inf")
+        .unwrap();
     env.crypto.set_alias_key(priv_key, pub_key).unwrap();
 }
 
@@ -69,10 +72,7 @@ fn init_same_profile() {
 
     match (&wolf_profile, &ref_profile) {
         (Response::GetProfile(w), Response::GetProfile(r)) => {
-            assert_eq!(
-                w.flags, r.flags,
-                "Wolf and ref GetProfile flags must match"
-            );
+            assert_eq!(w.flags, r.flags, "Wolf and ref GetProfile flags must match");
             assert_eq!(
                 w.max_tci_nodes, r.max_tci_nodes,
                 "Wolf and ref max_tci_nodes must match"

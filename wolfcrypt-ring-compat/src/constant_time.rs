@@ -5,8 +5,8 @@
 
 //! Constant-time operations.
 
-use crate::wolfcrypt_rs::CRYPTO_memcmp;
 use crate::error;
+use crate::wolfcrypt_rs::CRYPTO_memcmp;
 
 /// Returns `Ok(())` if `a == b` and `Err(error::Unspecified)` otherwise.
 ///

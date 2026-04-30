@@ -108,9 +108,7 @@ pub static INJECT_TRNG_ERROR: core::sync::atomic::AtomicBool =
 /// # Safety
 /// `info` must be a valid `wc_CryptoInfo` with `algo_type == WC_ALGO_TYPE_RNG`.
 #[cfg(not(target_arch = "riscv32"))]
-pub(crate) unsafe fn dispatch_rng(
-    info: &mut wolfcrypt_sys::wc_CryptoInfo,
-) -> core::ffi::c_int {
+pub(crate) unsafe fn dispatch_rng(info: &mut wolfcrypt_sys::wc_CryptoInfo) -> core::ffi::c_int {
     let rng_info = &info.__bindgen_anon_1.rng;
     let out = rng_info.out;
     let sz = rng_info.sz;

@@ -4,8 +4,8 @@
 // Modifications copyright wolfSSL Inc.
 // SPDX-License-Identifier: MIT
 
-use crate::wolfcrypt_rs::{wc_Chacha_SetKey, wc_Chacha_SetIV, wc_Chacha_Process, ChaCha};
 use crate::cipher::block::{Block, BLOCK_LEN};
+use crate::wolfcrypt_rs::{wc_Chacha_Process, wc_Chacha_SetIV, wc_Chacha_SetKey, ChaCha};
 use zeroize::Zeroize;
 
 use crate::error;
@@ -74,7 +74,12 @@ pub(crate) fn encrypt_chacha20(
         let mut cha: ChaCha = core::mem::zeroed();
         wc_Chacha_SetKey(&mut cha, key_bytes.as_ptr(), 32);
         wc_Chacha_SetIV(&mut cha, nonce.as_ptr(), counter);
-        wc_Chacha_Process(&mut cha, ciphertext.as_mut_ptr(), plaintext.as_ptr(), plaintext.len() as u32);
+        wc_Chacha_Process(
+            &mut cha,
+            ciphertext.as_mut_ptr(),
+            plaintext.as_ptr(),
+            plaintext.len() as u32,
+        );
     };
     Ok(())
 }
@@ -92,7 +97,12 @@ pub(crate) fn encrypt_in_place_chacha20(
         let mut cha: ChaCha = core::mem::zeroed();
         wc_Chacha_SetKey(&mut cha, key_bytes.as_ptr(), 32);
         wc_Chacha_SetIV(&mut cha, nonce.as_ptr(), counter);
-        wc_Chacha_Process(&mut cha, in_out.as_mut_ptr(), in_out.as_ptr(), in_out.len() as u32);
+        wc_Chacha_Process(
+            &mut cha,
+            in_out.as_mut_ptr(),
+            in_out.as_ptr(),
+            in_out.len() as u32,
+        );
     }
     crate::fips::set_fips_service_status_unapproved();
 }

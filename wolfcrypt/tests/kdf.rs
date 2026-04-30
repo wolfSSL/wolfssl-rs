@@ -10,7 +10,7 @@
 /// (sha256_mac = 4, etc.) rather than wc_HashType.
 #[cfg(wolfssl_prf)]
 mod tls_prf {
-    use wolfcrypt::kdf::{tls_prf, tls12_prf, SHA256_MAC};
+    use wolfcrypt::kdf::{tls12_prf, tls_prf, SHA256_MAC};
 
     /// Verify that the TLS PRF produces deterministic, non-trivial output.
     ///
@@ -25,10 +25,8 @@ mod tls_prf {
         let mut out1 = [0u8; 48];
         let mut out2 = [0u8; 48];
 
-        tls_prf(secret, seed, SHA256_MAC, &mut out1)
-            .expect("first wc_PRF call failed");
-        tls_prf(secret, seed, SHA256_MAC, &mut out2)
-            .expect("second wc_PRF call failed");
+        tls_prf(secret, seed, SHA256_MAC, &mut out1).expect("first wc_PRF call failed");
+        tls_prf(secret, seed, SHA256_MAC, &mut out2).expect("second wc_PRF call failed");
 
         assert_eq!(out1, out2, "PRF must be deterministic");
         assert!(
@@ -61,23 +59,11 @@ mod tls_prf {
         let mut out1 = [0u8; 48];
         let mut out2 = [0u8; 48];
 
-        tls12_prf(
-            &pre_master_secret,
-            label,
-            &seed,
-            hash_type,
-            &mut out1,
-        )
-        .expect("first wc_PRF_TLS call failed");
+        tls12_prf(&pre_master_secret, label, &seed, hash_type, &mut out1)
+            .expect("first wc_PRF_TLS call failed");
 
-        tls12_prf(
-            &pre_master_secret,
-            label,
-            &seed,
-            hash_type,
-            &mut out2,
-        )
-        .expect("second wc_PRF_TLS call failed");
+        tls12_prf(&pre_master_secret, label, &seed, hash_type, &mut out2)
+            .expect("second wc_PRF_TLS call failed");
 
         assert_eq!(out1, out2, "TLS 1.2 PRF must be deterministic");
         assert!(
@@ -95,10 +81,8 @@ mod tls_prf {
         let mut out1 = [0u8; 32];
         let mut out2 = [0u8; 32];
 
-        tls_prf(secret, seed1, SHA256_MAC, &mut out1)
-            .expect("PRF with seed1 failed");
-        tls_prf(secret, seed2, SHA256_MAC, &mut out2)
-            .expect("PRF with seed2 failed");
+        tls_prf(secret, seed1, SHA256_MAC, &mut out1).expect("PRF with seed1 failed");
+        tls_prf(secret, seed2, SHA256_MAC, &mut out2).expect("PRF with seed2 failed");
 
         assert_ne!(out1, out2, "different seeds must produce different output");
     }
@@ -130,21 +114,25 @@ mod pkcs12_pbkdf {
     #[test]
     fn pkcs12_pbkdf_sha1_smeg() {
         // "smeg" as BMPString (UTF-16BE) with null terminator
-        let password: &[u8] = &[
-            0x00, 0x73, 0x00, 0x6D, 0x00, 0x65, 0x00, 0x67, 0x00, 0x00,
-        ];
+        let password: &[u8] = &[0x00, 0x73, 0x00, 0x6D, 0x00, 0x65, 0x00, 0x67, 0x00, 0x00];
         let salt: &[u8] = &[0x0A, 0x58, 0xCF, 0x64, 0x53, 0x0D, 0x82, 0x3F];
         let iterations = 1;
         let hash_type = wolfcrypt_rs::WC_HASH_TYPE_SHA;
         let mut out = [0u8; 24];
 
-        pkcs12_pbkdf(password, salt, iterations, PKCS12_KEY_ID, hash_type, &mut out)
-            .expect("wc_PKCS12_PBKDF failed");
+        pkcs12_pbkdf(
+            password,
+            salt,
+            iterations,
+            PKCS12_KEY_ID,
+            hash_type,
+            &mut out,
+        )
+        .expect("wc_PKCS12_PBKDF failed");
 
         let expected: [u8; 24] = [
-            0x8A, 0xAA, 0xE6, 0x29, 0x7B, 0x6C, 0xB0, 0x46,
-            0x42, 0xAB, 0x5B, 0x07, 0x78, 0x51, 0x28, 0x4E,
-            0xB7, 0x12, 0x8F, 0x1A, 0x2A, 0x7F, 0xBC, 0xA3,
+            0x8A, 0xAA, 0xE6, 0x29, 0x7B, 0x6C, 0xB0, 0x46, 0x42, 0xAB, 0x5B, 0x07, 0x78, 0x51,
+            0x28, 0x4E, 0xB7, 0x12, 0x8F, 0x1A, 0x2A, 0x7F, 0xBC, 0xA3,
         ];
         assert_eq!(out, expected, "PKCS#12 PBKDF SHA-1 test vector mismatch");
     }
@@ -156,9 +144,7 @@ mod pkcs12_pbkdf {
     /// non-triviality.
     #[test]
     fn pkcs12_pbkdf_sha256_deterministic() {
-        let password: &[u8] = &[
-            0x00, 0x74, 0x00, 0x65, 0x00, 0x73, 0x00, 0x74, 0x00, 0x00,
-        ]; // "test" as BMPString
+        let password: &[u8] = &[0x00, 0x74, 0x00, 0x65, 0x00, 0x73, 0x00, 0x74, 0x00, 0x00]; // "test" as BMPString
         let salt: &[u8] = &[0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
         let iterations = 2048;
         let hash_type = wolfcrypt_rs::WC_HASH_TYPE_SHA256;
@@ -166,10 +152,24 @@ mod pkcs12_pbkdf {
         let mut out1 = [0u8; 32];
         let mut out2 = [0u8; 32];
 
-        pkcs12_pbkdf(password, salt, iterations, PKCS12_KEY_ID, hash_type, &mut out1)
-            .expect("first PKCS12 call failed");
-        pkcs12_pbkdf(password, salt, iterations, PKCS12_KEY_ID, hash_type, &mut out2)
-            .expect("second PKCS12 call failed");
+        pkcs12_pbkdf(
+            password,
+            salt,
+            iterations,
+            PKCS12_KEY_ID,
+            hash_type,
+            &mut out1,
+        )
+        .expect("first PKCS12 call failed");
+        pkcs12_pbkdf(
+            password,
+            salt,
+            iterations,
+            PKCS12_KEY_ID,
+            hash_type,
+            &mut out2,
+        )
+        .expect("second PKCS12 call failed");
 
         assert_eq!(out1, out2, "PKCS#12 PBKDF must be deterministic");
         assert!(
@@ -181,9 +181,7 @@ mod pkcs12_pbkdf {
     /// Different purpose IDs must produce different derived keys.
     #[test]
     fn pkcs12_pbkdf_different_ids() {
-        let password: &[u8] = &[
-            0x00, 0x70, 0x00, 0x77, 0x00, 0x64, 0x00, 0x00,
-        ]; // "pwd" as BMPString
+        let password: &[u8] = &[0x00, 0x70, 0x00, 0x77, 0x00, 0x64, 0x00, 0x00]; // "pwd" as BMPString
         let salt: &[u8] = &[0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE];
         let iterations = 1000;
         let hash_type = wolfcrypt_rs::WC_HASH_TYPE_SHA256;
@@ -191,10 +189,24 @@ mod pkcs12_pbkdf {
         let mut key_out = [0u8; 16];
         let mut mac_out = [0u8; 16];
 
-        pkcs12_pbkdf(password, salt, iterations, PKCS12_KEY_ID, hash_type, &mut key_out)
-            .expect("KEY derivation failed");
-        pkcs12_pbkdf(password, salt, iterations, PKCS12_MAC_ID, hash_type, &mut mac_out)
-            .expect("MAC derivation failed");
+        pkcs12_pbkdf(
+            password,
+            salt,
+            iterations,
+            PKCS12_KEY_ID,
+            hash_type,
+            &mut key_out,
+        )
+        .expect("KEY derivation failed");
+        pkcs12_pbkdf(
+            password,
+            salt,
+            iterations,
+            PKCS12_MAC_ID,
+            hash_type,
+            &mut mac_out,
+        )
+        .expect("MAC derivation failed");
 
         assert_ne!(
             key_out, mac_out,
@@ -220,7 +232,7 @@ mod pkcs12_pbkdf {
 /// Test vectors from RFC 8448 Section 3 (Simple 1-RTT Handshake).
 #[cfg(wolfssl_tls13_hkdf)]
 mod tls13_hkdf {
-    use wolfcrypt::kdf::{tls13_hkdf_extract, tls13_hkdf_expand_label};
+    use wolfcrypt::kdf::{tls13_hkdf_expand_label, tls13_hkdf_extract};
 
     const DIGEST_SHA256: i32 = wolfcrypt_rs::WC_HASH_TYPE_SHA256;
 
@@ -241,10 +253,9 @@ mod tls13_hkdf {
             .expect("wc_Tls13_HKDF_Extract failed");
 
         let expected: [u8; 32] = [
-            0x33, 0xad, 0x0a, 0x1c, 0x60, 0x7e, 0xc0, 0x3b,
-            0x09, 0xe6, 0xcd, 0x98, 0x93, 0x68, 0x0c, 0xe2,
-            0x10, 0xad, 0xf3, 0x00, 0xaa, 0x1f, 0x26, 0x60,
-            0xe1, 0xb2, 0x2e, 0x10, 0xf1, 0x70, 0xf9, 0x2a,
+            0x33, 0xad, 0x0a, 0x1c, 0x60, 0x7e, 0xc0, 0x3b, 0x09, 0xe6, 0xcd, 0x98, 0x93, 0x68,
+            0x0c, 0xe2, 0x10, 0xad, 0xf3, 0x00, 0xaa, 0x1f, 0x26, 0x60, 0xe1, 0xb2, 0x2e, 0x10,
+            0xf1, 0x70, 0xf9, 0x2a,
         ];
         assert_eq!(
             prk, expected,
@@ -260,8 +271,7 @@ mod tls13_hkdf {
         let mut prk1 = [0u8; 32];
         let mut prk2 = [0u8; 32];
 
-        tls13_hkdf_extract(salt, ikm, DIGEST_SHA256, &mut prk1)
-            .expect("first extract call failed");
+        tls13_hkdf_extract(salt, ikm, DIGEST_SHA256, &mut prk1).expect("first extract call failed");
         tls13_hkdf_extract(salt, ikm, DIGEST_SHA256, &mut prk2)
             .expect("second extract call failed");
 
@@ -275,8 +285,7 @@ mod tls13_hkdf {
         let ikm = b"test ikm";
         let mut prk = [0u8; 32];
 
-        tls13_hkdf_extract(salt, ikm, DIGEST_SHA256, &mut prk)
-            .expect("extract failed");
+        tls13_hkdf_extract(salt, ikm, DIGEST_SHA256, &mut prk).expect("extract failed");
 
         assert!(
             !prk.iter().all(|&b| b == 0),
@@ -291,8 +300,7 @@ mod tls13_hkdf {
         let salt = [0u8; 32];
         let ikm = [0u8; 32];
         let mut prk = [0u8; 32];
-        tls13_hkdf_extract(&salt, &ikm, DIGEST_SHA256, &mut prk)
-            .expect("extract failed");
+        tls13_hkdf_extract(&salt, &ikm, DIGEST_SHA256, &mut prk).expect("extract failed");
 
         let protocol = b"tls13 ";
         let label = b"derived";
@@ -300,15 +308,11 @@ mod tls13_hkdf {
         let mut okm1 = [0u8; 32];
         let mut okm2 = [0u8; 32];
 
-        tls13_hkdf_expand_label(
-            &prk, protocol, label, info, DIGEST_SHA256, &mut okm1,
-        )
-        .expect("first expand-label call failed");
+        tls13_hkdf_expand_label(&prk, protocol, label, info, DIGEST_SHA256, &mut okm1)
+            .expect("first expand-label call failed");
 
-        tls13_hkdf_expand_label(
-            &prk, protocol, label, info, DIGEST_SHA256, &mut okm2,
-        )
-        .expect("second expand-label call failed");
+        tls13_hkdf_expand_label(&prk, protocol, label, info, DIGEST_SHA256, &mut okm2)
+            .expect("second expand-label call failed");
 
         assert_eq!(okm1, okm2, "HKDF-Expand-Label must be deterministic");
     }
@@ -319,8 +323,7 @@ mod tls13_hkdf {
         let salt = [0u8; 32];
         let ikm = [0u8; 32];
         let mut prk = [0u8; 32];
-        tls13_hkdf_extract(&salt, &ikm, DIGEST_SHA256, &mut prk)
-            .expect("extract failed");
+        tls13_hkdf_extract(&salt, &ikm, DIGEST_SHA256, &mut prk).expect("extract failed");
 
         let protocol = b"tls13 ";
         let info = b"";
@@ -328,12 +331,22 @@ mod tls13_hkdf {
         let mut okm_b = [0u8; 32];
 
         tls13_hkdf_expand_label(
-            &prk, protocol, b"c hs traffic", info, DIGEST_SHA256, &mut okm_a,
+            &prk,
+            protocol,
+            b"c hs traffic",
+            info,
+            DIGEST_SHA256,
+            &mut okm_a,
         )
         .expect("expand-label 'c hs traffic' failed");
 
         tls13_hkdf_expand_label(
-            &prk, protocol, b"s hs traffic", info, DIGEST_SHA256, &mut okm_b,
+            &prk,
+            protocol,
+            b"s hs traffic",
+            info,
+            DIGEST_SHA256,
+            &mut okm_b,
         )
         .expect("expand-label 's hs traffic' failed");
 

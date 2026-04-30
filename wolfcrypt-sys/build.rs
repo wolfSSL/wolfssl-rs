@@ -281,10 +281,9 @@ fn main() {
     //   4. pkg-config                            → system
     //   5. panic
 
-    if let (Ok(lib_dir), Ok(include_dir)) = (
-        env::var("WOLFSSL_LIB_DIR"),
-        env::var("WOLFSSL_INCLUDE_DIR"),
-    ) {
+    if let (Ok(lib_dir), Ok(include_dir)) =
+        (env::var("WOLFSSL_LIB_DIR"), env::var("WOLFSSL_INCLUDE_DIR"))
+    {
         do_prebuilt(
             &PathBuf::from(lib_dir),
             &PathBuf::from(include_dir),
@@ -330,17 +329,15 @@ fn main() {
 }
 
 /// Use a pre-built wolfssl at explicit lib/include paths.
-fn do_prebuilt(
-    lib_dir: &Path,
-    include_dir: &Path,
-    manifest_dir: &Path,
-    is_fips: bool,
-) {
+fn do_prebuilt(lib_dir: &Path, include_dir: &Path, manifest_dir: &Path, is_fips: bool) {
     if !lib_dir.exists() {
         panic!("wolfssl lib dir does not exist: {}", lib_dir.display());
     }
     if !include_dir.exists() {
-        panic!("wolfssl include dir does not exist: {}", include_dir.display());
+        panic!(
+            "wolfssl include dir does not exist: {}",
+            include_dir.display()
+        );
     }
 
     // Parse options.h for cfg flags
@@ -362,7 +359,14 @@ fn do_prebuilt(
 
     generate_bindings(include_dir, manifest_dir, is_fips, false, None);
 
-    emit_metadata(&active_cfgs, include_dir, include_dir, "", &[lib_dir.to_path_buf()], false);
+    emit_metadata(
+        &active_cfgs,
+        include_dir,
+        include_dir,
+        "",
+        &[lib_dir.to_path_buf()],
+        false,
+    );
 }
 
 /// Compile wolfssl from source via wolfssl-src.

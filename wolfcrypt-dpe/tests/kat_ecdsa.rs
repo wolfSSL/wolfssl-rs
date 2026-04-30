@@ -5,10 +5,12 @@
 
 // CryptoSuite must be in scope for get_pubkey_serial() method resolution.
 #[allow(unused_imports)]
-use caliptra_dpe_crypto::{Crypto, CryptoSuite, Digest, PubKey, Sha256, Sha384, SignData, Signature};
+use caliptra_dpe_crypto::{
+    Crypto, CryptoSuite, Digest, PubKey, Sha256, Sha384, SignData, Signature,
+};
 use wolfcrypt_dpe::{WolfCryptDpe, WolfCryptDpe256};
 
-use wolfcrypt::{EcdsaVerifyingKey, EcdsaSignature, P384, P256};
+use wolfcrypt::{EcdsaSignature, EcdsaVerifyingKey, P256, P384};
 
 /// Reconstruct uncompressed public key bytes (04 || x || y) from a PubKey.
 fn pubkey_to_uncompressed(pub_key: &PubKey) -> Vec<u8> {
@@ -341,9 +343,10 @@ fn get_pubkey_serial_produces_hex_digest() {
     dpe.get_pubkey_serial(&pub_key, &mut serial).unwrap();
 
     // Must be valid hex (ASCII 0-9, a-f)
-    assert!(serial.iter().all(|&b| b.is_ascii_hexdigit()),
-        "serial contains non-hex characters");
+    assert!(
+        serial.iter().all(|&b| b.is_ascii_hexdigit()),
+        "serial contains non-hex characters"
+    );
     // Must not be all zeros (would mean hashing failed)
-    assert!(serial.iter().any(|&b| b != b'0'),
-        "serial is all zeros");
+    assert!(serial.iter().any(|&b| b != b'0'), "serial is all zeros");
 }

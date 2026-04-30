@@ -186,9 +186,9 @@ extern crate wolfcrypt_rs;
 /// prelude normally provides. Modules that need Vec/Box/String import this.
 #[cfg(not(feature = "std"))]
 pub(crate) mod prelude {
+    pub use alloc::borrow::ToOwned;
     pub use alloc::boxed::Box;
     pub use alloc::string::{String, ToString};
-    pub use alloc::borrow::ToOwned;
     pub use alloc::vec::Vec;
 }
 
@@ -221,15 +221,15 @@ mod evp_pkey;
 mod fips;
 mod hex;
 pub mod iv;
+#[cfg(feature = "unstable")]
+pub mod kdf;
+#[cfg(all(feature = "unstable", wolfssl_mlkem))]
+pub mod kem;
 pub mod key_wrap;
 #[cfg(all(feature = "unstable", not(feature = "fips"), wolfssl_dilithium))]
 mod pqdsa;
 mod ptr;
 pub mod rsa;
-#[cfg(feature = "unstable")]
-pub mod kdf;
-#[cfg(all(feature = "unstable", wolfssl_mlkem))]
-pub mod kem;
 pub mod tls_prf;
 pub mod unstable;
 
@@ -237,12 +237,11 @@ pub mod unstable;
 // HAVE_CURVE448) but wiring them up requires extending evp_pkey.rs
 // with ~20 new FFI functions. See PLAN-morering.md Module 10.
 
-pub(crate) use debug::derive_debug_via_id;
 use core::ffi::CStr;
+pub(crate) use debug::derive_debug_via_id;
 
 use crate::wolfcrypt_rs::{
-    CRYPTO_library_init, ERR_get_error, FIPS_mode, ERR_GET_LIB,
-    ERR_GET_REASON, wc_GetErrorString,
+    wc_GetErrorString, CRYPTO_library_init, ERR_get_error, FIPS_mode, ERR_GET_LIB, ERR_GET_REASON,
 };
 
 static START: spin::Once<()> = spin::Once::new();
@@ -279,7 +278,6 @@ pub fn try_fips_mode() -> Result<(), &'static str> {
     }
 }
 
-
 #[allow(dead_code)]
 unsafe fn dump_error() {
     // SAFETY: ERR_get_error/wc_GetErrorString are read-only diagnostic functions.
@@ -289,7 +287,9 @@ unsafe fn dump_error() {
     let func = 0i32;
     let error_msg = CStr::from_ptr(wc_GetErrorString(err as core::ffi::c_int));
     #[cfg(feature = "std")]
-    std::eprintln!("Raw Error -- {error_msg:?}\nErr: {err}, Lib: {lib}, Reason: {reason}, Func: {func}");
+    std::eprintln!(
+        "Raw Error -- {error_msg:?}\nErr: {err}, Lib: {lib}, Reason: {reason}, Func: {func}"
+    );
     let _ = (error_msg, lib, reason, func);
 }
 

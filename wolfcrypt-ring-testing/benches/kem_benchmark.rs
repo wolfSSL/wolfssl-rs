@@ -1,8 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0 OR ISC
 
-use wolfcrypt_ring_compat::kem::{Algorithm, DecapsulationKey, ML_KEM_1024, ML_KEM_512, ML_KEM_768};
 use criterion::{criterion_group, criterion_main, Criterion};
+use wolfcrypt_ring_compat::kem::{
+    Algorithm, DecapsulationKey, ML_KEM_1024, ML_KEM_512, ML_KEM_768,
+};
 
 const KEM_ALGORITHMS: &[Algorithm; 3] = &[ML_KEM_512, ML_KEM_768, ML_KEM_1024];
 

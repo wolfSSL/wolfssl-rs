@@ -185,15 +185,23 @@ macro_rules! impl_aes_ccm {
     };
 }
 
-impl_aes_ccm!(Aes128Ccm, typenum::U16, 16,
+impl_aes_ccm!(
+    Aes128Ccm,
+    typenum::U16,
+    16,
     "AES-128-CCM AEAD cipher, implementing `AeadInPlace` and `KeyInit`.\n\n\
      The trait-level nonce size is fixed to 13 bytes.  Use the standalone\n\
-     `aes_ccm_encrypt` / `aes_ccm_decrypt` functions for variable nonce lengths.");
+     `aes_ccm_encrypt` / `aes_ccm_decrypt` functions for variable nonce lengths."
+);
 
-impl_aes_ccm!(Aes256Ccm, U32, 32,
+impl_aes_ccm!(
+    Aes256Ccm,
+    U32,
+    32,
     "AES-256-CCM AEAD cipher, implementing `AeadInPlace` and `KeyInit`.\n\n\
      The trait-level nonce size is fixed to 13 bytes.  Use the standalone\n\
-     `aes_ccm_encrypt` / `aes_ccm_decrypt` functions for variable nonce lengths.");
+     `aes_ccm_encrypt` / `aes_ccm_decrypt` functions for variable nonce lengths."
+);
 
 // ---------------------------------------------------------------------------
 // Standalone (variable nonce/tag) API
@@ -246,11 +254,20 @@ pub fn aes_ccm_encrypt(
         )
     };
     if rc != 0 {
-        unsafe { wolfcrypt_rs::wc_AesFree(&mut aes); }
-        return Err(WolfCryptError::Ffi { code: rc, func: "wc_AesCcmSetKey" });
+        unsafe {
+            wolfcrypt_rs::wc_AesFree(&mut aes);
+        }
+        return Err(WolfCryptError::Ffi {
+            code: rc,
+            func: "wc_AesCcmSetKey",
+        });
     }
 
-    let aad_ptr = if aad.is_empty() { core::ptr::null() } else { aad.as_ptr() };
+    let aad_ptr = if aad.is_empty() {
+        core::ptr::null()
+    } else {
+        aad.as_ptr()
+    };
 
     let rc = unsafe {
         wolfcrypt_rs::wc_AesCcmEncrypt(
@@ -267,7 +284,9 @@ pub fn aes_ccm_encrypt(
         )
     };
 
-    unsafe { wolfcrypt_rs::wc_AesFree(&mut aes); }
+    unsafe {
+        wolfcrypt_rs::wc_AesFree(&mut aes);
+    }
 
     check(rc, "wc_AesCcmEncrypt")?;
     Ok(())
@@ -322,11 +341,20 @@ pub fn aes_ccm_decrypt(
         )
     };
     if rc != 0 {
-        unsafe { wolfcrypt_rs::wc_AesFree(&mut aes); }
-        return Err(WolfCryptError::Ffi { code: rc, func: "wc_AesCcmSetKey" });
+        unsafe {
+            wolfcrypt_rs::wc_AesFree(&mut aes);
+        }
+        return Err(WolfCryptError::Ffi {
+            code: rc,
+            func: "wc_AesCcmSetKey",
+        });
     }
 
-    let aad_ptr = if aad.is_empty() { core::ptr::null() } else { aad.as_ptr() };
+    let aad_ptr = if aad.is_empty() {
+        core::ptr::null()
+    } else {
+        aad.as_ptr()
+    };
 
     let rc = unsafe {
         wolfcrypt_rs::wc_AesCcmDecrypt(
@@ -343,7 +371,9 @@ pub fn aes_ccm_decrypt(
         )
     };
 
-    unsafe { wolfcrypt_rs::wc_AesFree(&mut aes); }
+    unsafe {
+        wolfcrypt_rs::wc_AesFree(&mut aes);
+    }
 
     check(rc, "wc_AesCcmDecrypt")?;
     Ok(())

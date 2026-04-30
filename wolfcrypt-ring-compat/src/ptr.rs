@@ -1,9 +1,8 @@
 use crate::wolfcrypt_rs::{
-    BN_free, CMAC_CTX_free, ECDSA_SIG_free, EC_GROUP_free, EC_KEY_free,
-    EC_POINT_free, EVP_CIPHER_CTX_free, EVP_MD_CTX_free, EVP_PKEY_CTX_free,
-    EVP_PKEY_free, HMAC_CTX_free, OPENSSL_free, RSA_free, BIGNUM, CMAC_CTX,
-    ECDSA_SIG, EC_GROUP, EC_KEY, EC_POINT, EVP_CIPHER_CTX, EVP_MD_CTX,
-    EVP_PKEY, EVP_PKEY_CTX, HMAC_CTX, RSA,
+    BN_free, CMAC_CTX_free, ECDSA_SIG_free, EC_GROUP_free, EC_KEY_free, EC_POINT_free,
+    EVP_CIPHER_CTX_free, EVP_MD_CTX_free, EVP_PKEY_CTX_free, EVP_PKEY_free, HMAC_CTX_free,
+    OPENSSL_free, RSA_free, BIGNUM, CMAC_CTX, ECDSA_SIG, EC_GROUP, EC_KEY, EC_POINT,
+    EVP_CIPHER_CTX, EVP_MD_CTX, EVP_PKEY, EVP_PKEY_CTX, HMAC_CTX, RSA,
 };
 use core::marker::PhantomData;
 
@@ -244,8 +243,8 @@ create_pointer!(CMAC_CTX, CMAC_CTX_free);
 
 #[cfg(test)]
 mod tests {
-    use crate::wolfcrypt_rs::BIGNUM;
     use crate::ptr::{DetachablePointer, ManagedPointer};
+    use crate::wolfcrypt_rs::BIGNUM;
 
     #[test]
     fn test_debug() {

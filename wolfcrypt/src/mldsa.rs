@@ -28,15 +28,13 @@ use alloc::vec::Vec;
 
 use crate::error::{check, len_as_u32, WolfCryptError};
 use wolfcrypt_rs::{
-    wc_dilithium_export_private, wc_dilithium_export_public, wc_dilithium_free,
-    wc_dilithium_import_public, wc_dilithium_init, wc_dilithium_make_key,
-    wc_dilithium_set_level, wc_dilithium_sign_msg, wc_dilithium_verify_msg,
-    wc_dilithium_key, wc_FreeRng, wc_InitRng, WC_RNG,
-    DILITHIUM_ML_DSA_44_KEY_SIZE, DILITHIUM_ML_DSA_44_PUB_KEY_SIZE,
-    DILITHIUM_ML_DSA_44_SIG_SIZE, DILITHIUM_ML_DSA_65_KEY_SIZE,
-    DILITHIUM_ML_DSA_65_PUB_KEY_SIZE, DILITHIUM_ML_DSA_65_SIG_SIZE,
-    DILITHIUM_ML_DSA_87_KEY_SIZE, DILITHIUM_ML_DSA_87_PUB_KEY_SIZE,
-    DILITHIUM_ML_DSA_87_SIG_SIZE, WC_ML_DSA_44, WC_ML_DSA_65, WC_ML_DSA_87,
+    wc_FreeRng, wc_InitRng, wc_dilithium_export_private, wc_dilithium_export_public,
+    wc_dilithium_free, wc_dilithium_import_key, wc_dilithium_import_public, wc_dilithium_init,
+    wc_dilithium_key, wc_dilithium_make_key, wc_dilithium_set_level, wc_dilithium_sign_msg,
+    wc_dilithium_verify_msg, DILITHIUM_ML_DSA_44_KEY_SIZE, DILITHIUM_ML_DSA_44_PUB_KEY_SIZE,
+    DILITHIUM_ML_DSA_44_SIG_SIZE, DILITHIUM_ML_DSA_65_KEY_SIZE, DILITHIUM_ML_DSA_65_PUB_KEY_SIZE,
+    DILITHIUM_ML_DSA_65_SIG_SIZE, DILITHIUM_ML_DSA_87_KEY_SIZE, DILITHIUM_ML_DSA_87_PUB_KEY_SIZE,
+    DILITHIUM_ML_DSA_87_SIG_SIZE, WC_ML_DSA_44, WC_ML_DSA_65, WC_ML_DSA_87, WC_RNG,
 };
 
 // ---------------------------------------------------------------------------
@@ -58,7 +56,10 @@ pub struct MlDsaSignature<L: MlDsaLevel> {
 
 impl<L: MlDsaLevel> Clone for MlDsaSignature<L> {
     fn clone(&self) -> Self {
-        Self { bytes: self.bytes.clone(), _level: PhantomData }
+        Self {
+            bytes: self.bytes.clone(),
+            _level: PhantomData,
+        }
     }
 }
 
@@ -77,7 +78,10 @@ impl<L: MlDsaLevel> TryFrom<&[u8]> for MlDsaSignature<L> {
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         if bytes.len() == L::SIG_SIZE {
-            Ok(Self { bytes: bytes.to_vec(), _level: PhantomData })
+            Ok(Self {
+                bytes: bytes.to_vec(),
+                _level: PhantomData,
+            })
         } else {
             Err(signature_trait::Error::new())
         }
@@ -196,17 +200,69 @@ impl<L: MlDsaLevel> MlDsaSigningKey<L> {
         // SAFETY: the key is fully initialised with both private and public
         // components after `wc_dilithium_make_key`.
         let rc = unsafe {
-            wc_dilithium_export_public(
-                self.key.get(),
-                pub_buf.as_mut_ptr(),
-                &mut pub_len,
-            )
+            wc_dilithium_export_public(self.key.get(), pub_buf.as_mut_ptr(), &mut pub_len)
         };
-        assert_eq!(rc, 0, "wc_dilithium_export_public failed (key not initialized)");
+        assert_eq!(
+            rc, 0,
+            "wc_dilithium_export_public failed (key not initialized)"
+        );
         assert_eq!(pub_len as usize, L::PUB_KEY_SIZE);
 
-        MlDsaVerifyingKey::from_bytes(&pub_buf)
-            .expect("exported public key must be valid")
+        MlDsaVerifyingKey::from_bytes(&pub_buf).expect("exported public key must be valid")
+    }
+
+    /// Load an ML-DSA signing key from raw private and public key bytes.
+    ///
+    /// Both `priv_bytes` and `pub_bytes` must be exactly `L::PRIV_KEY_SIZE` and
+    /// `L::PUB_KEY_SIZE` bytes, respectively.  The bytes are typically obtained
+    /// from a prior call to [`to_private_bytes`] and [`verifying_key().as_bytes()`].
+    pub fn from_key_bytes(priv_bytes: &[u8], pub_bytes: &[u8]) -> Result<Self, WolfCryptError> {
+        if priv_bytes.len() != L::PRIV_KEY_SIZE {
+            return Err(WolfCryptError::INVALID_INPUT);
+        }
+        if pub_bytes.len() != L::PUB_KEY_SIZE {
+            return Err(WolfCryptError::INVALID_INPUT);
+        }
+
+        let mut key = wc_dilithium_key::zeroed();
+
+        // SAFETY: `key` is zeroed; `wc_dilithium_init` fully initialises it.
+        let rc = unsafe { wc_dilithium_init(&mut key) };
+        check(rc, "wc_dilithium_init")?;
+
+        // SAFETY: key is initialised; set level before import.
+        let rc = unsafe { wc_dilithium_set_level(&mut key, L::LEVEL) };
+        check(rc, "wc_dilithium_set_level")?;
+
+        // SAFETY: `key` has level set; import private + public bytes.
+        let rc = unsafe {
+            wc_dilithium_import_key(
+                priv_bytes.as_ptr(),
+                len_as_u32(priv_bytes.len()),
+                pub_bytes.as_ptr(),
+                len_as_u32(pub_bytes.len()),
+                &mut key,
+            )
+        };
+        check(rc, "wc_dilithium_import_key")?;
+
+        let mut own_rng = WC_RNG::zeroed();
+        // SAFETY: `own_rng` is zeroed; `wc_InitRng` will fully initialise it.
+        let rc = unsafe { wc_InitRng(&mut own_rng) };
+        if rc != 0 {
+            // SAFETY: key was successfully initialised; free before returning.
+            unsafe { wc_dilithium_free(&mut key) };
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_InitRng",
+            });
+        }
+
+        Ok(Self {
+            key: UnsafeCell::new(key),
+            rng: UnsafeCell::new(own_rng),
+            _level: PhantomData,
+        })
     }
 
     /// Export the raw private key bytes.
@@ -219,13 +275,12 @@ impl<L: MlDsaLevel> MlDsaSigningKey<L> {
 
         // SAFETY: the key is fully initialised.
         let rc = unsafe {
-            wc_dilithium_export_private(
-                self.key.get(),
-                priv_buf.as_mut_ptr(),
-                &mut priv_len,
-            )
+            wc_dilithium_export_private(self.key.get(), priv_buf.as_mut_ptr(), &mut priv_len)
         };
-        assert_eq!(rc, 0, "wc_dilithium_export_private failed (key not initialized)");
+        assert_eq!(
+            rc, 0,
+            "wc_dilithium_export_private failed (key not initialized)"
+        );
         priv_buf.truncate(priv_len as usize);
         zeroize::Zeroizing::new(priv_buf)
     }
@@ -268,7 +323,10 @@ impl<L: MlDsaLevel> signature_trait::Signer<MlDsaSignature<L>> for MlDsaSigningK
         }
 
         sig_buf.truncate(sig_len as usize);
-        Ok(MlDsaSignature { bytes: sig_buf, _level: PhantomData })
+        Ok(MlDsaSignature {
+            bytes: sig_buf,
+            _level: PhantomData,
+        })
     }
 }
 

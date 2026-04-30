@@ -58,8 +58,7 @@ fn agreement_agree() {
                 Some(_error_msg) => {
                     // For error cases, try agree with a valid private key and the
                     // invalid peer public key. Should fail.
-                    let private_key =
-                        agreement::EphemeralPrivateKey::generate(alg, &rng)?;
+                    let private_key = agreement::EphemeralPrivateKey::generate(alg, &rng)?;
                     let peer_public =
                         agreement::UnparsedPublicKey::new(alg, &peer_public_key_bytes);
 

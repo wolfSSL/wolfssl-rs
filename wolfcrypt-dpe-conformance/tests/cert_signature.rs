@@ -18,8 +18,8 @@ fn generate_test_cert() -> Vec<u8> {
     let support = helpers::dpe_harness::DEFAULT_SUPPORT;
     let mut state = State::new(support, caliptra_dpe::DpeFlags::empty());
     let mut env = helpers::dpe_harness::make_ref_env(&mut state);
-    let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-        .expect("DPE init should succeed");
+    let mut dpe =
+        DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("DPE init should succeed");
 
     let derive_cmd = DeriveContextCmd {
         handle: ContextHandle::default(),
@@ -47,9 +47,7 @@ fn generate_test_cert() -> Vec<u8> {
         .execute(&mut dpe, &mut env, helpers::dpe_harness::LOCALITY)
         .expect("CertifyKey should succeed")
     {
-        Response::CertifyKey(CertifyKeyResp::P384(r)) => {
-            r.cert[..r.cert_size as usize].to_vec()
-        }
+        Response::CertifyKey(CertifyKeyResp::P384(r)) => r.cert[..r.cert_size as usize].to_vec(),
         _ => panic!("Expected CertifyKey P384 response"),
     }
 }
@@ -60,8 +58,7 @@ fn cert_signature_verifies_with_issuer_key() {
     // the exact parent public key from outside the DPE engine, but we can verify
     // that the cert has a structurally valid ECDSA signature by parsing it.
     let cert_bytes = generate_test_cert();
-    let parsed = helpers::x509_parser::parse_cert(&cert_bytes)
-        .expect("cert should parse");
+    let parsed = helpers::x509_parser::parse_cert(&cert_bytes).expect("cert should parse");
     // The signature should be a valid DER-encoded ECDSA signature (starts with 0x30 SEQUENCE tag)
     assert!(
         !parsed.signature_bytes.is_empty(),
@@ -77,8 +74,7 @@ fn cert_signature_verifies_with_issuer_key() {
 #[test]
 fn cert_signature_is_nonzero() {
     let cert_bytes = generate_test_cert();
-    let parsed = helpers::x509_parser::parse_cert(&cert_bytes)
-        .expect("cert should parse");
+    let parsed = helpers::x509_parser::parse_cert(&cert_bytes).expect("cert should parse");
     let has_nonzero = parsed.signature_bytes.iter().any(|&b| b != 0);
     assert!(
         has_nonzero,
@@ -89,8 +85,7 @@ fn cert_signature_is_nonzero() {
 #[test]
 fn cert_tbs_is_nonempty() {
     let cert_bytes = generate_test_cert();
-    let parsed = helpers::x509_parser::parse_cert(&cert_bytes)
-        .expect("cert should parse");
+    let parsed = helpers::x509_parser::parse_cert(&cert_bytes).expect("cert should parse");
     assert!(
         !parsed.tbs_der.is_empty(),
         "TBS certificate DER must be non-empty"
@@ -100,8 +95,7 @@ fn cert_tbs_is_nonempty() {
 #[test]
 fn cert_tampered_tbs_detected() {
     let cert_bytes = generate_test_cert();
-    let parsed = helpers::x509_parser::parse_cert(&cert_bytes)
-        .expect("cert should parse");
+    let parsed = helpers::x509_parser::parse_cert(&cert_bytes).expect("cert should parse");
     // Verify the original cert was parseable (already done above).
     // Now flip a byte in the TBS. The cert DER itself should still parse since
     // we only changed the TBS content, not the outer structure. But the signature

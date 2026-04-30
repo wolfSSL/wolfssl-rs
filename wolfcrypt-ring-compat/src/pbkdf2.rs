@@ -103,9 +103,9 @@
 //!     assert!(db.verify_password("alice", "@74d7]404j|W}6u").is_ok());
 //! }
 
-use crate::wolfcrypt_rs::PKCS5_PBKDF2_HMAC;
 use crate::error::Unspecified;
 use crate::fips::indicator_check;
+use crate::wolfcrypt_rs::PKCS5_PBKDF2_HMAC;
 use crate::{constant_time, digest, hmac};
 use core::num::NonZeroU32;
 use zeroize::Zeroize;

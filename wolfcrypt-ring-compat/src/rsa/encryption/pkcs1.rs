@@ -4,13 +4,13 @@
 #![allow(clippy::module_name_repetitions)]
 
 use super::{PrivateDecryptingKey, PublicEncryptingKey};
+use crate::error::Unspecified;
+use crate::fips::indicator_check;
+use crate::ptr::LcPtr;
 use crate::wolfcrypt_rs::{
     EVP_PKEY_CTX_set_rsa_padding, EVP_PKEY_decrypt, EVP_PKEY_decrypt_init, EVP_PKEY_encrypt,
     EVP_PKEY_encrypt_init, EVP_PKEY_CTX, RSA_PKCS1_PADDING,
 };
-use crate::error::Unspecified;
-use crate::fips::indicator_check;
-use crate::ptr::LcPtr;
 use core::fmt::Debug;
 
 /// RSA PKCS1-v1.5 public key for encryption.

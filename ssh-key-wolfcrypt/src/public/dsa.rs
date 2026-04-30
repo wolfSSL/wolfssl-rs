@@ -101,4 +101,3 @@ impl Hash for DsaPublicKey {
         self.y.as_bytes().hash(state);
     }
 }
-

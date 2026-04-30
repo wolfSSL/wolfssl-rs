@@ -59,10 +59,10 @@ assert_eq!(plain_out[0..dec_len], *plain);
 
 #![cfg(rsa)]
 
-use crate::sys;
 #[cfg(random)]
 use crate::random::RNG;
-use core::mem::{MaybeUninit};
+use crate::sys;
+use core::mem::MaybeUninit;
 
 /// The `RSA` struct manages the lifecycle of a wolfSSL `RsaKey` object.
 ///
@@ -76,57 +76,57 @@ pub struct RSA {
 
 impl RSA {
     // Hash type constants used for PSS sign and verify methods.
-    pub const HASH_TYPE_NONE       : u32 = sys::wc_HashType_WC_HASH_TYPE_NONE;
-    pub const HASH_TYPE_MD2        : u32 = sys::wc_HashType_WC_HASH_TYPE_MD2;
-    pub const HASH_TYPE_MD4        : u32 = sys::wc_HashType_WC_HASH_TYPE_MD4;
-    pub const HASH_TYPE_MD5        : u32 = sys::wc_HashType_WC_HASH_TYPE_MD5;
+    pub const HASH_TYPE_NONE: u32 = sys::wc_HashType_WC_HASH_TYPE_NONE;
+    pub const HASH_TYPE_MD2: u32 = sys::wc_HashType_WC_HASH_TYPE_MD2;
+    pub const HASH_TYPE_MD4: u32 = sys::wc_HashType_WC_HASH_TYPE_MD4;
+    pub const HASH_TYPE_MD5: u32 = sys::wc_HashType_WC_HASH_TYPE_MD5;
     #[cfg(sha)]
-    pub const HASH_TYPE_SHA        : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA;
+    pub const HASH_TYPE_SHA: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA;
     #[cfg(sha256)]
-    pub const HASH_TYPE_SHA224     : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA224;
+    pub const HASH_TYPE_SHA224: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA224;
     #[cfg(sha256)]
-    pub const HASH_TYPE_SHA256     : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA256;
+    pub const HASH_TYPE_SHA256: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA256;
     #[cfg(sha512)]
-    pub const HASH_TYPE_SHA384     : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA384;
+    pub const HASH_TYPE_SHA384: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA384;
     #[cfg(sha512)]
-    pub const HASH_TYPE_SHA512     : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA512;
-    pub const HASH_TYPE_MD5_SHA    : u32 = sys::wc_HashType_WC_HASH_TYPE_MD5_SHA;
+    pub const HASH_TYPE_SHA512: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA512;
+    pub const HASH_TYPE_MD5_SHA: u32 = sys::wc_HashType_WC_HASH_TYPE_MD5_SHA;
     #[cfg(sha3)]
-    pub const HASH_TYPE_SHA3_224   : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA3_224;
+    pub const HASH_TYPE_SHA3_224: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA3_224;
     #[cfg(sha3)]
-    pub const HASH_TYPE_SHA3_256   : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA3_256;
+    pub const HASH_TYPE_SHA3_256: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA3_256;
     #[cfg(sha3)]
-    pub const HASH_TYPE_SHA3_384   : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA3_384;
+    pub const HASH_TYPE_SHA3_384: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA3_384;
     #[cfg(sha3)]
-    pub const HASH_TYPE_SHA3_512   : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA3_512;
-    pub const HASH_TYPE_BLAKE2B    : u32 = sys::wc_HashType_WC_HASH_TYPE_BLAKE2B;
-    pub const HASH_TYPE_BLAKE2S    : u32 = sys::wc_HashType_WC_HASH_TYPE_BLAKE2S;
+    pub const HASH_TYPE_SHA3_512: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA3_512;
+    pub const HASH_TYPE_BLAKE2B: u32 = sys::wc_HashType_WC_HASH_TYPE_BLAKE2B;
+    pub const HASH_TYPE_BLAKE2S: u32 = sys::wc_HashType_WC_HASH_TYPE_BLAKE2S;
     #[cfg(sha512_224)]
-    pub const HASH_TYPE_SHA512_224 : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA512_224;
+    pub const HASH_TYPE_SHA512_224: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA512_224;
     #[cfg(sha512_256)]
-    pub const HASH_TYPE_SHA512_256 : u32 = sys::wc_HashType_WC_HASH_TYPE_SHA512_256;
+    pub const HASH_TYPE_SHA512_256: u32 = sys::wc_HashType_WC_HASH_TYPE_SHA512_256;
     #[cfg(shake128)]
-    pub const HASH_TYPE_SHAKE128   : u32 = sys::wc_HashType_WC_HASH_TYPE_SHAKE128;
+    pub const HASH_TYPE_SHAKE128: u32 = sys::wc_HashType_WC_HASH_TYPE_SHAKE128;
     #[cfg(shake256)]
-    pub const HASH_TYPE_SHAKE256   : u32 = sys::wc_HashType_WC_HASH_TYPE_SHAKE256;
+    pub const HASH_TYPE_SHAKE256: u32 = sys::wc_HashType_WC_HASH_TYPE_SHAKE256;
 
     // Mask generation function (MGF) constants used for PSS sign and verify methods.
-    pub const MGF1NONE       : i32 = sys::WC_MGF1NONE as i32;
-    pub const MGF1SHA1       : i32 = sys::WC_MGF1SHA1 as i32;
-    pub const MGF1SHA224     : i32 = sys::WC_MGF1SHA224 as i32;
-    pub const MGF1SHA256     : i32 = sys::WC_MGF1SHA256 as i32;
-    pub const MGF1SHA384     : i32 = sys::WC_MGF1SHA384 as i32;
-    pub const MGF1SHA512     : i32 = sys::WC_MGF1SHA512 as i32;
+    pub const MGF1NONE: i32 = sys::WC_MGF1NONE as i32;
+    pub const MGF1SHA1: i32 = sys::WC_MGF1SHA1 as i32;
+    pub const MGF1SHA224: i32 = sys::WC_MGF1SHA224 as i32;
+    pub const MGF1SHA256: i32 = sys::WC_MGF1SHA256 as i32;
+    pub const MGF1SHA384: i32 = sys::WC_MGF1SHA384 as i32;
+    pub const MGF1SHA512: i32 = sys::WC_MGF1SHA512 as i32;
     #[cfg(rsa_mgf1sha512_224)]
-    pub const MGF1SHA512_224 : i32 = sys::WC_MGF1SHA512_224 as i32;
+    pub const MGF1SHA512_224: i32 = sys::WC_MGF1SHA512_224 as i32;
     #[cfg(rsa_mgf1sha512_256)]
-    pub const MGF1SHA512_256 : i32 = sys::WC_MGF1SHA512_256 as i32;
+    pub const MGF1SHA512_256: i32 = sys::WC_MGF1SHA512_256 as i32;
 
     // Type constants used for `rsa_direct()`.
-    pub const PUBLIC_ENCRYPT : i32 = sys::RSA_PUBLIC_ENCRYPT;
-    pub const PUBLIC_DECRYPT : i32 = sys::RSA_PUBLIC_DECRYPT;
-    pub const PRIVATE_ENCRYPT : i32 = sys::RSA_PRIVATE_ENCRYPT;
-    pub const PRIVATE_DECRYPT : i32 = sys::RSA_PRIVATE_DECRYPT;
+    pub const PUBLIC_ENCRYPT: i32 = sys::RSA_PUBLIC_ENCRYPT;
+    pub const PUBLIC_DECRYPT: i32 = sys::RSA_PUBLIC_DECRYPT;
+    pub const PRIVATE_ENCRYPT: i32 = sys::RSA_PRIVATE_ENCRYPT;
+    pub const PRIVATE_DECRYPT: i32 = sys::RSA_PRIVATE_DECRYPT;
 
     /// Load a public and private RSA keypair from DER-encoded buffer.
     ///
@@ -217,7 +217,11 @@ impl RSA {
     /// assert_eq!(plain_out[0..dec_len], *plain);
     /// }
     /// ```
-    pub fn new_from_der_ex(der: &[u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<Self, i32> {
+    pub fn new_from_der_ex(
+        der: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
         let mut wc_rsakey: MaybeUninit<sys::RsaKey> = MaybeUninit::uninit();
         let heap = match heap {
             Some(heap) => heap,
@@ -238,7 +242,9 @@ impl RSA {
             sys::wc_RsaPrivateKeyDecode(der.as_ptr(), &mut idx, &mut wc_rsakey, der_size)
         };
         if rc != 0 {
-            unsafe { sys::wc_FreeRsaKey(&mut wc_rsakey); }
+            unsafe {
+                sys::wc_FreeRsaKey(&mut wc_rsakey);
+            }
             return Err(rc);
         }
         let rsa = RSA { wc_rsakey };
@@ -334,7 +340,11 @@ impl RSA {
     /// assert_eq!(plain_out[0..dec_len], *plain);
     /// }
     /// ```
-    pub fn new_public_from_der_ex(der: &[u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<Self, i32> {
+    pub fn new_public_from_der_ex(
+        der: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
         let mut wc_rsakey: MaybeUninit<sys::RsaKey> = MaybeUninit::uninit();
         let heap = match heap {
             Some(heap) => heap,
@@ -351,11 +361,12 @@ impl RSA {
         let mut wc_rsakey = unsafe { wc_rsakey.assume_init() };
         let der_size = der.len() as u32;
         let mut idx: u32 = 0;
-        let rc = unsafe {
-            sys::wc_RsaPublicKeyDecode(der.as_ptr(), &mut idx, &mut wc_rsakey, der_size)
-        };
+        let rc =
+            unsafe { sys::wc_RsaPublicKeyDecode(der.as_ptr(), &mut idx, &mut wc_rsakey, der_size) };
         if rc != 0 {
-            unsafe { sys::wc_FreeRsaKey(&mut wc_rsakey); }
+            unsafe {
+                sys::wc_FreeRsaKey(&mut wc_rsakey);
+            }
             return Err(rc);
         }
         let rsa = RSA { wc_rsakey };
@@ -449,7 +460,13 @@ impl RSA {
     /// }
     /// ```
     #[cfg(all(random, rsa_keygen))]
-    pub fn generate_ex(size: i32, e: i32, rng: &mut RNG, heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<Self, i32> {
+    pub fn generate_ex(
+        size: i32,
+        e: i32,
+        rng: &mut RNG,
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
         let mut wc_rsakey: MaybeUninit<sys::RsaKey> = MaybeUninit::uninit();
         let heap = match heap {
             Some(heap) => heap,
@@ -465,11 +482,11 @@ impl RSA {
         }
         let mut wc_rsakey = unsafe { wc_rsakey.assume_init() };
         let e = e as core::ffi::c_long;
-        let rc = unsafe {
-            sys::wc_MakeRsaKey(&mut wc_rsakey, size, e, &mut rng.wc_rng)
-        };
+        let rc = unsafe { sys::wc_MakeRsaKey(&mut wc_rsakey, size, e, &mut rng.wc_rng) };
         if rc != 0 {
-            unsafe { sys::wc_FreeRsaKey(&mut wc_rsakey); }
+            unsafe {
+                sys::wc_FreeRsaKey(&mut wc_rsakey);
+            }
             return Err(rc);
         }
         let rsa = RSA { wc_rsakey };
@@ -521,12 +538,19 @@ impl RSA {
     /// }
     /// ```
     #[allow(clippy::too_many_arguments)]
-    pub fn export_key(&mut self,
-            e: &mut [u8], e_size: &mut u32,
-            n: &mut [u8], n_size: &mut u32,
-            d: &mut [u8], d_size: &mut u32,
-            p: &mut [u8], p_size: &mut u32,
-            q: &mut [u8], q_size: &mut u32) -> Result<(), i32> {
+    pub fn export_key(
+        &mut self,
+        e: &mut [u8],
+        e_size: &mut u32,
+        n: &mut [u8],
+        n_size: &mut u32,
+        d: &mut [u8],
+        d_size: &mut u32,
+        p: &mut [u8],
+        p_size: &mut u32,
+        q: &mut [u8],
+        q_size: &mut u32,
+    ) -> Result<(), i32> {
         *e_size = e.len() as u32;
         *n_size = n.len() as u32;
         *d_size = d.len() as u32;
@@ -537,12 +561,19 @@ impl RSA {
         #[cfg(not(rsa_const_api))]
         let key_ptr = &mut self.wc_rsakey;
         let rc = unsafe {
-            sys::wc_RsaExportKey(key_ptr,
-                e.as_mut_ptr(), e_size,
-                n.as_mut_ptr(), n_size,
-                d.as_mut_ptr(), d_size,
-                p.as_mut_ptr(), p_size,
-                q.as_mut_ptr(), q_size)
+            sys::wc_RsaExportKey(
+                key_ptr,
+                e.as_mut_ptr(),
+                e_size,
+                n.as_mut_ptr(),
+                n_size,
+                d.as_mut_ptr(),
+                d_size,
+                p.as_mut_ptr(),
+                p_size,
+                q.as_mut_ptr(),
+                q_size,
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -581,9 +612,13 @@ impl RSA {
     /// rsa.export_public_key(&mut e, &mut e_size, &mut n, &mut n_size).expect("Error with export_public_key()");
     /// }
     /// ```
-    pub fn export_public_key(&mut self,
-            e: &mut [u8], e_size: &mut u32,
-            n: &mut [u8], n_size: &mut u32) -> Result<(), i32> {
+    pub fn export_public_key(
+        &mut self,
+        e: &mut [u8],
+        e_size: &mut u32,
+        n: &mut [u8],
+        n_size: &mut u32,
+    ) -> Result<(), i32> {
         *e_size = e.len() as u32;
         *n_size = n.len() as u32;
         #[cfg(rsa_const_api)]
@@ -591,8 +626,7 @@ impl RSA {
         #[cfg(not(rsa_const_api))]
         let key = &mut self.wc_rsakey;
         let rc = unsafe {
-            sys::wc_RsaFlattenPublicKey(key,
-                e.as_mut_ptr(), e_size, n.as_mut_ptr(), n_size)
+            sys::wc_RsaFlattenPublicKey(key, e.as_mut_ptr(), e_size, n.as_mut_ptr(), n_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -704,13 +738,23 @@ impl RSA {
     /// }
     /// ```
     #[cfg(random)]
-    pub fn public_encrypt(&mut self, din: &[u8], dout: &mut [u8], rng: &mut RNG) -> Result<usize, i32> {
+    pub fn public_encrypt(
+        &mut self,
+        din: &[u8],
+        dout: &mut [u8],
+        rng: &mut RNG,
+    ) -> Result<usize, i32> {
         let din_size = din.len() as u32;
         let dout_size = dout.len() as u32;
         let rc = unsafe {
-            sys::wc_RsaPublicEncrypt(din.as_ptr(), din_size,
-                dout.as_mut_ptr(), dout_size, &mut self.wc_rsakey,
-                &mut rng.wc_rng)
+            sys::wc_RsaPublicEncrypt(
+                din.as_ptr(),
+                din_size,
+                dout.as_mut_ptr(),
+                dout_size,
+                &mut self.wc_rsakey,
+                &mut rng.wc_rng,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -766,8 +810,13 @@ impl RSA {
         let din_size = din.len() as u32;
         let dout_size = dout.len() as u32;
         let rc = unsafe {
-            sys::wc_RsaPrivateDecrypt(din.as_ptr(), din_size,
-                dout.as_mut_ptr(), dout_size, &mut self.wc_rsakey)
+            sys::wc_RsaPrivateDecrypt(
+                din.as_ptr(),
+                din_size,
+                dout.as_mut_ptr(),
+                dout_size,
+                &mut self.wc_rsakey,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -828,12 +877,27 @@ impl RSA {
     /// }
     /// ```
     #[cfg(all(random, rsa_pss))]
-    pub fn pss_sign(&mut self, din: &[u8], dout: &mut [u8], hash_algo: u32, mgf: i32, rng: &mut RNG) -> Result<usize, i32> {
+    pub fn pss_sign(
+        &mut self,
+        din: &[u8],
+        dout: &mut [u8],
+        hash_algo: u32,
+        mgf: i32,
+        rng: &mut RNG,
+    ) -> Result<usize, i32> {
         let din_size = din.len() as u32;
         let dout_size = dout.len() as u32;
         let rc = unsafe {
-            sys::wc_RsaPSS_Sign(din.as_ptr(), din_size, dout.as_mut_ptr(), dout_size,
-                hash_algo, mgf, &mut self.wc_rsakey, &mut rng.wc_rng)
+            sys::wc_RsaPSS_Sign(
+                din.as_ptr(),
+                din_size,
+                dout.as_mut_ptr(),
+                dout_size,
+                hash_algo,
+                mgf,
+                &mut self.wc_rsakey,
+                &mut rng.wc_rng,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -895,8 +959,7 @@ impl RSA {
         let din_size = din.len() as u32;
         let sig_size = sig.len() as u32;
         let rc = unsafe {
-            sys::wc_RsaPSS_CheckPadding(din.as_ptr(), din_size,
-                sig.as_ptr(), sig_size, hash_algo)
+            sys::wc_RsaPSS_CheckPadding(din.as_ptr(), din_size, sig.as_ptr(), sig_size, hash_algo)
         };
         if rc != 0 {
             return Err(rc);
@@ -957,13 +1020,25 @@ impl RSA {
     /// }
     /// ```
     #[cfg(all(rsa_pss, rsa_const_api))]
-    pub fn pss_verify(&mut self, din: &[u8], dout: &mut [u8], hash_algo: u32, mgf: i32) -> Result<usize, i32> {
+    pub fn pss_verify(
+        &mut self,
+        din: &[u8],
+        dout: &mut [u8],
+        hash_algo: u32,
+        mgf: i32,
+    ) -> Result<usize, i32> {
         let din_size = din.len() as u32;
         let dout_size = dout.len() as u32;
         let rc = unsafe {
-            sys::wc_RsaPSS_Verify(din.as_ptr(), din_size,
-                dout.as_mut_ptr(), dout_size,
-                hash_algo, mgf, &mut self.wc_rsakey)
+            sys::wc_RsaPSS_Verify(
+                din.as_ptr(),
+                din_size,
+                dout.as_mut_ptr(),
+                dout_size,
+                hash_algo,
+                mgf,
+                &mut self.wc_rsakey,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -1028,14 +1103,29 @@ impl RSA {
     /// }
     /// ```
     #[cfg(all(rsa_pss, rsa_const_api))]
-    pub fn pss_verify_check(&mut self, din: &[u8], dout: &mut [u8], digest: &[u8], hash_algo: u32, mgf: i32) -> Result<usize, i32> {
+    pub fn pss_verify_check(
+        &mut self,
+        din: &[u8],
+        dout: &mut [u8],
+        digest: &[u8],
+        hash_algo: u32,
+        mgf: i32,
+    ) -> Result<usize, i32> {
         let din_size = din.len() as u32;
         let dout_size = dout.len() as u32;
         let digest_size = digest.len() as u32;
         let rc = unsafe {
-            sys::wc_RsaPSS_VerifyCheck(din.as_ptr(), din_size,
-                dout.as_mut_ptr(), dout_size, digest.as_ptr(), digest_size,
-                hash_algo, mgf, &mut self.wc_rsakey)
+            sys::wc_RsaPSS_VerifyCheck(
+                din.as_ptr(),
+                din_size,
+                dout.as_mut_ptr(),
+                dout_size,
+                digest.as_ptr(),
+                digest_size,
+                hash_algo,
+                mgf,
+                &mut self.wc_rsakey,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -1091,13 +1181,25 @@ impl RSA {
     /// }
     /// ```
     #[cfg(all(rsa_direct, rsa_const_api))]
-    pub fn rsa_direct(&mut self, din: &[u8], dout: &mut [u8], typ: i32, rng: &mut RNG) -> Result<usize, i32> {
+    pub fn rsa_direct(
+        &mut self,
+        din: &[u8],
+        dout: &mut [u8],
+        typ: i32,
+        rng: &mut RNG,
+    ) -> Result<usize, i32> {
         let din_size = din.len() as u32;
         let mut dout_size = dout.len() as u32;
         let rc = unsafe {
-            sys::wc_RsaDirect(din.as_ptr(), din_size,
-                dout.as_mut_ptr(), &mut dout_size,
-                &mut self.wc_rsakey, typ, &mut rng.wc_rng)
+            sys::wc_RsaDirect(
+                din.as_ptr(),
+                din_size,
+                dout.as_mut_ptr(),
+                &mut dout_size,
+                &mut self.wc_rsakey,
+                typ,
+                &mut rng.wc_rng,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -1152,9 +1254,7 @@ impl RSA {
     /// ```
     #[cfg(random)]
     pub fn set_rng(&mut self, rng: &mut RNG) -> Result<(), i32> {
-        let rc = unsafe {
-            sys::wc_RsaSetRNG(&mut self.wc_rsakey, &mut rng.wc_rng)
-        };
+        let rc = unsafe { sys::wc_RsaSetRNG(&mut self.wc_rsakey, &mut rng.wc_rng) };
         if rc != 0 {
             return Err(rc);
         }
@@ -1212,9 +1312,14 @@ impl RSA {
         let din_size = din.len() as u32;
         let dout_size = dout.len() as u32;
         let rc = unsafe {
-            sys::wc_RsaSSL_Sign(din.as_ptr(), din_size,
-                dout.as_mut_ptr(), dout_size,
-                &mut self.wc_rsakey, &mut rng.wc_rng)
+            sys::wc_RsaSSL_Sign(
+                din.as_ptr(),
+                din_size,
+                dout.as_mut_ptr(),
+                dout_size,
+                &mut self.wc_rsakey,
+                &mut rng.wc_rng,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -1273,8 +1378,13 @@ impl RSA {
         let din_size = din.len() as u32;
         let dout_size = dout.len() as u32;
         let rc = unsafe {
-            sys::wc_RsaSSL_Verify(din.as_ptr(), din_size,
-                dout.as_mut_ptr(), dout_size, &mut self.wc_rsakey)
+            sys::wc_RsaSSL_Verify(
+                din.as_ptr(),
+                din_size,
+                dout.as_mut_ptr(),
+                dout_size,
+                &mut self.wc_rsakey,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -1292,6 +1402,8 @@ impl Drop for RSA {
     /// struct goes out of scope, automatically cleaning up resources and
     /// preventing memory leaks.
     fn drop(&mut self) {
-        unsafe { sys::wc_FreeRsaKey(&mut self.wc_rsakey); }
+        unsafe {
+            sys::wc_FreeRsaKey(&mut self.wc_rsakey);
+        }
     }
 }

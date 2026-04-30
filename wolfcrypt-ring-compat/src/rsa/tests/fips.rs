@@ -49,4 +49,3 @@ generate_key!(rsa4096_signing_generate_key, KeyPair, KeySize::Rsa4096);
 // Key generation for large RSA keys is very slow
 #[cfg(not(disable_slow_tests))]
 generate_key!(rsa8192_signing_generate_key, KeyPair, KeySize::Rsa8192);
-

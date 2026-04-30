@@ -180,19 +180,43 @@ macro_rules! impl_aes_cbc_dec {
     };
 }
 
-impl_aes_cbc_enc!(Aes128CbcEnc, typenum::U16, 16u32,
-    "AES-128 CBC encryption, implementing `BlockEncryptMut` and `KeyIvInit`.");
-impl_aes_cbc_dec!(Aes128CbcDec, typenum::U16, 16u32,
-    "AES-128 CBC decryption, implementing `BlockDecryptMut` and `KeyIvInit`.");
+impl_aes_cbc_enc!(
+    Aes128CbcEnc,
+    typenum::U16,
+    16u32,
+    "AES-128 CBC encryption, implementing `BlockEncryptMut` and `KeyIvInit`."
+);
+impl_aes_cbc_dec!(
+    Aes128CbcDec,
+    typenum::U16,
+    16u32,
+    "AES-128 CBC decryption, implementing `BlockDecryptMut` and `KeyIvInit`."
+);
 
 #[cfg(wolfssl_aes_192)]
-impl_aes_cbc_enc!(Aes192CbcEnc, typenum::U24, 24u32,
-    "AES-192 CBC encryption, implementing `BlockEncryptMut` and `KeyIvInit`.");
+impl_aes_cbc_enc!(
+    Aes192CbcEnc,
+    typenum::U24,
+    24u32,
+    "AES-192 CBC encryption, implementing `BlockEncryptMut` and `KeyIvInit`."
+);
 #[cfg(wolfssl_aes_192)]
-impl_aes_cbc_dec!(Aes192CbcDec, typenum::U24, 24u32,
-    "AES-192 CBC decryption, implementing `BlockDecryptMut` and `KeyIvInit`.");
+impl_aes_cbc_dec!(
+    Aes192CbcDec,
+    typenum::U24,
+    24u32,
+    "AES-192 CBC decryption, implementing `BlockDecryptMut` and `KeyIvInit`."
+);
 
-impl_aes_cbc_enc!(Aes256CbcEnc, typenum::U32, 32u32,
-    "AES-256 CBC encryption, implementing `BlockEncryptMut` and `KeyIvInit`.");
-impl_aes_cbc_dec!(Aes256CbcDec, typenum::U32, 32u32,
-    "AES-256 CBC decryption, implementing `BlockDecryptMut` and `KeyIvInit`.");
+impl_aes_cbc_enc!(
+    Aes256CbcEnc,
+    typenum::U32,
+    32u32,
+    "AES-256 CBC encryption, implementing `BlockEncryptMut` and `KeyIvInit`."
+);
+impl_aes_cbc_dec!(
+    Aes256CbcDec,
+    typenum::U32,
+    32u32,
+    "AES-256 CBC decryption, implementing `BlockDecryptMut` and `KeyIvInit`."
+);

@@ -15,8 +15,7 @@ fn main() {
         // Locate the wolfSSL include dirs via DEP_WOLFSSL env vars propagated
         // from wolfcrypt-rs (which has `links = "wolfssl"`).
         let include = std::env::var("DEP_WOLFSSL_INCLUDE").unwrap_or_default();
-        let settings_include =
-            std::env::var("DEP_WOLFSSL_SETTINGS_INCLUDE").unwrap_or_default();
+        let settings_include = std::env::var("DEP_WOLFSSL_SETTINGS_INCLUDE").unwrap_or_default();
 
         let mut build = cc::Build::new();
         build

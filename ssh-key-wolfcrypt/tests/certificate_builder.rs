@@ -6,8 +6,8 @@
     any(feature = "ed25519", feature = "p256")
 ))]
 
-use chacha20::{ChaCha8Rng, rand_core::SeedableRng};
-use ssh_key::{Algorithm, PrivateKey, certificate};
+use chacha20::{rand_core::SeedableRng, ChaCha8Rng};
+use ssh_key::{certificate, Algorithm, PrivateKey};
 
 #[cfg(feature = "p256")]
 use ssh_key::EcdsaCurve;
@@ -78,7 +78,10 @@ fn ed25519_sign_and_verify() {
     // much RNG state keygen consumed. Since wolfCrypt uses its own DRBG for
     // keygen (ignoring the caller's RNG), the nonce offset differs from
     // upstream. We verify the nonce is non-empty rather than a fixed value.
-    assert_eq!(cert.nonce().len(), certificate::Builder::RECOMMENDED_NONCE_SIZE);
+    assert_eq!(
+        cert.nonce().len(),
+        certificate::Builder::RECOMMENDED_NONCE_SIZE
+    );
     assert_eq!(cert.public_key(), subject_key.public_key().key_data());
     assert_eq!(cert.serial(), SERIAL);
     assert_eq!(cert.cert_type(), certificate::CertType::User);
@@ -126,7 +129,10 @@ fn ecdsa_nistp256_sign_and_verify() {
     assert_eq!(cert.algorithm(), algorithm);
     // wolfCrypt uses its own DRBG for keygen (ignoring the caller's RNG),
     // so the ChaCha8 nonce offset differs from upstream.
-    assert_eq!(cert.nonce().len(), certificate::Builder::RECOMMENDED_NONCE_SIZE);
+    assert_eq!(
+        cert.nonce().len(),
+        certificate::Builder::RECOMMENDED_NONCE_SIZE
+    );
     assert_eq!(cert.public_key(), subject_key.public_key().key_data());
     assert_eq!(cert.signature_key(), ca_key.public_key().key_data());
 
@@ -185,7 +191,10 @@ R6qbyo6hPuCiV9cAAAAAAQID
         Algorithm::Rsa { hash: None }
     );
     // wolfCrypt uses its own DRBG for keygen, so nonce offset differs.
-    assert_eq!(cert.nonce().len(), certificate::Builder::RECOMMENDED_NONCE_SIZE);
+    assert_eq!(
+        cert.nonce().len(),
+        certificate::Builder::RECOMMENDED_NONCE_SIZE
+    );
     assert_eq!(cert.public_key(), subject_key.public_key().key_data());
     assert_eq!(cert.signature_key(), ca_key.public_key().key_data());
 
@@ -205,13 +214,11 @@ fn new_with_validity_times() {
     let issued_at = SystemTime::now();
     let expires_at = issued_at + Duration::from_secs(3600);
 
-    assert!(
-        certificate::Builder::new_with_validity_times(
-            nonce,
-            subject_key.public_key(),
-            issued_at,
-            expires_at
-        )
-        .is_ok()
-    );
+    assert!(certificate::Builder::new_with_validity_times(
+        nonce,
+        subject_key.public_key(),
+        issued_at,
+        expires_at
+    )
+    .is_ok());
 }

@@ -1,7 +1,7 @@
 #![allow(deprecated, dead_code)]
 
-use wolfcrypt_ring_compat::{test, test_file};
 use criterion::{criterion_group, criterion_main, Criterion};
+use wolfcrypt_ring_compat::{test, test_file};
 
 #[allow(dead_code)]
 pub struct RsaConfig {
@@ -156,7 +156,13 @@ fn test_rsa_sign(c: &mut Criterion, config: &RsaConfig) {
     let wc_sig = &mut buffer[0..wc_key_pair.public_modulus_len()];
     group.bench_function("wolfcrypt-ring-compat", |b| {
         b.iter(|| {
-            wolfcrypt_ring_compat_benchmarks::sign(&wc_key_pair, &wc_rng, &config.msg, wc_encoding, wc_sig);
+            wolfcrypt_ring_compat_benchmarks::sign(
+                &wc_key_pair,
+                &wc_rng,
+                &config.msg,
+                wc_encoding,
+                wc_sig,
+            );
         });
     });
     #[cfg(feature = "ring-benchmarks")]
@@ -198,7 +204,12 @@ fn test_rsa_verify(c: &mut Criterion, config: &RsaConfig) {
 
         group.bench_function("wolfcrypt-ring-compat", |b| {
             b.iter(|| {
-                wolfcrypt_ring_compat_benchmarks::verify(wc_params, wc_pub_key, &config.msg, wc_sig);
+                wolfcrypt_ring_compat_benchmarks::verify(
+                    wc_params,
+                    wc_pub_key,
+                    &config.msg,
+                    wc_sig,
+                );
             });
         });
     }

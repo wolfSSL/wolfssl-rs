@@ -1,5 +1,5 @@
 use crate::wolfcrypt_rs::{
-    ECDSA_SIG_new, ECDSA_SIG_set0, i2d_ECDSA_SIG, NID_X9_62_prime256v1, NID_secp256k1,
+    i2d_ECDSA_SIG, ECDSA_SIG_new, ECDSA_SIG_set0, NID_X9_62_prime256v1, NID_secp256k1,
     NID_secp384r1, NID_secp521r1, BIGNUM, ECDSA_SIG, EVP_PKEY,
 };
 

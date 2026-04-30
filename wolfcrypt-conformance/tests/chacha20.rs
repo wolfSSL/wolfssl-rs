@@ -93,11 +93,7 @@ mod chacha20_equiv {
             );
             pure.apply_keystream(&mut pure_ct);
 
-            assert_eq!(
-                wolf_ct, pure_ct,
-                "ChaCha20 mismatch at length {}",
-                len
-            );
+            assert_eq!(wolf_ct, pure_ct, "ChaCha20 mismatch at length {}", len);
         }
     }
 

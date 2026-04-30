@@ -1,9 +1,9 @@
 // Supplemental Known Answer Tests (KATs) for the wolfSSL backend.
 // Each test vector cites its normative source.
 
-use ring::{aead, digest, hkdf, hmac, signature};
 use ring::rand::SystemRandom;
-use ring::signature::{Ed25519KeyPair, EcdsaKeyPair, KeyPair, UnparsedPublicKey};
+use ring::signature::{EcdsaKeyPair, Ed25519KeyPair, KeyPair, UnparsedPublicKey};
+use ring::{aead, digest, hkdf, hmac, signature};
 
 /// Helper: decode a hex string to bytes.
 fn hex_to_bytes(hex: &str) -> Vec<u8> {
@@ -20,9 +20,7 @@ fn hex_to_bytes(hex: &str) -> Vec<u8> {
 // ---------------------------------------------------------------------------
 #[test]
 fn sha256_fips_180_4_b1() {
-    let expected = hex_to_bytes(
-        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-    );
+    let expected = hex_to_bytes("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     let actual = digest::digest(&digest::SHA256, b"abc");
     assert_eq!(actual.as_ref(), expected.as_slice());
 }
@@ -92,9 +90,7 @@ fn aes_128_gcm_nist_sp800_38d_test_case_2() {
 // ---------------------------------------------------------------------------
 #[test]
 fn hmac_sha256_rfc4231_test_case_2() {
-    let expected = hex_to_bytes(
-        "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843",
-    );
+    let expected = hex_to_bytes("5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843");
     let key = hmac::Key::new(hmac::HMAC_SHA256, b"Jefe");
     let tag = hmac::sign(&key, b"what do ya want for nothing?");
     assert_eq!(tag.as_ref(), expected.as_slice());
@@ -128,9 +124,7 @@ fn hkdf_sha256_rfc5869_test_case_1() {
 
     let mut okm_bytes = vec![0u8; 42];
     let info_slice = [info.as_slice()];
-    let okm = prk
-        .expand(&info_slice, HkdfLen(42))
-        .unwrap();
+    let okm = prk.expand(&info_slice, HkdfLen(42)).unwrap();
     okm.fill(&mut okm_bytes).unwrap();
 
     assert_eq!(okm_bytes, expected_okm);
@@ -189,7 +183,8 @@ fn ecdsa_p256_sign_verify_fips186_4() {
 #[test]
 fn ed25519_rfc8032_test_vector_1() {
     let seed = hex_to_bytes("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
-    let expected_pub = hex_to_bytes("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
+    let expected_pub =
+        hex_to_bytes("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
     let expected_sig = hex_to_bytes(
         "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155\
          5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b",

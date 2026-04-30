@@ -46,16 +46,12 @@ use core::ptr;
 use crate::error::{check, len_as_u32, WolfCryptError};
 use crate::rand::WolfRng;
 use wolfcrypt_rs::{
-    wc_HpkeInit, wc_HpkeGenerateKeyPair, wc_HpkeSerializePublicKey,
-    wc_HpkeDeserializePublicKey, wc_HpkeFreeKey, wc_HpkeSealBase, wc_HpkeOpenBase,
-    WcHpke,
-    DHKEM_P256_HKDF_SHA256, DHKEM_P384_HKDF_SHA384, DHKEM_P521_HKDF_SHA512,
-    DHKEM_X25519_HKDF_SHA256, DHKEM_X448_HKDF_SHA512,
+    wc_HpkeDeserializePublicKey, wc_HpkeFreeKey, wc_HpkeGenerateKeyPair, wc_HpkeInit,
+    wc_HpkeOpenBase, wc_HpkeSealBase, wc_HpkeSerializePublicKey, HPKE_Nt_MAX, WcHpke,
+    DHKEM_P256_ENC_LEN, DHKEM_P256_HKDF_SHA256, DHKEM_P384_ENC_LEN, DHKEM_P384_HKDF_SHA384,
+    DHKEM_P521_ENC_LEN, DHKEM_P521_HKDF_SHA512, DHKEM_X25519_ENC_LEN, DHKEM_X25519_HKDF_SHA256,
+    DHKEM_X448_ENC_LEN, DHKEM_X448_HKDF_SHA512, HPKE_AES_128_GCM, HPKE_AES_256_GCM,
     HPKE_HKDF_SHA256, HPKE_HKDF_SHA384, HPKE_HKDF_SHA512,
-    HPKE_AES_128_GCM, HPKE_AES_256_GCM,
-    DHKEM_P256_ENC_LEN, DHKEM_P384_ENC_LEN, DHKEM_P521_ENC_LEN,
-    DHKEM_X25519_ENC_LEN, DHKEM_X448_ENC_LEN,
-    HPKE_Nt_MAX,
 };
 
 // ---------------------------------------------------------------------------
@@ -179,12 +175,7 @@ impl HpkeKeyPair {
         // SAFETY: `hpke.hpke` is initialised, `self.key` is a valid keypair
         // from `wc_HpkeGenerateKeyPair`, and `buf` is large enough.
         let rc = unsafe {
-            wc_HpkeSerializePublicKey(
-                &mut *hpke.hpke,
-                self.key,
-                buf.as_mut_ptr(),
-                &mut out_sz,
-            )
+            wc_HpkeSerializePublicKey(&mut *hpke.hpke, self.key, buf.as_mut_ptr(), &mut out_sz)
         };
         check(rc, "wc_HpkeSerializePublicKey")?;
         buf.truncate(out_sz as usize);
@@ -234,7 +225,13 @@ impl Hpke {
         // SAFETY: `hpke` is zero-initialised and `wc_HpkeInit` will fully
         // initialise it.  We pass NULL for the heap (use default allocator).
         let rc = unsafe {
-            wc_HpkeInit(&mut *hpke, suite.kem, suite.kdf, suite.aead, ptr::null_mut())
+            wc_HpkeInit(
+                &mut *hpke,
+                suite.kem,
+                suite.kdf,
+                suite.aead,
+                ptr::null_mut(),
+            )
         };
         check(rc, "wc_HpkeInit")?;
         Ok(Self { hpke, suite })
@@ -252,9 +249,7 @@ impl Hpke {
         let mut key: *mut c_void = ptr::null_mut();
         // SAFETY: `self.hpke` is initialised, `rng.rng` is initialised,
         // and `key` is a valid out-pointer.
-        let rc = unsafe {
-            wc_HpkeGenerateKeyPair(&mut *self.hpke, &mut key, &mut rng.rng)
-        };
+        let rc = unsafe { wc_HpkeGenerateKeyPair(&mut *self.hpke, &mut key, &mut rng.rng) };
         check(rc, "wc_HpkeGenerateKeyPair")?;
         if key.is_null() {
             return Err(WolfCryptError::AllocFailed);
@@ -275,12 +270,7 @@ impl Hpke {
         let mut key: *mut c_void = ptr::null_mut();
         // SAFETY: `self.hpke` is initialised, `enc` is a valid byte slice.
         let rc = unsafe {
-            wc_HpkeDeserializePublicKey(
-                &mut *self.hpke,
-                &mut key,
-                enc.as_ptr(),
-                enc.len() as u16,
-            )
+            wc_HpkeDeserializePublicKey(&mut *self.hpke, &mut key, enc.as_ptr(), enc.len() as u16)
         };
         check(rc, "wc_HpkeDeserializePublicKey")?;
         if key.is_null() {

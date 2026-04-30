@@ -1,8 +1,8 @@
 #![cfg(all(wolfssl_openssl_extra, wolfssl_cmac))]
 
 mod helpers;
-use helpers::cavp::parse_cavp;
 use digest::Mac;
+use helpers::cavp::parse_cavp;
 
 /// Run CAVP CMAC verification tests for a given AES key size.
 ///
@@ -39,7 +39,11 @@ macro_rules! cavp_cmac_test {
                 // When Mlen == 0 the Msg field is typically "00" (placeholder),
                 // but we should hash zero bytes of input.
                 let msg_bytes = tc.bytes("Msg");
-                let msg = if mlen == 0 { &[][..] } else { &msg_bytes[..mlen] };
+                let msg = if mlen == 0 {
+                    &[][..]
+                } else {
+                    &msg_bytes[..mlen]
+                };
 
                 let mut mac = <$wolf_type>::new_from_slice(&key)
                     .expect(concat!(stringify!($name), ": new_from_slice failed"));
@@ -83,5 +87,15 @@ macro_rules! cavp_cmac_test {
     };
 }
 
-cavp_cmac_test!(aes128_cmac_cavp, wolfcrypt::WolfCmacAes128, 16, helpers::load_vectors("cavp/cavp_aes128_cmac_tests.txt"));
-cavp_cmac_test!(aes256_cmac_cavp, wolfcrypt::WolfCmacAes256, 32, helpers::load_vectors("cavp/cavp_aes256_cmac_tests.txt"));
+cavp_cmac_test!(
+    aes128_cmac_cavp,
+    wolfcrypt::WolfCmacAes128,
+    16,
+    helpers::load_vectors("cavp/cavp_aes128_cmac_tests.txt")
+);
+cavp_cmac_test!(
+    aes256_cmac_cavp,
+    wolfcrypt::WolfCmacAes256,
+    32,
+    helpers::load_vectors("cavp/cavp_aes256_cmac_tests.txt")
+);

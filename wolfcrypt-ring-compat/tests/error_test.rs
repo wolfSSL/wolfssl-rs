@@ -72,7 +72,10 @@ fn key_rejected_from_invalid_key() {
     assert!(!debug.is_empty(), "KeyRejected Debug should not be empty");
 
     let display = format!("{}", err);
-    assert!(!display.is_empty(), "KeyRejected Display should not be empty");
+    assert!(
+        !display.is_empty(),
+        "KeyRejected Display should not be empty"
+    );
 
     let desc = err.description_();
     assert!(

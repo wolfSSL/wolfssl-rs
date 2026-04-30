@@ -558,7 +558,6 @@ fn decode_rsa_4096_openssh() {
     assert_eq!(b"user@example.com", key.comment().as_bytes());
 }
 
-
 #[cfg(feature = "alloc")]
 #[test]
 fn decode_custom_algorithm_openssh() {

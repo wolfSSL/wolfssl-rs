@@ -5,8 +5,8 @@
 
 #![cfg(all(feature = "rsa-direct", wolfssl_rsa))]
 
-use wolfcrypt::rsa::{NativeRsaKey, RsaDirectType};
 use wolfcrypt::rand::WolfRng;
+use wolfcrypt::rsa::{NativeRsaKey, RsaDirectType};
 
 // ===========================================================================
 // Section 1: Generate + round-trip (private-encrypt then public-decrypt)
@@ -20,8 +20,7 @@ use wolfcrypt::rand::WolfRng;
 #[test]
 fn private_encrypt_then_public_decrypt_roundtrip() {
     let mut rng = WolfRng::new().expect("RNG init");
-    let mut key = NativeRsaKey::generate(2048, &mut rng)
-        .expect("RSA 2048-bit key generation");
+    let mut key = NativeRsaKey::generate(2048, &mut rng).expect("RSA 2048-bit key generation");
 
     let key_sz = key.encrypt_size().expect("encrypt_size");
     assert_eq!(key_sz, 256, "2048-bit key should have 256-byte modulus");
@@ -40,7 +39,10 @@ fn private_encrypt_then_public_decrypt_roundtrip() {
         .rsa_direct(&input, RsaDirectType::PrivateEncrypt, &mut rng)
         .expect("rsa_direct PrivateEncrypt");
     assert_eq!(encrypted.len(), key_sz);
-    assert_ne!(encrypted, input, "encrypted output should differ from input");
+    assert_ne!(
+        encrypted, input,
+        "encrypted output should differ from input"
+    );
 
     // public-decrypt (s^e mod n) — should recover original input
     let recovered = key
@@ -59,8 +61,7 @@ fn private_encrypt_then_public_decrypt_roundtrip() {
 #[test]
 fn public_encrypt_then_private_decrypt_roundtrip() {
     let mut rng = WolfRng::new().expect("RNG init");
-    let mut key = NativeRsaKey::generate(2048, &mut rng)
-        .expect("RSA 2048-bit key generation");
+    let mut key = NativeRsaKey::generate(2048, &mut rng).expect("RSA 2048-bit key generation");
 
     let key_sz = key.encrypt_size().expect("encrypt_size");
 
@@ -93,12 +94,14 @@ fn public_encrypt_then_private_decrypt_roundtrip() {
 #[test]
 fn wrong_input_size_rejected() {
     let mut rng = WolfRng::new().expect("RNG init");
-    let mut key = NativeRsaKey::generate(2048, &mut rng)
-        .expect("RSA key generation");
+    let mut key = NativeRsaKey::generate(2048, &mut rng).expect("RSA key generation");
 
     let too_short = vec![0x42u8; 128]; // 1024 bits, but key is 2048
     let result = key.rsa_direct(&too_short, RsaDirectType::PublicEncrypt, &mut rng);
-    assert!(result.is_err(), "input shorter than key size should be rejected");
+    assert!(
+        result.is_err(),
+        "input shorter than key size should be rejected"
+    );
 }
 
 // ===========================================================================
@@ -110,7 +113,6 @@ fn wrong_input_size_rejected() {
 fn encrypt_size_matches_key_bits() {
     let mut rng = WolfRng::new().expect("RNG init");
 
-    let key_2048 = NativeRsaKey::generate(2048, &mut rng)
-        .expect("RSA 2048 key generation");
+    let key_2048 = NativeRsaKey::generate(2048, &mut rng).expect("RSA 2048 key generation");
     assert_eq!(key_2048.encrypt_size().unwrap(), 256);
 }

@@ -74,9 +74,14 @@ impl CMAC {
         let data_size = data.len() as u32;
         let mut dout_size = dout.len() as u32;
         let rc = unsafe {
-            sys::wc_AesCmacGenerate(dout.as_mut_ptr(), &mut dout_size,
-                data.as_ptr(), data_size,
-                key.as_ptr(), key_size)
+            sys::wc_AesCmacGenerate(
+                dout.as_mut_ptr(),
+                &mut dout_size,
+                data.as_ptr(),
+                data_size,
+                key.as_ptr(),
+                key_size,
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -133,7 +138,11 @@ impl CMAC {
     /// ];
     /// let mut cmac = CMAC::new_ex(&key, None, None).expect("Error with new_ex()");
     /// ```
-    pub fn new_ex(key: &[u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<Self, i32> {
+    pub fn new_ex(
+        key: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<Self, i32> {
         let key_size = key.len() as u32;
         let mut ws_cmac: MaybeUninit<sys::Cmac> = MaybeUninit::uninit();
         let typ = sys::CmacType_WC_CMAC_AES as i32;
@@ -146,8 +155,15 @@ impl CMAC {
             None => sys::INVALID_DEVID,
         };
         let rc = unsafe {
-            sys::wc_InitCmac_ex(ws_cmac.as_mut_ptr(), key.as_ptr(), key_size,
-                typ, core::ptr::null_mut(), heap, dev_id)
+            sys::wc_InitCmac_ex(
+                ws_cmac.as_mut_ptr(),
+                key.as_ptr(),
+                key_size,
+                typ,
+                core::ptr::null_mut(),
+                heap,
+                dev_id,
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -197,9 +213,14 @@ impl CMAC {
         let data_size = data.len() as u32;
         let check_size = check.len() as u32;
         let rc = unsafe {
-            sys::wc_AesCmacVerify(check.as_ptr(), check_size,
-                data.as_ptr(), data_size,
-                key.as_ptr(), key_size)
+            sys::wc_AesCmacVerify(
+                check.as_ptr(),
+                check_size,
+                data.as_ptr(),
+                data_size,
+                key.as_ptr(),
+                key_size,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -242,7 +263,14 @@ impl CMAC {
     /// }
     /// ```
     #[cfg(aes)]
-    pub fn generate_ex(&mut self, key: &[u8], data: &[u8], dout: &mut [u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<(), i32> {
+    pub fn generate_ex(
+        &mut self,
+        key: &[u8],
+        data: &[u8],
+        dout: &mut [u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<(), i32> {
         let key_size = key.len() as u32;
         let data_size = data.len() as u32;
         let mut dout_size = dout.len() as u32;
@@ -255,10 +283,17 @@ impl CMAC {
             None => sys::INVALID_DEVID,
         };
         let rc = unsafe {
-            sys::wc_AesCmacGenerate_ex(&mut self.ws_cmac,
-                dout.as_mut_ptr(), &mut dout_size,
-                data.as_ptr(), data_size,
-                key.as_ptr(), key_size, heap, dev_id)
+            sys::wc_AesCmacGenerate_ex(
+                &mut self.ws_cmac,
+                dout.as_mut_ptr(),
+                &mut dout_size,
+                data.as_ptr(),
+                data_size,
+                key.as_ptr(),
+                key_size,
+                heap,
+                dev_id,
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -294,9 +329,7 @@ impl CMAC {
     /// ```
     pub fn update(&mut self, data: &[u8]) -> Result<(), i32> {
         let data_size = data.len() as u32;
-        let rc = unsafe {
-            sys::wc_CmacUpdate(&mut self.ws_cmac, data.as_ptr(), data_size)
-        };
+        let rc = unsafe { sys::wc_CmacUpdate(&mut self.ws_cmac, data.as_ptr(), data_size) };
         if rc != 0 {
             return Err(rc);
         }
@@ -337,8 +370,7 @@ impl CMAC {
     pub fn finalize(mut self, dout: &mut [u8]) -> Result<(), i32> {
         let mut dout_size = dout.len() as u32;
         let rc = unsafe {
-            sys::wc_CmacFinalNoFree(&mut self.ws_cmac,
-                dout.as_mut_ptr(), &mut dout_size)
+            sys::wc_CmacFinalNoFree(&mut self.ws_cmac, dout.as_mut_ptr(), &mut dout_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -384,7 +416,14 @@ impl CMAC {
     /// }
     /// ```
     #[cfg(aes)]
-    pub fn verify_ex(&mut self, key: &[u8], data: &[u8], check: &[u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<bool, i32> {
+    pub fn verify_ex(
+        &mut self,
+        key: &[u8],
+        data: &[u8],
+        check: &[u8],
+        heap: Option<*mut core::ffi::c_void>,
+        dev_id: Option<i32>,
+    ) -> Result<bool, i32> {
         let key_size = key.len() as u32;
         let data_size = data.len() as u32;
         let check_size = check.len() as u32;
@@ -397,10 +436,17 @@ impl CMAC {
             None => sys::INVALID_DEVID,
         };
         let rc = unsafe {
-            sys::wc_AesCmacVerify_ex(&mut self.ws_cmac,
-                check.as_ptr(), check_size,
-                data.as_ptr(), data_size,
-                key.as_ptr(), key_size, heap, dev_id)
+            sys::wc_AesCmacVerify_ex(
+                &mut self.ws_cmac,
+                check.as_ptr(),
+                check_size,
+                data.as_ptr(),
+                data_size,
+                key.as_ptr(),
+                key_size,
+                heap,
+                dev_id,
+            )
         };
         if rc < 0 {
             return Err(rc);
@@ -411,6 +457,8 @@ impl CMAC {
 impl Drop for CMAC {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
-        unsafe { sys::wc_CmacFree(&mut self.ws_cmac); }
+        unsafe {
+            sys::wc_CmacFree(&mut self.ws_cmac);
+        }
     }
 }

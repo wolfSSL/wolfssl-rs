@@ -51,7 +51,7 @@ use core::ffi::{c_int, c_void};
 
 use alloc::boxed::Box;
 
-use crate::error::{WolfCryptError, check};
+use crate::error::{check, WolfCryptError};
 
 // ---------------------------------------------------------------------------
 // Result type for callbacks
@@ -355,7 +355,8 @@ unsafe extern "C" fn trampoline(
         wolfcrypt_rs::WC_ALGO_TYPE_HASH => {
             let hash_type = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hash_type(info_c) };
             let in_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hash_in(info_c) };
-            let in_sz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hash_in_sz(info_c) } as usize;
+            let in_sz =
+                unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hash_in_sz(info_c) } as usize;
             let digest_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hash_digest(info_c) };
 
             let input = if !in_ptr.is_null() && in_sz > 0 {
@@ -369,13 +370,18 @@ unsafe extern "C" fn trampoline(
             } else {
                 Some(unsafe { core::slice::from_raw_parts_mut(digest_ptr, 64) })
             };
-            state.callbacks.hash(HashRequest { hash_type, input, digest })
+            state.callbacks.hash(HashRequest {
+                hash_type,
+                input,
+                digest,
+            })
         }
 
         wolfcrypt_rs::WC_ALGO_TYPE_HMAC => {
             let mac_type = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hmac_mac_type(info_c) };
             let in_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hmac_in(info_c) };
-            let in_sz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hmac_in_sz(info_c) } as usize;
+            let in_sz =
+                unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hmac_in_sz(info_c) } as usize;
             let digest_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hmac_digest(info_c) };
 
             let input = if !in_ptr.is_null() && in_sz > 0 {
@@ -388,7 +394,11 @@ unsafe extern "C" fn trampoline(
             } else {
                 Some(unsafe { core::slice::from_raw_parts_mut(digest_ptr, 64) })
             };
-            state.callbacks.hmac(HmacRequest { mac_type, input, digest })
+            state.callbacks.hmac(HmacRequest {
+                mac_type,
+                input,
+                digest,
+            })
         }
 
         wolfcrypt_rs::WC_ALGO_TYPE_CIPHER => {
@@ -447,47 +457,119 @@ unsafe fn build_cipher_aesgcm(
     encrypting: bool,
 ) -> c_int {
     if encrypting {
-        let aes  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_aes(info_c) };
-        let out  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_out(info_m) };
-        let inp  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_in(info_c) };
-        let sz   = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_sz(info_c) } as usize;
-        let iv   = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_iv(info_c) };
-        let ivsz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_iv_sz(info_c) } as usize;
-        let tag  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag(info_m) };
-        let tagsz= unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag_sz(info_c) } as usize;
-        let ain  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in(info_c) };
-        let ainsz= unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in_sz(info_c) } as usize;
+        let aes = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_aes(info_c) };
+        let out = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_out(info_m) };
+        let inp = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_in(info_c) };
+        let sz =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_sz(info_c) } as usize;
+        let iv = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_iv(info_c) };
+        let ivsz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_iv_sz(info_c) }
+            as usize;
+        let tag =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag(info_m) };
+        let tagsz =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag_sz(info_c) }
+                as usize;
+        let ain =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in(info_c) };
+        let ainsz =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in_sz(info_c) }
+                as usize;
 
-        let input    = if !inp.is_null() && sz > 0 { unsafe { core::slice::from_raw_parts(inp, sz) } } else { &[] };
-        let out_sl   = if !out.is_null() && sz > 0 { unsafe { core::slice::from_raw_parts_mut(out, sz) } } else { &mut [] };
-        let iv_sl    = if !iv.is_null() && ivsz > 0 { unsafe { core::slice::from_raw_parts(iv, ivsz) } } else { &[] };
-        let tag_sl   = if !tag.is_null() && tagsz > 0 { unsafe { core::slice::from_raw_parts_mut(tag, tagsz) } } else { &mut [] };
-        let auth_in  = if !ain.is_null() && ainsz > 0 { unsafe { core::slice::from_raw_parts(ain, ainsz) } } else { &[] };
+        let input = if !inp.is_null() && sz > 0 {
+            unsafe { core::slice::from_raw_parts(inp, sz) }
+        } else {
+            &[]
+        };
+        let out_sl = if !out.is_null() && sz > 0 {
+            unsafe { core::slice::from_raw_parts_mut(out, sz) }
+        } else {
+            &mut []
+        };
+        let iv_sl = if !iv.is_null() && ivsz > 0 {
+            unsafe { core::slice::from_raw_parts(iv, ivsz) }
+        } else {
+            &[]
+        };
+        let tag_sl = if !tag.is_null() && tagsz > 0 {
+            unsafe { core::slice::from_raw_parts_mut(tag, tagsz) }
+        } else {
+            &mut []
+        };
+        let auth_in = if !ain.is_null() && ainsz > 0 {
+            unsafe { core::slice::from_raw_parts(ain, ainsz) }
+        } else {
+            &[]
+        };
 
-        state.callbacks.cipher(CipherRequest::AesGcmEncrypt(AesGcmEncRequest {
-            aes, input, out: out_sl, iv: iv_sl, auth_tag: tag_sl, auth_in,
-        })).to_c()
+        state
+            .callbacks
+            .cipher(CipherRequest::AesGcmEncrypt(AesGcmEncRequest {
+                aes,
+                input,
+                out: out_sl,
+                iv: iv_sl,
+                auth_tag: tag_sl,
+                auth_in,
+            }))
+            .to_c()
     } else {
-        let aes  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_aes(info_c) };
-        let out  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_out(info_m) };
-        let inp  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_in(info_c) };
-        let sz   = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_sz(info_c) } as usize;
-        let iv   = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_iv(info_c) };
-        let ivsz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_iv_sz(info_c) } as usize;
-        let tag  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag(info_c) };
-        let tagsz= unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag_sz(info_c) } as usize;
-        let ain  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in(info_c) };
-        let ainsz= unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in_sz(info_c) } as usize;
+        let aes = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_aes(info_c) };
+        let out = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_out(info_m) };
+        let inp = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_in(info_c) };
+        let sz =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_sz(info_c) } as usize;
+        let iv = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_iv(info_c) };
+        let ivsz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_iv_sz(info_c) }
+            as usize;
+        let tag =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag(info_c) };
+        let tagsz =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag_sz(info_c) }
+                as usize;
+        let ain =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in(info_c) };
+        let ainsz =
+            unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in_sz(info_c) }
+                as usize;
 
-        let input    = if !inp.is_null() && sz > 0 { unsafe { core::slice::from_raw_parts(inp, sz) } } else { &[] };
-        let out_sl   = if !out.is_null() && sz > 0 { unsafe { core::slice::from_raw_parts_mut(out, sz) } } else { &mut [] };
-        let iv_sl    = if !iv.is_null() && ivsz > 0 { unsafe { core::slice::from_raw_parts(iv, ivsz) } } else { &[] };
-        let tag_sl   = if !tag.is_null() && tagsz > 0 { unsafe { core::slice::from_raw_parts(tag, tagsz) } } else { &[] };
-        let auth_in  = if !ain.is_null() && ainsz > 0 { unsafe { core::slice::from_raw_parts(ain, ainsz) } } else { &[] };
+        let input = if !inp.is_null() && sz > 0 {
+            unsafe { core::slice::from_raw_parts(inp, sz) }
+        } else {
+            &[]
+        };
+        let out_sl = if !out.is_null() && sz > 0 {
+            unsafe { core::slice::from_raw_parts_mut(out, sz) }
+        } else {
+            &mut []
+        };
+        let iv_sl = if !iv.is_null() && ivsz > 0 {
+            unsafe { core::slice::from_raw_parts(iv, ivsz) }
+        } else {
+            &[]
+        };
+        let tag_sl = if !tag.is_null() && tagsz > 0 {
+            unsafe { core::slice::from_raw_parts(tag, tagsz) }
+        } else {
+            &[]
+        };
+        let auth_in = if !ain.is_null() && ainsz > 0 {
+            unsafe { core::slice::from_raw_parts(ain, ainsz) }
+        } else {
+            &[]
+        };
 
-        state.callbacks.cipher(CipherRequest::AesGcmDecrypt(AesGcmDecRequest {
-            aes, input, out: out_sl, iv: iv_sl, auth_tag: tag_sl, auth_in,
-        })).to_c()
+        state
+            .callbacks
+            .cipher(CipherRequest::AesGcmDecrypt(AesGcmDecRequest {
+                aes,
+                input,
+                out: out_sl,
+                iv: iv_sl,
+                auth_tag: tag_sl,
+                auth_in,
+            }))
+            .to_c()
     }
 }
 
@@ -500,14 +582,28 @@ unsafe fn build_cipher_aescbc(
     let aes = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aescbc_aes(info_c) };
     let out = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aescbc_out(info_m) };
     let inp = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aescbc_in(info_c) };
-    let sz  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aescbc_sz(info_c) } as usize;
+    let sz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aescbc_sz(info_c) } as usize;
 
-    let input  = if !inp.is_null() && sz > 0 { unsafe { core::slice::from_raw_parts(inp, sz) } } else { &[] };
-    let out_sl = if !out.is_null() && sz > 0 { unsafe { core::slice::from_raw_parts_mut(out, sz) } } else { &mut [] };
+    let input = if !inp.is_null() && sz > 0 {
+        unsafe { core::slice::from_raw_parts(inp, sz) }
+    } else {
+        &[]
+    };
+    let out_sl = if !out.is_null() && sz > 0 {
+        unsafe { core::slice::from_raw_parts_mut(out, sz) }
+    } else {
+        &mut []
+    };
 
-    state.callbacks.cipher(CipherRequest::AesCbc(AesCbcRequest {
-        aes, encrypting, input, out: out_sl,
-    })).to_c()
+    state
+        .callbacks
+        .cipher(CipherRequest::AesCbc(AesCbcRequest {
+            aes,
+            encrypting,
+            input,
+            out: out_sl,
+        }))
+        .to_c()
 }
 
 #[cfg(wolfssl_ecc)]
@@ -516,20 +612,39 @@ unsafe fn build_pk_ecdsasign(
     info_c: *const wolfcrypt_rs::wc_CryptoInfo,
     info_m: *mut wolfcrypt_rs::wc_CryptoInfo,
 ) -> c_int {
-    let key     = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_key(info_c) };
-    let in_ptr  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_in(info_c) };
-    let inlen   = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_inlen(info_c) } as usize;
+    let key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_key(info_c) };
+    let in_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_in(info_c) };
+    let inlen = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_inlen(info_c) } as usize;
     let out_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_out(info_m) };
     let out_len = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_outlen(info_m) };
-    let rng     = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_rng(info_c) };
+    let rng = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_rng(info_c) };
 
-    let hash    = if !in_ptr.is_null() && inlen > 0 { unsafe { core::slice::from_raw_parts(in_ptr, inlen) } } else { &[] };
-    let cap     = if out_len.is_null() { 0 } else { unsafe { *out_len } as usize };
-    let out     = if !out_ptr.is_null() && cap > 0 { unsafe { core::slice::from_raw_parts_mut(out_ptr, cap) } } else { &mut [] };
+    let hash = if !in_ptr.is_null() && inlen > 0 {
+        unsafe { core::slice::from_raw_parts(in_ptr, inlen) }
+    } else {
+        &[]
+    };
+    let cap = if out_len.is_null() {
+        0
+    } else {
+        (unsafe { *out_len }) as usize
+    };
+    let out = if !out_ptr.is_null() && cap > 0 {
+        unsafe { core::slice::from_raw_parts_mut(out_ptr, cap) }
+    } else {
+        &mut []
+    };
 
-    state.callbacks.pk(PkRequest::EcdsaSign(EcdsaSignRequest {
-        key, hash, out, out_len, rng,
-    })).to_c()
+    state
+        .callbacks
+        .pk(PkRequest::EcdsaSign(EcdsaSignRequest {
+            key,
+            hash,
+            out,
+            out_len,
+            rng,
+        }))
+        .to_c()
 }
 
 #[cfg(wolfssl_ecc)]
@@ -538,19 +653,35 @@ unsafe fn build_pk_ecdsaverify(
     info_c: *const wolfcrypt_rs::wc_CryptoInfo,
     info_m: *mut wolfcrypt_rs::wc_CryptoInfo,
 ) -> c_int {
-    let key      = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_key(info_c) };
-    let sig_ptr  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_sig(info_c) };
-    let siglen   = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_siglen(info_c) } as usize;
+    let key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_key(info_c) };
+    let sig_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_sig(info_c) };
+    let siglen =
+        unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_siglen(info_c) } as usize;
     let hash_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_hash(info_c) };
-    let hashlen  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_hashlen(info_c) } as usize;
-    let result   = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_res(info_m) };
+    let hashlen =
+        unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_hashlen(info_c) } as usize;
+    let result = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_res(info_m) };
 
-    let sig  = if !sig_ptr.is_null() && siglen > 0 { unsafe { core::slice::from_raw_parts(sig_ptr, siglen) } } else { &[] };
-    let hash = if !hash_ptr.is_null() && hashlen > 0 { unsafe { core::slice::from_raw_parts(hash_ptr, hashlen) } } else { &[] };
+    let sig = if !sig_ptr.is_null() && siglen > 0 {
+        unsafe { core::slice::from_raw_parts(sig_ptr, siglen) }
+    } else {
+        &[]
+    };
+    let hash = if !hash_ptr.is_null() && hashlen > 0 {
+        unsafe { core::slice::from_raw_parts(hash_ptr, hashlen) }
+    } else {
+        &[]
+    };
 
-    state.callbacks.pk(PkRequest::EcdsaVerify(EcdsaVerifyRequest {
-        key, sig, hash, result,
-    })).to_c()
+    state
+        .callbacks
+        .pk(PkRequest::EcdsaVerify(EcdsaVerifyRequest {
+            key,
+            sig,
+            hash,
+            result,
+        }))
+        .to_c()
 }
 
 #[cfg(wolfssl_ecc)]
@@ -560,31 +691,48 @@ unsafe fn build_pk_ecdh(
     info_m: *mut wolfcrypt_rs::wc_CryptoInfo,
 ) -> c_int {
     let private_key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_private_key(info_c) };
-    let public_key  = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_public_key(info_c) };
-    let out_ptr     = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_out(info_m) };
-    let out_len     = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_outlen(info_m) };
+    let public_key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_public_key(info_c) };
+    let out_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_out(info_m) };
+    let out_len = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_outlen(info_m) };
 
-    let cap = if out_len.is_null() { 0 } else { unsafe { *out_len } as usize };
-    let out = if !out_ptr.is_null() && cap > 0 { unsafe { core::slice::from_raw_parts_mut(out_ptr, cap) } } else { &mut [] };
+    let cap = if out_len.is_null() {
+        0
+    } else {
+        (unsafe { *out_len }) as usize
+    };
+    let out = if !out_ptr.is_null() && cap > 0 {
+        unsafe { core::slice::from_raw_parts_mut(out_ptr, cap) }
+    } else {
+        &mut []
+    };
 
-    state.callbacks.pk(PkRequest::Ecdh(EcdhRequest {
-        private_key, public_key, out, out_len,
-    })).to_c()
+    state
+        .callbacks
+        .pk(PkRequest::Ecdh(EcdhRequest {
+            private_key,
+            public_key,
+            out,
+            out_len,
+        }))
+        .to_c()
 }
 
 #[cfg(wolfssl_ecc)]
-unsafe fn build_pk_eckg(
-    state: &DeviceState,
-    info_c: *const wolfcrypt_rs::wc_CryptoInfo,
-) -> c_int {
-    let key      = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_key(info_c) };
-    let size     = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_size(info_c) };
+unsafe fn build_pk_eckg(state: &DeviceState, info_c: *const wolfcrypt_rs::wc_CryptoInfo) -> c_int {
+    let key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_key(info_c) };
+    let size = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_size(info_c) };
     let curve_id = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_curve_id(info_c) };
-    let rng      = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_rng(info_c) };
+    let rng = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_rng(info_c) };
 
-    state.callbacks.pk(PkRequest::EcKeyGen(EcKeyGenRequest {
-        key, size, curve_id, rng,
-    })).to_c()
+    state
+        .callbacks
+        .pk(PkRequest::EcKeyGen(EcKeyGenRequest {
+            key,
+            size,
+            curve_id,
+            rng,
+        }))
+        .to_c()
 }
 
 // ---------------------------------------------------------------------------
@@ -619,13 +767,16 @@ pub fn register_device(
     });
     let ctx = Box::into_raw(state) as *mut c_void;
 
-    let rc = unsafe {
-        wolfcrypt_rs::wc_CryptoCb_RegisterDevice(dev_id, Some(trampoline), ctx)
-    };
+    let rc = unsafe { wolfcrypt_rs::wc_CryptoCb_RegisterDevice(dev_id, Some(trampoline), ctx) };
 
     if rc != 0 {
-        unsafe { drop(Box::from_raw(ctx as *mut DeviceState)); }
-        return Err(WolfCryptError::Ffi { code: rc, func: "wc_CryptoCb_RegisterDevice" });
+        unsafe {
+            drop(Box::from_raw(ctx as *mut DeviceState));
+        }
+        return Err(WolfCryptError::Ffi {
+            code: rc,
+            func: "wc_CryptoCb_RegisterDevice",
+        });
     }
 
     Ok(())
@@ -653,32 +804,32 @@ pub fn unregister_device(dev_id: i32) {
 
 /// Re-export the constants callers need for matching operation types.
 pub mod algo_type {
-    pub use wolfcrypt_rs::WC_ALGO_TYPE_NONE;
-    pub use wolfcrypt_rs::WC_ALGO_TYPE_HASH;
     pub use wolfcrypt_rs::WC_ALGO_TYPE_CIPHER;
+    pub use wolfcrypt_rs::WC_ALGO_TYPE_CMAC;
+    pub use wolfcrypt_rs::WC_ALGO_TYPE_HASH;
+    pub use wolfcrypt_rs::WC_ALGO_TYPE_HMAC;
+    pub use wolfcrypt_rs::WC_ALGO_TYPE_NONE;
     pub use wolfcrypt_rs::WC_ALGO_TYPE_PK;
     pub use wolfcrypt_rs::WC_ALGO_TYPE_RNG;
     pub use wolfcrypt_rs::WC_ALGO_TYPE_SEED;
-    pub use wolfcrypt_rs::WC_ALGO_TYPE_HMAC;
-    pub use wolfcrypt_rs::WC_ALGO_TYPE_CMAC;
 }
 
 /// Re-export cipher type constants.
 pub mod cipher_type {
     pub use wolfcrypt_rs::WC_CIPHER_AES_CBC;
-    pub use wolfcrypt_rs::WC_CIPHER_AES_GCM;
-    pub use wolfcrypt_rs::WC_CIPHER_AES_CTR;
     pub use wolfcrypt_rs::WC_CIPHER_AES_CCM;
+    pub use wolfcrypt_rs::WC_CIPHER_AES_CTR;
     pub use wolfcrypt_rs::WC_CIPHER_AES_ECB;
+    pub use wolfcrypt_rs::WC_CIPHER_AES_GCM;
 }
 
 /// Re-export PK type constants.
 pub mod pk_type {
-    pub use wolfcrypt_rs::WC_PK_TYPE_RSA;
-    pub use wolfcrypt_rs::WC_PK_TYPE_EC_KEYGEN;
     pub use wolfcrypt_rs::WC_PK_TYPE_ECDH;
     pub use wolfcrypt_rs::WC_PK_TYPE_ECDSA_SIGN;
     pub use wolfcrypt_rs::WC_PK_TYPE_ECDSA_VERIFY;
+    pub use wolfcrypt_rs::WC_PK_TYPE_EC_KEYGEN;
     pub use wolfcrypt_rs::WC_PK_TYPE_ED25519_SIGN;
     pub use wolfcrypt_rs::WC_PK_TYPE_ED25519_VERIFY;
+    pub use wolfcrypt_rs::WC_PK_TYPE_RSA;
 }

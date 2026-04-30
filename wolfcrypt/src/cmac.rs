@@ -62,7 +62,9 @@ macro_rules! impl_cmac {
                 }
                 // SAFETY: key pointer is valid; length has been validated above.
                 let ctx = unsafe { $new_fn(key.as_ptr()) };
-                if ctx.is_null() { return None; }
+                if ctx.is_null() {
+                    return None;
+                }
                 Some(Self { ctx })
             }
         }
@@ -84,13 +86,12 @@ macro_rules! impl_cmac {
             fn update(&mut self, data: &[u8]) {
                 // SAFETY: ctx is valid; data pointer and length are correct.
                 let rc = unsafe {
-                    wolfcrypt_rs::wolfcrypt_cmac_update(
-                        self.ctx,
-                        data.as_ptr(),
-                        data.len() as u32,
-                    )
+                    wolfcrypt_rs::wolfcrypt_cmac_update(self.ctx, data.as_ptr(), data.len() as u32)
                 };
-                assert_eq!(rc, 0, concat!(stringify!($name), ": wolfcrypt_cmac_update failed"));
+                assert_eq!(
+                    rc, 0,
+                    concat!(stringify!($name), ": wolfcrypt_cmac_update failed")
+                );
             }
         }
 
@@ -100,13 +101,12 @@ macro_rules! impl_cmac {
                 let mut out_len: u32 = 16;
                 // SAFETY: out is exactly 16 bytes; ctx is valid.
                 let rc = unsafe {
-                    wolfcrypt_rs::wolfcrypt_cmac_final(
-                        self.ctx,
-                        out.as_mut_ptr(),
-                        &mut out_len,
-                    )
+                    wolfcrypt_rs::wolfcrypt_cmac_final(self.ctx, out.as_mut_ptr(), &mut out_len)
                 };
-                assert_eq!(rc, 0, concat!(stringify!($name), ": wolfcrypt_cmac_final failed"));
+                assert_eq!(
+                    rc, 0,
+                    concat!(stringify!($name), ": wolfcrypt_cmac_final failed")
+                );
                 debug_assert_eq!(out_len, 16);
                 // Prevent Drop from double-freeing.
                 let ctx = self.ctx;

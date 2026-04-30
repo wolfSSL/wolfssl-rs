@@ -106,7 +106,6 @@ pub use self::{
 
 #[cfg(feature = "alloc")]
 pub use crate::{
-    Comment, SshSig,
     private::{
         dsa::{DsaKeypair, DsaPrivateKey},
         opaque::{OpaqueKeypair, OpaqueKeypairBytes, OpaquePrivateKeyBytes},
@@ -114,6 +113,7 @@ pub use crate::{
         sk::SkEd25519,
     },
     sha2::Digest,
+    Comment, SshSig,
 };
 
 #[cfg(feature = "ecdsa")]
@@ -122,12 +122,12 @@ pub use self::ecdsa::{EcdsaKeypair, EcdsaPrivateKey};
 #[cfg(all(feature = "alloc", feature = "ecdsa"))]
 pub use self::sk::SkEcdsaSha2NistP256;
 
-use crate::{Algorithm, Cipher, Error, Fingerprint, HashAlg, Kdf, PublicKey, Result, public};
+use crate::{public, Algorithm, Cipher, Error, Fingerprint, HashAlg, Kdf, PublicKey, Result};
 use cipher::Tag;
 use core::str;
 use encoding::{
-    CheckedSum, Decode, DecodePem, Encode, EncodePem, Reader, Writer,
     pem::{LineEnding, PemLabel},
+    CheckedSum, Decode, DecodePem, Encode, EncodePem, Reader, Writer,
 };
 use subtle::{Choice, ConstantTimeEq};
 

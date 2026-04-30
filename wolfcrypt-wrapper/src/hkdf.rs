@@ -25,8 +25,8 @@ Derivation Function (HKDF) functionality.
 
 #![cfg(hkdf)]
 
-use crate::sys;
 use crate::hmac::HMAC;
+use crate::sys;
 
 /// Perform HKDF-Extract operation.
 ///
@@ -92,7 +92,14 @@ pub fn hkdf_extract(typ: i32, salt: Option<&[u8]>, key: &[u8], out: &mut [u8]) -
 /// let mut extract_out = [0u8; SHA256::DIGEST_SIZE];
 /// hkdf_extract_ex(HMAC::TYPE_SHA256, Some(salt), ikm, &mut extract_out, None, None).expect("Error with hkdf_extract_ex()");
 /// ```
-pub fn hkdf_extract_ex(typ: i32, salt: Option<&[u8]>, key: &[u8], out: &mut [u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<(), i32> {
+pub fn hkdf_extract_ex(
+    typ: i32,
+    salt: Option<&[u8]>,
+    key: &[u8],
+    out: &mut [u8],
+    heap: Option<*mut core::ffi::c_void>,
+    dev_id: Option<i32>,
+) -> Result<(), i32> {
     let mut salt_ptr = core::ptr::null();
     let mut salt_size = 0u32;
     if let Some(salt) = salt {
@@ -112,8 +119,16 @@ pub fn hkdf_extract_ex(typ: i32, salt: Option<&[u8]>, key: &[u8], out: &mut [u8]
         None => sys::INVALID_DEVID,
     };
     let rc = unsafe {
-        sys::wc_HKDF_Extract_ex(typ, salt_ptr, salt_size,
-            key.as_ptr(), key_size, out.as_mut_ptr(), heap, dev_id)
+        sys::wc_HKDF_Extract_ex(
+            typ,
+            salt_ptr,
+            salt_size,
+            key.as_ptr(),
+            key_size,
+            out.as_mut_ptr(),
+            heap,
+            dev_id,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -191,7 +206,14 @@ pub fn hkdf_expand(typ: i32, key: &[u8], info: Option<&[u8]>, out: &mut [u8]) ->
 /// let mut expand_out = [0u8; 16];
 /// hkdf_expand_ex(HMAC::TYPE_SHA256, &extract_out, Some(info), &mut expand_out, None, None).expect("Error with hkdf_expand_ex()");
 /// ```
-pub fn hkdf_expand_ex(typ: i32, key: &[u8], info: Option<&[u8]>, out: &mut [u8], heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<(), i32> {
+pub fn hkdf_expand_ex(
+    typ: i32,
+    key: &[u8],
+    info: Option<&[u8]>,
+    out: &mut [u8],
+    heap: Option<*mut core::ffi::c_void>,
+    dev_id: Option<i32>,
+) -> Result<(), i32> {
     let key_size = key.len() as u32;
     let mut info_ptr = core::ptr::null();
     let mut info_size = 0u32;
@@ -209,8 +231,17 @@ pub fn hkdf_expand_ex(typ: i32, key: &[u8], info: Option<&[u8]>, out: &mut [u8],
         None => sys::INVALID_DEVID,
     };
     let rc = unsafe {
-        sys::wc_HKDF_Expand_ex(typ, key.as_ptr(), key_size,
-            info_ptr, info_size, out.as_mut_ptr(), out_size, heap, dev_id)
+        sys::wc_HKDF_Expand_ex(
+            typ,
+            key.as_ptr(),
+            key_size,
+            info_ptr,
+            info_size,
+            out.as_mut_ptr(),
+            out_size,
+            heap,
+            dev_id,
+        )
     };
     if rc != 0 {
         return Err(rc);
@@ -249,7 +280,13 @@ pub fn hkdf_expand_ex(typ: i32, key: &[u8], info: Option<&[u8]>, out: &mut [u8],
 /// let mut out = [0u8; 16];
 /// hkdf(HMAC::TYPE_SHA256, ikm, Some(salt), Some(info), &mut out).expect("Error with hkdf()");
 /// ```
-pub fn hkdf(typ: i32, key: &[u8], salt: Option<&[u8]>, info: Option<&[u8]>, out: &mut[u8]) -> Result<(), i32> {
+pub fn hkdf(
+    typ: i32,
+    key: &[u8],
+    salt: Option<&[u8]>,
+    info: Option<&[u8]>,
+    out: &mut [u8],
+) -> Result<(), i32> {
     let key_size = key.len() as u32;
     let mut salt_ptr = core::ptr::null();
     let mut salt_size = 0u32;
@@ -265,8 +302,17 @@ pub fn hkdf(typ: i32, key: &[u8], salt: Option<&[u8]>, info: Option<&[u8]>, out:
     }
     let out_size = out.len() as u32;
     let rc = unsafe {
-        sys::wc_HKDF(typ, key.as_ptr(), key_size, salt_ptr, salt_size,
-            info_ptr, info_size, out.as_mut_ptr(), out_size)
+        sys::wc_HKDF(
+            typ,
+            key.as_ptr(),
+            key_size,
+            salt_ptr,
+            salt_size,
+            info_ptr,
+            info_size,
+            out.as_mut_ptr(),
+            out_size,
+        )
     };
     if rc != 0 {
         return Err(rc);

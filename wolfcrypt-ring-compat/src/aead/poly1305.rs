@@ -6,8 +6,8 @@
 // TODO: enforce maximum input length.
 
 use super::{Tag, TAG_LEN};
-use crate::wolfcrypt_rs::{wc_Poly1305SetKey, wc_Poly1305Update, wc_Poly1305Final};
 use crate::cipher::block::BLOCK_LEN;
+use crate::wolfcrypt_rs::{wc_Poly1305Final, wc_Poly1305SetKey, wc_Poly1305Update};
 use core::mem::MaybeUninit;
 
 /// A Poly1305 key.
@@ -54,11 +54,7 @@ impl Context {
     pub fn update(&mut self, input: &[u8]) {
         // SAFETY: state is valid (initialized in from_key); pointer/length from a valid Rust slice.
         unsafe {
-            wc_Poly1305Update(
-                &mut self.state.0,
-                input.as_ptr(),
-                input.len() as u32,
-            );
+            wc_Poly1305Update(&mut self.state.0, input.as_ptr(), input.len() as u32);
         }
     }
 

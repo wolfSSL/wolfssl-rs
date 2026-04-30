@@ -38,11 +38,18 @@ fn manual_init_simulation() {
     let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384).unwrap();
 
     let result = InitCtxCmd::new_simulation().execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_ok(), "InitCtxCmd simulation failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "InitCtxCmd simulation failed: {:?}",
+        result.err()
+    );
     match result.unwrap() {
         Response::InitCtx(resp) => {
             // Simulation contexts get non-default handles.
-            assert_ne!(resp.handle.0, [0u8; 16], "simulation handle should not be all zeros");
+            assert_ne!(
+                resp.handle.0, [0u8; 16],
+                "simulation handle should not be all zeros"
+            );
         }
         _ => panic!("Expected InitCtx response, got unexpected response"),
     }
@@ -58,7 +65,10 @@ fn init_default_context_fails_when_already_initialized() {
 
     // AUTO_INIT already created the default context. Trying to initialize again should fail.
     let result = InitCtxCmd::new_use_default().execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result.is_err(), "Expected error when re-initializing default context");
+    assert!(
+        result.is_err(),
+        "Expected error when re-initializing default context"
+    );
 }
 
 #[test]
@@ -70,10 +80,18 @@ fn double_simulation_init() {
     let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384).unwrap();
 
     let result1 = InitCtxCmd::new_simulation().execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result1.is_ok(), "First simulation init failed: {:?}", result1.err());
+    assert!(
+        result1.is_ok(),
+        "First simulation init failed: {:?}",
+        result1.err()
+    );
 
     let result2 = InitCtxCmd::new_simulation().execute(&mut dpe, &mut env, LOCALITY);
-    assert!(result2.is_ok(), "Second simulation init failed: {:?}", result2.err());
+    assert!(
+        result2.is_ok(),
+        "Second simulation init failed: {:?}",
+        result2.err()
+    );
 }
 
 #[test]

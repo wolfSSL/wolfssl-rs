@@ -194,7 +194,11 @@ mod trait_api {
         let tag = cipher
             .encrypt_in_place_detached((&nonce).into(), &aad, &mut buf)
             .expect("encrypt failed");
-        assert_ne!(&buf[..], &plaintext[..], "ciphertext must differ from plaintext");
+        assert_ne!(
+            &buf[..],
+            &plaintext[..],
+            "ciphertext must differ from plaintext"
+        );
 
         // Decrypt in-place.
         cipher

@@ -9,10 +9,9 @@
 fn sha256_round_trip() {
     let input = b"abc";
     let expected: [u8; 32] = [
-        0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
-        0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
-        0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
-        0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad,
+        0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea, 0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22,
+        0x23, 0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c, 0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00,
+        0x15, 0xad,
     ];
 
     let mut output = [0u8; 32];
@@ -20,21 +19,36 @@ fn sha256_round_trip() {
         let ret = wolfcrypt_rs::SHA256(input.as_ptr(), input.len(), output.as_mut_ptr());
         assert!(!ret.is_null(), "SHA256 returned null");
     }
-    assert_eq!(output, expected, "SHA-256 digest does not match NIST FIPS 180-4 B.1");
+    assert_eq!(
+        output, expected,
+        "SHA-256 digest does not match NIST FIPS 180-4 B.1"
+    );
 }
 
 /// Verify ML-KEM NID constants are in sync between Rust (lib.rs) and C (compat_shim.c).
 #[test]
 fn mlkem_nid_constants_sync() {
     unsafe {
-        assert_eq!(wolfcrypt_rs::NID_MLKEM512, wolfcrypt_rs::get_NID_MLKEM512(),
-            "NID_MLKEM512 mismatch between Rust and C");
-        assert_eq!(wolfcrypt_rs::NID_MLKEM768, wolfcrypt_rs::get_NID_MLKEM768(),
-            "NID_MLKEM768 mismatch between Rust and C");
-        assert_eq!(wolfcrypt_rs::NID_MLKEM1024, wolfcrypt_rs::get_NID_MLKEM1024(),
-            "NID_MLKEM1024 mismatch between Rust and C");
-        assert_eq!(wolfcrypt_rs::EVP_PKEY_KEM, wolfcrypt_rs::get_EVP_PKEY_KEM_TYPE(),
-            "EVP_PKEY_KEM type mismatch between Rust and C");
+        assert_eq!(
+            wolfcrypt_rs::NID_MLKEM512,
+            wolfcrypt_rs::get_NID_MLKEM512(),
+            "NID_MLKEM512 mismatch between Rust and C"
+        );
+        assert_eq!(
+            wolfcrypt_rs::NID_MLKEM768,
+            wolfcrypt_rs::get_NID_MLKEM768(),
+            "NID_MLKEM768 mismatch between Rust and C"
+        );
+        assert_eq!(
+            wolfcrypt_rs::NID_MLKEM1024,
+            wolfcrypt_rs::get_NID_MLKEM1024(),
+            "NID_MLKEM1024 mismatch between Rust and C"
+        );
+        assert_eq!(
+            wolfcrypt_rs::EVP_PKEY_KEM,
+            wolfcrypt_rs::get_EVP_PKEY_KEM_TYPE(),
+            "EVP_PKEY_KEM type mismatch between Rust and C"
+        );
     }
 }
 

@@ -6,9 +6,7 @@
 
 use crate::prelude::*;
 
-use caliptra_dpe_crypto::{
-    ecdsa::EcdsaAlgorithm, CryptoError, Digest, SignatureAlgorithm,
-};
+use caliptra_dpe_crypto::{ecdsa::EcdsaAlgorithm, CryptoError, Digest, SignatureAlgorithm};
 
 use crate::error::from_wolfcrypt;
 
@@ -61,7 +59,13 @@ pub(crate) fn hkdf_derive_cdi(
     let output_len = hkdf_output_size(algs)?;
     // Extract: salt=info, IKM=measurement
     // Expand: info=measurement, L=output_len
-    hkdf_extract_expand(algs, info, measurement.as_slice(), measurement.as_slice(), output_len)
+    hkdf_extract_expand(
+        algs,
+        info,
+        measurement.as_slice(),
+        measurement.as_slice(),
+        output_len,
+    )
 }
 
 /// Derive private key bytes from CDI, label, and info using HKDF.

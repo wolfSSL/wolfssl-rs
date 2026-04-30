@@ -4,6 +4,12 @@
 // SPDX-License-Identifier: MIT
 use super::signature::{RsaEncoding, RsaPadding};
 use super::{encoding, RsaParameters};
+use crate::encoding::{AsDer, Pkcs8V1Der, PublicKeyX509Der};
+use crate::error::{KeyRejected, Unspecified};
+#[cfg(feature = "ring-io")]
+use crate::io;
+use crate::ptr::{ConstPointer, DetachableLcPtr, LcPtr};
+use crate::sealed::Sealed;
 use crate::wolfcrypt_rs::{
     EVP_PKEY_CTX_set_rsa_keygen_bits, EVP_PKEY_CTX_set_signature_md, EVP_PKEY_assign_RSA,
     EVP_PKEY_new, RSA_new, RSA_set0_key, RSA_size, EVP_PKEY, EVP_PKEY_CTX, EVP_PKEY_RSA,
@@ -11,12 +17,6 @@ use crate::wolfcrypt_rs::{
 };
 #[cfg(feature = "ring-io")]
 use crate::wolfcrypt_rs::{RSA_get0_key, BIGNUM, RSA};
-use crate::encoding::{AsDer, Pkcs8V1Der, PublicKeyX509Der};
-use crate::error::{KeyRejected, Unspecified};
-#[cfg(feature = "ring-io")]
-use crate::io;
-use crate::ptr::{ConstPointer, DetachableLcPtr, LcPtr};
-use crate::sealed::Sealed;
 use crate::{hex, rand};
 // wolfSSL's RSA_check_key performs FIPS-level validation
 #[cfg(feature = "fips")]
@@ -251,7 +251,7 @@ impl KeyPair {
             |pctx: *mut EVP_PKEY_CTX| {
                 let evp_md = match_digest_type(&digest.algorithm().id);
                 // SAFETY: pctx is a valid EVP_PKEY_CTX from the caller; evp_md is a static digest pointer.
-        if 1 != unsafe { EVP_PKEY_CTX_set_signature_md(pctx, evp_md.as_const_ptr()) } {
+                if 1 != unsafe { EVP_PKEY_CTX_set_signature_md(pctx, evp_md.as_const_ptr()) } {
                     return Err(());
                 }
                 if let RsaPadding::RSA_PKCS1_PSS_PADDING = encoding.padding() {
@@ -340,11 +340,9 @@ impl PublicKey {
         {
             let evp_pkey = evp_pkey.as_const();
             let pubkey = evp_pkey.get_rsa()?;
-            let modulus = pubkey
-                .project_const_lifetime(rsa_get0_n)?;
+            let modulus = pubkey.project_const_lifetime(rsa_get0_n)?;
             let modulus = modulus.to_be_bytes().into_boxed_slice();
-            let exponent = pubkey
-                .project_const_lifetime(rsa_get0_e)?;
+            let exponent = pubkey.project_const_lifetime(rsa_get0_e)?;
             let exponent = exponent.to_be_bytes().into_boxed_slice();
             Ok(PublicKey {
                 key,

@@ -5,7 +5,10 @@
 fn main() {
     // wolfCrypt_Init is required before any hash operation (idempotent; FIPS POST).
     let init_rc = unsafe { wolfcrypt_sys::wolfCrypt_Init() };
-    assert!(init_rc == 0 || init_rc == 1, "wolfCrypt_Init failed: {init_rc}");
+    assert!(
+        init_rc == 0 || init_rc == 1,
+        "wolfCrypt_Init failed: {init_rc}"
+    );
 
     // wc_Hash is available unconditionally (no devId variant needed for this probe).
     let data = b"abc";
@@ -22,5 +25,8 @@ fn main() {
     assert_eq!(rc, 0, "wc_Hash(SHA256, 'abc') failed with rc={rc}");
     // Digest correctness is validated by CryptoCb integration tests (phase1_hash.rs).
     // This probe only verifies that wc_Hash links and returns 0.
-    println!("link_probe_hash: PASS (rc={rc}, digest[0]={:#04x})", digest[0]);
+    println!(
+        "link_probe_hash: PASS (rc={rc}, digest[0]={:#04x})",
+        digest[0]
+    );
 }

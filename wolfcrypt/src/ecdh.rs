@@ -8,10 +8,10 @@
 //! implementation (RFC 7748).
 
 use wolfcrypt_rs::{
-    wc_curve25519_export_key_raw_ex, wc_curve25519_free, wc_curve25519_import_private_raw_ex,
-    wc_curve25519_import_public_ex, wc_curve25519_init, wc_curve25519_key,
-    wc_curve25519_make_key, wc_curve25519_make_pub, wc_curve25519_set_rng,
-    wc_curve25519_shared_secret_ex, wc_FreeRng, wc_InitRng, EC25519_LITTLE_ENDIAN, WC_RNG,
+    wc_FreeRng, wc_InitRng, wc_curve25519_export_key_raw_ex, wc_curve25519_free,
+    wc_curve25519_import_private_raw_ex, wc_curve25519_import_public_ex, wc_curve25519_init,
+    wc_curve25519_key, wc_curve25519_make_key, wc_curve25519_make_pub, wc_curve25519_set_rng,
+    wc_curve25519_shared_secret_ex, EC25519_LITTLE_ENDIAN, WC_RNG,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -94,7 +94,10 @@ impl X25519StaticSecret {
                 EC25519_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(rc, 0, "wc_curve25519_import_private_raw_ex failed (invalid key bytes)");
+        assert_eq!(
+            rc, 0,
+            "wc_curve25519_import_private_raw_ex failed (invalid key bytes)"
+        );
 
         clamped.zeroize();
 
@@ -113,9 +116,7 @@ impl X25519StaticSecret {
 
         // SAFETY: `key` is initialized, `rng.rng` is an initialized WC_RNG.
         // wolfCrypt generates a full 32-byte keypair.
-        let rc = unsafe {
-            wc_curve25519_make_key(&mut rng.rng, KEY_LEN as i32, &mut key)
-        };
+        let rc = unsafe { wc_curve25519_make_key(&mut rng.rng, KEY_LEN as i32, &mut key) };
         assert_eq!(rc, 0, "wc_curve25519_make_key failed (RNG failure)");
 
         Self { key }
@@ -142,7 +143,10 @@ impl X25519StaticSecret {
                 EC25519_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(rc, 0, "wc_curve25519_export_key_raw_ex failed (buffer too small)");
+        assert_eq!(
+            rc, 0,
+            "wc_curve25519_export_key_raw_ex failed (buffer too small)"
+        );
 
         // Zeroize private bytes — we only need the public portion.
         priv_bytes.zeroize();
@@ -184,7 +188,10 @@ impl X25519StaticSecret {
                 EC25519_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(rc, 0, "wc_curve25519_import_public_ex failed (invalid public key)");
+        assert_eq!(
+            rc, 0,
+            "wc_curve25519_import_public_ex failed (invalid public key)"
+        );
 
         let mut out = [0u8; KEY_LEN];
         let mut out_len = KEY_LEN as u32;
@@ -201,7 +208,10 @@ impl X25519StaticSecret {
                 EC25519_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(rc, 0, "wc_curve25519_shared_secret_ex failed (invalid key or buffer)");
+        assert_eq!(
+            rc, 0,
+            "wc_curve25519_shared_secret_ex failed (invalid key or buffer)"
+        );
 
         // SAFETY: `peer_key` and `rng` were initialized; free them now.
         unsafe {
@@ -268,11 +278,9 @@ impl SharedSecret {
 
 #[cfg(wolfssl_curve448)]
 use wolfcrypt_rs::{
-    wc_curve448_export_key_raw_ex, wc_curve448_free,
-    wc_curve448_import_private_raw_ex,
-    wc_curve448_import_public_ex, wc_curve448_init, wc_curve448_key,
-    wc_curve448_make_key, wc_curve448_make_pub,
-    wc_curve448_shared_secret_ex, EC448_LITTLE_ENDIAN,
+    wc_curve448_export_key_raw_ex, wc_curve448_free, wc_curve448_import_private_raw_ex,
+    wc_curve448_import_public_ex, wc_curve448_init, wc_curve448_key, wc_curve448_make_key,
+    wc_curve448_make_pub, wc_curve448_shared_secret_ex, EC448_LITTLE_ENDIAN,
 };
 
 #[cfg(wolfssl_curve448)]
@@ -351,7 +359,10 @@ impl X448StaticSecret {
                 EC448_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(rc, 0, "wc_curve448_import_private_raw_ex failed (invalid key bytes)");
+        assert_eq!(
+            rc, 0,
+            "wc_curve448_import_private_raw_ex failed (invalid key bytes)"
+        );
 
         clamped.zeroize();
 
@@ -370,9 +381,7 @@ impl X448StaticSecret {
 
         // SAFETY: `key` is initialized, `rng.rng` is an initialized WC_RNG.
         // wolfCrypt generates a full 56-byte keypair.
-        let rc = unsafe {
-            wc_curve448_make_key(&mut rng.rng, X448_KEY_LEN as i32, &mut key)
-        };
+        let rc = unsafe { wc_curve448_make_key(&mut rng.rng, X448_KEY_LEN as i32, &mut key) };
         assert_eq!(rc, 0, "wc_curve448_make_key failed (RNG failure)");
 
         Self { key }
@@ -399,7 +408,10 @@ impl X448StaticSecret {
                 EC448_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(rc, 0, "wc_curve448_export_key_raw_ex failed (buffer too small)");
+        assert_eq!(
+            rc, 0,
+            "wc_curve448_export_key_raw_ex failed (buffer too small)"
+        );
 
         // Zeroize private bytes — we only need the public portion.
         priv_bytes.zeroize();
@@ -427,7 +439,10 @@ impl X448StaticSecret {
                 EC448_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(rc, 0, "wc_curve448_import_public_ex failed (invalid public key)");
+        assert_eq!(
+            rc, 0,
+            "wc_curve448_import_public_ex failed (invalid public key)"
+        );
 
         let mut out = [0u8; X448_KEY_LEN];
         let mut out_len = X448_KEY_LEN as u32;
@@ -444,7 +459,10 @@ impl X448StaticSecret {
                 EC448_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(rc, 0, "wc_curve448_shared_secret_ex failed (invalid key or buffer)");
+        assert_eq!(
+            rc, 0,
+            "wc_curve448_shared_secret_ex failed (invalid key or buffer)"
+        );
 
         // SAFETY: `peer_key` was initialized; free it now.
         unsafe {
@@ -533,14 +551,9 @@ pub(crate) mod nist_ecdh_native {
     use crate::error::WolfCryptError;
 
     use wolfcrypt_rs::{
-        wc_ecc_key, wc_ecc_key_new, wc_ecc_key_free,
-        wc_ecc_make_key_ex,
-        wc_ecc_shared_secret,
-        wc_ecc_import_x963, wc_ecc_export_x963,
-        wc_ecc_import_private_key_ex,
-        wc_ecc_check_key, wc_ecc_set_rng,
-        wc_InitRng, wc_FreeRng, WC_RNG,
-        ECC_SECP256R1,
+        wc_FreeRng, wc_InitRng, wc_ecc_check_key, wc_ecc_export_x963, wc_ecc_import_private_key_ex,
+        wc_ecc_import_x963, wc_ecc_key, wc_ecc_key_free, wc_ecc_key_new, wc_ecc_make_key_ex,
+        wc_ecc_set_rng, wc_ecc_shared_secret, ECC_SECP256R1, WC_RNG,
     };
 
     #[cfg(wolfssl_ecc_p384)]
@@ -638,19 +651,26 @@ pub(crate) mod nist_ecdh_native {
             if tmp.is_null() {
                 return Err(WolfCryptError::ALLOC_FAILED);
             }
-            let rc = unsafe {
-                wc_ecc_import_x963(bytes.as_ptr(), bytes.len() as u32, tmp)
-            };
+            let rc = unsafe { wc_ecc_import_x963(bytes.as_ptr(), bytes.len() as u32, tmp) };
             if rc != 0 {
                 unsafe { wc_ecc_key_free(tmp) };
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_import_x963" });
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_ecc_import_x963",
+                });
             }
             let rc = unsafe { wc_ecc_check_key(tmp) };
             unsafe { wc_ecc_key_free(tmp) };
             if rc != 0 {
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_check_key" });
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_ecc_check_key",
+                });
             }
-            Ok(Self { bytes: bytes.to_vec(), _curve: PhantomData })
+            Ok(Self {
+                bytes: bytes.to_vec(),
+                _curve: PhantomData,
+            })
         }
 
         /// Return the raw uncompressed point bytes (`0x04 || x || y`).
@@ -706,7 +726,9 @@ pub(crate) mod nist_ecdh_native {
             let key = *self.key.get_mut();
             if !key.is_null() {
                 // SAFETY: key was allocated by wc_ecc_key_new in all constructors.
-                unsafe { wc_ecc_key_free(key); }
+                unsafe {
+                    wc_ecc_key_free(key);
+                }
             }
         }
     }
@@ -724,22 +746,36 @@ pub(crate) mod nist_ecdh_native {
             // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
             let rc = unsafe { wc_InitRng(&mut rng) };
             if rc != 0 {
-                unsafe { wc_ecc_key_free(key); }
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng" });
+                unsafe {
+                    wc_ecc_key_free(key);
+                }
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_InitRng",
+                });
             }
 
             // SAFETY: key and rng are both initialised; FIELD_SIZE matches CURVE_ID.
-            let rc = unsafe {
-                wc_ecc_make_key_ex(&mut rng, C::FIELD_SIZE as i32, key, C::CURVE_ID)
-            };
+            let rc =
+                unsafe { wc_ecc_make_key_ex(&mut rng, C::FIELD_SIZE as i32, key, C::CURVE_ID) };
             // Free RNG regardless of outcome.
-            unsafe { wc_FreeRng(&mut rng); }
+            unsafe {
+                wc_FreeRng(&mut rng);
+            }
             if rc != 0 {
-                unsafe { wc_ecc_key_free(key); }
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_make_key_ex" });
+                unsafe {
+                    wc_ecc_key_free(key);
+                }
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_ecc_make_key_ex",
+                });
             }
 
-            Ok(Self { key: UnsafeCell::new(key), _curve: PhantomData })
+            Ok(Self {
+                key: UnsafeCell::new(key),
+                _curve: PhantomData,
+            })
         }
 
         /// Import a private key from its raw scalar bytes (big-endian,
@@ -760,16 +796,27 @@ pub(crate) mod nist_ecdh_native {
             // Passing null public key is valid — wolfCrypt accepts private-only import.
             let rc = unsafe {
                 wc_ecc_import_private_key_ex(
-                    scalar.as_ptr(), scalar.len() as u32,
-                    ptr::null(), 0,
-                    key, C::CURVE_ID,
+                    scalar.as_ptr(),
+                    scalar.len() as u32,
+                    ptr::null(),
+                    0,
+                    key,
+                    C::CURVE_ID,
                 )
             };
             if rc != 0 {
-                unsafe { wc_ecc_key_free(key); }
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_import_private_key_ex" });
+                unsafe {
+                    wc_ecc_key_free(key);
+                }
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_ecc_import_private_key_ex",
+                });
             }
-            Ok(Self { key: UnsafeCell::new(key), _curve: PhantomData })
+            Ok(Self {
+                key: UnsafeCell::new(key),
+                _curve: PhantomData,
+            })
         }
 
         /// Export the public key as an uncompressed point (`0x04 || x || y`).
@@ -783,7 +830,10 @@ pub(crate) mod nist_ecdh_native {
             // SAFETY: key is initialised and has a public component (generate path).
             let rc = unsafe { wc_ecc_export_x963(key, buf.as_mut_ptr(), &mut sz) };
             if rc != 0 {
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_export_x963" });
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_ecc_export_x963",
+                });
             }
             if sz as usize != C::POINT_SIZE {
                 return Err(WolfCryptError::INVALID_INPUT);
@@ -814,15 +864,25 @@ pub(crate) mod nist_ecdh_native {
                 )
             };
             if rc != 0 {
-                unsafe { wc_ecc_key_free(peer_key); }
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_import_x963" });
+                unsafe {
+                    wc_ecc_key_free(peer_key);
+                }
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_ecc_import_x963",
+                });
             }
 
             // ── Paranoid: validate peer point is on the curve ───────────────
             let rc = unsafe { wc_ecc_check_key(peer_key) };
             if rc != 0 {
-                unsafe { wc_ecc_key_free(peer_key); }
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_check_key" });
+                unsafe {
+                    wc_ecc_key_free(peer_key);
+                }
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_ecc_check_key",
+                });
             }
 
             // ── Attach RNG to private key for blinding ──────────────────────
@@ -832,8 +892,13 @@ pub(crate) mod nist_ecdh_native {
             let mut rng = WC_RNG::zeroed();
             let rc = unsafe { wc_InitRng(&mut rng) };
             if rc != 0 {
-                unsafe { wc_ecc_key_free(peer_key); }
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_InitRng" });
+                unsafe {
+                    wc_ecc_key_free(peer_key);
+                }
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_InitRng",
+                });
             }
             let rc = unsafe { wc_ecc_set_rng(priv_key, &mut rng) };
             if rc != 0 {
@@ -841,16 +906,18 @@ pub(crate) mod nist_ecdh_native {
                     wc_ecc_key_free(peer_key);
                     wc_FreeRng(&mut rng);
                 }
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_set_rng" });
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_ecc_set_rng",
+                });
             }
 
             // ── Compute shared secret ───────────────────────────────────────
             let mut out = vec![0u8; C::FIELD_SIZE];
             let mut out_len = out.len() as u32;
             // SAFETY: priv_key has private scalar + RNG; peer_key has public point.
-            let rc = unsafe {
-                wc_ecc_shared_secret(priv_key, peer_key, out.as_mut_ptr(), &mut out_len)
-            };
+            let rc =
+                unsafe { wc_ecc_shared_secret(priv_key, peer_key, out.as_mut_ptr(), &mut out_len) };
 
             // Always clean up peer key and RNG.
             unsafe {
@@ -859,13 +926,19 @@ pub(crate) mod nist_ecdh_native {
             }
 
             if rc != 0 {
-                return Err(WolfCryptError::Ffi { code: rc, func: "wc_ecc_shared_secret" });
+                return Err(WolfCryptError::Ffi {
+                    code: rc,
+                    func: "wc_ecc_shared_secret",
+                });
             }
             if out_len as usize != C::FIELD_SIZE {
                 return Err(WolfCryptError::INVALID_INPUT);
             }
 
-            Ok(NistEcdhSharedSecret { bytes: out, _curve: PhantomData })
+            Ok(NistEcdhSharedSecret {
+                bytes: out,
+                _curve: PhantomData,
+            })
         }
     }
 
@@ -883,8 +956,7 @@ pub(crate) mod nist_ecdh_native {
 // No wolfssl_openssl_extra required — native wc_ecc_* only.
 #[cfg(wolfssl_ecc)]
 pub use nist_ecdh_native::{
-    NistCurve, NistEcdhPublicKey, NistEcdhSecret, NistEcdhSharedSecret,
-    NistP256, P256EcdhSecret,
+    NistCurve, NistEcdhPublicKey, NistEcdhSecret, NistEcdhSharedSecret, NistP256, P256EcdhSecret,
 };
 #[cfg(all(wolfssl_ecc, wolfssl_ecc_p384))]
 pub use nist_ecdh_native::{NistP384, P384EcdhSecret};

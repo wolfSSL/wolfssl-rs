@@ -5,7 +5,7 @@ mod helpers;
 use caliptra_cfi_lib::CfiCounter;
 use caliptra_dpe::commands::{
     CommandExecution, DeriveContextCmd, DeriveContextFlags, RotateCtxCmd, RotateCtxFlags,
-    SignP384Cmd, SignFlags,
+    SignFlags, SignP384Cmd,
 };
 use caliptra_dpe::context::ContextHandle;
 use caliptra_dpe::dpe_instance::DpeInstance;
@@ -88,7 +88,10 @@ fn rotate_changes_handle() {
 
     // New handle should work.
     let (r, s, _) = sign_with_handle(&mut dpe, &mut env, new_handle, [0; 48], [0xBB; 48]);
-    assert!(r.iter().any(|&b| b != 0), "Sign with rotated handle should produce non-zero r");
+    assert!(
+        r.iter().any(|&b| b != 0),
+        "Sign with rotated handle should produce non-zero r"
+    );
 }
 
 #[test]
@@ -104,7 +107,10 @@ fn rotate_preserves_key() {
     // Sign before rotation.
     let (r_before, s_before, handle_after_sign) =
         sign_with_handle(&mut dpe, &mut env, child, [0xAA; 48], [0xBB; 48]);
-    assert!(r_before.iter().any(|&b| b != 0), "Pre-rotation sig_r should be non-zero");
+    assert!(
+        r_before.iter().any(|&b| b != 0),
+        "Pre-rotation sig_r should be non-zero"
+    );
 
     // Rotate the handle.
     let rotate_cmd = RotateCtxCmd {
@@ -119,8 +125,14 @@ fn rotate_preserves_key() {
     // Sign after rotation should still succeed (key is preserved).
     let (r_after, s_after, _) =
         sign_with_handle(&mut dpe, &mut env, new_handle, [0xAA; 48], [0xBB; 48]);
-    assert!(r_after.iter().any(|&b| b != 0), "Post-rotation sig_r should be non-zero");
-    assert!(s_after.iter().any(|&b| b != 0), "Post-rotation sig_s should be non-zero");
+    assert!(
+        r_after.iter().any(|&b| b != 0),
+        "Post-rotation sig_r should be non-zero"
+    );
+    assert!(
+        s_after.iter().any(|&b| b != 0),
+        "Post-rotation sig_s should be non-zero"
+    );
 }
 
 #[test]

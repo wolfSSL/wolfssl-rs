@@ -52,12 +52,12 @@ const TEST_LOCALITIES: [u32; 2] = [AUTO_INIT_LOCALITY, u32::from_be_bytes(*b"OTH
 const DEFAULT_PLATFORM: DefaultPlatform = DefaultPlatform(DefaultPlatformProfile::P384);
 
 const TEST_DIGEST: [u8; DPE_PROFILE.hash_size()] = [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-    26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+    27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
 ];
 const TEST_LABEL: [u8; DPE_PROFILE.hash_size()] = [
-    48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26,
-    25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
+    48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25,
+    24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
 ];
 
 fn wolf_env(state: &mut State) -> DpeEnv<'_, WolfTestTypes> {
@@ -82,10 +82,7 @@ macro_rules! assert_cmd_err {
     ($result:expr, $expected_err:expr) => {
         match $result {
             Err(e) => assert_eq!(e, $expected_err),
-            Ok(_) => panic!(
-                "Expected error {:?} but got Ok",
-                $expected_err
-            ),
+            Ok(_) => panic!("Expected error {:?} but got Ok", $expected_err),
         }
     };
 }
@@ -281,9 +278,9 @@ fn upstream_test_initialize_context() {
     // Try setting both flags.
     assert_cmd_err!(
         (InitCtxCmd::DEFAULT_FLAG_MASK | InitCtxCmd::SIMULATION_FLAG_MASK).execute(
-        &mut dpe,
-        &mut env,
-        TEST_LOCALITIES[0]
+            &mut dpe,
+            &mut env,
+            TEST_LOCALITIES[0]
         ),
         DpeErrorCode::InvalidArgument
     );
@@ -316,8 +313,8 @@ fn upstream_test_derive_support() {
 
     assert_cmd_err!(
         DeriveContextCmd {
-        flags: DeriveContextFlags::INTERNAL_INPUT_DICE,
-        ..Default::default()
+            flags: DeriveContextFlags::INTERNAL_INPUT_DICE,
+            ..Default::default()
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::ArgumentNotSupported
@@ -331,8 +328,8 @@ fn upstream_test_derive_support() {
 
     assert_cmd_err!(
         DeriveContextCmd {
-        flags: DeriveContextFlags::INTERNAL_INPUT_INFO,
-        ..Default::default()
+            flags: DeriveContextFlags::INTERNAL_INPUT_INFO,
+            ..Default::default()
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::ArgumentNotSupported
@@ -346,8 +343,8 @@ fn upstream_test_derive_support() {
 
     assert_cmd_err!(
         DeriveContextCmd {
-        flags: DeriveContextFlags::RETAIN_PARENT_CONTEXT,
-        ..Default::default()
+            flags: DeriveContextFlags::RETAIN_PARENT_CONTEXT,
+            ..Default::default()
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::ArgumentNotSupported
@@ -425,8 +422,9 @@ fn upstream_test_correct_child_handle() {
     }
 
     // Make sure child has a random (non-default) handle when not creating default.
-    let resp =
-        DeriveContextCmd::default().execute(&mut dpe, &mut env, TEST_LOCALITIES[0]).unwrap();
+    let resp = DeriveContextCmd::default()
+        .execute(&mut dpe, &mut env, TEST_LOCALITIES[0])
+        .unwrap();
 
     match resp {
         Response::DeriveContext(DeriveContextResp {
@@ -546,8 +544,8 @@ fn upstream_test_default_context_cannot_be_retained() {
 
     assert_cmd_err!(
         DeriveContextCmd {
-        flags: DeriveContextFlags::RETAIN_PARENT_CONTEXT,
-        ..Default::default()
+            flags: DeriveContextFlags::RETAIN_PARENT_CONTEXT,
+            ..Default::default()
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::InvalidArgument
@@ -558,10 +556,7 @@ fn upstream_test_default_context_cannot_be_retained() {
 fn upstream_test_recursive() {
     CfiCounter::reset_for_test();
     let mut state = State::new(
-        Support::AUTO_INIT
-            | Support::RECURSIVE
-            | Support::INTERNAL_DICE
-            | Support::INTERNAL_INFO,
+        Support::AUTO_INIT | Support::RECURSIVE | Support::INTERNAL_DICE | Support::INTERNAL_INFO,
         DpeFlags::empty(),
     );
     let mut env = wolf_env(&mut state);
@@ -655,10 +650,10 @@ fn upstream_test_sign_bad_command_inputs() {
     // Bad handle.
     assert_cmd_err!(
         SignP384Cmd {
-        handle: ContextHandle([0xff; ContextHandle::SIZE]),
-        label: TEST_LABEL,
-        flags: SignFlags::empty(),
-        digest: TEST_DIGEST
+            handle: ContextHandle([0xff; ContextHandle::SIZE]),
+            label: TEST_LABEL,
+            flags: SignFlags::empty(),
+            digest: TEST_DIGEST
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::InvalidHandle
@@ -671,10 +666,10 @@ fn upstream_test_sign_bad_command_inputs() {
         .is_ok());
     assert_cmd_err!(
         SignP384Cmd {
-        handle: ContextHandle::default(),
-        label: TEST_LABEL,
-        flags: SignFlags::empty(),
-        digest: TEST_DIGEST
+            handle: ContextHandle::default(),
+            label: TEST_LABEL,
+            flags: SignFlags::empty(),
+            digest: TEST_DIGEST
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[1]),
         DpeErrorCode::InvalidLocality
@@ -694,10 +689,10 @@ fn upstream_test_sign_bad_command_inputs() {
         .is_ok());
     assert_cmd_err!(
         SignP384Cmd {
-        handle: sim_handle,
-        label: TEST_LABEL,
-        flags: SignFlags::empty(),
-        digest: TEST_DIGEST
+            handle: sim_handle,
+            label: TEST_LABEL,
+            flags: SignFlags::empty(),
+            digest: TEST_DIGEST
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::InvalidArgument
@@ -722,7 +717,7 @@ fn upstream_test_destroy_context() {
     // Wrong locality.
     assert_cmd_err!(
         DestroyCtxCmd {
-        handle: ContextHandle::default(),
+            handle: ContextHandle::default(),
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[1]),
         DpeErrorCode::InvalidLocality
@@ -732,7 +727,12 @@ fn upstream_test_destroy_context() {
     activate_dummy_context(&mut env.state, 0, Context::ROOT_INDEX, &TEST_HANDLE, &[1]);
     activate_dummy_context(&mut env.state, 1, 0, &ContextHandle::default(), &[]);
     // destroy context[1]
-    assert_destroy_ok(&mut dpe, &mut env, ContextHandle::default(), TEST_LOCALITIES[0]);
+    assert_destroy_ok(
+        &mut dpe,
+        &mut env,
+        ContextHandle::default(),
+        TEST_LOCALITIES[0],
+    );
     assert_eq!(env.state.contexts[1].state, ContextState::Inactive);
     assert!(env.state.contexts[0].children.is_empty());
     // destroy context[0]
@@ -791,7 +791,12 @@ fn upstream_test_destroy_context() {
     );
 
     // destroy context[0] and all descendants
-    assert_destroy_ok(&mut dpe, &mut env, ContextHandle::default(), TEST_LOCALITIES[0]);
+    assert_destroy_ok(
+        &mut dpe,
+        &mut env,
+        ContextHandle::default(),
+        TEST_LOCALITIES[0],
+    );
     assert_eq!(env.state.contexts[0].state, ContextState::Inactive);
     assert_eq!(env.state.contexts[1].state, ContextState::Inactive);
     assert_eq!(env.state.contexts[2].state, ContextState::Inactive);
@@ -911,8 +916,8 @@ fn upstream_test_rotate_context() {
     // Make sure it returns an error if the command is marked unsupported.
     assert_cmd_err!(
         RotateCtxCmd {
-        handle: ContextHandle::default(),
-        flags: RotateCtxFlags::empty(),
+            handle: ContextHandle::default(),
+            flags: RotateCtxFlags::empty(),
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::InvalidCommand
@@ -928,8 +933,8 @@ fn upstream_test_rotate_context() {
     // Invalid handle.
     assert_cmd_err!(
         RotateCtxCmd {
-        handle: TEST_HANDLE,
-        flags: RotateCtxFlags::empty(),
+            handle: TEST_HANDLE,
+            flags: RotateCtxFlags::empty(),
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::InvalidHandle
@@ -938,8 +943,8 @@ fn upstream_test_rotate_context() {
     // Wrong locality.
     assert_cmd_err!(
         RotateCtxCmd {
-        handle: ContextHandle::default(),
-        flags: RotateCtxFlags::empty(),
+            handle: ContextHandle::default(),
+            flags: RotateCtxFlags::empty(),
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[1]),
         DpeErrorCode::InvalidLocality
@@ -948,8 +953,8 @@ fn upstream_test_rotate_context() {
     // Caller's locality already has default context.
     assert_cmd_err!(
         RotateCtxCmd {
-        handle: ContextHandle::default(),
-        flags: RotateCtxFlags::TARGET_IS_DEFAULT,
+            handle: ContextHandle::default(),
+            flags: RotateCtxFlags::TARGET_IS_DEFAULT,
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::InvalidArgument
@@ -980,8 +985,8 @@ fn upstream_test_rotate_context() {
     // when we have other non-default contexts in the same locality.
     assert_cmd_err!(
         RotateCtxCmd {
-        handle: SIMULATION_HANDLE,
-        flags: RotateCtxFlags::TARGET_IS_DEFAULT,
+            handle: SIMULATION_HANDLE,
+            flags: RotateCtxFlags::TARGET_IS_DEFAULT,
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::InvalidArgument
@@ -1022,7 +1027,9 @@ fn upstream_test_support_validation() {
     dpe_validator.dpe.contexts[0].context_type = ContextType::Simulation;
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::SimulationNotSupported))
+        Err(DpeErrorCode::Validation(
+            ValidationError::SimulationNotSupported
+        ))
     );
 
     // test internal dice support
@@ -1030,7 +1037,9 @@ fn upstream_test_support_validation() {
     dpe_validator.dpe.contexts[0].uses_internal_input_dice = U8Bool::new(true);
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::InternalDiceNotSupported))
+        Err(DpeErrorCode::Validation(
+            ValidationError::InternalDiceNotSupported
+        ))
     );
 
     // test internal info support
@@ -1038,7 +1047,9 @@ fn upstream_test_support_validation() {
     dpe_validator.dpe.contexts[0].uses_internal_input_info = U8Bool::new(true);
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::InternalInfoNotSupported))
+        Err(DpeErrorCode::Validation(
+            ValidationError::InternalInfoNotSupported
+        ))
     );
 
     // test x509
@@ -1047,7 +1058,9 @@ fn upstream_test_support_validation() {
     dpe_validator.dpe.contexts[0].allow_x509 = U8Bool::new(true);
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::AllowX509NotSupported))
+        Err(DpeErrorCode::Validation(
+            ValidationError::AllowX509NotSupported
+        ))
     );
 }
 
@@ -1064,28 +1077,36 @@ fn upstream_test_context_specific_validation() {
     dpe_validator.dpe.contexts[0].parent_idx = 0;
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::InactiveContextInvalidParent))
+        Err(DpeErrorCode::Validation(
+            ValidationError::InactiveContextInvalidParent
+        ))
     );
 
     dpe_validator.dpe.contexts[0].parent_idx = Context::ROOT_INDEX;
     dpe_validator.dpe.contexts[0].children = u64::MAX.into();
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::InactiveContextWithChildren))
+        Err(DpeErrorCode::Validation(
+            ValidationError::InactiveContextWithChildren
+        ))
     );
 
     dpe_validator.dpe.contexts[0].children = Children::empty();
     dpe_validator.dpe.contexts[0].tci.tci_current = TciMeasurement([1; TCI_SIZE]);
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::InactiveContextWithMeasurement))
+        Err(DpeErrorCode::Validation(
+            ValidationError::InactiveContextWithMeasurement
+        ))
     );
 
     dpe_validator.dpe.contexts[0].tci.tci_current = TciMeasurement::default();
     dpe_validator.dpe.contexts[0].allow_x509 = U8Bool::new(true);
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::InactiveContextWithFlagSet))
+        Err(DpeErrorCode::Validation(
+            ValidationError::InactiveContextWithFlagSet
+        ))
     );
 
     // active context validation
@@ -1094,7 +1115,9 @@ fn upstream_test_context_specific_validation() {
     dpe_validator.dpe.contexts[0].parent_idx = 250;
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::ParentDoesNotExist))
+        Err(DpeErrorCode::Validation(
+            ValidationError::ParentDoesNotExist
+        ))
     );
 
     dpe_validator.dpe.contexts[0].parent_idx = Context::ROOT_INDEX;
@@ -1121,21 +1144,27 @@ fn upstream_test_context_specific_validation() {
     dpe_validator.dpe.contexts[0].children = Children::from(1 << 10);
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::ParentChildLinksCorrupted))
+        Err(DpeErrorCode::Validation(
+            ValidationError::ParentChildLinksCorrupted
+        ))
     );
 
     dpe_validator.dpe.contexts[0].children = Children::empty();
     dpe_validator.dpe.contexts[0].parent_idx = 10;
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::ParentChildLinksCorrupted))
+        Err(DpeErrorCode::Validation(
+            ValidationError::ParentChildLinksCorrupted
+        ))
     );
 
     dpe_validator.dpe.contexts[0].parent_idx = Context::ROOT_INDEX;
     dpe_validator.dpe.has_initialized = U8Bool::new(false);
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::DpeNotMarkedInitialized))
+        Err(DpeErrorCode::Validation(
+            ValidationError::DpeNotMarkedInitialized
+        ))
     );
 
     // retired context validation
@@ -1144,7 +1173,9 @@ fn upstream_test_context_specific_validation() {
     dpe_validator.dpe.contexts[0].state = ContextState::Retired;
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::DanglingRetiredContext))
+        Err(DpeErrorCode::Validation(
+            ValidationError::DanglingRetiredContext
+        ))
     );
 
     // locality mismatch
@@ -1174,14 +1205,18 @@ fn upstream_test_contexts_within_same_locality_validation() {
     dpe_validator.dpe.contexts[1].handle = ContextHandle::default();
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::MultipleDefaultContexts))
+        Err(DpeErrorCode::Validation(
+            ValidationError::MultipleDefaultContexts
+        ))
     );
 
     // default and non-default contexts in same locality
     dpe_validator.dpe.contexts[1].handle = ContextHandle([1u8; ContextHandle::SIZE]);
     assert_eq!(
         dpe_validator.validate_dpe(),
-        Err(DpeErrorCode::Validation(ValidationError::MixedContextLocality))
+        Err(DpeErrorCode::Validation(
+            ValidationError::MixedContextLocality
+        ))
     );
 }
 
@@ -1308,8 +1343,8 @@ fn upstream_test_fails_if_size_greater_than_max_chunk_size() {
 
     assert_cmd_err!(
         GetCertificateChainCmd {
-        size: MAX_CHUNK_SIZE as u32 + 1,
-        offset: 0,
+            size: MAX_CHUNK_SIZE as u32 + 1,
+            offset: 0,
         }
         .execute(&mut dpe, &mut env, TEST_LOCALITIES[0]),
         DpeErrorCode::InvalidArgument

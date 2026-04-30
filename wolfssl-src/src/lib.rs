@@ -136,7 +136,11 @@ impl Build {
         // For bare-metal features, shadow the default user_settings.h with the
         // selected header so wolfSSL picks it up via -I ordering.
         // Priority: cryptocb-pure > cryptocb-only > riscv-bare-metal.
-        if cfg!(any(feature = "riscv-bare-metal", feature = "cryptocb-only", feature = "cryptocb-pure")) {
+        if cfg!(any(
+            feature = "riscv-bare-metal",
+            feature = "cryptocb-only",
+            feature = "cryptocb-pure"
+        )) {
             let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
             let src_name = if cfg!(feature = "cryptocb-pure") {
                 "user_settings_cryptocb_pure.h"
@@ -147,8 +151,7 @@ impl Build {
             };
             let src = settings_dir.join(src_name);
             let dst = out_dir.join("user_settings.h");
-            std::fs::copy(&src, &dst)
-                .unwrap_or_else(|e| panic!("failed to copy {src_name}: {e}"));
+            std::fs::copy(&src, &dst).unwrap_or_else(|e| panic!("failed to copy {src_name}: {e}"));
             // OUT_DIR comes first so its user_settings.h takes precedence.
             build.include(&out_dir);
 
@@ -183,7 +186,10 @@ impl Build {
             } else {
                 let upstream = wolfcrypt_src.join(src);
                 if !upstream.exists() {
-                    panic!("required wolfcrypt source not found: {}", upstream.display());
+                    panic!(
+                        "required wolfcrypt source not found: {}",
+                        upstream.display()
+                    );
                 }
                 upstream
             };
@@ -206,7 +212,10 @@ impl Build {
         println!("cargo:rerun-if-changed={}", user_settings_path.display());
         println!("cargo:rerun-if-changed={}", patches_dir.display());
         if self.fips {
-            println!("cargo:rerun-if-changed={}", settings_dir.join("user_settings_fips.h").display());
+            println!(
+                "cargo:rerun-if-changed={}",
+                settings_dir.join("user_settings_fips.h").display()
+            );
         }
 
         Artifacts {
@@ -321,8 +330,8 @@ impl Default for Build {
 ///
 /// Flat scan — does not evaluate `#if`/`#ifdef` guards.
 pub fn parse_defines(path: &Path) -> HashSet<String> {
-    let file = std::fs::File::open(path)
-        .unwrap_or_else(|e| panic!("cannot open {}: {e}", path.display()));
+    let file =
+        std::fs::File::open(path).unwrap_or_else(|e| panic!("cannot open {}: {e}", path.display()));
     let reader = std::io::BufReader::new(file);
     let mut defines = HashSet::new();
     for line in reader.lines() {
@@ -508,7 +517,10 @@ fn append_cryptocb_pure_sources(defines: &HashSet<String>, sources: &mut Vec<&'s
     // No kdf.c: HAVE_HKDF is not defined in user_settings_cryptocb_pure.h.
 }
 
-fn append_conditional_wolfcrypt_sources(defines: &HashSet<String>, sources: &mut Vec<&'static str>) {
+fn append_conditional_wolfcrypt_sources(
+    defines: &HashSet<String>,
+    sources: &mut Vec<&'static str>,
+) {
     if defines.contains("HAVE_CHACHA") {
         sources.push("chacha.c");
     }
@@ -589,7 +601,11 @@ mod tests {
         let defs = parse_defines(f.path());
         assert!(defs.contains("HAVE_ECC"), "missing HAVE_ECC: {:?}", defs);
         assert!(defs.contains("HAVE_AES"), "missing HAVE_AES: {:?}", defs);
-        assert!(defs.contains("WOLFSSL_SHA256"), "missing WOLFSSL_SHA256: {:?}", defs);
+        assert!(
+            defs.contains("WOLFSSL_SHA256"),
+            "missing WOLFSSL_SHA256: {:?}",
+            defs
+        );
         assert_eq!(defs.len(), 3, "unexpected defines: {:?}", defs);
     }
 

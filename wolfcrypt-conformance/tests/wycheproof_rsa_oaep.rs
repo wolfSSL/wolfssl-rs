@@ -54,7 +54,11 @@ fn pkcs8_extract_rsa_pkcs1(pkcs8: &[u8]) -> Vec<u8> {
     let mut pos = 0;
 
     // Outer SEQUENCE
-    assert_eq!(pkcs8[pos], 0x30, "Expected outer SEQUENCE tag (0x30), got 0x{:02x}", pkcs8[pos]);
+    assert_eq!(
+        pkcs8[pos], 0x30,
+        "Expected outer SEQUENCE tag (0x30), got 0x{:02x}",
+        pkcs8[pos]
+    );
     pos += 1;
     read_len(pkcs8, &mut pos); // outer length (skip)
 
@@ -71,7 +75,10 @@ fn pkcs8_extract_rsa_pkcs1(pkcs8: &[u8]) -> Vec<u8> {
     pos += algo_len;
 
     // OCTET STRING containing PKCS#1 RSAPrivateKey
-    assert_eq!(pkcs8[pos], 0x04, "Expected OCTET STRING for private key content");
+    assert_eq!(
+        pkcs8[pos], 0x04,
+        "Expected OCTET STRING for private key content"
+    );
     pos += 1;
     let content_len = read_len(pkcs8, &mut pos);
 
@@ -156,11 +163,9 @@ fn run_wycheproof_oaep(json: &str, expected_sha: &str, expected_mgf_sha: &str) {
                         )
                     });
                     assert_eq!(
-                        plaintext,
-                        expected_msg,
+                        plaintext, expected_msg,
                         "tc {}: OAEP decrypted plaintext mismatch (comment: {})",
-                        tc.tc_id,
-                        tc.comment,
+                        tc.tc_id, tc.comment,
                     );
                     valid_count += 1;
                 }
@@ -202,9 +207,7 @@ fn run_wycheproof_oaep(json: &str, expected_sha: &str, expected_mgf_sha: &str) {
         );
     }
 
-    eprintln!(
-        "  wycheproof_rsa_oaep: {valid_count} valid, {invalid_count} invalid passed"
-    );
+    eprintln!("  wycheproof_rsa_oaep: {valid_count} valid, {invalid_count} invalid passed");
 }
 
 // ---------------------------------------------------------------------------
@@ -237,4 +240,3 @@ fn rsa_oaep_4096_sha256_mgf1sha256() {
         "SHA-256",
     );
 }
-

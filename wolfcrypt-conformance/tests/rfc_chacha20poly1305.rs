@@ -87,8 +87,7 @@ fn rfc8439_wolf_decrypt() {
 #[test]
 fn rfc8439_pure_encrypt() {
     let key = GenericArray::from_slice(&RFC8439_KEY);
-    let nonce =
-        Nonce::<chacha20poly1305::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
+    let nonce = Nonce::<chacha20poly1305::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
 
     let cipher = <chacha20poly1305::ChaCha20Poly1305 as KeyInit>::new(key);
 
@@ -113,10 +112,8 @@ fn rfc8439_pure_encrypt() {
 #[test]
 fn rfc8439_wolf_encrypt_pure_decrypt() {
     let key = GenericArray::from_slice(&RFC8439_KEY);
-    let nonce_wolf =
-        Nonce::<wolfcrypt::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
-    let nonce_pure =
-        Nonce::<chacha20poly1305::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
+    let nonce_wolf = Nonce::<wolfcrypt::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
+    let nonce_pure = Nonce::<chacha20poly1305::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
 
     let wolf = <wolfcrypt::ChaCha20Poly1305 as KeyInit>::new(key);
     let pure = <chacha20poly1305::ChaCha20Poly1305 as KeyInit>::new(key);
@@ -141,10 +138,8 @@ fn rfc8439_wolf_encrypt_pure_decrypt() {
 #[test]
 fn rfc8439_pure_encrypt_wolf_decrypt() {
     let key = GenericArray::from_slice(&RFC8439_KEY);
-    let nonce_wolf =
-        Nonce::<wolfcrypt::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
-    let nonce_pure =
-        Nonce::<chacha20poly1305::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
+    let nonce_wolf = Nonce::<wolfcrypt::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
+    let nonce_pure = Nonce::<chacha20poly1305::ChaCha20Poly1305>::from_slice(&RFC8439_NONCE);
 
     let wolf = <wolfcrypt::ChaCha20Poly1305 as KeyInit>::new(key);
     let pure = <chacha20poly1305::ChaCha20Poly1305 as KeyInit>::new(key);

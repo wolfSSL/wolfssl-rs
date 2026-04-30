@@ -472,8 +472,8 @@ fn decode_private_key_as(
 
         #[cfg(feature = "rsa")]
         (Algorithm::Rsa { .. }, KeyData::Rsa(pk)) => {
-            use crate::Mpint;
             use crate::private::{RsaKeypair, RsaPrivateKey};
+            use crate::Mpint;
 
             let d = Mpint::decode(reader)?;
             let p = Mpint::decode(reader)?;
@@ -486,8 +486,8 @@ fn decode_private_key_as(
         #[cfg(feature = "ed25519")]
         (Algorithm::Ed25519, KeyData::Ed25519(pk)) => {
             // PPK encodes Ed25519 private exponent as an mpint
-            use crate::Mpint;
             use crate::private::{Ed25519Keypair, Ed25519PrivateKey};
+            use crate::Mpint;
             use zeroize::Zeroizing;
 
             // Copy and pad exponent

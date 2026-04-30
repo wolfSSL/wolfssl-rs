@@ -8,7 +8,10 @@
 
 fn main() {
     let init_rc = unsafe { wolfcrypt_sys::wolfCrypt_Init() };
-    assert!(init_rc == 0 || init_rc == 1, "wolfCrypt_Init failed: {init_rc}");
+    assert!(
+        init_rc == 0 || init_rc == 1,
+        "wolfCrypt_Init failed: {init_rc}"
+    );
 
     // --- RNG ---
     let mut rng: wolfcrypt_sys::WC_RNG = unsafe { core::mem::zeroed() };
@@ -51,7 +54,10 @@ fn main() {
         )
     };
     assert_eq!(rc, 0, "wc_ecc_sign_hash failed: {rc}");
-    assert!(sig_len > 0 && sig_len <= 128, "unexpected sig_len={sig_len}");
+    assert!(
+        sig_len > 0 && sig_len <= 128,
+        "unexpected sig_len={sig_len}"
+    );
 
     // --- Verify ---
     let mut result: core::ffi::c_int = 0;

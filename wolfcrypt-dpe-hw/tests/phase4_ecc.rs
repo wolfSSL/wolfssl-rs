@@ -275,7 +275,10 @@ mod tests {
                 &mut sig_len,
             );
             assert_eq!(rc, 0, "wc_ecc_rs_raw_to_sig failed: {rc}");
-            assert!(sig_len > 0 && sig_len <= 128, "unexpected sig_len={sig_len}");
+            assert!(
+                sig_len > 0 && sig_len <= 128,
+                "unexpected sig_len={sig_len}"
+            );
 
             // Build SEC1 uncompressed public key: 0x04 || Qx || Qy.
             let mut pub_bytes = [0u8; 97];
@@ -303,7 +306,10 @@ mod tests {
             // Verify using the HW CryptoCb path.
             let (rc, result) = ecc384_verify(&mut key, &sig[..sig_len as usize], &digest);
             assert_eq!(rc, 0, "wc_ecc_verify_hash failed: {rc}");
-            assert_eq!(result, 1, "NIST vector verification failed (result={result})");
+            assert_eq!(
+                result, 1,
+                "NIST vector verification failed (result={result})"
+            );
             assert_eq!(
                 ecc_dispatch_count(),
                 before + 1,
@@ -378,13 +384,15 @@ mod tests {
 
             // Verify the corrupted signature — must return VERIFY_SIGN_ERROR.
             const VERIFY_SIGN_ERROR: core::ffi::c_int = -330;
-            let (rc, result) =
-                ecc384_verify(&mut key, &bad_sig[..bad_sig_len as usize], &hash);
+            let (rc, result) = ecc384_verify(&mut key, &bad_sig[..bad_sig_len as usize], &hash);
             assert_eq!(
                 rc, VERIFY_SIGN_ERROR,
                 "expected VERIFY_SIGN_ERROR ({VERIFY_SIGN_ERROR}), got rc={rc}"
             );
-            assert_eq!(result, 0, "result should be 0 on verify failure, got {result}");
+            assert_eq!(
+                result, 0,
+                "result should be 0 on verify failure, got {result}"
+            );
 
             // Dispatch count: only the sign incremented; failed verify did not.
             assert_eq!(
@@ -460,7 +468,10 @@ mod tests {
             assert_eq!(shared_a, shared_b, "ECDH shared secrets do not match");
 
             // The shared secret must not be all zeros (catastrophic failure check).
-            assert_ne!(shared_a, [0u8; 48], "ECDH produced an all-zeros shared secret");
+            assert_ne!(
+                shared_a, [0u8; 48],
+                "ECDH produced an all-zeros shared secret"
+            );
 
             wolfcrypt_sys::wc_ecc_free(&mut key_a);
             wolfcrypt_sys::wc_ecc_free(&mut key_b);

@@ -1,9 +1,9 @@
 #![allow(deprecated, dead_code)]
 
 #[cfg(feature = "ring-sig-verify")]
-use wolfcrypt_ring_compat::{test, test_file};
-#[cfg(feature = "ring-sig-verify")]
 use criterion::{criterion_group, criterion_main, Criterion};
+#[cfg(feature = "ring-sig-verify")]
+use wolfcrypt_ring_compat::{test, test_file};
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -247,7 +247,12 @@ fn test_ecdsa_verify(c: &mut Criterion, config: &EcdsaConfig) {
 
     group.bench_function("wolfcrypt-ring-compat", |b| {
         b.iter(|| {
-            wolfcrypt_ring_compat_benchmarks::verify(wc_verification_alg, pub_key, &config.msg, sig);
+            wolfcrypt_ring_compat_benchmarks::verify(
+                wc_verification_alg,
+                pub_key,
+                &config.msg,
+                sig,
+            );
         });
     });
     #[cfg(feature = "ring-benchmarks")]

@@ -6,10 +6,10 @@
 use ring::aead::nonce_sequence::Counter32Builder;
 use ring::{aead, error, test, test_file};
 
+use core::ops::RangeFrom;
 use ring::aead::{
     Aad, BoundKey, Nonce, OpeningKey, SealingKey, UnboundKey, AES_128_GCM, NONCE_LEN,
 };
-use core::ops::RangeFrom;
 
 #[test]
 fn aead_aes_gcm_128() {
@@ -45,8 +45,16 @@ fn aead_chacha20_poly1305() {
 
 /// Tests all combinations of sealer and opener functions
 fn test_aead_all(aead_alg: &'static aead::Algorithm, test_file: test::File) {
-    let sealers = vec![seal_with_key, seal_with_less_safe_key, seal_with_less_safe_key_scatter];
-    let openers = vec![open_with_key, open_with_less_safe_key, open_with_less_safe_key_gather];
+    let sealers = vec![
+        seal_with_key,
+        seal_with_less_safe_key,
+        seal_with_less_safe_key_scatter,
+    ];
+    let openers = vec![
+        open_with_key,
+        open_with_less_safe_key,
+        open_with_less_safe_key_gather,
+    ];
 
     for seal in &sealers {
         for open in &openers {

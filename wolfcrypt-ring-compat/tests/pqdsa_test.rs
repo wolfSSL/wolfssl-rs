@@ -1,7 +1,7 @@
 #![cfg(all(not(feature = "fips"), feature = "unstable"))]
 
-use ring::signature::VerificationAlgorithm;
 use ring::signature::KeyPair;
+use ring::signature::VerificationAlgorithm;
 use ring::unstable::signature::{
     PqdsaKeyPair, ML_DSA_44, ML_DSA_44_SIGNING, ML_DSA_65, ML_DSA_65_SIGNING, ML_DSA_87,
     ML_DSA_87_SIGNING,
@@ -302,7 +302,10 @@ fn test_mldsa_seed_functional_equivalence() {
         let raw = original.private_key().as_raw_bytes().unwrap();
         let reconstructed = PqdsaKeyPair::from_raw_private_key(signing_alg, raw.as_ref()).unwrap();
 
-        assert_eq!(original.public_key().as_ref(), reconstructed.public_key().as_ref());
+        assert_eq!(
+            original.public_key().as_ref(),
+            reconstructed.public_key().as_ref()
+        );
 
         let msg = b"equivalence test";
 
@@ -312,12 +315,12 @@ fn test_mldsa_seed_functional_equivalence() {
         let mut sig_reconstructed = vec![0u8; signing_alg.signature_len()];
         reconstructed.sign(msg, &mut sig_reconstructed).unwrap();
 
-        let pk = ring::signature::UnparsedPublicKey::new(
-            verify_alg,
-            original.public_key().as_ref(),
-        );
-        pk.verify(msg, &sig_original).expect("original signature should verify");
-        pk.verify(msg, &sig_reconstructed).expect("reconstructed signature should verify");
+        let pk =
+            ring::signature::UnparsedPublicKey::new(verify_alg, original.public_key().as_ref());
+        pk.verify(msg, &sig_original)
+            .expect("original signature should verify");
+        pk.verify(msg, &sig_reconstructed)
+            .expect("reconstructed signature should verify");
     }
 }
 
@@ -339,10 +342,8 @@ fn test_mldsa_verify_wrong_key() {
         kp1.sign(msg, &mut sig).unwrap();
 
         // Verify with wrong public key should fail
-        let wrong_pk = ring::signature::UnparsedPublicKey::new(
-            verify_alg,
-            kp2.public_key().as_ref(),
-        );
+        let wrong_pk =
+            ring::signature::UnparsedPublicKey::new(verify_alg, kp2.public_key().as_ref());
         assert!(
             wrong_pk.verify(msg, &sig).is_err(),
             "verification with wrong key should fail"
@@ -367,10 +368,7 @@ fn test_mldsa_corrupted_signature() {
         kp.sign(msg, &mut sig).unwrap();
 
         // First verify the original signature works
-        let pk = ring::signature::UnparsedPublicKey::new(
-            verify_alg,
-            kp.public_key().as_ref(),
-        );
+        let pk = ring::signature::UnparsedPublicKey::new(verify_alg, kp.public_key().as_ref());
         assert!(pk.verify(msg, &sig).is_ok(), "original sig should verify");
 
         // Corrupt the first byte
@@ -397,10 +395,7 @@ fn test_mldsa_zero_signature() {
         let msg = b"zero sig test";
         let zero_sig = vec![0u8; signing_alg.signature_len()];
 
-        let pk = ring::signature::UnparsedPublicKey::new(
-            verify_alg,
-            kp.public_key().as_ref(),
-        );
+        let pk = ring::signature::UnparsedPublicKey::new(verify_alg, kp.public_key().as_ref());
         assert!(
             pk.verify(msg, &zero_sig).is_err(),
             "all-zeros signature should fail verification"
@@ -428,10 +423,8 @@ fn test_mldsa_ring_sig_verify() {
         kp.sign(msg, &mut sig).unwrap();
 
         let pk_bytes = kp.public_key().as_ref();
-        assert!(verify_alg.verify(
-            pk_bytes.into(),
-            msg.as_ref().into(),
-            sig.as_slice().into(),
-        ).is_ok());
+        assert!(verify_alg
+            .verify(pk_bytes.into(), msg.as_ref().into(), sig.as_slice().into(),)
+            .is_ok());
     }
 }

@@ -3,8 +3,8 @@
 // Modifications copyright wolfSSL Inc.
 // SPDX-License-Identifier: MIT
 
-use ring::{digest, error, pbkdf2, test, test_file};
 use core::num::NonZeroU32;
+use ring::{digest, error, pbkdf2, test, test_file};
 
 /// Test vectors from `BoringSSL`, Go, and other sources.
 #[test]

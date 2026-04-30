@@ -4,7 +4,9 @@ fn main() {
     // Determine which dependency is active. Exactly one must be selected.
     // Note: wolfcrypt-ring-compat-fips and wolfcrypt-rs-fips are FIPS variants
     // of their respective base crates (same dep, different feature flags).
-    let dep = if cfg!(feature = "wolfcrypt-ring-compat") || cfg!(feature = "wolfcrypt-ring-compat-fips") {
+    let dep = if cfg!(feature = "wolfcrypt-ring-compat")
+        || cfg!(feature = "wolfcrypt-ring-compat-fips")
+    {
         "wolfcrypt-ring-compat"
     } else if cfg!(feature = "wolfcrypt-rs") || cfg!(feature = "wolfcrypt-rs-fips") {
         "wolfcrypt-rs"
@@ -14,10 +16,18 @@ fn main() {
 
     // Verify mutual exclusivity: count how many top-level features are active.
     let mut count = 0u32;
-    if cfg!(feature = "wolfcrypt-ring-compat") { count += 1; }
-    if cfg!(feature = "wolfcrypt-ring-compat-fips") { count += 1; }
-    if cfg!(feature = "wolfcrypt-rs") { count += 1; }
-    if cfg!(feature = "wolfcrypt-rs-fips") { count += 1; }
+    if cfg!(feature = "wolfcrypt-ring-compat") {
+        count += 1;
+    }
+    if cfg!(feature = "wolfcrypt-ring-compat-fips") {
+        count += 1;
+    }
+    if cfg!(feature = "wolfcrypt-rs") {
+        count += 1;
+    }
+    if cfg!(feature = "wolfcrypt-rs-fips") {
+        count += 1;
+    }
     assert_eq!(
         count, 1,
         "exactly one crate feature must be selected at a time"

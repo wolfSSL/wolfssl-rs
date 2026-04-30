@@ -6,8 +6,8 @@ use aead::{
     Aad, Algorithm, BoundKey, Nonce, NonceSequence, OpeningKey, SealingKey, UnboundKey,
     AES_128_GCM, AES_256_GCM, CHACHA20_POLY1305,
 };
-use ring::test::from_hex;
 use error::Unspecified;
+use ring::test::from_hex;
 
 struct NotANonce(Vec<u8>);
 

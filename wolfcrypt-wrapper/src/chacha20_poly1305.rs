@@ -62,8 +62,14 @@ impl ChaCha20Poly1305 {
     ///
     /// Returns either Ok(()) on success or Err(e) containing the wolfSSL
     /// library error code value.
-    pub fn decrypt(key: &[u8], iv: &[u8], aad: &[u8], ciphertext: &[u8],
-        auth_tag: &[u8], plaintext: &mut [u8]) -> Result<(), i32> {
+    pub fn decrypt(
+        key: &[u8],
+        iv: &[u8],
+        aad: &[u8],
+        ciphertext: &[u8],
+        auth_tag: &[u8],
+        plaintext: &mut [u8],
+    ) -> Result<(), i32> {
         if key.len() != Self::KEYSIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BUFFER_E);
         }
@@ -76,9 +82,16 @@ impl ChaCha20Poly1305 {
         let aad_size = aad.len() as u32;
         let ciphertext_size = ciphertext.len() as u32;
         let rc = unsafe {
-            sys::wc_ChaCha20Poly1305_Decrypt(key.as_ptr(), iv.as_ptr(),
-                aad.as_ptr(), aad_size, ciphertext.as_ptr(),
-                ciphertext_size, auth_tag.as_ptr(), plaintext.as_mut_ptr())
+            sys::wc_ChaCha20Poly1305_Decrypt(
+                key.as_ptr(),
+                iv.as_ptr(),
+                aad.as_ptr(),
+                aad_size,
+                ciphertext.as_ptr(),
+                ciphertext_size,
+                auth_tag.as_ptr(),
+                plaintext.as_mut_ptr(),
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -104,8 +117,14 @@ impl ChaCha20Poly1305 {
     ///
     /// Returns either Ok(()) on success or Err(e) containing the wolfSSL
     /// library error code value.
-    pub fn encrypt(key: &[u8], iv: &[u8], aad: &[u8], plaintext: &[u8],
-        ciphertext: &mut [u8], auth_tag: &mut [u8]) -> Result<(), i32> {
+    pub fn encrypt(
+        key: &[u8],
+        iv: &[u8],
+        aad: &[u8],
+        plaintext: &[u8],
+        ciphertext: &mut [u8],
+        auth_tag: &mut [u8],
+    ) -> Result<(), i32> {
         if key.len() != Self::KEYSIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BUFFER_E);
         }
@@ -118,9 +137,16 @@ impl ChaCha20Poly1305 {
         let aad_size = aad.len() as u32;
         let plaintext_size = plaintext.len() as u32;
         let rc = unsafe {
-            sys::wc_ChaCha20Poly1305_Encrypt(key.as_ptr(), iv.as_ptr(),
-                aad.as_ptr(), aad_size, plaintext.as_ptr(), plaintext_size,
-                ciphertext.as_mut_ptr(), auth_tag.as_mut_ptr())
+            sys::wc_ChaCha20Poly1305_Encrypt(
+                key.as_ptr(),
+                iv.as_ptr(),
+                aad.as_ptr(),
+                aad_size,
+                plaintext.as_ptr(),
+                plaintext_size,
+                ciphertext.as_mut_ptr(),
+                auth_tag.as_mut_ptr(),
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -148,8 +174,12 @@ impl ChaCha20Poly1305 {
         }
         let mut wc_ccp: MaybeUninit<sys::ChaChaPoly_Aead> = MaybeUninit::uninit();
         let rc = unsafe {
-            sys::wc_ChaCha20Poly1305_Init(wc_ccp.as_mut_ptr(), key.as_ptr(),
-                iv.as_ptr(), if encrypt {1} else {0})
+            sys::wc_ChaCha20Poly1305_Init(
+                wc_ccp.as_mut_ptr(),
+                key.as_ptr(),
+                iv.as_ptr(),
+                if encrypt { 1 } else { 0 },
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -173,10 +203,8 @@ impl ChaCha20Poly1305 {
     /// library error code value.
     pub fn update_aad(&mut self, aad: &[u8]) -> Result<(), i32> {
         let aad_size = aad.len() as u32;
-        let rc = unsafe {
-            sys::wc_ChaCha20Poly1305_UpdateAad(&mut self.wc_ccp,
-                aad.as_ptr(), aad_size)
-        };
+        let rc =
+            unsafe { sys::wc_ChaCha20Poly1305_UpdateAad(&mut self.wc_ccp, aad.as_ptr(), aad_size) };
         if rc != 0 {
             return Err(rc);
         }
@@ -206,8 +234,12 @@ impl ChaCha20Poly1305 {
         }
         let din_size = din.len() as u32;
         let rc = unsafe {
-            sys::wc_ChaCha20Poly1305_UpdateData(&mut self.wc_ccp,
-                din.as_ptr(), dout.as_mut_ptr(), din_size)
+            sys::wc_ChaCha20Poly1305_UpdateData(
+                &mut self.wc_ccp,
+                din.as_ptr(),
+                dout.as_mut_ptr(),
+                din_size,
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -233,10 +265,7 @@ impl ChaCha20Poly1305 {
         if auth_tag.len() != Self::AUTH_TAG_SIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BUFFER_E);
         }
-        let rc = unsafe {
-            sys::wc_ChaCha20Poly1305_Final(&mut self.wc_ccp,
-                auth_tag.as_mut_ptr())
-        };
+        let rc = unsafe { sys::wc_ChaCha20Poly1305_Final(&mut self.wc_ccp, auth_tag.as_mut_ptr()) };
         if rc != 0 {
             return Err(rc);
         }
@@ -245,8 +274,7 @@ impl ChaCha20Poly1305 {
 }
 
 #[cfg(xchacha20_poly1305)]
-pub struct XChaCha20Poly1305 {
-}
+pub struct XChaCha20Poly1305 {}
 
 #[cfg(xchacha20_poly1305)]
 impl XChaCha20Poly1305 {
@@ -277,8 +305,13 @@ impl XChaCha20Poly1305 {
     ///
     /// Returns either Ok(()) on success or Err(e) containing the wolfSSL
     /// library error code value.
-    pub fn decrypt(key: &[u8], iv: &[u8], aad: &[u8], ciphertext: &[u8],
-        plaintext: &mut [u8]) -> Result<(), i32> {
+    pub fn decrypt(
+        key: &[u8],
+        iv: &[u8],
+        aad: &[u8],
+        ciphertext: &[u8],
+        plaintext: &mut [u8],
+    ) -> Result<(), i32> {
         if key.len() != Self::KEYSIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BUFFER_E);
         }
@@ -287,11 +320,17 @@ impl XChaCha20Poly1305 {
         }
         let rc = unsafe {
             sys::wc_XChaCha20Poly1305_Decrypt(
-                plaintext.as_mut_ptr(), plaintext.len(),
-                ciphertext.as_ptr(), ciphertext.len(),
-                aad.as_ptr(), aad.len(),
-                iv.as_ptr(), iv.len(),
-                key.as_ptr(), key.len())
+                plaintext.as_mut_ptr(),
+                plaintext.len(),
+                ciphertext.as_ptr(),
+                ciphertext.len(),
+                aad.as_ptr(),
+                aad.len(),
+                iv.as_ptr(),
+                iv.len(),
+                key.as_ptr(),
+                key.len(),
+            )
         };
         if rc != 0 {
             return Err(rc);
@@ -318,8 +357,13 @@ impl XChaCha20Poly1305 {
     ///
     /// Returns either Ok(()) on success or Err(e) containing the wolfSSL
     /// library error code value.
-    pub fn encrypt(key: &[u8], iv: &[u8], aad: &[u8], plaintext: &[u8],
-        ciphertext: &mut [u8]) -> Result<(), i32> {
+    pub fn encrypt(
+        key: &[u8],
+        iv: &[u8],
+        aad: &[u8],
+        plaintext: &[u8],
+        ciphertext: &mut [u8],
+    ) -> Result<(), i32> {
         if key.len() != Self::KEYSIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BUFFER_E);
         }
@@ -328,11 +372,17 @@ impl XChaCha20Poly1305 {
         }
         let rc = unsafe {
             sys::wc_XChaCha20Poly1305_Encrypt(
-                ciphertext.as_mut_ptr(), ciphertext.len(),
-                plaintext.as_ptr(), plaintext.len(),
-                aad.as_ptr(), aad.len(),
-                iv.as_ptr(), iv.len(),
-                key.as_ptr(), key.len())
+                ciphertext.as_mut_ptr(),
+                ciphertext.len(),
+                plaintext.as_ptr(),
+                plaintext.len(),
+                aad.as_ptr(),
+                aad.len(),
+                iv.as_ptr(),
+                iv.len(),
+                key.as_ptr(),
+                key.len(),
+            )
         };
         if rc != 0 {
             return Err(rc);

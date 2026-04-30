@@ -84,14 +84,26 @@ mod tests {
         let mut tag = [0u8; 16];
         let rc = wolfcrypt_sys::wc_AesGcmEncrypt(
             &mut aes,
-            if plaintext.is_empty() { core::ptr::null_mut() } else { ct.as_mut_ptr() },
-            if plaintext.is_empty() { core::ptr::null() } else { plaintext.as_ptr() },
+            if plaintext.is_empty() {
+                core::ptr::null_mut()
+            } else {
+                ct.as_mut_ptr()
+            },
+            if plaintext.is_empty() {
+                core::ptr::null()
+            } else {
+                plaintext.as_ptr()
+            },
             plaintext.len() as u32,
             iv.as_ptr(),
             12,
             tag.as_mut_ptr(),
             16,
-            if aad.is_empty() { core::ptr::null() } else { aad.as_ptr() },
+            if aad.is_empty() {
+                core::ptr::null()
+            } else {
+                aad.as_ptr()
+            },
             aad.len() as u32,
         );
         wolfcrypt_sys::wc_AesFree(&mut aes);
@@ -114,14 +126,26 @@ mod tests {
         let mut pt = vec![0u8; ciphertext.len()];
         let rc = wolfcrypt_sys::wc_AesGcmDecrypt(
             &mut aes,
-            if ciphertext.is_empty() { core::ptr::null_mut() } else { pt.as_mut_ptr() },
-            if ciphertext.is_empty() { core::ptr::null() } else { ciphertext.as_ptr() },
+            if ciphertext.is_empty() {
+                core::ptr::null_mut()
+            } else {
+                pt.as_mut_ptr()
+            },
+            if ciphertext.is_empty() {
+                core::ptr::null()
+            } else {
+                ciphertext.as_ptr()
+            },
             ciphertext.len() as u32,
             iv.as_ptr(),
             12,
             tag.as_ptr(),
             16,
-            if aad.is_empty() { core::ptr::null() } else { aad.as_ptr() },
+            if aad.is_empty() {
+                core::ptr::null()
+            } else {
+                aad.as_ptr()
+            },
             aad.len() as u32,
         );
         wolfcrypt_sys::wc_AesFree(&mut aes);
@@ -174,7 +198,8 @@ mod tests {
         assert_eq!(aes_dispatch_count(), 0, "counter leak from previous test");
 
         // NIST SP 800-38D TC15 (AES-256-GCM, 64-byte PT, no AAD).
-        const KEY: [u8; 32] = hex!("feffe9928665731c6d6a8f9467308308feffe9928665731c6d6a8f9467308308");
+        const KEY: [u8; 32] =
+            hex!("feffe9928665731c6d6a8f9467308308feffe9928665731c6d6a8f9467308308");
         const IV: [u8; 12] = hex!("cafebabefacedbaddecaf888");
         const PT: [u8; 64] = hex!("d9313225f88406e5a55909c5aff5269a86a7a9531534f7da2e4c303d8a318a721c3c0c95956809532fcf0e2449a6b525b16aedf5aa0de657ba637b391aafd255");
         const EXPECTED_CT: [u8; 64] = hex!("522dc1f099567d07f47f37a32a84427d643a8cdcbfe5c0c97598a2bd2555d1aa8cb08e48590dbb3da7b08b1056828838c5f61e6393ba7a0abcc9f662898015ad");
@@ -185,7 +210,11 @@ mod tests {
         assert_eq!(rc, 0, "wc_AesGcmEncrypt(NIST TC15) failed: {rc}");
         assert_eq!(ct.as_slice(), EXPECTED_CT.as_slice(), "ciphertext mismatch");
         assert_eq!(tag, EXPECTED_TAG, "auth tag mismatch");
-        assert_eq!(aes_dispatch_count(), before + 1, "AES_DISPATCH_COUNT must increment by 1");
+        assert_eq!(
+            aes_dispatch_count(),
+            before + 1,
+            "AES_DISPATCH_COUNT must increment by 1"
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -199,7 +228,8 @@ mod tests {
         reset_aes_dispatch_count();
         assert_eq!(aes_dispatch_count(), 0, "counter leak from previous test");
 
-        const KEY: [u8; 32] = hex!("feffe9928665731c6d6a8f9467308308feffe9928665731c6d6a8f9467308308");
+        const KEY: [u8; 32] =
+            hex!("feffe9928665731c6d6a8f9467308308feffe9928665731c6d6a8f9467308308");
         const IV: [u8; 12] = hex!("cafebabefacedbaddecaf888");
         const CT: [u8; 64] = hex!("522dc1f099567d07f47f37a32a84427d643a8cdcbfe5c0c97598a2bd2555d1aa8cb08e48590dbb3da7b08b1056828838c5f61e6393ba7a0abcc9f662898015ad");
         const TAG: [u8; 16] = hex!("b094dac5d93471bdec1a502270e3cc6c");
@@ -209,7 +239,11 @@ mod tests {
         let (rc, pt) = unsafe { gcm_decrypt(HW_DEVICE_ID, &KEY, &IV, &[], &CT, &TAG) };
         assert_eq!(rc, 0, "wc_AesGcmDecrypt(NIST TC15) failed: {rc}");
         assert_eq!(pt.as_slice(), EXPECTED_PT.as_slice(), "plaintext mismatch");
-        assert_eq!(aes_dispatch_count(), before + 1, "AES_DISPATCH_COUNT must increment by 1");
+        assert_eq!(
+            aes_dispatch_count(),
+            before + 1,
+            "AES_DISPATCH_COUNT must increment by 1"
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -223,7 +257,8 @@ mod tests {
         reset_aes_dispatch_count();
         assert_eq!(aes_dispatch_count(), 0, "counter leak from previous test");
 
-        const KEY: [u8; 32] = hex!("feffe9928665731c6d6a8f9467308308feffe9928665731c6d6a8f9467308308");
+        const KEY: [u8; 32] =
+            hex!("feffe9928665731c6d6a8f9467308308feffe9928665731c6d6a8f9467308308");
         const IV: [u8; 12] = hex!("cafebabefacedbaddecaf888");
         const CT: [u8; 64] = hex!("522dc1f099567d07f47f37a32a84427d643a8cdcbfe5c0c97598a2bd2555d1aa8cb08e48590dbb3da7b08b1056828838c5f61e6393ba7a0abcc9f662898015ad");
         // Flip the first bit of the correct tag.
@@ -270,7 +305,9 @@ mod tests {
         let vectors: [([u8; 32], [u8; 12], [u8; 8], [u8; 32]); 5] = [
             (
                 hex!("0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"),
-                hex!("aabbccddeeff00112233445566778899")[..12].try_into().unwrap(),
+                hex!("aabbccddeeff00112233445566778899")[..12]
+                    .try_into()
+                    .unwrap(),
                 *b"aad_vec1",
                 hex!("deadbeefcafebabe0102030405060708090a0b0c0d0e0f101112131415161718"),
             ),
@@ -304,13 +341,11 @@ mod tests {
 
         for (i, (key, iv, aad, pt)) in vectors.iter().enumerate() {
             // hw encrypt → sw decrypt
-            let (enc_rc, ct, tag) =
-                unsafe { gcm_encrypt(HW_DEVICE_ID, key, iv, aad, pt) };
+            let (enc_rc, ct, tag) = unsafe { gcm_encrypt(HW_DEVICE_ID, key, iv, aad, pt) };
             assert_eq!(enc_rc, 0, "hw encrypt failed for vector {i}: {enc_rc}");
 
-            let (dec_rc, recovered) = unsafe {
-                gcm_decrypt(wolfcrypt_sys::INVALID_DEVID, key, iv, aad, &ct, &tag)
-            };
+            let (dec_rc, recovered) =
+                unsafe { gcm_decrypt(wolfcrypt_sys::INVALID_DEVID, key, iv, aad, &ct, &tag) };
             assert_eq!(dec_rc, 0, "sw decrypt failed for vector {i}: {dec_rc}");
             assert_eq!(
                 recovered.as_slice(),
@@ -321,11 +356,17 @@ mod tests {
             // sw encrypt → hw decrypt
             let (sw_enc_rc, sw_ct, sw_tag) =
                 unsafe { gcm_encrypt(wolfcrypt_sys::INVALID_DEVID, key, iv, aad, pt) };
-            assert_eq!(sw_enc_rc, 0, "sw encrypt failed for vector {i}: {sw_enc_rc}");
+            assert_eq!(
+                sw_enc_rc, 0,
+                "sw encrypt failed for vector {i}: {sw_enc_rc}"
+            );
 
             let (hw_dec_rc, hw_recovered) =
                 unsafe { gcm_decrypt(HW_DEVICE_ID, key, iv, aad, &sw_ct, &sw_tag) };
-            assert_eq!(hw_dec_rc, 0, "hw decrypt failed for vector {i}: {hw_dec_rc}");
+            assert_eq!(
+                hw_dec_rc, 0,
+                "hw decrypt failed for vector {i}: {hw_dec_rc}"
+            );
             assert_eq!(
                 hw_recovered.as_slice(),
                 pt.as_slice(),
@@ -364,8 +405,15 @@ mod tests {
 
         let before = aes_dispatch_count();
         let (rc, ct) = unsafe { cbc_encrypt(HW_DEVICE_ID, &KEY, &IV, &PT) };
-        assert_eq!(rc, 0, "wc_AesCbcEncrypt(NIST AESAVS, AES-256-CBC) failed: {rc}");
-        assert_eq!(ct.as_slice(), EXPECTED_CT.as_slice(), "CBC ciphertext mismatch");
+        assert_eq!(
+            rc, 0,
+            "wc_AesCbcEncrypt(NIST AESAVS, AES-256-CBC) failed: {rc}"
+        );
+        assert_eq!(
+            ct.as_slice(),
+            EXPECTED_CT.as_slice(),
+            "CBC ciphertext mismatch"
+        );
         assert_eq!(
             aes_dispatch_count(),
             before + 1,
@@ -417,10 +465,13 @@ mod tests {
         //   1. key copy is made from aes->devKey onto the dispatch stack frame
         //   2. key copy is used for the AES-GCM operation
         //   3. key.zeroize() is called — zeroes the dispatch stack frame's copy
-        let (rc, _ct, _tag) =
-            unsafe { gcm_encrypt(HW_DEVICE_ID, &test_key, &iv, &[], &pt) };
+        let (rc, _ct, _tag) = unsafe { gcm_encrypt(HW_DEVICE_ID, &test_key, &iv, &[], &pt) };
         assert_eq!(rc, 0, "GCM encrypt failed: {rc}");
-        assert_eq!(aes_dispatch_count(), 1, "AES_DISPATCH_COUNT must be 1 after one dispatch");
+        assert_eq!(
+            aes_dispatch_count(),
+            1,
+            "AES_DISPATCH_COUNT must be 1 after one dispatch"
+        );
 
         // Zero OUR local test_key before scanning so it doesn't cause a false
         // positive when we scan our own stack frame.
@@ -459,4 +510,3 @@ mod tests {
         );
     }
 }
-

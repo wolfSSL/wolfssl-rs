@@ -19,8 +19,8 @@ fn setup_and_certify() -> Vec<u8> {
     let support = helpers::dpe_harness::DEFAULT_SUPPORT;
     let mut state = State::new(support, caliptra_dpe::DpeFlags::empty());
     let mut env = helpers::dpe_harness::make_ref_env(&mut state);
-    let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-        .expect("DPE init should succeed");
+    let mut dpe =
+        DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("DPE init should succeed");
 
     let derive_cmd = DeriveContextCmd {
         handle: ContextHandle::default(),
@@ -48,9 +48,7 @@ fn setup_and_certify() -> Vec<u8> {
         .execute(&mut dpe, &mut env, helpers::dpe_harness::LOCALITY)
         .expect("CertifyKey should succeed")
     {
-        Response::CertifyKey(CertifyKeyResp::P384(r)) => {
-            r.cert[..r.cert_size as usize].to_vec()
-        }
+        Response::CertifyKey(CertifyKeyResp::P384(r)) => r.cert[..r.cert_size as usize].to_vec(),
         _ => panic!("Expected CertifyKey P384 response"),
     }
 }
@@ -61,8 +59,8 @@ fn get_chain_returns_cert_data() {
     let support = helpers::dpe_harness::DEFAULT_SUPPORT;
     let mut state = State::new(support, caliptra_dpe::DpeFlags::empty());
     let mut env = helpers::dpe_harness::make_ref_env(&mut state);
-    let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-        .expect("DPE init should succeed");
+    let mut dpe =
+        DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("DPE init should succeed");
 
     let chain_cmd = GetCertificateChainCmd {
         offset: 0,
@@ -89,8 +87,8 @@ fn chain_data_is_valid_der() {
     let support = helpers::dpe_harness::DEFAULT_SUPPORT;
     let mut state = State::new(support, caliptra_dpe::DpeFlags::empty());
     let mut env = helpers::dpe_harness::make_ref_env(&mut state);
-    let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-        .expect("DPE init should succeed");
+    let mut dpe =
+        DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("DPE init should succeed");
 
     let chain_cmd = GetCertificateChainCmd {
         offset: 0,
@@ -116,8 +114,7 @@ fn chain_data_is_valid_der() {
 #[test]
 fn leaf_cert_not_ca() {
     let cert_bytes = setup_and_certify();
-    let parsed = helpers::x509_parser::parse_cert(&cert_bytes)
-        .expect("cert should parse");
+    let parsed = helpers::x509_parser::parse_cert(&cert_bytes).expect("cert should parse");
     assert!(
         !parsed.is_ca,
         "Leaf certificate from CertifyKey must not have CA=true in BasicConstraints"
@@ -133,8 +130,8 @@ fn certify_after_derive_different_pubkey() {
     let pk_a = {
         let mut state = State::new(support, caliptra_dpe::DpeFlags::empty());
         let mut env = helpers::dpe_harness::make_ref_env(&mut state);
-        let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-            .expect("DPE init should succeed");
+        let mut dpe =
+            DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("DPE init should succeed");
 
         let derive_cmd = DeriveContextCmd {
             handle: ContextHandle::default(),
@@ -178,8 +175,8 @@ fn certify_after_derive_different_pubkey() {
     let pk_b = {
         let mut state = State::new(support, caliptra_dpe::DpeFlags::empty());
         let mut env = helpers::dpe_harness::make_ref_env(&mut state);
-        let mut dpe = DpeInstance::new(&mut env, DpeProfile::P384Sha384)
-            .expect("DPE init should succeed");
+        let mut dpe =
+            DpeInstance::new(&mut env, DpeProfile::P384Sha384).expect("DPE init should succeed");
 
         let derive_cmd = DeriveContextCmd {
             handle: ContextHandle::default(),

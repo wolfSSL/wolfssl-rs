@@ -58,9 +58,9 @@ assert!(valid);
 
 #![cfg(dilithium)]
 
-use crate::sys;
 #[cfg(all(random, any(dilithium_make_key, dilithium_sign)))]
 use crate::random::RNG;
+use crate::sys;
 use core::mem::MaybeUninit;
 
 /// Rust wrapper for a wolfSSL `dilithium_key` object.
@@ -286,9 +286,7 @@ impl Dilithium {
         if rc != 0 {
             return Err(rc);
         }
-        let rc = unsafe {
-            sys::wc_dilithium_make_key_from_seed(&mut key.ws_key, seed.as_ptr())
-        };
+        let rc = unsafe { sys::wc_dilithium_make_key_from_seed(&mut key.ws_key, seed.as_ptr()) };
         if rc != 0 {
             return Err(rc);
         }
@@ -340,10 +338,7 @@ impl Dilithium {
     /// let key = Dilithium::new_ex(None, None).expect("Error with new_ex()");
     /// }
     /// ```
-    pub fn new_ex(
-        heap: Option<*mut core::ffi::c_void>,
-        dev_id: Option<i32>,
-    ) -> Result<Self, i32> {
+    pub fn new_ex(heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<Self, i32> {
         let mut ws_key: MaybeUninit<sys::dilithium_key> = MaybeUninit::uninit();
         let heap = match heap {
             Some(h) => h,
@@ -687,8 +682,10 @@ impl Dilithium {
         let public_size = public.len() as u32;
         let rc = unsafe {
             sys::wc_dilithium_import_key(
-                private.as_ptr(), private_size,
-                public.as_ptr(), public_size,
+                private.as_ptr(),
+                private_size,
+                public.as_ptr(),
+                public_size,
                 &mut self.ws_key,
             )
         };
@@ -769,7 +766,9 @@ impl Dilithium {
         let mut private_size = private.len() as u32;
         let rc = unsafe {
             sys::wc_dilithium_export_private(
-                &mut self.ws_key, private.as_mut_ptr(), &mut private_size,
+                &mut self.ws_key,
+                private.as_mut_ptr(),
+                &mut private_size,
             )
         };
         if rc != 0 {
@@ -815,8 +814,10 @@ impl Dilithium {
         let rc = unsafe {
             sys::wc_dilithium_export_key(
                 &mut self.ws_key,
-                private.as_mut_ptr(), &mut private_size,
-                public.as_mut_ptr(), &mut public_size,
+                private.as_mut_ptr(),
+                &mut private_size,
+                public.as_mut_ptr(),
+                &mut public_size,
             )
         };
         if rc != 0 {
@@ -858,19 +859,17 @@ impl Dilithium {
     /// }
     /// ```
     #[cfg(all(dilithium_sign, random))]
-    pub fn sign_msg(
-        &mut self,
-        msg: &[u8],
-        sig: &mut [u8],
-        rng: &mut RNG,
-    ) -> Result<usize, i32> {
+    pub fn sign_msg(&mut self, msg: &[u8], sig: &mut [u8], rng: &mut RNG) -> Result<usize, i32> {
         let msg_len = msg.len() as u32;
         let mut sig_len = sig.len() as u32;
         let rc = unsafe {
             sys::wc_dilithium_sign_ctx_msg(
-                core::ptr::null(), 0,
-                msg.as_ptr(), msg_len,
-                sig.as_mut_ptr(), &mut sig_len,
+                core::ptr::null(),
+                0,
+                msg.as_ptr(),
+                msg_len,
+                sig.as_mut_ptr(),
+                &mut sig_len,
                 &mut self.ws_key,
                 &mut rng.wc_rng,
             )
@@ -930,9 +929,12 @@ impl Dilithium {
         let mut sig_len = sig.len() as u32;
         let rc = unsafe {
             sys::wc_dilithium_sign_ctx_msg(
-                ctx.as_ptr(), ctx_len,
-                msg.as_ptr(), msg_len,
-                sig.as_mut_ptr(), &mut sig_len,
+                ctx.as_ptr(),
+                ctx_len,
+                msg.as_ptr(),
+                msg_len,
+                sig.as_mut_ptr(),
+                &mut sig_len,
                 &mut self.ws_key,
                 &mut rng.wc_rng,
             )
@@ -979,10 +981,13 @@ impl Dilithium {
         let mut sig_len = sig.len() as u32;
         let rc = unsafe {
             sys::wc_dilithium_sign_ctx_hash(
-                ctx.as_ptr(), ctx_len,
+                ctx.as_ptr(),
+                ctx_len,
                 hash_alg,
-                hash.as_ptr(), hash_len,
-                sig.as_mut_ptr(), &mut sig_len,
+                hash.as_ptr(),
+                hash_len,
+                sig.as_mut_ptr(),
+                &mut sig_len,
                 &mut self.ws_key,
                 &mut rng.wc_rng,
             )
@@ -1040,9 +1045,12 @@ impl Dilithium {
         let mut sig_len = sig.len() as u32;
         let rc = unsafe {
             sys::wc_dilithium_sign_ctx_msg_with_seed(
-                core::ptr::null(), 0,
-                msg.as_ptr(), msg_len,
-                sig.as_mut_ptr(), &mut sig_len,
+                core::ptr::null(),
+                0,
+                msg.as_ptr(),
+                msg_len,
+                sig.as_mut_ptr(),
+                &mut sig_len,
                 &mut self.ws_key,
                 seed.as_ptr(),
             )
@@ -1086,9 +1094,12 @@ impl Dilithium {
         let mut sig_len = sig.len() as u32;
         let rc = unsafe {
             sys::wc_dilithium_sign_ctx_msg_with_seed(
-                ctx.as_ptr(), ctx_len,
-                msg.as_ptr(), msg_len,
-                sig.as_mut_ptr(), &mut sig_len,
+                ctx.as_ptr(),
+                ctx_len,
+                msg.as_ptr(),
+                msg_len,
+                sig.as_mut_ptr(),
+                &mut sig_len,
                 &mut self.ws_key,
                 seed.as_ptr(),
             )
@@ -1135,10 +1146,13 @@ impl Dilithium {
         let mut sig_len = sig.len() as u32;
         let rc = unsafe {
             sys::wc_dilithium_sign_ctx_hash_with_seed(
-                ctx.as_ptr(), ctx_len,
+                ctx.as_ptr(),
+                ctx_len,
                 hash_alg,
-                hash.as_ptr(), hash_len,
-                sig.as_mut_ptr(), &mut sig_len,
+                hash.as_ptr(),
+                hash_len,
+                sig.as_mut_ptr(),
+                &mut sig_len,
                 &mut self.ws_key,
                 seed.as_ptr(),
             )
@@ -1187,9 +1201,12 @@ impl Dilithium {
         let mut res = 0i32;
         let rc = unsafe {
             sys::wc_dilithium_verify_ctx_msg(
-                sig.as_ptr(), sig_len,
-                core::ptr::null(), 0,
-                msg.as_ptr(), msg_len,
+                sig.as_ptr(),
+                sig_len,
+                core::ptr::null(),
+                0,
+                msg.as_ptr(),
+                msg_len,
                 &mut res,
                 &mut self.ws_key,
             )
@@ -1244,9 +1261,12 @@ impl Dilithium {
         let mut res = 0i32;
         let rc = unsafe {
             sys::wc_dilithium_verify_ctx_msg(
-                sig.as_ptr(), sig_len,
-                ctx.as_ptr(), ctx_len,
-                msg.as_ptr(), msg_len,
+                sig.as_ptr(),
+                sig_len,
+                ctx.as_ptr(),
+                ctx_len,
+                msg.as_ptr(),
+                msg_len,
                 &mut res,
                 &mut self.ws_key,
             )
@@ -1290,10 +1310,13 @@ impl Dilithium {
         let mut res = 0i32;
         let rc = unsafe {
             sys::wc_dilithium_verify_ctx_hash(
-                sig.as_ptr(), sig_len,
-                ctx.as_ptr(), ctx_len,
+                sig.as_ptr(),
+                sig_len,
+                ctx.as_ptr(),
+                ctx_len,
                 hash_alg,
-                hash.as_ptr(), hash_len,
+                hash.as_ptr(),
+                hash_len,
                 &mut res,
                 &mut self.ws_key,
             )
@@ -1311,6 +1334,8 @@ impl Drop for Dilithium {
     /// This calls `wc_dilithium_free()`. The Rust Drop trait guarantees this
     /// is called when the `Dilithium` struct goes out of scope.
     fn drop(&mut self) {
-        unsafe { sys::wc_dilithium_free(&mut self.ws_key); }
+        unsafe {
+            sys::wc_dilithium_free(&mut self.ws_key);
+        }
     }
 }

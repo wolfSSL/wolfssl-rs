@@ -9,8 +9,8 @@ mod unix_time;
 pub use self::{builder::Builder, cert_type::CertType, field::Field, options_map::OptionsMap};
 
 use crate::{
-    Algorithm, Comment, Error, Fingerprint, HashAlg, Result, Signature,
     public::{KeyData, SshFormat},
+    Algorithm, Comment, Error, Fingerprint, HashAlg, Result, Signature,
 };
 use alloc::{
     string::{String, ToString},
@@ -21,7 +21,7 @@ use encoding::{Base64Reader, CheckedSum, Decode, Encode, Reader, Writer};
 use signature::Verifier;
 
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize, de, ser};
+use serde::{de, ser, Deserialize, Serialize};
 
 #[cfg(feature = "std")]
 use {

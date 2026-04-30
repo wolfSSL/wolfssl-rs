@@ -3,9 +3,7 @@
 mod helpers;
 use helpers::wycheproof::*;
 
-use wolfcrypt::rsa::{
-    RsaDigest, RsaPublicKey, RsaPkcs1v15Signature, RsaPssSignature,
-};
+use wolfcrypt::rsa::{RsaDigest, RsaPkcs1v15Signature, RsaPssSignature, RsaPublicKey};
 
 // ---------------------------------------------------------------------------
 // PKCS#1 v1.5 signature verification
@@ -15,12 +13,20 @@ use wolfcrypt::rsa::{
 
 #[test]
 fn rsa_pkcs1v15_2048_sha256() {
-    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_2048_sha256_test.json"), "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pkcs1v15(
+        &helpers::load_wycheproof("rsa_signature_2048_sha256_test.json"),
+        "SHA-256",
+        RsaDigest::Sha256,
+    );
 }
 
 #[test]
 fn rsa_pkcs1v15_3072_sha256() {
-    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_3072_sha256_test.json"), "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pkcs1v15(
+        &helpers::load_wycheproof("rsa_signature_3072_sha256_test.json"),
+        "SHA-256",
+        RsaDigest::Sha256,
+    );
 }
 
 // --- SHA-384 ---
@@ -28,19 +34,31 @@ fn rsa_pkcs1v15_3072_sha256() {
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pkcs1v15_2048_sha384() {
-    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_2048_sha384_test.json"), "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pkcs1v15(
+        &helpers::load_wycheproof("rsa_signature_2048_sha384_test.json"),
+        "SHA-384",
+        RsaDigest::Sha384,
+    );
 }
 
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pkcs1v15_3072_sha384() {
-    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_3072_sha384_test.json"), "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pkcs1v15(
+        &helpers::load_wycheproof("rsa_signature_3072_sha384_test.json"),
+        "SHA-384",
+        RsaDigest::Sha384,
+    );
 }
 
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pkcs1v15_4096_sha384() {
-    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_4096_sha384_test.json"), "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pkcs1v15(
+        &helpers::load_wycheproof("rsa_signature_4096_sha384_test.json"),
+        "SHA-384",
+        RsaDigest::Sha384,
+    );
 }
 
 // --- SHA-512 ---
@@ -48,19 +66,31 @@ fn rsa_pkcs1v15_4096_sha384() {
 #[cfg(wolfssl_sha512)]
 #[test]
 fn rsa_pkcs1v15_2048_sha512() {
-    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_2048_sha512_test.json"), "SHA-512", RsaDigest::Sha512);
+    run_wycheproof_pkcs1v15(
+        &helpers::load_wycheproof("rsa_signature_2048_sha512_test.json"),
+        "SHA-512",
+        RsaDigest::Sha512,
+    );
 }
 
 #[cfg(wolfssl_sha512)]
 #[test]
 fn rsa_pkcs1v15_3072_sha512() {
-    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_3072_sha512_test.json"), "SHA-512", RsaDigest::Sha512);
+    run_wycheproof_pkcs1v15(
+        &helpers::load_wycheproof("rsa_signature_3072_sha512_test.json"),
+        "SHA-512",
+        RsaDigest::Sha512,
+    );
 }
 
 #[cfg(wolfssl_sha512)]
 #[test]
 fn rsa_pkcs1v15_4096_sha512() {
-    run_wycheproof_pkcs1v15(&helpers::load_wycheproof("rsa_signature_4096_sha512_test.json"), "SHA-512", RsaDigest::Sha512);
+    run_wycheproof_pkcs1v15(
+        &helpers::load_wycheproof("rsa_signature_4096_sha512_test.json"),
+        "SHA-512",
+        RsaDigest::Sha512,
+    );
 }
 
 fn run_wycheproof_pkcs1v15(json: &str, expected_sha: &str, digest: RsaDigest) {
@@ -94,24 +124,22 @@ fn run_wycheproof_pkcs1v15(json: &str, expected_sha: &str, digest: RsaDigest) {
 
             let sig = match RsaPkcs1v15Signature::try_from(sig_bytes.as_slice()) {
                 Ok(s) => s,
-                Err(_) => {
-                    match tc.result {
-                        WycheproofResult::Valid => {
-                            panic!(
-                                "tc {}: RSA PKCS#1v1.5 sig parse failed for valid vector, comment: {}",
-                                tc.tc_id, tc.comment,
-                            );
-                        }
-                        _ => {
-                            if tc.result == WycheproofResult::Invalid {
-                                invalid_count += 1;
-                            } else {
-                                _acceptable_count += 1;
-                            }
-                            continue;
-                        }
+                Err(_) => match tc.result {
+                    WycheproofResult::Valid => {
+                        panic!(
+                            "tc {}: RSA PKCS#1v1.5 sig parse failed for valid vector, comment: {}",
+                            tc.tc_id, tc.comment,
+                        );
                     }
-                }
+                    _ => {
+                        if tc.result == WycheproofResult::Invalid {
+                            invalid_count += 1;
+                        } else {
+                            _acceptable_count += 1;
+                        }
+                        continue;
+                    }
+                },
             };
 
             let result = pk.verify_pkcs1v15_with_digest(&msg, &sig, digest);
@@ -121,7 +149,9 @@ fn run_wycheproof_pkcs1v15(json: &str, expected_sha: &str, digest: RsaDigest) {
                     assert!(
                         result.is_ok(),
                         "tc {}: RSA PKCS#1v1.5 ({:?}) verify failed for valid vector, comment: {}",
-                        tc.tc_id, digest, tc.comment,
+                        tc.tc_id,
+                        digest,
+                        tc.comment,
                     );
                     valid_count += 1;
                 }
@@ -133,7 +163,10 @@ fn run_wycheproof_pkcs1v15(json: &str, expected_sha: &str, digest: RsaDigest) {
                         result.is_err(),
                         "tc {}: RSA PKCS#1v1.5 ({:?}) verify SUCCEEDED for invalid vector! \
                          flags: {:?}, comment: {}",
-                        tc.tc_id, digest, tc.flags, tc.comment,
+                        tc.tc_id,
+                        digest,
+                        tc.flags,
+                        tc.comment,
                     );
                     invalid_count += 1;
                 }
@@ -153,11 +186,8 @@ fn run_wycheproof_pkcs1v15(json: &str, expected_sha: &str, digest: RsaDigest) {
     );
 
     if skip_count > 0 {
-        eprintln!(
-            "  wycheproof: skipped {skip_count} test vectors with non-matching hash/key"
-        );
+        eprintln!("  wycheproof: skipped {skip_count} test vectors with non-matching hash/key");
     }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -168,17 +198,29 @@ fn run_wycheproof_pkcs1v15(json: &str, expected_sha: &str, digest: RsaDigest) {
 
 #[test]
 fn rsa_pss_2048_sha256_mgf1_32() {
-    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_2048_sha256_mgf1_32_test.json"), "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pss(
+        &helpers::load_wycheproof("rsa_pss_2048_sha256_mgf1_32_test.json"),
+        "SHA-256",
+        RsaDigest::Sha256,
+    );
 }
 
 #[test]
 fn rsa_pss_3072_sha256_mgf1_32() {
-    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_3072_sha256_mgf1_32_test.json"), "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pss(
+        &helpers::load_wycheproof("rsa_pss_3072_sha256_mgf1_32_test.json"),
+        "SHA-256",
+        RsaDigest::Sha256,
+    );
 }
 
 #[test]
 fn rsa_pss_4096_sha256_mgf1_32() {
-    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_4096_sha256_mgf1_32_test.json"), "SHA-256", RsaDigest::Sha256);
+    run_wycheproof_pss(
+        &helpers::load_wycheproof("rsa_pss_4096_sha256_mgf1_32_test.json"),
+        "SHA-256",
+        RsaDigest::Sha256,
+    );
 }
 
 // --- SHA-384 ---
@@ -186,13 +228,21 @@ fn rsa_pss_4096_sha256_mgf1_32() {
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pss_2048_sha384_mgf1_48() {
-    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_2048_sha384_mgf1_48_test.json"), "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pss(
+        &helpers::load_wycheproof("rsa_pss_2048_sha384_mgf1_48_test.json"),
+        "SHA-384",
+        RsaDigest::Sha384,
+    );
 }
 
 #[cfg(wolfssl_sha384)]
 #[test]
 fn rsa_pss_4096_sha384_mgf1_48() {
-    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_4096_sha384_mgf1_48_test.json"), "SHA-384", RsaDigest::Sha384);
+    run_wycheproof_pss(
+        &helpers::load_wycheproof("rsa_pss_4096_sha384_mgf1_48_test.json"),
+        "SHA-384",
+        RsaDigest::Sha384,
+    );
 }
 
 // --- SHA-512 ---
@@ -200,7 +250,11 @@ fn rsa_pss_4096_sha384_mgf1_48() {
 #[cfg(wolfssl_sha512)]
 #[test]
 fn rsa_pss_4096_sha512_mgf1_64() {
-    run_wycheproof_pss(&helpers::load_wycheproof("rsa_pss_4096_sha512_mgf1_64_test.json"), "SHA-512", RsaDigest::Sha512);
+    run_wycheproof_pss(
+        &helpers::load_wycheproof("rsa_pss_4096_sha512_mgf1_64_test.json"),
+        "SHA-512",
+        RsaDigest::Sha512,
+    );
 }
 
 /// Wycheproof RSA-PSS test. Uses `verify_pss_with_digest` so the digest,
@@ -242,24 +296,22 @@ fn run_wycheproof_pss(json: &str, expected_sha: &str, digest: RsaDigest) {
 
             let sig = match RsaPssSignature::try_from(sig_bytes.as_slice()) {
                 Ok(s) => s,
-                Err(_) => {
-                    match tc.result {
-                        WycheproofResult::Valid => {
-                            panic!(
-                                "tc {}: RSA PSS sig parse failed for valid vector, comment: {}",
-                                tc.tc_id, tc.comment,
-                            );
-                        }
-                        _ => {
-                            if tc.result == WycheproofResult::Invalid {
-                                invalid_count += 1;
-                            } else {
-                                _acceptable_count += 1;
-                            }
-                            continue;
-                        }
+                Err(_) => match tc.result {
+                    WycheproofResult::Valid => {
+                        panic!(
+                            "tc {}: RSA PSS sig parse failed for valid vector, comment: {}",
+                            tc.tc_id, tc.comment,
+                        );
                     }
-                }
+                    _ => {
+                        if tc.result == WycheproofResult::Invalid {
+                            invalid_count += 1;
+                        } else {
+                            _acceptable_count += 1;
+                        }
+                        continue;
+                    }
+                },
             };
 
             let result = pk.verify_pss_with_digest(&msg, &sig, digest);
@@ -269,7 +321,9 @@ fn run_wycheproof_pss(json: &str, expected_sha: &str, digest: RsaDigest) {
                     assert!(
                         result.is_ok(),
                         "tc {}: RSA PSS ({:?}) verify failed for valid vector, comment: {}",
-                        tc.tc_id, digest, tc.comment,
+                        tc.tc_id,
+                        digest,
+                        tc.comment,
                     );
                     valid_count += 1;
                 }
@@ -281,7 +335,10 @@ fn run_wycheproof_pss(json: &str, expected_sha: &str, digest: RsaDigest) {
                         result.is_err(),
                         "tc {}: RSA PSS ({:?}) verify SUCCEEDED for invalid vector! \
                          flags: {:?}, comment: {}",
-                        tc.tc_id, digest, tc.flags, tc.comment,
+                        tc.tc_id,
+                        digest,
+                        tc.flags,
+                        tc.comment,
                     );
                     invalid_count += 1;
                 }
@@ -301,9 +358,6 @@ fn run_wycheproof_pss(json: &str, expected_sha: &str, digest: RsaDigest) {
     );
 
     if skip_count > 0 {
-        eprintln!(
-            "  wycheproof: skipped {skip_count} test vectors with non-matching hash/key"
-        );
+        eprintln!("  wycheproof: skipped {skip_count} test vectors with non-matching hash/key");
     }
-
 }

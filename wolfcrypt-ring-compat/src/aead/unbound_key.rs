@@ -1,7 +1,7 @@
 use super::aead_ctx::AeadCtx;
 use super::{
-    Algorithm, Nonce, Tag, AES_128_GCM, AES_192_GCM, AES_256_GCM,
-    CHACHA20_POLY1305, MAX_KEY_LEN, MAX_TAG_LEN,
+    Algorithm, Nonce, Tag, AES_128_GCM, AES_192_GCM, AES_256_GCM, CHACHA20_POLY1305, MAX_KEY_LEN,
+    MAX_TAG_LEN,
 };
 use crate::error::Unspecified;
 use crate::fips::indicator_check;
@@ -218,8 +218,7 @@ impl UnboundKey {
             aad,
             &mut tag[..alg_tag_len],
         ))?;
-        buf[plaintext_len..plaintext_len + alg_tag_len]
-            .copy_from_slice(&tag[..alg_tag_len]);
+        buf[plaintext_len..plaintext_len + alg_tag_len].copy_from_slice(&tag[..alg_tag_len]);
 
         Ok(nonce)
     }

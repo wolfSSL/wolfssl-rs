@@ -1,6 +1,6 @@
 //! Elliptic Curve Digital Signature Algorithm (ECDSA) private keys.
 
-use crate::{Algorithm, EcdsaCurve, Error, Result, public::EcdsaPublicKey};
+use crate::{public::EcdsaPublicKey, Algorithm, EcdsaCurve, Error, Result};
 use core::fmt;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
 use sec1::consts::{U32, U48, U66};
@@ -204,7 +204,10 @@ impl EcdsaKeypair {
     /// The caller-provided `rng` is ignored — wolfCrypt uses its own
     /// internal DRBG via [`wolfcrypt::rand::WolfRng`]. The parameter is
     /// retained for API compatibility with the upstream `ssh-key` crate.
-    #[cfg(all(feature = "rand_core", any(feature = "p256", feature = "p384", feature = "p521")))]
+    #[cfg(all(
+        feature = "rand_core",
+        any(feature = "p256", feature = "p384", feature = "p521")
+    ))]
     #[allow(unused_variables)]
     pub fn random<R: CryptoRng + ?Sized>(rng: &mut R, curve: EcdsaCurve) -> Result<Self> {
         use wolfcrypt::rand::WolfRng;
@@ -229,8 +232,8 @@ impl EcdsaKeypair {
         match curve {
             #[cfg(feature = "p256")]
             EcdsaCurve::NistP256 => {
-                let public = sec1::EncodedPoint::<U32>::from_bytes(&pub_bytes)
-                    .map_err(|_| Error::Crypto)?;
+                let public =
+                    sec1::EncodedPoint::<U32>::from_bytes(&pub_bytes).map_err(|_| Error::Crypto)?;
                 Ok(EcdsaKeypair::NistP256 {
                     private: EcdsaPrivateKey::from(pad_private(&priv_bytes)?),
                     public,
@@ -238,8 +241,8 @@ impl EcdsaKeypair {
             }
             #[cfg(feature = "p384")]
             EcdsaCurve::NistP384 => {
-                let public = sec1::EncodedPoint::<U48>::from_bytes(&pub_bytes)
-                    .map_err(|_| Error::Crypto)?;
+                let public =
+                    sec1::EncodedPoint::<U48>::from_bytes(&pub_bytes).map_err(|_| Error::Crypto)?;
                 Ok(EcdsaKeypair::NistP384 {
                     private: EcdsaPrivateKey::from(pad_private(&priv_bytes)?),
                     public,
@@ -247,8 +250,8 @@ impl EcdsaKeypair {
             }
             #[cfg(feature = "p521")]
             EcdsaCurve::NistP521 => {
-                let public = sec1::EncodedPoint::<U66>::from_bytes(&pub_bytes)
-                    .map_err(|_| Error::Crypto)?;
+                let public =
+                    sec1::EncodedPoint::<U66>::from_bytes(&pub_bytes).map_err(|_| Error::Crypto)?;
                 Ok(EcdsaKeypair::NistP521 {
                     private: EcdsaPrivateKey::from(pad_private(&priv_bytes)?),
                     public,

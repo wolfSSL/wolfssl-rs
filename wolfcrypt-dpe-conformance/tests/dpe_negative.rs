@@ -5,7 +5,7 @@ mod helpers;
 use caliptra_cfi_lib::CfiCounter;
 use caliptra_dpe::commands::{
     CertifyKeyFlags, CertifyKeyP384Cmd, CommandExecution, DeriveContextCmd, DeriveContextFlags,
-    DestroyCtxCmd, InitCtxCmd, RotateCtxCmd, RotateCtxFlags, SignP384Cmd, SignFlags,
+    DestroyCtxCmd, InitCtxCmd, RotateCtxCmd, RotateCtxFlags, SignFlags, SignP384Cmd,
 };
 use caliptra_dpe::context::ContextHandle;
 use caliptra_dpe::dpe_instance::DpeInstance;
@@ -163,7 +163,10 @@ fn derive_max_depth() {
             }
         }
     }
-    assert!(last_error.is_some(), "Expected error when exceeding max TCIs");
+    assert!(
+        last_error.is_some(),
+        "Expected error when exceeding max TCIs"
+    );
 }
 
 #[test]

@@ -220,7 +220,8 @@ fn rfc5869_vector_1() {
     // Wolf
     let wolf_hkdf = WolfHkdfSha256::new(Some(&salt), &ikm);
     let mut wolf_okm = vec![0u8; 42];
-    wolf_hkdf.expand(&info, &mut wolf_okm)
+    wolf_hkdf
+        .expand(&info, &mut wolf_okm)
         .expect("wolf: RFC 5869 vector 1 expand should succeed");
 
     assert_eq!(
@@ -232,7 +233,8 @@ fn rfc5869_vector_1() {
     // Pure
     let pure_hkdf = hkdf::Hkdf::<sha2::Sha256>::new(Some(&salt), &ikm);
     let mut pure_okm = vec![0u8; 42];
-    pure_hkdf.expand(&info, &mut pure_okm)
+    pure_hkdf
+        .expand(&info, &mut pure_okm)
         .expect("pure: RFC 5869 vector 1 expand should succeed");
 
     assert_eq!(

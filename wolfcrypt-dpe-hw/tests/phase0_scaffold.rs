@@ -21,7 +21,10 @@
 fn test_init_noop_without_feature() {
     // init() must succeed and register NOTHING.
     let result = wolfcrypt_dpe_hw::init();
-    assert!(result.is_ok(), "init() must return Ok(()) without caliptra-2x");
+    assert!(
+        result.is_ok(),
+        "init() must return Ok(()) without caliptra-2x"
+    );
 
     // Verify the library reports no hardware backend active.
     // has_caliptra_hw_backend() reflects whether init() actually performs
@@ -42,8 +45,10 @@ fn test_init_noop_without_feature() {
     // unregister.  If init() had already registered at HW_DEVICE_ID this would
     // silently overwrite it — which is why we also check has_caliptra_hw_backend().
     let wc_init_rc = unsafe { wolfcrypt_sys::wolfCrypt_Init() };
-    assert!(wc_init_rc == 0 || wc_init_rc == 1,
-        "wolfCrypt_Init must succeed (0) or be already initialized (1); got {wc_init_rc}");
+    assert!(
+        wc_init_rc == 0 || wc_init_rc == 1,
+        "wolfCrypt_Init must succeed (0) or be already initialized (1); got {wc_init_rc}"
+    );
 
     unsafe extern "C" fn probe_cb(
         _: core::ffi::c_int,
@@ -59,7 +64,10 @@ fn test_init_noop_without_feature() {
             core::ptr::null_mut(),
         )
     };
-    assert_eq!(rc, 0, "wc_CryptoCb_RegisterDevice sanity probe failed with rc={rc}");
+    assert_eq!(
+        rc, 0,
+        "wc_CryptoCb_RegisterDevice sanity probe failed with rc={rc}"
+    );
     unsafe { wolfcrypt_sys::wc_CryptoCb_UnRegisterDevice(wolfcrypt_dpe_hw::HW_DEVICE_ID) };
 }
 
@@ -72,8 +80,10 @@ fn test_init_noop_without_feature() {
 fn test_stub_callback_returns_unavailable() {
     // wolfCrypt must be initialized before CryptoCb registration.
     let wc_rc = unsafe { wolfcrypt_sys::wolfCrypt_Init() };
-    assert!(wc_rc == 0 || wc_rc == 1,
-        "wolfCrypt_Init must succeed (0=fresh, 1=already-init); got {wc_rc}");
+    assert!(
+        wc_rc == 0 || wc_rc == 1,
+        "wolfCrypt_Init must succeed (0=fresh, 1=already-init); got {wc_rc}"
+    );
 
     // Register the hardware device.
     wolfcrypt_dpe_hw::init().expect("init() must succeed under caliptra-2x");

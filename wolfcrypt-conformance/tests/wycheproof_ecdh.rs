@@ -50,10 +50,8 @@ fn normalize_scalar(bytes: &[u8], field_size: usize) -> Option<Vec<u8>> {
 // Core runner
 // ---------------------------------------------------------------------------
 
-fn run_wycheproof_ecdh_ecpoint<C>(
-    json: &str,
-    expected_curve: &str,
-) where
+fn run_wycheproof_ecdh_ecpoint<C>(json: &str, expected_curve: &str)
+where
     C: wolfcrypt::ecdh::NistCurve,
 {
     let file: WycheproofFile<EcdhEcpointTestGroup> =
@@ -78,23 +76,21 @@ fn run_wycheproof_ecdh_ecpoint<C>(
             // --- Parse the peer public key ---
             let peer_pub = match NistEcdhPublicKey::<C>::from_bytes(&pub_bytes) {
                 Ok(pk) => pk,
-                Err(e) => {
-                    match tc.result {
-                        WycheproofResult::Valid => panic!(
-                            "tc {}: key import failed for valid vector \
+                Err(e) => match tc.result {
+                    WycheproofResult::Valid => panic!(
+                        "tc {}: key import failed for valid vector \
                              (flags: {:?}, error: {:?}), comment: {}",
-                            tc.tc_id, tc.flags, e, tc.comment
-                        ),
-                        WycheproofResult::Invalid => {
-                            invalid_count += 1;
-                            continue;
-                        }
-                        WycheproofResult::Acceptable => {
-                            skip_count += 1;
-                            continue;
-                        }
+                        tc.tc_id, tc.flags, e, tc.comment
+                    ),
+                    WycheproofResult::Invalid => {
+                        invalid_count += 1;
+                        continue;
                     }
-                }
+                    WycheproofResult::Acceptable => {
+                        skip_count += 1;
+                        continue;
+                    }
+                },
             };
 
             // --- Normalize private scalar (Wycheproof may DER-pad with leading 00) ---
@@ -107,7 +103,10 @@ fn run_wycheproof_ecdh_ecpoint<C>(
                             "tc {}: scalar wider than field for valid vector, comment: {}",
                             tc.tc_id, tc.comment
                         ),
-                        _ => { invalid_count += 1; continue; }
+                        _ => {
+                            invalid_count += 1;
+                            continue;
+                        }
                     }
                 }
             };
@@ -115,22 +114,20 @@ fn run_wycheproof_ecdh_ecpoint<C>(
             // --- Import the private scalar ---
             let sk = match NistEcdhSecret::<C>::from_private_scalar(&priv_normalized) {
                 Ok(k) => k,
-                Err(_) => {
-                    match tc.result {
-                        WycheproofResult::Valid => panic!(
-                            "tc {}: private scalar import failed for valid vector, comment: {}",
-                            tc.tc_id, tc.comment
-                        ),
-                        WycheproofResult::Invalid => {
-                            invalid_count += 1;
-                            continue;
-                        }
-                        WycheproofResult::Acceptable => {
-                            skip_count += 1;
-                            continue;
-                        }
+                Err(_) => match tc.result {
+                    WycheproofResult::Valid => panic!(
+                        "tc {}: private scalar import failed for valid vector, comment: {}",
+                        tc.tc_id, tc.comment
+                    ),
+                    WycheproofResult::Invalid => {
+                        invalid_count += 1;
+                        continue;
                     }
-                }
+                    WycheproofResult::Acceptable => {
+                        skip_count += 1;
+                        continue;
+                    }
+                },
             };
 
             // --- Compute shared secret ---
@@ -159,7 +156,9 @@ fn run_wycheproof_ecdh_ecpoint<C>(
                         result.is_err(),
                         "tc {}: ECDH SUCCEEDED for invalid vector! \
                          flags: {:?}, comment: {}",
-                        tc.tc_id, tc.flags, tc.comment
+                        tc.tc_id,
+                        tc.flags,
+                        tc.comment
                     );
                     invalid_count += 1;
                 }
