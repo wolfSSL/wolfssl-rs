@@ -1,6 +1,6 @@
 [package]
 name = "wolfhsm"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Rust bindings to wolfHSM"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
@@ -24,8 +24,8 @@ she = ["wolfhsm-sys/she"]
 
 [dependencies]
 log = "0.4"
-wolfhsm-sys = { version = "0.1.0", path = "../wolfhsm-sys" }
-wolfcrypt-sys = { version = "0.1.2", path = "../wolfcrypt-sys" }
+wolfhsm-sys = { version = "0.1.1", path = "../wolfhsm-sys" }
+wolfcrypt-sys = { version = "0.1.3", path = "../wolfcrypt-sys" }
 signature = "2.2"
 p256 = { version = "0.13", features = ["ecdsa"] }
 ed25519 = "2.2"
