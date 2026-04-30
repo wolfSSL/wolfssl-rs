@@ -398,7 +398,6 @@ libFuzzer
 XXX-fips-test
 /wolfAsyncCrypt
 /async
-user_settings_asm.h
 **/.visualgdb
 /IDE/Espressif/**/sdkconfig
 /IDE/Espressif/**/sdkconfig.old
