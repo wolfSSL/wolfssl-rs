@@ -9,8 +9,17 @@
 //!
 //! # Quick start
 //!
-//! ```no_run,ignore
-//! // Requires: features = ["tss"] and tpm2-rs git deps (see Cargo.toml)
+//! Open a transport connection (no extra features required):
+//!
+//! ```no_run
+//! use wolftpm_tss::connection::WolfTpmLinuxDev;
+//! let mut transport = WolfTpmLinuxDev::open().unwrap();
+//! ```
+//!
+//! Send a TPM command via the tpm-rs client stack (requires `features = ["tss"]`
+//! and the tpm2-rs git dependencies — see `Cargo.toml`):
+//!
+//! ```ignore
 //! use wolftpm_tss::connection::WolfTpmLinuxDev;
 //! use tpm2_rs_client::run_command;
 //! use tpm2_rs_base::commands::GetRandomCmd;
