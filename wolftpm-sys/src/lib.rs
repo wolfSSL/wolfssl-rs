@@ -7,3 +7,6 @@
 )]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+#[cfg(feature = "swtpm")]
+pub mod swtpm;

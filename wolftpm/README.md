@@ -43,7 +43,6 @@ portability.  The wolfTPM C API is straightforward to wrap in Rust.
 - Express TPM object lifetimes in the Rust type system
 - Translate TPM return codes to typed `Error` variants
 - Provide `Send`/`Sync` analysis for multi-threaded use
-- Expose `wolfTPM2_GetRandom` as a `rand::RngCore` implementation
 
 ## How it works
 
@@ -133,7 +132,7 @@ let pcr: [u8; 32] = dev.pcr_read(0)?;
 // ECC P-256 signing key (transient, flushed on drop)
 dev.with_ecc_key(|key| {
     let sig = key.sign(&message_hash)?;           // sha-256 digest
-    let ok  = key.verify(&message_hash, &sig)?;
+    key.verify(&message_hash, &sig)?;             // Err(SignatureInvalid) if it doesn't match
     Ok(())
 })?;
 ```

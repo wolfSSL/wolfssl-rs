@@ -5,13 +5,6 @@ use crate::error::Error;
 #[cfg(feature = "tss")]
 use tpm2_rs_client::connection::Connection;
 
-/// Serialises concurrent swtpm initialisations so that two threads do not
-/// corrupt each other's environment variables.
-///
-/// NOTE: This does not protect against unrelated threads calling
-/// `std::env::var()` or other `setenv`/`unsetenv` calls concurrently.
-#[cfg(feature = "swtpm")]
-static SWTPM_INIT_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 // ── shared transact helper ────────────────────────────────────────────────────
 
@@ -38,7 +31,7 @@ fn do_transact<'a>(
     // cmd.len() not fitting in c_int means the command exceeds the maximum
     // message size the transport can express.
     let cmd_sz = c_int::try_from(cmd.len()).map_err(|_| Error::CommandTooLarge)?;
-    let rsp_buf_sz = c_int::try_from(rsp.len()).map_err(|_| Error::ResponseBufferTooSmall)?;
+    let rsp_buf_sz = c_int::try_from(rsp.len()).map_err(|_| Error::ResponseBufferTooLarge)?;
     let mut rsp_sz: c_int = 0;
 
     let rc = unsafe {
@@ -235,8 +228,6 @@ impl WolfTpmSwtpm {
     pub fn connect(host: &str, port: u16) -> Result<Self, Error> {
         use std::ffi::CString;
 
-        // wolfTPM swtpm reads SWTPM_SERVER_NAME / SWTPM_SERVER_PORT from
-        // the environment.  Set them for the duration of Init, then clear.
         let host_c = CString::new(host)
             .map_err(|_| Error::InvalidArg("host contains a null byte"))?;
         // port.to_string() is always a valid ASCII digit string; this branch
@@ -244,39 +235,11 @@ impl WolfTpmSwtpm {
         let port_c = CString::new(port.to_string())
             .map_err(|_| Error::InvalidArg("port string contains a null byte"))?;
 
-        // unwrap: if the mutex is poisoned a previous thread panicked mid-init,
-        // leaving the process env in an unknown state.  Panic here is correct —
-        // there is no safe recovery path.
-        let _guard = SWTPM_INIT_LOCK.lock().unwrap();
-
-        // SAFETY: setenv/unsetenv are POSIX; the strings are valid C strings.
-        // The lock above serialises access to the process-global environment.
-        let rc = unsafe { libc_setenv(b"SWTPM_SERVER_NAME\0".as_ptr(), host_c.as_ptr()) };
-        if rc != 0 {
-            return Err(Error::InvalidArg("setenv failed for SWTPM_SERVER_NAME"));
-        }
-        let rc = unsafe { libc_setenv(b"SWTPM_SERVER_PORT\0".as_ptr(), port_c.as_ptr()) };
-        if rc != 0 {
-            // Best-effort rollback; if unsetenv fails (EINVAL), SWTPM_SERVER_NAME
-            // is left in the environment but that is a benign stale value —
-            // wolfTPM2_Init will not be called, so no incorrect connection is made.
-            let _ = unsafe { libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr()) };
-            return Err(Error::InvalidArg("setenv failed for SWTPM_SERVER_PORT"));
-        }
-
-        let mut dev = Box::new(unsafe { std::mem::zeroed::<wolftpm_sys::WOLFTPM2_DEV>() });
-        let rc = unsafe {
-            wolftpm_sys::wolfTPM2_Init(dev.as_mut() as *mut _, None, std::ptr::null_mut())
-        };
-
-        // Clean up env vars regardless of success/failure.  EINVAL is impossible
-        // here because the names are hard-coded valid ASCII strings.
-        unsafe {
-            let _ = libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr());
-            let _ = libc_unsetenv(b"SWTPM_SERVER_PORT\0".as_ptr());
-        }
-
-        Error::check(rc)?;
+        // Delegate to the shared init helper in wolftpm-sys (also used by
+        // wolftpm::Device::open_swtpm) so the two callers share a single copy
+        // of the setenv/init/unsetenv sequence.
+        let dev = wolftpm_sys::swtpm::init_swtpm(&host_c, &port_c)
+            .map_err(|rc| Error::Transport { code: rc })?;
         Ok(Self { inner: WolfTpmDev::new(dev) })
     }
 }
@@ -288,18 +251,6 @@ impl Connection for WolfTpmSwtpm {
     fn transact<'a>(&mut self, cmd: &[u8], rsp: &'a mut [u8]) -> Result<&'a mut [u8], Self::Error> {
         do_transact(self.inner.dev.as_mut(), cmd, rsp)
     }
-}
-
-#[cfg(feature = "swtpm")]
-unsafe fn libc_setenv(name: *const u8, value: *const std::ffi::c_char) -> std::ffi::c_int {
-    libc::setenv(name as *const _, value, 1)
-}
-
-#[cfg(feature = "swtpm")]
-unsafe fn libc_unsetenv(name: *const u8) -> std::ffi::c_int {
-    // POSIX unsetenv returns 0 on success, -1 on error (EINVAL = invalid name).
-    // The caller decides whether to propagate or ignore the error.
-    libc::unsetenv(name as *const _)
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -314,6 +265,7 @@ mod tests {
     fn error_display_non_empty() {
         let cases = [
             Error::ResponseBufferTooSmall,
+            Error::ResponseBufferTooLarge,
             Error::CommandTooLarge,
             Error::MalformedResponse,
             Error::Transport { code: -1 },

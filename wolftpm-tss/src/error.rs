@@ -28,10 +28,12 @@ pub enum Error {
     /// `msg` is a `'static` description of what was invalid.
     InvalidArg(&'static str),
     /// The response buffer supplied to [`Connection::transact`] is too small
-    /// to hold the TPM response, or its length overflows `c_int` (> 2 GiB) and
-    /// therefore cannot be expressed to the C transport shim.  Both cases mean
-    /// the caller must supply a correctly-sized buffer.
+    /// to hold the TPM response.
     ResponseBufferTooSmall,
+    /// The response buffer supplied to [`Connection::transact`] is too large
+    /// to express as a `c_int` (> 2 GiB).  The C transport shim uses `int`
+    /// for buffer sizes; pass a smaller buffer.
+    ResponseBufferTooLarge,
     /// The command buffer passed to [`Connection::transact`] is too large to
     /// fit in a `c_int`; the TPM transport has a maximum command size.
     CommandTooLarge,
@@ -100,6 +102,9 @@ impl fmt::Display for Error {
             Error::InvalidArg(msg) => write!(f, "invalid argument: {msg}"),
             Error::ResponseBufferTooSmall => {
                 write!(f, "response buffer too small for TPM response")
+            }
+            Error::ResponseBufferTooLarge => {
+                write!(f, "response buffer exceeds c_int range (> 2 GiB); use a smaller buffer")
             }
             Error::CommandTooLarge => {
                 write!(f, "command buffer too large for TPM transport")

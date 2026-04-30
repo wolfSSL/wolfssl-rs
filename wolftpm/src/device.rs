@@ -1,13 +1,5 @@
 use crate::error::Error;
 
-/// Serialises concurrent swtpm initialisations so that two threads do not
-/// corrupt each other's environment variables.
-///
-/// NOTE: This does not protect against unrelated threads calling
-/// `std::env::var()` or other `setenv`/`unsetenv` calls concurrently.
-#[cfg(feature = "swtpm")]
-static SWTPM_INIT_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
 /// Safe handle to a wolfTPM device context.
 ///
 /// The context is heap-allocated to give the C library a stable address.
@@ -16,8 +8,20 @@ pub struct Device {
     dev: Box<wolftpm_sys::WOLFTPM2_DEV>,
 }
 
-// SAFETY: WOLFTPM2_DEV holds no thread-local state and no raw pointers
-// shared across threads. The Box gives it a stable address.
+// SAFETY: WOLFTPM2_DEV is safe to send across threads because:
+// 1. All internal state (context buffers, session handles) lives inside the
+//    struct itself — wolfTPM uses no process-global mutable state that is
+//    keyed to the calling thread.  Verified against wolfTPM src/tpm2.c and
+//    tpm2_wrap.c: global variables are compile-time constants or statistics
+//    counters, not per-call state.
+// 2. The Box gives the struct a stable heap address; no internal pointer
+//    points back to the stack of the creating thread.
+// 3. `Device` is NOT `Sync` — concurrent calls through a shared reference
+//    are prevented.  Callers must use `&mut Device` (exclusive access) for
+//    every operation.
+// NOTE: if a future wolfTPM version introduces thread-local state (e.g. for
+// async I/O or per-thread error buffers), this impl must be revisited.
+// Re-check when upgrading wolfTPM past the tested version (v4.0.0 / fbbf6fe).
 unsafe impl Send for Device {}
 
 impl Device {
@@ -40,10 +44,6 @@ impl Device {
     }
 
     /// Connect to a software TPM at `host:port` (swtpm or IBM TPM2 simulator).
-    ///
-    /// NOTE: The setenv/init/unsetenv sequence here is mirrored in
-    /// `wolftpm_tss::connection::WolfTpmSwtpm::connect`.  Any bug fix to this
-    /// function must also be applied there.
     ///
     /// Requires wolfTPM compiled with `--enable-swtpm`. When that flag is set,
     /// wolfTPM reads `SWTPM_SERVER_NAME` and `SWTPM_SERVER_PORT` from the
@@ -72,39 +72,11 @@ impl Device {
         let port_c = CString::new(port.to_string())
             .map_err(|_| Error::InvalidArg("port string invalid"))?;
 
-        // unwrap: if the mutex is poisoned a previous thread panicked mid-init,
-        // leaving the process env in an unknown state.  Panic here is correct —
-        // there is no safe recovery path.
-        let _guard = SWTPM_INIT_LOCK.lock().unwrap();
-
-        // SAFETY: setenv/unsetenv are POSIX; the strings are valid C strings.
-        // The lock above serialises access to the process-global environment.
-        let rc = unsafe { libc_setenv(b"SWTPM_SERVER_NAME\0".as_ptr(), host_c.as_ptr()) };
-        if rc != 0 {
-            return Err(Error::InvalidArg("setenv failed for SWTPM_SERVER_NAME"));
-        }
-        let rc = unsafe { libc_setenv(b"SWTPM_SERVER_PORT\0".as_ptr(), port_c.as_ptr()) };
-        if rc != 0 {
-            // Best-effort rollback; if unsetenv fails (EINVAL), SWTPM_SERVER_NAME
-            // is left in the environment but that is a benign stale value —
-            // wolfTPM2_Init will not be called, so no incorrect connection is made.
-            let _ = unsafe { libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr()) };
-            return Err(Error::InvalidArg("setenv failed for SWTPM_SERVER_PORT"));
-        }
-
-        let mut dev = Box::new(unsafe { std::mem::zeroed::<wolftpm_sys::WOLFTPM2_DEV>() });
-        let rc = unsafe {
-            wolftpm_sys::wolfTPM2_Init(dev.as_mut() as *mut _, None, std::ptr::null_mut())
-        };
-
-        // Clear env vars regardless of success/failure.  EINVAL is impossible
-        // here because the names are hard-coded valid ASCII strings.
-        unsafe {
-            let _ = libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr());
-            let _ = libc_unsetenv(b"SWTPM_SERVER_PORT\0".as_ptr());
-        }
-
-        Error::check(rc)?;
+        // Delegate to the shared init helper in wolftpm-sys (also used by
+        // wolftpm-tss::WolfTpmSwtpm::connect) so the two callers share a
+        // single copy of the setenv/init/unsetenv sequence.
+        let dev = wolftpm_sys::swtpm::init_swtpm(&host_c, &port_c)
+            .map_err(|rc| Error::Tpm { rc: crate::error::TpmRc::from_raw(rc as u32) })?;
         Ok(Self { dev })
     }
 
@@ -203,18 +175,6 @@ impl Drop for Device {
             wolftpm_sys::wolfTPM2_Cleanup(self.dev_ptr_mut());
         }
     }
-}
-
-#[cfg(feature = "swtpm")]
-unsafe fn libc_setenv(name: *const u8, value: *const std::ffi::c_char) -> std::ffi::c_int {
-    libc::setenv(name as *const _, value, 1)
-}
-
-#[cfg(feature = "swtpm")]
-unsafe fn libc_unsetenv(name: *const u8) -> std::ffi::c_int {
-    // POSIX unsetenv returns 0 on success, -1 on error (EINVAL = invalid name).
-    // The caller decides whether to propagate or ignore the error.
-    libc::unsetenv(name as *const _)
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
