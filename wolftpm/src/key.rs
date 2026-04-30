@@ -109,21 +109,6 @@ impl<'dev> EccKey<'dev> {
         Ok(Self { key, srk, dev: device })
     }
 
-    /// Flush the signing key and storage root key from transient object memory.
-    ///
-    /// Errors from `wolfTPM2_UnloadHandle` are intentionally ignored: flush is
-    /// best-effort and the keys are gone from the caller's view regardless.
-    fn flush(&mut self) {
-        let dev_ptr = self.dev.dev_ptr_mut();
-        // SAFETY: dev_ptr is the live WOLFTPM2_DEV; key and srk are valid
-        // transient object handles that were loaded in create().
-        // wolfTPM2_UnloadHandle is a no-op if the handle is already null/persistent.
-        unsafe {
-            wolftpm_sys::wolfTPM2_UnloadHandle(dev_ptr, &mut self.key.handle as *mut _);
-            wolftpm_sys::wolfTPM2_UnloadHandle(dev_ptr, &mut self.srk.handle as *mut _);
-        }
-    }
-
     /// Sign a pre-computed SHA-256 digest.
     ///
     /// `hash` must be exactly 32 bytes. Returns the DER-encoded ECDSA
@@ -265,7 +250,16 @@ impl core::fmt::Debug for EccKey<'_> {
 
 impl Drop for EccKey<'_> {
     fn drop(&mut self) {
-        self.flush();
+        let dev_ptr = self.dev.dev_ptr_mut();
+        // SAFETY: dev_ptr is the live WOLFTPM2_DEV; key and srk are valid
+        // transient object handles that were loaded in create().
+        // wolfTPM2_UnloadHandle is a no-op if the handle is already null/persistent.
+        // Errors are intentionally ignored: flush is best-effort and the keys
+        // are gone from the caller's view regardless.
+        unsafe {
+            wolftpm_sys::wolfTPM2_UnloadHandle(dev_ptr, &mut self.key.handle as *mut _);
+            wolftpm_sys::wolfTPM2_UnloadHandle(dev_ptr, &mut self.srk.handle as *mut _);
+        }
     }
 }
 

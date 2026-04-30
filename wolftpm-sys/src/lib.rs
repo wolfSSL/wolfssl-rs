@@ -8,5 +8,7 @@
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
+pub mod tpm_rc;
+
 #[cfg(feature = "swtpm")]
 pub mod swtpm;

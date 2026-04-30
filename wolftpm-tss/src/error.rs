@@ -2,7 +2,7 @@ use core::fmt;
 
 /// Error type for wolfTPM TSS transport operations.
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Error {
     /// wolfTPM returned a nonzero error code from a transport operation.
     ///
@@ -73,29 +73,9 @@ impl fmt::Display for Error {
                 Ok(())
             }
             Error::TpmLayer { rc } => {
-                // TPM-layer protocol errors from the TPM2 response header.
-                // Symbolic names for the most commonly encountered codes:
-                let name = match rc {
-                    // FMT1 base codes  (TPM2 Part 2 §6.6.3)
-                    0x0081 => Some("TPM_RC_ASYMMETRIC"),
-                    0x0083 => Some("TPM_RC_HASH"),
-                    0x0084 => Some("TPM_RC_VALUE"),
-                    0x008e => Some("TPM_RC_AUTH_FAIL"),
-                    0x0095 => Some("TPM_RC_SIZE"),
-                    0x0096 => Some("TPM_RC_SYMMETRIC"),
-                    // VER1 codes  (TPM2 Part 2 §6.6.2)
-                    0x0101 => Some("TPM_RC_FAILURE"),
-                    0x0120 => Some("TPM_RC_DISABLED"),
-                    0x0142 => Some("TPM_RC_COMMAND_SIZE"),
-                    0x0143 => Some("TPM_RC_COMMAND_CODE"),
-                    // WARN codes  (TPM2 Part 2 §6.6.4)
-                    0x0904 => Some("TPM_RC_MEMORY"),
-                    0x0922 => Some("TPM_RC_RETRY"),
-                    _ => None,
-                };
                 write!(f, "TPM error 0x{rc:08x}")?;
-                if let Some(n) = name {
-                    write!(f, " ({n})")?;
+                if let Some(name) = wolftpm_sys::tpm_rc::tpm_rc_name(*rc) {
+                    write!(f, " ({name})")?;
                 }
                 Ok(())
             }
@@ -128,6 +108,6 @@ impl From<tpm2_rs_base::errors::TssError> for Error {
     /// from [`Error::Transport`] (transport-layer failures such as a missing
     /// device or a broken socket).
     fn from(e: tpm2_rs_base::errors::TssError) -> Self {
-        Error::TpmLayer { rc: e.get() as u32 }
+        Error::TpmLayer { rc: e.get() }
     }
 }

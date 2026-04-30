@@ -117,6 +117,20 @@ pub struct WolfTpmLinuxDev {
     inner: WolfTpmDev,
 }
 
+// SAFETY: WOLFTPM2_DEV is safe to send across threads because:
+// 1. All internal state (context buffers, session handles) lives inside the
+//    struct itself — wolfTPM uses no process-global mutable state keyed to
+//    the calling thread.  Verified against wolfTPM src/tpm2.c and tpm2_wrap.c
+//    (v4.0.0 / fbbf6fe): global variables are compile-time constants or
+//    statistics counters, not per-call state.
+// 2. The Box in WolfTpmDev gives the struct a stable heap address; no
+//    internal pointer points back to the stack of the creating thread.
+// 3. WolfTpmLinuxDev is NOT Sync — concurrent calls through a shared
+//    reference are prevented; all operations require &mut self.
+// NOTE: if a future wolfTPM version introduces thread-local state, this impl
+// must be revisited.  Re-check when upgrading wolfTPM past v4.0.0 / fbbf6fe.
+unsafe impl Send for WolfTpmLinuxDev {}
+
 impl core::fmt::Debug for WolfTpmLinuxDev {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         // WOLFTPM2_DEV is an opaque C struct; delegate to the inner wrapper
@@ -130,11 +144,14 @@ impl core::fmt::Debug for WolfTpmLinuxDev {
 impl WolfTpmLinuxDev {
     /// Open a connection to the TPM via the Linux kernel driver.
     ///
-    /// Calls `wolfTPM2_Init` with the `WOLFTPM_LINUX_DEV` transport.
-    /// When wolfTPM is built with `--enable-devtpm`, `ioCb` is not used
-    /// and must be `None`; wolfTPM handles the `/dev/tpm0` I/O internally.
+    /// Calls `wolfTPM2_Init` with no I/O callback; wolfTPM selects the
+    /// transport based on how it was compiled:
+    /// - `linux-dev` feature: explicit `/dev/tpm0` or `/dev/tpmrm0` kernel
+    ///   driver transport (`WOLFTPM_LINUX_DEV`).
+    /// - no `linux-dev` feature: wolfTPM compile-time default (TIS or
+    ///   autodetect — depends on how wolfTPM itself was built).
     ///
-    /// Fails if `/dev/tpm0` is not present or not accessible.
+    /// Fails if the selected device is not present or not accessible.
     pub fn open() -> Result<Self, Error> {
         // SAFETY: zeroed WOLFTPM2_DEV is the correct initial state per
         // the wolfTPM documentation; wolfTPM2_Init fills it in.
@@ -180,6 +197,10 @@ pub struct WolfTpmSwtpm {
     inner: WolfTpmDev,
 }
 
+// SAFETY: same argument as for WolfTpmLinuxDev above.
+#[cfg(feature = "swtpm")]
+unsafe impl Send for WolfTpmSwtpm {}
+
 #[cfg(feature = "swtpm")]
 impl core::fmt::Debug for WolfTpmSwtpm {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -195,9 +216,10 @@ impl core::fmt::Debug for WolfTpmSwtpm {
 impl WolfTpmSwtpm {
     /// Connect to a software TPM at `host:port`.
     ///
-    /// NOTE: The setenv/init/unsetenv sequence here mirrors
-    /// `wolftpm::Device::open_swtpm`.  Any bug fix to that function must also
-    /// be applied here.
+    /// The setenv/init/unsetenv sequence is shared with
+    /// `wolftpm::Device::open_swtpm` via `wolftpm_sys::swtpm::init_swtpm`;
+    /// both functions delegate to that helper and there is no duplication
+    /// to keep in sync.
     ///
     /// The default swtpm port is `2321`; the IBM simulator uses `2321` for
     /// the TPM command port and `2322` for the platform port.
