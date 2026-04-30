@@ -31,6 +31,8 @@ after every `d2i_ECPrivateKey` import.
 **Fix:** `wolfSSL_d2i_ECPrivateKey` should call `wc_ecc_make_pub` when the
 `publicKey` field is absent, matching OpenSSL behavior.
 
+**Filed:** Zendesk #21732
+
 ---
 
 ### 2. `EVP_CIPHER_iv_length` returns 0 for CFB128 modes
@@ -60,6 +62,8 @@ unsafe fn evp_cipher_iv_length(cipher: *const EVP_CIPHER) -> c_int {
 
 **Fix:** The CFB128 cipher descriptors in wolfSSL should report `iv_len = 16`.
 
+**Filed:** Zendesk #21730
+
 ---
 
 ### 3. `EVP_DigestSignUpdate` and `EVP_DigestVerifyUpdate` have mismatched `cnt` types
@@ -81,6 +85,8 @@ wolfSSL's inconsistency exactly, with a comment noting it is a wolfSSL bug:
 ```
 
 **Fix:** Change `wolfSSL_EVP_DigestSignUpdate`'s `cnt` parameter to `size_t`.
+
+**Filed:** Zendesk #21734
 
 ---
 
@@ -104,6 +110,8 @@ from internal.c so crypto-only builds don't need this stub."*
 
 **Fix:** Move `SetErrorString` (or its error-code-to-string mapping) out of
 `internal.c` into a file compiled for all wolfSSL configurations.
+
+**Filed:** Zendesk #21735
 
 ---
 
@@ -134,6 +142,8 @@ validating it.
 **Fix:** Add native `wolfSSL_AES_wrap_key_padded` / `wolfSSL_AES_unwrap_key_padded`
 per RFC 5649.
 
+**Filed:** Zendesk #21736
+
 ---
 
 ### 6. KBKDF counter mode with HMAC is absent
@@ -152,6 +162,8 @@ concatenated with the caller-supplied FixedInfo, hashed with HMAC.
 
 **Fix:** Add a native `wc_KBKDF_ctr_hmac` function (or extend `wc_KDA_KDF_PRF`
 to accept a MAC type selector) matching the existing CMAC variant.
+
+**Filed:** Zendesk #21737
 
 ---
 
@@ -185,6 +197,8 @@ RFC 8439.
 both AAD length and data length are zero, or the state machine should advance
 to DATA implicitly when `Init` is called.
 
+**Filed:** GitHub issue #10040, PR #10046
+
 ---
 
 ### 8. `wc_curve25519_make_pub` requires the caller to clamp the private scalar
@@ -210,6 +224,8 @@ clamp(&mut clamped);
 **Fix:** `wc_curve25519_make_pub` should clamp internally, matching the
 behavior of every other Curve25519 implementation.  Alternatively, the
 documentation should state this requirement explicitly.
+
+**Filed:** Zendesk #21731
 
 ---
 
@@ -243,6 +259,8 @@ wc_FreeRng(&mut rng);
 (and the make-public equivalent), so callers can pass their existing RNG rather
 than constructing a temporary one.
 
+**Filed:** Zendesk #21738
+
 ---
 
 ### 10. All sign and verify operations require `*mut` pointers for logically read-only operations
@@ -270,6 +288,8 @@ Affected types: `Ed25519SigningKey`, `Ed25519VerifyingKey`, `Ed448SigningKey`,
 public-key-export functions where the key is not actually modified.  This is
 routine C const-correctness work.
 
+**Filed:** Zendesk #21739 (covers bugs 10 and 11)
+
 ---
 
 ### 11. Ed448 DER functions take `*mut key` but their Ed25519 counterparts take `const`
@@ -293,6 +313,8 @@ wolfSSL's inconsistency and a comment explains the discrepancy:
 
 **Fix:** Change `wc_Ed448PrivateKeyToDer` and `wc_Ed448KeyToDer` to accept
 `const wc_ed448_key *` where the key is not modified.
+
+**Filed:** Zendesk #21739 (covers bugs 10 and 11)
 
 ---
 
@@ -320,6 +342,8 @@ explicit comment:
 
 **Fix:** Swap the parameter order in a future wolfSSL major release, or
 introduce a correctly-ordered `wc_curve25519_make_public_key` alias.
+
+**Filed:** Zendesk #21733
 
 ---
 
@@ -355,3 +379,5 @@ opaque handle types (returning `Aes *` rather than requiring `Aes` in the
 caller's stack frame).  Alternatively, exporting a `wc_AesSize()` function
 that returns `sizeof(Aes)` at runtime would let the Rust side allocate the
 right amount without a compile-time constant.
+
+**Filed:** Zendesk #21740
