@@ -13,7 +13,13 @@ readme = "README.md"
 linux-dev = ["wolftpm-sys/linux-dev"]
 
 ## Enable software TPM socket transport (for swtpm / IBM TPM2 simulator).
-swtpm = ["wolftpm-sys/swtpm"]
+swtpm = ["wolftpm-sys/swtpm", "dep:libc"]
 
 [dependencies]
 wolftpm-sys = { version = "0.1.0", path = "../wolftpm-sys" }
+libc = { version = "0.2", optional = true }
+
+[dev-dependencies]
+# Independent oracle for sign_verify test: verify TPM-produced ECDSA signatures
+# using a pure-Rust P-256 implementation to confirm cross-implementation correctness.
+p256 = { version = "0.13", features = ["ecdsa"] }

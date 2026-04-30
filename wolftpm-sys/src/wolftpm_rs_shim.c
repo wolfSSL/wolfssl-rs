@@ -104,7 +104,10 @@ int wolftpm_rs_transact(
         return BAD_FUNC_ARG;
     if (cmd_sz <= 0 || cmd_sz > (int)sizeof(dev->ctx.cmdBuf))
         return BAD_FUNC_ARG;
-    if (rsp_buf_sz <= 0 || rsp_buf_sz > (int)sizeof(dev->ctx.cmdBuf))
+    /* No upper bound on rsp_buf_sz: resp_len is bounded by packet.size =
+     * sizeof(cmdBuf), so the XMEMCPY at the end cannot write past cmdBuf
+     * regardless of how large the caller's output buffer is. */
+    if (rsp_buf_sz <= 0)
         return BAD_FUNC_ARG;
 
     /* Copy command into the context's internal buffer */

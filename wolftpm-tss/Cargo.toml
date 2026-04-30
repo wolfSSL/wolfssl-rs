@@ -13,7 +13,7 @@ readme = "README.md"
 linux-dev = ["wolftpm-sys/linux-dev"]
 
 ## Enable software TPM socket transport (for swtpm / IBM TPM2 simulator).
-swtpm = ["wolftpm-sys/swtpm"]
+swtpm = ["wolftpm-sys/swtpm", "dep:libc"]
 
 ## Enable the tpm-rs / TSS Connection trait implementations.
 ## tpm2-rs-client and tpm2-rs-base are not yet on crates.io; git source only.
@@ -23,5 +23,6 @@ tss = ["dep:tpm2-rs-client", "dep:tpm2-rs-base"]
 # wolftpm-sys must be a direct [dependency] so that Cargo propagates
 # DEP_WOLFTPM_SRC_* and link metadata to downstream consumers.
 wolftpm-sys = { version = "0.1.0", path = "../wolftpm-sys" }
+libc = { version = "0.2", optional = true }
 tpm2-rs-client = { git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }
 tpm2-rs-base = { git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }

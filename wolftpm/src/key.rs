@@ -113,7 +113,7 @@ impl<'dev> EccKey<'dev> {
     ///
     /// Errors from `wolfTPM2_UnloadHandle` are intentionally ignored: flush is
     /// best-effort and the keys are gone from the caller's view regardless.
-    pub(crate) fn flush(&mut self) {
+    fn flush(&mut self) {
         let dev_ptr = self.dev.dev_ptr_mut();
         // SAFETY: dev_ptr is the live WOLFTPM2_DEV; key and srk are valid
         // transient object handles that were loaded in create().
@@ -130,7 +130,7 @@ impl<'dev> EccKey<'dev> {
     /// signature (ASN.1 SEQUENCE of two INTEGERs, up to ~72 bytes for P-256).
     pub fn sign(&mut self, hash: &[u8]) -> Result<Vec<u8>, Error> {
         if hash.len() != 32 {
-            return Err(Error::InvalidArg("hash must be 32 bytes"));
+            return Err(Error::InvalidHashLen { got: hash.len() });
         }
 
         // For P-256 the DER-encoded ECDSA signature is at most 72 bytes
@@ -167,13 +167,38 @@ impl<'dev> EccKey<'dev> {
         Ok(sig)
     }
 
+    /// Return the uncompressed P-256 public key as 64 raw bytes (X ∥ Y, 32 bytes each,
+    /// big-endian as exported by the TPM).
+    ///
+    /// The returned bytes are suitable for constructing a standard 65-byte uncompressed
+    /// point (`0x04 ‖ X ‖ Y`) accepted by most cryptographic libraries.
+    pub fn public_key_bytes(&self) -> Result<[u8; 64], Error> {
+        // SAFETY: This key was created as ECC P-256 by EccKey::create, so the
+        // unique union in the public area always holds an ECC point (TPMS_ECC_POINT).
+        let ecc_pt = unsafe { self.key.pub_.publicArea.unique.ecc };
+        let x_sz = ecc_pt.x.size as usize;
+        let y_sz = ecc_pt.y.size as usize;
+        if x_sz != 32 || y_sz != 32 {
+            return Err(Error::UnexpectedResponse);
+        }
+        let mut out = [0u8; 64];
+        out[..32].copy_from_slice(&ecc_pt.x.buffer[..32]);
+        out[32..].copy_from_slice(&ecc_pt.y.buffer[..32]);
+        Ok(out)
+    }
+
     /// Verify a DER-encoded ECDSA signature against a pre-computed SHA-256 digest.
     ///
     /// `hash` must be exactly 32 bytes. `sig` must be non-empty.
-    /// Returns `true` if the signature is valid, `false` if it is not.
-    pub fn verify(&mut self, hash: &[u8], sig: &[u8]) -> Result<bool, Error> {
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::SignatureInvalid`] if the signature is structurally valid
+    /// but does not verify against this key and hash.  Returns [`Error::Tpm`] for
+    /// any other TPM-layer failure.
+    pub fn verify(&mut self, hash: &[u8], sig: &[u8]) -> Result<(), Error> {
         if hash.len() != 32 {
-            return Err(Error::InvalidArg("hash must be 32 bytes"));
+            return Err(Error::InvalidHashLen { got: hash.len() });
         }
         if sig.is_empty() {
             return Err(Error::InvalidArg("sig is empty"));
@@ -214,10 +239,12 @@ impl<'dev> EccKey<'dev> {
             rc
         };
         match base_rc {
-            0 => Ok(true),
+            0 => Ok(()),
             // TPM_RC_SIGNATURE (0x9B = 155): the signature is structurally
-            // well-formed but does not verify — not a fatal error.
-            r if r == wolftpm_sys::TPM_RC_T_TPM_RC_SIGNATURE as i32 => Ok(false),
+            // well-formed but does not verify against this key and hash.
+            r if r == wolftpm_sys::TPM_RC_T_TPM_RC_SIGNATURE as i32 => {
+                Err(Error::SignatureInvalid)
+            }
             _ => Err(Error::Tpm {
                 rc: crate::error::TpmRc::from_raw(rc as u32),
             }),
@@ -246,9 +273,17 @@ impl Drop for EccKey<'_> {
 
 #[cfg(test)]
 mod tests {
+    /// Sign with the TPM and verify with RustCrypto p256 as an independent oracle.
+    ///
+    /// This test proves that the TPM produces standards-compliant ECDSA P-256
+    /// signatures that a pure-Rust implementation can verify — not merely that
+    /// sign+verify round-trip on the same device.
     #[test]
     #[ignore = "requires /dev/tpm0"]
-    fn sign_verify_roundtrip() {
+    fn sign_and_verify_with_independent_oracle() {
+        use p256::ecdsa::{DerSignature, VerifyingKey};
+        use p256::ecdsa::signature::hazmat::PrehashVerifier;
+
         let mut dev = crate::device::Device::open().expect("open");
         // SHA-256 of b"hello"
         let hash: [u8; 32] = [
@@ -257,11 +292,27 @@ mod tests {
             0x1b, 0x16, 0x1e, 0x5c, 0x1f, 0xa7, 0x42, 0x5e,
             0x73, 0x04, 0x33, 0x62, 0x93, 0x8b, 0x98, 0x24,
         ];
-        dev.with_ecc_key(|key| {
+        dev.with_ecc_key(|key| -> Result<(), crate::error::Error> {
             let sig = key.sign(&hash)?;
-            assert!(!sig.is_empty());
-            let ok = key.verify(&hash, &sig)?;
-            assert!(ok, "verify returned false for freshly-signed data");
+            assert!(!sig.is_empty(), "sign returned empty signature");
+
+            // Export the public key and verify with RustCrypto p256 (independent oracle).
+            let pub_bytes = key.public_key_bytes()?;
+            let mut uncompressed = [0u8; 65];
+            uncompressed[0] = 0x04; // uncompressed point tag
+            uncompressed[1..].copy_from_slice(&pub_bytes);
+            let encoded_point = p256::EncodedPoint::from_bytes(&uncompressed[..])
+                .expect("TPM returned invalid P-256 point coordinates");
+            let verifying_key = VerifyingKey::from_encoded_point(&encoded_point)
+                .expect("TPM returned point not on P-256 curve");
+            let der_sig = DerSignature::try_from(sig.as_slice())
+                .expect("TPM produced a non-DER-encoded signature");
+            verifying_key
+                .verify_prehash(&hash, &der_sig)
+                .expect("RustCrypto p256 oracle: TPM signature did not verify");
+
+            // Also confirm the TPM's own verify agrees (sanity check).
+            key.verify(&hash, &sig)?;
             Ok(())
         })
         .expect("with_ecc_key");

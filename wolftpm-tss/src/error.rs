@@ -9,6 +9,10 @@ pub enum Error {
         /// The wolfTPM / TPM_RC error code.
         code: i32,
     },
+    /// A caller-supplied argument failed validation before any FFI call.
+    ///
+    /// `msg` is a `'static` description of what was invalid.
+    InvalidArg(&'static str),
     /// The response buffer supplied to [`Connection::transact`] is too small
     /// to hold the TPM response, or its length overflows `c_int` (> 2 GiB) and
     /// therefore cannot be expressed to the C transport shim.  Both cases mean
@@ -69,6 +73,7 @@ impl fmt::Display for Error {
                 }
                 Ok(())
             }
+            Error::InvalidArg(msg) => write!(f, "invalid argument: {msg}"),
             Error::ResponseBufferTooSmall => {
                 write!(f, "response buffer too small for TPM response")
             }

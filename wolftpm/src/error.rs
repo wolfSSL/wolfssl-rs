@@ -63,8 +63,22 @@ pub enum Error {
     },
     /// A caller-supplied argument failed validation before any FFI call.
     ///
-    /// `msg` is a `'static` description of what was invalid.
+    /// `msg` is a `'static` description of what was invalid.  Used for
+    /// programmer errors whose values are not meaningful to inspect at runtime
+    /// (e.g. a null byte in a host string).  For errors where the caller
+    /// needs the actual value, use the structured variants below.
     InvalidArg(&'static str),
+    /// A PCR index was outside the valid range (0–23).
+    InvalidPcrIndex(u8),
+    /// A hash buffer was not exactly 32 bytes (required for SHA-256 operations).
+    InvalidHashLen {
+        /// The actual length supplied by the caller.
+        got: usize,
+    },
+    /// An ECDSA signature was structurally valid but did not verify against the
+    /// supplied key and hash.  This is a normal cryptographic outcome, not an
+    /// error in the TPM or the library.
+    SignatureInvalid,
     /// The buffer supplied to receive a response was too small.
     BufferTooSmall,
     /// The TPM returned a response that violates protocol expectations.
@@ -236,6 +250,13 @@ impl fmt::Display for Error {
                 }
             }
             Error::InvalidArg(msg) => write!(f, "invalid argument: {msg}"),
+            Error::InvalidPcrIndex(n) => {
+                write!(f, "PCR index {n} is out of range (valid range: 0–23)")
+            }
+            Error::InvalidHashLen { got } => {
+                write!(f, "hash must be exactly 32 bytes, got {got}")
+            }
+            Error::SignatureInvalid => write!(f, "signature verification failed"),
             Error::BufferTooSmall => write!(f, "response buffer too small"),
             Error::UnexpectedResponse => write!(f, "TPM returned unexpected response"),
         }
@@ -282,5 +303,22 @@ mod tests {
             s.contains("0xdeadbeef"),
             "expected hex code in display, got: {s}"
         );
+    }
+
+    #[test]
+    fn test_display_structured_variants() {
+        let e = Error::InvalidPcrIndex(25);
+        assert!(
+            e.to_string().contains("25"),
+            "InvalidPcrIndex display missing index: {e}"
+        );
+
+        let e = Error::InvalidHashLen { got: 16 };
+        assert!(
+            e.to_string().contains("16"),
+            "InvalidHashLen display missing length: {e}"
+        );
+
+        assert!(!Error::SignatureInvalid.to_string().is_empty());
     }
 }

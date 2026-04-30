@@ -117,11 +117,16 @@ impl Device {
     /// A fresh key is created on the TPM, the closure is called, and the key
     /// is always flushed from transient object memory — even if the closure
     /// returns `Err`.
-    pub fn with_ecc_key<F, T>(&mut self, f: F) -> Result<T, Error>
+    ///
+    /// The closure may use any error type `E` provided it implements
+    /// `From<Error>`, so callers can use their own error types without
+    /// manually mapping.
+    pub fn with_ecc_key<F, T, E>(&mut self, f: F) -> Result<T, E>
     where
-        F: FnOnce(&mut crate::key::EccKey<'_>) -> Result<T, Error>,
+        F: FnOnce(&mut crate::key::EccKey<'_>) -> Result<T, E>,
+        E: From<Error>,
     {
-        let mut key = crate::key::EccKey::create(self)?;
+        let mut key = crate::key::EccKey::create(self).map_err(E::from)?;
         let result = f(&mut key);
         // key is dropped here, which triggers EccKey::Drop and unloads both
         // the signing key and the SRK from transient object memory.
@@ -151,7 +156,7 @@ impl Device {
     /// rather than forwarding an opaque TPM_RC_VALUE to the caller.
     pub fn pcr_read(&mut self, index: u8) -> Result<[u8; 32], Error> {
         if index > 23 {
-            return Err(Error::InvalidArg("PCR index must be 0–23"));
+            return Err(Error::InvalidPcrIndex(index));
         }
         // TPM_MAX_DIGEST_SIZE = 64; allocate the largest possible digest buffer.
         let mut digest = [0u8; 64];
@@ -196,32 +201,16 @@ impl Drop for Device {
     }
 }
 
-// ── POSIX env helpers (avoids a libc dep just for two calls) ─────────────────
-// NOTE: These helpers are intentionally duplicated in wolftpm-tss/src/connection.rs.
-// Kept separate to avoid introducing a shared internal crate dependency between
-// wolftpm and wolftpm-tss.  If a bug is found here, fix it in both files.
-// The two copies are kept byte-for-byte identical in logic; review diffs carefully.
-
 #[cfg(feature = "swtpm")]
 unsafe fn libc_setenv(name: *const u8, value: *const std::ffi::c_char) -> std::ffi::c_int {
-    extern "C" {
-        fn setenv(
-            name: *const std::ffi::c_char,
-            value: *const std::ffi::c_char,
-            overwrite: std::ffi::c_int,
-        ) -> std::ffi::c_int;
-    }
-    setenv(name as *const _, value, 1)
+    libc::setenv(name as *const _, value, 1)
 }
 
 #[cfg(feature = "swtpm")]
 unsafe fn libc_unsetenv(name: *const u8) -> std::ffi::c_int {
-    extern "C" {
-        fn unsetenv(name: *const std::ffi::c_char) -> std::ffi::c_int;
-    }
     // POSIX unsetenv returns 0 on success, -1 on error (EINVAL = invalid name).
     // The caller decides whether to propagate or ignore the error.
-    unsetenv(name as *const _)
+    libc::unsetenv(name as *const _)
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

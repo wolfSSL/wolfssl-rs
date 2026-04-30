@@ -233,15 +233,12 @@ impl WolfTpmSwtpm {
 
         // wolfTPM swtpm reads SWTPM_SERVER_NAME / SWTPM_SERVER_PORT from
         // the environment.  Set them for the duration of Init, then clear.
-        // A null byte in `host` is a programmer error (the argument is invalid),
-        // not a malformed TPM response.  Use Transport { code: -1 } as the
-        // closest available variant; wolftpm-tss has no InvalidArg variant.
-        let host_c =
-            CString::new(host).map_err(|_| Error::Transport { code: -1 })?;
+        let host_c = CString::new(host)
+            .map_err(|_| Error::InvalidArg("host contains a null byte"))?;
         // port.to_string() is always a valid ASCII digit string; this branch
         // is unreachable in practice but kept for exhaustiveness.
-        let port_c =
-            CString::new(port.to_string()).map_err(|_| Error::Transport { code: -1 })?;
+        let port_c = CString::new(port.to_string())
+            .map_err(|_| Error::InvalidArg("port string contains a null byte"))?;
 
         // unwrap: if the mutex is poisoned a previous thread panicked mid-init,
         // leaving the process env in an unknown state.  Panic here is correct —
@@ -289,32 +286,16 @@ impl Connection for WolfTpmSwtpm {
     }
 }
 
-// ── POSIX env helpers (avoids a libc dep just for two calls) ─────────────────
-// NOTE: These helpers are intentionally duplicated from wolftpm/src/device.rs.
-// Kept separate to avoid introducing a shared internal crate dependency between
-// wolftpm and wolftpm-tss.  If a bug is found here, fix it in both files.
-// The two copies are kept byte-for-byte identical in logic; review diffs carefully.
-
 #[cfg(feature = "swtpm")]
 unsafe fn libc_setenv(name: *const u8, value: *const std::ffi::c_char) -> std::ffi::c_int {
-    extern "C" {
-        fn setenv(
-            name: *const std::ffi::c_char,
-            value: *const std::ffi::c_char,
-            overwrite: std::ffi::c_int,
-        ) -> std::ffi::c_int;
-    }
-    setenv(name as *const _, value, 1)
+    libc::setenv(name as *const _, value, 1)
 }
 
 #[cfg(feature = "swtpm")]
 unsafe fn libc_unsetenv(name: *const u8) -> std::ffi::c_int {
-    extern "C" {
-        fn unsetenv(name: *const std::ffi::c_char) -> std::ffi::c_int;
-    }
     // POSIX unsetenv returns 0 on success, -1 on error (EINVAL = invalid name).
     // The caller decides whether to propagate or ignore the error.
-    unsetenv(name as *const _)
+    libc::unsetenv(name as *const _)
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -332,6 +313,7 @@ mod tests {
             Error::CommandTooLarge,
             Error::MalformedResponse,
             Error::Transport { code: -1 },
+            Error::InvalidArg("test"),
         ];
         for e in &cases {
             assert!(!format!("{e}").is_empty(), "Display for {e:?} was empty");
