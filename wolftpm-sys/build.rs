@@ -24,14 +24,13 @@ fn main() {
     let wolftpm_lib = env::var("DEP_WOLFTPM_SRC_LIB")
         .expect("DEP_WOLFTPM_SRC_LIB not set");
 
-    // Emit a version note so future maintainers know what wolfTPM release was
-    // tested.  wolftpm_rs_shim.c accesses WOLFTPM2_CTX internal fields (cmdBuf);
-    // a version change that restructures that struct will cause a compile error
-    // in the shim (missing field) or be caught by the _Static_assert therein.
-    // Known-good: wolfTPM commit fbbf6fe / version 4.0.0.
-    // The rerun directive ensures this note is re-emitted when version.h changes.
+    // ── 2a. Assert wolfTPM version is compatible ─────────────────────────────
+    // wolftpm_rs_shim.c accesses WOLFTPM2_CTX::cmdBuf, an internal field that
+    // is not part of wolfTPM's stable public API.  Fail the build immediately
+    // if the wolfTPM version has changed rather than risking silent misbehaviour.
+    // To update: verify shim.c still works, then update TESTED_VERSION_HEX.
     println!("cargo:rerun-if-changed={wolftpm_include}/wolftpm/version.h");
-    println!("cargo:warning=wolftpm-sys: built against wolfTPM at {wolftpm_include} (tested: v4.0.0 / fbbf6fe; shim accesses WOLFTPM2_CTX::cmdBuf)");
+    check_wolftpm_version(&format!("{wolftpm_include}/wolftpm/version.h"));
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
@@ -135,4 +134,44 @@ fn main() {
     bindings
         .write_to_file(out_dir.join("bindings.rs"))
         .expect("failed to write bindings.rs");
+}
+
+/// Assert that the wolfTPM version matches the tested release.
+///
+/// Reads `LIBWOLFTPM_VERSION_HEX` from `version.h` and panics if it differs
+/// from the known-good value.  This catches wolfTPM upgrades before they
+/// silently break the shim's internal field accesses.
+///
+/// To move to a new wolfTPM version:
+/// 1. Verify `wolftpm_rs_shim.c` still compiles and works correctly.
+/// 2. Update `TESTED_VERSION_HEX` below to the new value.
+fn check_wolftpm_version(version_h_path: &str) {
+    // wolfTPM commit fbbf6fe / tag v4.0.0
+    const TESTED_VERSION_HEX: u64 = 0x04000000;
+
+    let content = std::fs::read_to_string(version_h_path)
+        .unwrap_or_else(|e| panic!("cannot read {version_h_path}: {e}"));
+
+    let found = content
+        .lines()
+        .find_map(|line| {
+            let rest = line.trim().strip_prefix("#define LIBWOLFTPM_VERSION_HEX")?;
+            let token = rest.trim().strip_prefix("0x").or_else(|| rest.trim().strip_prefix("0X")).unwrap_or(rest.trim());
+            u64::from_str_radix(token, 16).ok()
+        })
+        .unwrap_or_else(|| panic!(
+            "LIBWOLFTPM_VERSION_HEX not found in {version_h_path}; \
+             cannot verify wolfTPM version compatibility"
+        ));
+
+    if found != TESTED_VERSION_HEX {
+        panic!(
+            "wolfTPM version mismatch: {version_h_path} defines \
+             LIBWOLFTPM_VERSION_HEX=0x{found:08x} but this crate was tested \
+             against 0x{TESTED_VERSION_HEX:08x} (v4.0.0 / fbbf6fe).\n\
+             wolftpm_rs_shim.c accesses WOLFTPM2_CTX::cmdBuf which is not a \
+             stable API — review shim.c for compatibility, then update \
+             TESTED_VERSION_HEX in wolftpm-sys/build.rs."
+        );
+    }
 }
