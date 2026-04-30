@@ -3,10 +3,6 @@
 wolfTPM backend for the [tpm-rs](https://github.com/tpm-rs/tpm-rs) TSS
 (Trusted Software Stack) Rust ecosystem.
 
-> **Status**: stub — `open()` / `connect()` constructors and `transact()`
-> bodies are not yet implemented.  The crate structure, trait impls, and error
-> types are declared so that downstream code can be written and type-checked.
-
 ## What
 
 `wolftpm-tss` implements [`tpm2_rs_client::connection::Connection`] using
@@ -39,35 +35,37 @@ for any library in the tpm-rs ecosystem.
 
 ### Connection::transact bridge
 
-wolfTPM stores a raw I/O callback (`TPM2HalIoCb`) inside `TPM2_CTX::ioCb`.
-On Linux this callback writes command bytes to `/dev/tpm0` and reads the
-response back.  For swtpm it does the same over a TCP socket.
+`Connection::transact` delegates to `wolftpm_rs_transact`, a thin C shim
+compiled into `wolftpm-sys` that calls the wolfTPM transport layer directly.
 
-`Connection::transact` bridges to this callback:
-
-1. Copy the tpm-rs command bytes into the response buffer (wolfTPM's
-   transport is in-place — the same buffer holds command then response).
-2. Call `ctx.ioCb` directly to perform the transport.
-3. Read the response length from bytes 2–5 of the TPM2 response header
-   (big-endian `u32`, per the TCG TPM2 Part 3 specification).
-4. Return a slice of the response buffer of exactly that length.
+The shim:
+1. Copies the tpm-rs command bytes into wolfTPM's internal `cmdBuf`.
+2. Dispatches to the configured transport (`RS_SEND_COMMAND` — either the
+   Linux kernel TPM driver or the swtpm TCP socket path).
+3. Reads the response length from bytes 2–5 of the TPM2 response header
+   (big-endian `u32`, per TCG TPM2 Part 3).
+4. Copies exactly that many bytes back into the caller's `rsp` buffer.
 
 ```text
-cmd: &[u8]  ──copy──►  rsp[..cmd.len()]
+cmd: &[u8]  ──copy──►  wolftpm cmdBuf
                                 │
-                         ioCb(ctx, rsp, rsp, cmd_len, userCtx)
+                         RS_SEND_COMMAND (kernel/swtpm transport)
                                 │
-                         rsp[2..6] → response_len (big-endian u32)
+                         cmdBuf[2..6] → response_len (big-endian u32)
+                                │
+                         cmdBuf[..response_len] ──copy──► rsp
                                 │
                          Ok(&rsp[..response_len])
 ```
 
-### Why call ioCb directly?
+### Why use a C shim rather than calling ioCb directly?
 
-`TPM2_SendCommand` in wolfTPM adds session HMAC processing and parameter
-encryption on top of the raw transport.  The tpm-rs client stack handles
-its own command marshaling and sessions, so calling the transport callback
-directly avoids double-processing.
+`wolfTPM2_Init` with the Linux device or swtpm transport sets `ioCb = NULL`
+internally — wolfTPM manages the I/O itself without exposing a callback.
+The shim accesses `dev->ctx.cmdBuf` directly (documented internal field)
+to pass bytes through the transport layer without the high-level session and
+parameter-encryption processing in `TPM2_SendCommand`.  The tpm-rs client
+stack handles its own command marshaling and sessions.
 
 ## Provided types
 

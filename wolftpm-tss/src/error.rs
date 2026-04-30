@@ -32,7 +32,19 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Transport { code } => {
-                write!(f, "wolfTPM transport error {code:#010x}")
+                // `code` is a TPM_RC value (TPM2 Part 2 §6.6).
+                // Named constants for the most common transport-layer codes:
+                let name = match *code as u32 {
+                    0x0095 => Some("TPM_RC_SIZE"),
+                    0x0096 => Some("TPM_RC_SYMMETRIC"),
+                    0x0143 => Some("TPM_RC_COMMAND_CODE"),
+                    _ => None,
+                };
+                write!(f, "wolfTPM transport error {code:#010x}")?;
+                if let Some(n) = name {
+                    write!(f, " ({n})")?;
+                }
+                Ok(())
             }
             Error::ResponseBufferTooSmall => {
                 write!(f, "response buffer too small for TPM response")
@@ -52,6 +64,8 @@ impl From<tpm2_rs_base::errors::TssError> for Error {
     fn from(e: tpm2_rs_base::errors::TssError) -> Self {
         // TssError is a TPM-layer error, not a transport error.
         // Encode it as a transport code so callers can distinguish.
-        Error::Transport { code: e.get() as i32 }
+        Error::Transport {
+            code: e.get() as i32,
+        }
     }
 }

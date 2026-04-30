@@ -3,11 +3,11 @@
 //!
 //! # Status
 //!
-//! This crate is a stub — the build infrastructure (`wolftpm-src`, `wolftpm-sys`)
-//! is functional but the high-level Rust API has not yet been implemented.
-//! Contributions welcome.
+//! Core API implemented: [`Device`] for TPM initialization and basic operations,
+//! and [`EccKey`] for transient P-256 signing keys.
+//! Advanced wolfTPM features (NV storage, attestation, HMAC sessions) are not yet wrapped.
 //!
-//! # Quick start (planned API)
+//! # Quick start
 //!
 //! ```no_run
 //! use wolftpm::Device;
@@ -30,5 +30,11 @@
 //! If neither feature is enabled, wolfTPM autodetects the available transport
 //! at runtime on Linux.
 
+pub mod device;
+pub use device::Device;
+
 pub mod error;
 pub use error::Error;
+
+pub mod key;
+pub use key::EccKey;

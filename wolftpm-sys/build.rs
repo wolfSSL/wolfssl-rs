@@ -24,10 +24,36 @@ fn main() {
     let wolftpm_lib = env::var("DEP_WOLFTPM_SRC_LIB")
         .expect("DEP_WOLFTPM_SRC_LIB not set");
 
+    // Emit a version note so future maintainers know what wolfTPM release was
+    // tested.  wolftpm_rs_shim.c accesses WOLFTPM2_CTX internal fields (cmdBuf);
+    // a version change that restructures that struct will cause a compile error
+    // in the shim (missing field) or be caught by the _Static_assert therein.
+    // Known-good: wolfTPM commit fbbf6fe / version 4.0.0.
+    // The rerun directive ensures this note is re-emitted when version.h changes.
+    println!("cargo:rerun-if-changed={wolftpm_include}/wolftpm/version.h");
+    println!("cargo:warning=wolftpm-sys: built against wolfTPM at {wolftpm_include} (tested: v4.0.0 / fbbf6fe; shim accesses WOLFTPM2_CTX::cmdBuf)");
+
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
-    // ── 3. Link wolftpm and wolfssl ───────────────────────────────────────────
+    // ── 3. Compile the Rust shim and link wolftpm + wolfssl ──────────────────
+    // The shim (wolftpm_rs_shim.c) wraps the internal INTERNAL_SEND_COMMAND
+    // dispatch to expose a raw-bytes wolftpm_rs_transact() function.
+    let mut shim = cc::Build::new();
+    shim.file(manifest_dir.join("src/wolftpm_rs_shim.c"))
+        .include(&wolftpm_lib)
+        .include(&wolftpm_include)
+        .include(format!("{wolftpm_include}/hal"))
+        .include(&wolfssl_include)
+        .include(&wolfssl_settings);
+    if use_user_settings {
+        shim.define("WOLFSSL_USER_SETTINGS", None);
+    } else {
+        shim.define("WOLFSSL_USE_OPTIONS_H", None);
+    }
+    shim.define("WOLFTPM2_NO_WOLFCRYPT", None);
+    shim.compile("wolftpm_rs_shim");
+
     println!("cargo:rustc-link-search=native={wolftpm_lib}");
     println!("cargo:rustc-link-lib=static=wolftpm");
 
@@ -83,6 +109,7 @@ fn main() {
         .allowlist_type("TPMU_.*")
         .allowlist_function("wolfTPM2_.*")
         .allowlist_function("TPM2_.*")
+        .allowlist_function("wolftpm_rs_.*")
         .allowlist_item("TPM_.*")
         .allowlist_item("TPM2_.*")
         .allowlist_item("WOLFTPM_.*")

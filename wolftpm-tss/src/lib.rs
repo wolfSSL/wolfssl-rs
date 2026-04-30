@@ -5,22 +5,19 @@
 //! tpm-rs client stack to use a hardware TPM or software TPM simulator via
 //! wolfTPM.
 //!
-//! # Status
+//! See [`connection`] for the available transport types.
 //!
-//! Stub — the [`Connection`] implementations are not yet wired to wolfTPM.
-//! See [`connection`] for the planned types.
-//!
-//! # Quick start (planned API)
+//! # Quick start
 //!
 //! ```no_run
 //! use wolftpm_tss::connection::WolfTpmLinuxDev;
 //! use tpm2_rs_client::run_command;
-//! use tpm2_rs_base::commands::GetRandom;
+//! use tpm2_rs_base::commands::GetRandomCmd;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let mut transport = WolfTpmLinuxDev::open()?;
-//! let (resp, _) = run_command(&GetRandom { bytes_requested: 32 }, &mut transport)?;
-//! println!("random bytes: {:?}", resp.random_bytes.buffer());
+//! let resp = run_command(&GetRandomCmd { bytes_requested: 32 }, &mut transport)?;
+//! println!("random bytes: {:?}", resp.random_bytes);
 //! # Ok(())
 //! # }
 //! ```
@@ -31,6 +28,7 @@
 //! |---------|-------------|
 //! | `linux-dev` | Linux `/dev/tpm0` kernel driver transport |
 //! | `swtpm` | Software TPM socket transport (swtpm / IBM TPM2 simulator) |
+//! | `tss` | Enable `Connection` trait impls (requires tpm2-rs-client / tpm2-rs-base git deps) |
 
 pub mod connection;
 pub mod error;

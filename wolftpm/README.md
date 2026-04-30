@@ -3,14 +3,9 @@
 Safe Rust bindings to [wolfTPM](https://github.com/wolfSSL/wolfTPM), a portable
 TPM 2.0 library from wolfSSL.
 
-> **Status**: build infrastructure stub.  The `wolftpm-src` and `wolftpm-sys`
-> crates compile wolfTPM from source and generate raw FFI bindings.  The
-> high-level safe Rust API in this crate has not yet been implemented.
-> Contributions welcome — see the [planned API](#planned-api) section.
-
 ## What
 
-`wolftpm` will provide an idiomatic, safe Rust API for TPM 2.0 operations via
+`wolftpm` provides an idiomatic, safe Rust API for TPM 2.0 operations via
 wolfTPM.  A Trusted Platform Module (TPM 2.0) is a hardware security chip
 present in most modern PCs, servers, and embedded systems.  It provides:
 
@@ -42,7 +37,7 @@ portability.  The wolfTPM C API is straightforward to wrap in Rust.
 
 ### Why this crate over writing raw `unsafe` bindings yourself?
 
-`wolftpm` (once fully implemented) will:
+`wolftpm`:
 
 - Ensure `WOLFTPM2_DEV` is properly initialised and cleaned up via RAII
 - Express TPM object lifetimes in the Rust type system
@@ -62,7 +57,7 @@ wolftpm-sys     bindgen-generated FFI bindings; links libwolftpm.a and
 │               libwolfssl; excludes wolfSSL key-import helpers for now
 │               (WOLFTPM2_NO_WOLFCRYPT)
 │
-wolftpm         Safe high-level Rust API (this crate — work in progress)
+wolftpm         Safe high-level Rust API (this crate)
 ```
 
 ### Transport selection
@@ -121,9 +116,7 @@ environment variables.
 | `linux-dev` | Linux `/dev/tpm0` kernel driver transport |
 | `swtpm` | Software TPM socket transport |
 
-## Planned API
-
-The intended safe API (subject to change):
+## API
 
 ```rust
 use wolftpm::{Device, Error};
@@ -134,18 +127,15 @@ let mut dev = Device::open()?;                    // /dev/tpm0 or swtpm socket
 // Hardware random bytes
 let random = dev.get_random(32)?;
 
-// Generate a persistent ECC P-256 signing key
-let key = dev.create_ecc_key()?;
-let sig = key.sign(&mut dev, &message_hash)?;
-let ok  = key.verify(&mut dev, &message_hash, &sig)?;
+// Read a PCR (SHA-256 bank, index 0)
+let pcr: [u8; 32] = dev.pcr_read(0)?;
 
-// PCR read and quote
-let pcr = dev.pcr_read(0)?;
-let quote = dev.pcr_quote(&[0, 1, 2], &nonce)?;
-
-// Seal data to current PCR state
-let sealed = dev.seal(&data, &[0, 1, 2, 7])?;
-let plain  = dev.unseal(&sealed)?;
+// ECC P-256 signing key (transient, flushed on drop)
+dev.with_ecc_key(|key| {
+    let sig = key.sign(&message_hash)?;           // sha-256 digest
+    let ok  = key.verify(&message_hash, &sig)?;
+    Ok(())
+})?;
 ```
 
 ## References
