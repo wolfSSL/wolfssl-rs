@@ -12,6 +12,12 @@ fn main() {
     let wolfssl_vendored = env::var("DEP_WOLFCRYPT_SYS_VENDORED")
         .map(|v| v == "1")
         .unwrap_or(false);
+    // For pre-built wolfssl installs built with -DWOLFSSL_USER_SETTINGS, the full
+    // feature set (including HAVE_DILITHIUM, WOLFSSL_WC_DILITHIUM, etc.) lives in
+    // user_settings.h, not options.h.  Use WOLFSSL_USER_SETTINGS mode when the
+    // install provides a user_settings.h so we get all defines consistently.
+    let user_settings_h = PathBuf::from(&wolfssl_settings).join("user_settings.h");
+    let use_user_settings = wolfssl_vendored || user_settings_h.exists();
 
     // ── 2. Read wolfHSM metadata from wolfhsm-src ────────────────────────────
     let wolfhsm_include = env::var("DEP_WOLFHSM_SRC_INCLUDE")
@@ -27,7 +33,8 @@ fn main() {
     // calls into wolfssl, so the link order must be shims → wolfhsm → wolfssl.
     // cc::Build::compile() emits cargo:rustc-link-lib and cargo:rustc-link-search
     // automatically — do NOT add a duplicate println! for wolfhsm_shims.
-    cc::Build::new()
+    let mut shims = cc::Build::new();
+    shims
         .file(manifest_dir.join("src").join("shims.c"))
         // wolfhsm_lib is the OUT_DIR from wolfhsm-src; it holds wolfhsm_cfg.h
         .include(&wolfhsm_lib)
@@ -36,7 +43,7 @@ fn main() {
         .include(&wolfssl_include)
         .include(&wolfssl_settings)
         .define(
-            if wolfssl_vendored {
+            if use_user_settings {
                 "WOLFSSL_USER_SETTINGS"
             } else {
                 "WOLFSSL_USE_OPTIONS_H"
@@ -47,8 +54,8 @@ fn main() {
         .define("WOLF_CRYPTO_CB", None)
         .define("WOLFHSM_CFG_NO_WOLFCRYPT", Some("0"))
         .warnings(false)
-        .opt_level(2)
-        .compile("wolfhsm_shims");
+        .opt_level(2);
+    shims.compile("wolfhsm_shims");
 
     // ── 4. Link wolfhsm and wolfssl ───────────────────────────────────────────
     // These come after wolfhsm_shims in the linker command (callees after callers).
@@ -77,8 +84,29 @@ fn main() {
 
     // ── 5. Run bindgen ────────────────────────────────────────────────────────
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    // posix_transport_uds.{c,h} was added to wolfHSM after v1.4.0.  When using
+    // the bundled submodule (which may be pinned to an older commit), provide a
+    // stub header so wrapper.h can include it without error.  The stub is empty;
+    // bindgen will simply find no UDS symbols, which is correct for that version.
+    let uds_h = PathBuf::from(&wolfhsm_include)
+        .join("port")
+        .join("posix")
+        .join("posix_transport_uds.h");
+    if !uds_h.exists() {
+        let stub_dir = out_dir.join("port").join("posix");
+        std::fs::create_dir_all(&stub_dir).expect("create stub dir");
+        std::fs::write(
+            stub_dir.join("posix_transport_uds.h"),
+            b"/* stub: posix_transport_uds not available in this wolfHSM version */\n",
+        )
+        .expect("write stub header");
+    }
     let bindings = bindgen::Builder::default()
         .header(manifest_dir.join("wrapper.h").to_str().unwrap())
+        // OUT_DIR first: stub headers (posix_transport_uds.h) live here when
+        // the wolfHSM source doesn't provide them.
+        .clang_arg(format!("-I{}", out_dir.display()))
         // wolfHSM include paths (wolfhsm_lib is the OUT_DIR that holds
         // the generated wolfhsm_cfg.h from wolfhsm-src)
         .clang_arg(format!("-I{wolfhsm_lib}"))
@@ -88,7 +116,7 @@ fn main() {
         .clang_arg(format!("-I{wolfssl_include}"))
         .clang_arg(format!("-I{wolfssl_settings}"))
         // wolfSSL settings mode
-        .clang_arg(if wolfssl_vendored {
+        .clang_arg(if use_user_settings {
             "-DWOLFSSL_USER_SETTINGS"
         } else {
             "-DWOLFSSL_USE_OPTIONS_H"

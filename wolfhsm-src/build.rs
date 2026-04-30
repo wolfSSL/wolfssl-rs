@@ -115,12 +115,13 @@ fn main() {
         println!("cargo:rerun-if-changed={}", path.display());
     }
 
-    // POSIX port files.
+    // POSIX port files.  All are included when present; some are optional
+    // because they may not exist in every wolfHSM version or fork.
     let posix_dir = wolfhsm_src.join("port").join("posix");
     let posix_sources = [
         "posix_transport_tcp.c",
         "posix_transport_shm.c",
-        "posix_transport_uds.c",
+        "posix_transport_uds.c", // added post-v1.4.0; skip gracefully if absent
         "posix_transport_tls.c",
         "posix_lock.c",
         "posix_timeout.c",
@@ -128,8 +129,10 @@ fn main() {
     ];
     for name in &posix_sources {
         let path = posix_dir.join(name);
-        build.file(&path);
-        println!("cargo:rerun-if-changed={}", path.display());
+        if path.exists() {
+            build.file(&path);
+            println!("cargo:rerun-if-changed={}", path.display());
+        }
     }
 
     build.compile("wolfhsm");
@@ -203,15 +206,18 @@ fn locate_wolfhsm_src() -> PathBuf {
         }
     }
 
-    // Priority 2: ~/GIT/wolfHSM fallback.
-    let home = env::var("HOME").unwrap();
-    let fallback = PathBuf::from(home).join("GIT").join("wolfHSM");
-    if fallback.exists() {
-        return fallback;
+    // Priority 2: bundled submodule (wolfhsm-src/wolfhsm/ inside this crate).
+    // Present after `git submodule update --init wolfhsm-src/wolfhsm`.
+    let bundled = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("wolfhsm");
+    if bundled.join("src").exists() {
+        return bundled;
     }
 
     panic!(
-        "wolfHSM source not found. Set WOLFHSM_SRC to the wolfHSM source directory."
+        "wolfHSM source not found.\n\
+         Options:\n\
+         1. Set WOLFHSM_SRC=/path/to/wolfHSM source directory\n\
+         2. Run: git submodule update --init wolfhsm-src/wolfhsm"
     );
 }
 
