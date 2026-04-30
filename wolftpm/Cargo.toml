@@ -1,6 +1,6 @@
 [package]
 name = "wolftpm"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.71"
 description = "Rust bindings to wolfTPM"
@@ -16,7 +16,7 @@ linux-dev = ["wolftpm-sys/linux-dev"]
 swtpm = ["wolftpm-sys/swtpm"]
 
 [dependencies]
-wolftpm-sys = { version = "0.1.0", path = "../wolftpm-sys" }
+wolftpm-sys = { version = "0.2.0", path = "../wolftpm-sys" }
 
 [dev-dependencies]
 # Independent oracle for sign_verify test: verify TPM-produced ECDSA signatures

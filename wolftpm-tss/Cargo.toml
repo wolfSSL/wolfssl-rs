@@ -1,6 +1,6 @@
 [package]
 name = "wolftpm-tss"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.71"
 description = "wolfTPM backend for the tpm-rs / TSS Rust ecosystem"
@@ -22,6 +22,6 @@ tss = ["dep:tpm2-rs-client", "dep:tpm2-rs-base"]
 [dependencies]
 # wolftpm-sys must be a direct [dependency] so that Cargo propagates
 # DEP_WOLFTPM_SRC_* and link metadata to downstream consumers.
-wolftpm-sys = { version = "0.1.0", path = "../wolftpm-sys" }
+wolftpm-sys = { version = "0.2.0", path = "../wolftpm-sys" }
 tpm2-rs-client = { git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }
 tpm2-rs-base = { git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }
