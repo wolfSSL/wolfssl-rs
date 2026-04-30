@@ -76,7 +76,14 @@ impl Device {
         // wolftpm-tss::WolfTpmSwtpm::connect) so the two callers share a
         // single copy of the setenv/init/unsetenv sequence.
         let dev = wolftpm_sys::swtpm::init_swtpm(&host_c, &port_c)
-            .map_err(|rc| Error::Tpm { rc: crate::error::TpmRc::from_raw(rc as u32) })?;
+            .map_err(|e| match e {
+                wolftpm_sys::swtpm::InitError::Env => {
+                    Error::InvalidArg("setenv failed (ENOMEM?); cannot set swtpm connection vars")
+                }
+                wolftpm_sys::swtpm::InitError::WolfTpm(rc) => {
+                    Error::Tpm { rc: crate::error::TpmRc::from_raw(rc as u32) }
+                }
+            })?;
         Ok(Self { dev })
     }
 

@@ -2,6 +2,18 @@
 ///
 /// Having a single copy here prevents the two callers from diverging.
 
+/// Error returned by [`init_swtpm`].
+#[derive(Debug, Clone, Copy)]
+pub enum InitError {
+    /// A POSIX `setenv` call failed (e.g. `ENOMEM`).  The return value from
+    /// `libc::setenv` is always `-1`; the specific cause is in `errno` but
+    /// that is not captured here because this failure mode is essentially
+    /// unrecoverable.
+    Env,
+    /// `wolfTPM2_Init` returned a nonzero error code.
+    WolfTpm(i32),
+}
+
 /// Serialises concurrent swtpm initialisations so that two threads do not
 /// corrupt each other's environment variables.
 ///
@@ -16,12 +28,11 @@ static SWTPM_INIT_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// A process-wide mutex (shared across both `wolftpm` and `wolftpm-tss`)
 /// serialises concurrent calls.
 ///
-/// Returns `Ok(Box<WOLFTPM2_DEV>)` on success, or `Err(rc)` on failure where
-/// `rc` is the nonzero wolfTPM return code from `wolfTPM2_Init`.
+/// Returns `Ok(Box<WOLFTPM2_DEV>)` on success, or an [`InitError`] on failure.
 ///
 /// The caller is responsible for:
 /// - Ensuring `host` contains no embedded NUL bytes (pass a validated `&CStr`)
-/// - Mapping the `i32` error to the crate's own error type
+/// - Mapping the [`InitError`] to the crate's own error type
 ///
 /// # Thread safety
 ///
@@ -32,7 +43,7 @@ static SWTPM_INIT_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 pub fn init_swtpm(
     host: &std::ffi::CStr,
     port: &std::ffi::CStr,
-) -> Result<Box<crate::WOLFTPM2_DEV>, i32> {
+) -> Result<Box<crate::WOLFTPM2_DEV>, InitError> {
     // unwrap: if the mutex is poisoned a previous thread panicked mid-init,
     // leaving the process env in an unknown state.  Panic here is correct —
     // there is no safe recovery path.
@@ -42,7 +53,7 @@ pub fn init_swtpm(
     // The lock above serialises access to the process-global environment.
     let rc = unsafe { libc_setenv(b"SWTPM_SERVER_NAME\0".as_ptr(), host.as_ptr()) };
     if rc != 0 {
-        return Err(rc);
+        return Err(InitError::Env);
     }
     let rc = unsafe { libc_setenv(b"SWTPM_SERVER_PORT\0".as_ptr(), port.as_ptr()) };
     if rc != 0 {
@@ -50,7 +61,7 @@ pub fn init_swtpm(
         // is left in the environment but that is a benign stale value —
         // wolfTPM2_Init will not be called, so no incorrect connection is made.
         unsafe { let _ = libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr()); }
-        return Err(rc);
+        return Err(InitError::Env);
     }
 
     // SAFETY: zeroed WOLFTPM2_DEV is the correct initial state per wolfTPM
@@ -68,7 +79,7 @@ pub fn init_swtpm(
     }
 
     if rc != 0 {
-        return Err(rc);
+        return Err(InitError::WolfTpm(rc));
     }
     Ok(dev)
 }

@@ -57,18 +57,9 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Transport { code } => {
-                // `code` is a wolfTPM/wolfSSL internal error code.
-                // Symbolic names for the most common transport-layer codes:
-                let name = match *code as u32 {
-                    // wolfTPM-internal codes (negative i32 cast to u32)
-                    0xffffff9c => Some("wolfTPM:TIMEOUT(-100)"),
-                    0xffffff53 => Some("wolfTPM:BAD_FUNC_ARG(-173)"),
-                    0xffffff57 => Some("wolfTPM:BAD_STATE_E(-169)"),
-                    _ => None,
-                };
                 write!(f, "wolfTPM transport error 0x{:08x}", *code as u32)?;
-                if let Some(n) = name {
-                    write!(f, " ({n})")?;
+                if let Some(name) = wolftpm_sys::tpm_rc::tpm_rc_name(*code as u32) {
+                    write!(f, " ({name})")?;
                 }
                 Ok(())
             }

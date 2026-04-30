@@ -127,9 +127,8 @@ impl<'dev> EccKey<'dev> {
         // SAFETY: dev_ptr is alive for 'dev; self.key is a loaded TPM key;
         // hash is 32 bytes (validated above); sig is 128 bytes and sig_sz
         // reflects that size on entry.
-        // hash is validated to be 32 bytes above; 32 fits in c_int on all targets.
-        let hash_sz = std::ffi::c_int::try_from(hash.len())
-            .map_err(|_| Error::InvalidArg("hash length overflows c_int"))?;
+        // hash.len() == 32 is validated above; 32 fits in c_int on all platforms.
+        let hash_sz: std::ffi::c_int = 32;
 
         let rc = unsafe {
             wolftpm_sys::wolfTPM2_SignHashScheme(
@@ -191,9 +190,8 @@ impl<'dev> EccKey<'dev> {
 
         let sig_sz =
             i32::try_from(sig.len()).map_err(|_| Error::InvalidArg("sig too large"))?;
-        // hash is validated to be 32 bytes above; 32 fits in c_int on all targets.
-        let hash_sz = std::ffi::c_int::try_from(hash.len())
-            .map_err(|_| Error::InvalidArg("hash length overflows c_int"))?;
+        // hash.len() == 32 is validated above; 32 fits in c_int on all platforms.
+        let hash_sz: std::ffi::c_int = 32;
 
         // SAFETY: dev_ptr is alive for 'dev; self.key is a loaded TPM key;
         // hash is 32 bytes (hash_sz) and sig is sig_sz bytes (both validated above).
