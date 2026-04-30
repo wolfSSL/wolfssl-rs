@@ -51,11 +51,20 @@ fn main() {
         build.include(settings_inc);
     }
 
-    // wolfSSL settings mode.
-    // Always define WOLFSSL_USER_SETTINGS — both pre-built and vendored modes
-    // use the user_settings.h mechanism (pre-built installs expose one at
-    // $WOLFSSL_DIR/include/user_settings.h or $WOLFSSL_DIR/include/wolfssl/).
-    build.define("WOLFSSL_USER_SETTINGS", None);
+    // wolfSSL settings mode: define WOLFSSL_USER_SETTINGS only when a
+    // user_settings.h is actually present, matching the conditional logic in
+    // wolftpm-sys/build.rs so the shim and the wolfTPM library see the same
+    // wolfSSL header configuration.
+    //
+    // For pre-built installs, user_settings.h lives in the include dir (e.g.
+    // $WOLFSSL_DIR/include/user_settings.h).  For vendored builds,
+    // wolfssl_settings_include points to the wolfssl-src crate directory that
+    // holds user_settings.h.
+    let user_settings_h = wolfssl_include.join("user_settings.h");
+    let use_user_settings = wolfssl_settings_include.is_some() || user_settings_h.exists();
+    if use_user_settings {
+        build.define("WOLFSSL_USER_SETTINGS", None);
+    }
 
     build.warnings(false);
     build.opt_level(2);

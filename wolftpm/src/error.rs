@@ -22,7 +22,7 @@ pub struct TpmRc(u32);
 impl TpmRc {
     /// Returns `true` if this code represents success (`TPM_RC_SUCCESS == 0`).
     #[inline]
-    pub fn is_success(&self) -> bool {
+    pub fn is_success(self) -> bool {
         self.0 == 0
     }
 

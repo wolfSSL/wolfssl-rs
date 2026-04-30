@@ -41,6 +41,10 @@ impl Device {
 
     /// Connect to a software TPM at `host:port` (swtpm or IBM TPM2 simulator).
     ///
+    /// NOTE: The setenv/init/unsetenv sequence here is mirrored in
+    /// `wolftpm_tss::connection::WolfTpmSwtpm::connect`.  Any bug fix to this
+    /// function must also be applied there.
+    ///
     /// Requires wolfTPM compiled with `--enable-swtpm`. When that flag is set,
     /// wolfTPM reads `SWTPM_SERVER_NAME` and `SWTPM_SERVER_PORT` from the
     /// environment; the `host` and `port` arguments are forwarded by temporarily
@@ -152,7 +156,7 @@ impl Device {
     ///
     /// # Errors
     ///
-    /// Returns [`Error::InvalidArg`] immediately if `index` is outside 0–23,
+    /// Returns [`Error::InvalidPcrIndex`] immediately if `index` is outside 0–23,
     /// rather than forwarding an opaque TPM_RC_VALUE to the caller.
     pub fn pcr_read(&mut self, index: u8) -> Result<[u8; 32], Error> {
         if index > 23 {

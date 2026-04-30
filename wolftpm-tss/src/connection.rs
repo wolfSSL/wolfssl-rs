@@ -202,6 +202,10 @@ impl core::fmt::Debug for WolfTpmSwtpm {
 impl WolfTpmSwtpm {
     /// Connect to a software TPM at `host:port`.
     ///
+    /// NOTE: The setenv/init/unsetenv sequence here mirrors
+    /// `wolftpm::Device::open_swtpm`.  Any bug fix to that function must also
+    /// be applied here.
+    ///
     /// The default swtpm port is `2321`; the IBM simulator uses `2321` for
     /// the TPM command port and `2322` for the platform port.
     ///
@@ -249,7 +253,7 @@ impl WolfTpmSwtpm {
         // The lock above serialises access to the process-global environment.
         let rc = unsafe { libc_setenv(b"SWTPM_SERVER_NAME\0".as_ptr(), host_c.as_ptr()) };
         if rc != 0 {
-            return Err(Error::Transport { code: rc });
+            return Err(Error::InvalidArg("setenv failed for SWTPM_SERVER_NAME"));
         }
         let rc = unsafe { libc_setenv(b"SWTPM_SERVER_PORT\0".as_ptr(), port_c.as_ptr()) };
         if rc != 0 {
@@ -257,7 +261,7 @@ impl WolfTpmSwtpm {
             // is left in the environment but that is a benign stale value —
             // wolfTPM2_Init will not be called, so no incorrect connection is made.
             let _ = unsafe { libc_unsetenv(b"SWTPM_SERVER_NAME\0".as_ptr()) };
-            return Err(Error::Transport { code: rc });
+            return Err(Error::InvalidArg("setenv failed for SWTPM_SERVER_PORT"));
         }
 
         let mut dev = Box::new(unsafe { std::mem::zeroed::<wolftpm_sys::WOLFTPM2_DEV>() });
@@ -313,6 +317,7 @@ mod tests {
             Error::CommandTooLarge,
             Error::MalformedResponse,
             Error::Transport { code: -1 },
+            Error::TpmLayer { rc: 0x0101 },
             Error::InvalidArg("test"),
         ];
         for e in &cases {
