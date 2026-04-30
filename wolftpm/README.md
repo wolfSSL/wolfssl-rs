@@ -3,32 +3,175 @@
 Safe Rust bindings to [wolfTPM](https://github.com/wolfSSL/wolfTPM), a portable
 TPM 2.0 library from wolfSSL.
 
-> **Status**: build infrastructure stub — the high-level Rust API has not yet
-> been implemented.  The `wolftpm-src` and `wolftpm-sys` crates compile wolfTPM
-> from source and generate raw FFI bindings; this crate will wrap them safely.
+> **Status**: build infrastructure stub.  The `wolftpm-src` and `wolftpm-sys`
+> crates compile wolfTPM from source and generate raw FFI bindings.  The
+> high-level safe Rust API in this crate has not yet been implemented.
+> Contributions welcome — see the [planned API](#planned-api) section.
 
-## Crate stack
+## What
 
-| Crate | Role |
-|---|---|
-| `wolftpm-src` | Compiles wolfTPM C source via the `cc` crate |
-| `wolftpm-sys` | bindgen-generated raw FFI bindings |
-| `wolftpm` | Safe high-level Rust API (this crate) |
+`wolftpm` will provide an idiomatic, safe Rust API for TPM 2.0 operations via
+wolfTPM.  A Trusted Platform Module (TPM 2.0) is a hardware security chip
+present in most modern PCs, servers, and embedded systems.  It provides:
 
-## Build requirements
+- **Hardware-bound keys** — RSA and ECC keys that never leave the chip
+- **Attestation** — cryptographic proof of platform state via PCR quotes
+- **Sealing** — encrypting data to a specific measured boot state
+- **Random number generation** — hardware entropy source
+- **NV storage** — small amounts of tamper-evident persistent storage
+- **Platform authentication** — policy-gated access to keys and objects
 
-- wolfTPM source (via `WOLFTPM_SRC` env var or bundled submodule)
-- wolfSSL headers (via `WOLFSSL_DIR` or `WOLFSSL_INCLUDE_DIR`)
+wolfTPM is a compact, portable C implementation of the TPM 2.0 client stack
+that works with hardware TPMs (via Linux kernel driver or SPI), the
+[swtpm](https://github.com/stefanberger/swtpm) software TPM, the
+[IBM TPM2 simulator](https://sourceforge.net/projects/ibmswtpm2/), and
+bare-metal microcontrollers.
 
-See [`wolftpm-src/README.md`](../wolftpm-src/README.md) for details.
+## Why
 
-## Features
+### Why wolfTPM over tss2-sys/tpm2-tss?
+
+The [tpm2-tss](https://github.com/tpm2-software/tpm2-tss) stack is the
+reference Linux userspace implementation but is large, has many dependencies
+(DBUS, JSON, OpenSSL), and is difficult to build for embedded or bare-metal
+targets.
+
+wolfTPM is self-contained, depends only on wolfSSL for crypto, compiles to a
+small footprint (suitable for microcontrollers), and is designed for
+portability.  The wolfTPM C API is straightforward to wrap in Rust.
+
+### Why this crate over writing raw `unsafe` bindings yourself?
+
+`wolftpm` (once fully implemented) will:
+
+- Ensure `WOLFTPM2_DEV` is properly initialised and cleaned up via RAII
+- Express TPM object lifetimes in the Rust type system
+- Translate TPM return codes to typed `Error` variants
+- Provide `Send`/`Sync` analysis for multi-threaded use
+- Expose `wolfTPM2_GetRandom` as a `rand::RngCore` implementation
+
+## How it works
+
+### Crate stack
+
+```
+wolftpm-src     Compiles wolfTPM C source via the cc crate; generates
+│               wolftpm/options.h; emits DEP_WOLFTPM_SRC_{INCLUDE,LIB}
+│
+wolftpm-sys     bindgen-generated FFI bindings; links libwolftpm.a and
+│               libwolfssl; excludes wolfSSL key-import helpers for now
+│               (WOLFTPM2_NO_WOLFCRYPT)
+│
+wolftpm         Safe high-level Rust API (this crate — work in progress)
+```
+
+### Transport selection
+
+wolfTPM supports several transport backends, selected at compile time:
+
+| Transport | Define | Description |
+|---|---|---|
+| Linux kernel driver | `WOLFTPM_LINUX_DEV` | `/dev/tpm0` or `/dev/tpmrm0` |
+| Software TPM | `WOLFTPM_SWTPM` | TCP socket to swtpm/IBM simulator |
+| SPI TIS | *(chip-specific)* | Direct SPI bus (embedded) |
+| Windows | `WOLFTPM_WINAPI` | Windows TBS API |
+
+The default on Linux (when no feature is selected) is `WOLFTPM_LINUX_DEV`.
+Select `swtpm` for testing against a software TPM.
+
+### wolfSSL integration
+
+wolfTPM uses wolfSSL/wolfCrypt for RSA, ECC, and hash operations when it needs
+to perform key operations locally (e.g. parameter encryption, key wrapping).
+The current bindings use `-DWOLFTPM2_NO_WOLFCRYPT` to keep the generated FFI
+self-contained.  Full wolfSSL integration (key import/export between wolfSSL
+and TPM objects) will be added in a future version.
+
+## How to use
+
+```toml
+[dependencies]
+wolftpm = "0.1"
+```
+
+### Build requirements
+
+wolfTPM source and wolfSSL headers must be available at build time.  The
+simplest setup:
+
+```sh
+# Option 1: point to a local wolfTPM clone
+export WOLFTPM_SRC=/path/to/wolfTPM
+export WOLFSSL_DIR=/path/to/wolfssl-install
+cargo build
+
+# Option 2: use the bundled submodule
+git submodule update --init wolftpm-src/wolftpm
+export WOLFSSL_DIR=/path/to/wolfssl-install
+cargo build
+```
+
+See [`wolftpm-src`](https://crates.io/crates/wolftpm-src) for the full set of
+environment variables.
+
+### Features
 
 | Feature | Description |
 |---|---|
 | `linux-dev` | Linux `/dev/tpm0` kernel driver transport |
-| `swtpm` | Software TPM socket transport (swtpm / IBM TPM2 simulator) |
+| `swtpm` | Software TPM socket transport |
+
+## Planned API
+
+The intended safe API (subject to change):
+
+```rust
+use wolftpm::{Device, Error};
+
+// Open a connection to the TPM
+let mut dev = Device::open()?;                    // /dev/tpm0 or swtpm socket
+
+// Hardware random bytes
+let random = dev.get_random(32)?;
+
+// Generate a persistent ECC P-256 signing key
+let key = dev.create_ecc_key()?;
+let sig = key.sign(&mut dev, &message_hash)?;
+let ok  = key.verify(&mut dev, &message_hash, &sig)?;
+
+// PCR read and quote
+let pcr = dev.pcr_read(0)?;
+let quote = dev.pcr_quote(&[0, 1, 2], &nonce)?;
+
+// Seal data to current PCR state
+let sealed = dev.seal(&data, &[0, 1, 2, 7])?;
+let plain  = dev.unseal(&sealed)?;
+```
+
+## References
+
+- [wolfTPM repository](https://github.com/wolfSSL/wolfTPM)
+- [wolfTPM documentation](https://www.wolfssl.com/docs/wolftpm/)
+- [wolfTPM API reference](https://wolfssl.github.io/wolfTPM/)
+- [TCG TPM2 Library Specification](https://trustedcomputinggroup.org/resource/tpm-library-specification/)
+- [swtpm — software TPM for testing](https://github.com/stefanberger/swtpm)
+- [IBM TPM2 simulator](https://sourceforge.net/projects/ibmswtpm2/)
+- [wolfssl-rs workspace](https://github.com/wolfSSL/wolfssl-rs)
+
+## Copyright
+
+Copyright (C) 2006-2026 wolfSSL Inc.
+
+wolfTPM is copyright wolfSSL Inc. and its contributors.
 
 ## License
 
-GPL-3.0-only OR LicenseRef-wolfSSL-commercial
+`GPL-3.0-only OR LicenseRef-wolfSSL-commercial`
+
+This crate is available under the
+[GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html).
+For proprietary or commercial use where the GPL is not acceptable, a commercial
+license is available from [wolfSSL Inc.](https://www.wolfssl.com/license/)
+
+wolfTPM itself is licensed under GPL-2.0-or-later or a commercial wolfSSL
+license.
