@@ -1,6 +1,6 @@
 [package]
 name = "wolfhsm"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Rust bindings to wolfHSM"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"

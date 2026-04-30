@@ -1,7 +1,7 @@
 [package]
 name = "wolfcrypt-ring-testing"
 authors = ["WolfSSL Inc"]
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 description = "Tests and benchmarks for wolfcrypt-ring-compat"
