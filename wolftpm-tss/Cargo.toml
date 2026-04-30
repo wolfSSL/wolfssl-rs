@@ -26,5 +26,5 @@ wolfcrypt-sys = { version = "0.1.3", path = "../wolfcrypt-sys" }
 
 # tpm-rs TSS client traits.  Not yet published to crates.io; pinned by commit.
 # Enable with the `tss` feature.
-tpm2-rs-client = { git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }
-tpm2-rs-base = { git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }
+tpm2-rs-client = { version = "0.1.0", git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }
+tpm2-rs-base = { version = "0.1.0", git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }
