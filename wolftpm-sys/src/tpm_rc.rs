@@ -3,12 +3,39 @@
 /// Covers:
 /// - TPM2-spec codes from `wolftpm/tpm_types.h` (`TPM_RC_T` enum).
 /// - wolfTPM internal codes (negative `i32` cast to `u32`; values >= `0x8000_0000`).
+/// - FMT1-qualified codes: if the exact code is not found and it looks like a
+///   FMT1 code (bit 7 set, bits 15:12 clear), the modifier bits are stripped
+///   (P-flag bit 6, subject-number bits 11:8) and the base code is looked up.
+///   For example, `TPM_RC_SIGNATURE | param_1` (`0x01DB`) resolves to
+///   `"TPM_RC_SIGNATURE"`.
 ///
 /// Pure modifier flags (`TPM_RC_H`, `TPM_RC_P`, `TPM_RC_S`, `TPM_RC_1`–`TPM_RC_F`,
 /// `TPM_RC_N_MASK`) and boundary markers (`RC_VER1`, `RC_FMT1`, `RC_WARN`,
 /// `RC_MAX_FM0`, `RC_MAX_FMT1`, `RC_MAX_WARN`, `TPM_RC_NOT_USED`) are omitted
 /// because they are not returned as standalone error codes.
 pub fn tpm_rc_name(rc: u32) -> Option<&'static str> {
+    tpm_rc_name_exact(rc).or_else(|| {
+        let base = fmt1_base(rc);
+        if base != rc { tpm_rc_name_exact(base) } else { None }
+    })
+}
+
+/// Strip FMT1 modifier bits from `rc` if it is a FMT1 code; otherwise return `rc` unchanged.
+///
+/// FMT1 codes (TPM2 Part 2 §6.6.3) have bit 7 set and bits 15:12 clear.
+/// The modifier bits are P-flag (bit 6 = 0x0040) and subject number (bits 11:8 = 0x0F00).
+/// wolfTPM internal codes have values >= 0x8000_0000, so bits 15:12 are always set
+/// and they are never mis-identified as FMT1.
+fn fmt1_base(rc: u32) -> u32 {
+    const FMT1_MODIFIER_MASK: u32 = 0x0F40;
+    if (rc & 0x80) != 0 && (rc & 0xF000) == 0 {
+        rc & !FMT1_MODIFIER_MASK
+    } else {
+        rc
+    }
+}
+
+fn tpm_rc_name_exact(rc: u32) -> Option<&'static str> {
     match rc {
         // Success
         0x0000 => Some("TPM_RC_SUCCESS"),
@@ -124,5 +151,40 @@ pub fn tpm_rc_name(rc: u32) -> Option<&'static str> {
         0xffffffa2 => Some("wolfTPM:LENGTH_ONLY_E(-94)"),     // LENGTH_ONLY_E
         0xffffff4a => Some("wolfTPM:NOT_COMPILED_IN(-182)"),  // NOT_COMPILED_IN
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn exact_codes_resolve() {
+        assert_eq!(tpm_rc_name(0x0000), Some("TPM_RC_SUCCESS"));
+        assert_eq!(tpm_rc_name(0x009b), Some("TPM_RC_SIGNATURE"));
+        assert_eq!(tpm_rc_name(0x0082), Some("TPM_RC_ATTRIBUTES"));
+        assert_eq!(tpm_rc_name(0x0101), Some("TPM_RC_FAILURE"));
+    }
+
+    #[test]
+    fn fmt1_qualified_codes_resolve() {
+        // TPM_RC_SIGNATURE (0x009B) | P-flag (0x040) | param_1 (0x100) = 0x01DB
+        assert_eq!(tpm_rc_name(0x01db), Some("TPM_RC_SIGNATURE"));
+        // TPM_RC_ATTRIBUTES (0x0082) | session_1 (0x200) = 0x0282
+        assert_eq!(tpm_rc_name(0x0282), Some("TPM_RC_ATTRIBUTES"));
+        // TPM_RC_VALUE (0x0084) | P-flag (0x040) | param_2 (0x200) = 0x02C4
+        assert_eq!(tpm_rc_name(0x02c4), Some("TPM_RC_VALUE"));
+    }
+
+    #[test]
+    fn wolftpm_internal_codes_resolve() {
+        assert_eq!(tpm_rc_name(0xffffff53), Some("wolfTPM:BAD_FUNC_ARG(-173)"));
+        // Internal codes are not mis-identified as FMT1 (bits 15:12 are set).
+        assert_eq!(tpm_rc_name(0xffffff00), None);
+    }
+
+    #[test]
+    fn unknown_code_returns_none() {
+        assert_eq!(tpm_rc_name(0xdeadbeef), None);
     }
 }

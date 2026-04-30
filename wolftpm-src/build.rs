@@ -103,6 +103,39 @@ fn main() {
         }
     }
 
+    // Assert that feature-required optional files are actually present.
+    // The optional_sources loop silently skips absent files (for older wolfTPM
+    // versions), but if a feature explicitly requires one of them, a missing
+    // file would produce a cryptic linker error rather than a clear message.
+    let linux_dev = env::var("CARGO_FEATURE_LINUX_DEV").is_ok();
+    let swtpm = env::var("CARGO_FEATURE_SWTPM").is_ok();
+    if linux_dev {
+        let p = src_dir.join("tpm2_linux.c");
+        if !p.exists() {
+            panic!(
+                "linux-dev feature requires {} but that file is missing from \
+                 the wolfTPM source at {}.\n\
+                 Disable the linux-dev feature or use wolfTPM ≥ v1.7 which \
+                 introduced tpm2_linux.c.",
+                p.display(),
+                wolftpm_src.display()
+            );
+        }
+    }
+    if swtpm {
+        let p = src_dir.join("tpm2_swtpm.c");
+        if !p.exists() {
+            panic!(
+                "swtpm feature requires {} but that file is missing from \
+                 the wolfTPM source at {}.\n\
+                 Disable the swtpm feature or use a wolfTPM version that \
+                 includes tpm2_swtpm.c.",
+                p.display(),
+                wolftpm_src.display()
+            );
+        }
+    }
+
     build.compile("wolftpm");
 
     // ----------------------------------------------------------------
@@ -148,6 +181,15 @@ fn generate_wolftpm_options(path: &std::path::Path) {
         let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
         if target_os == "linux" || target_os.is_empty() {
             writeln!(f, "#define WOLFTPM_LINUX_DEV").unwrap();
+        } else {
+            // No transport feature and not Linux: wolfTPM's hal/tpm_io.h will
+            // not have a transport implementation, which will cause a compile
+            // or link error.  Emit a warning now so the error is diagnosable.
+            println!(
+                "cargo:warning=wolftpm-src: no transport feature selected for \
+                 target_os={target_os}.  Enable the 'linux-dev' or 'swtpm' feature, \
+                 or provide a custom wolfTPM HAL."
+            );
         }
     }
     writeln!(f).unwrap();
