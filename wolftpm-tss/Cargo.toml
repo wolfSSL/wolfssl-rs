@@ -15,16 +15,13 @@ linux-dev = ["wolftpm-sys/linux-dev"]
 swtpm = ["wolftpm-sys/swtpm"]
 
 ## Enable the tpm-rs / TSS Connection trait implementations.
-## Requires tpm2-rs-client and tpm2-rs-base (not yet on crates.io; git deps).
-tss = ["dep:tpm2-rs-client", "dep:tpm2-rs-base"]
+## tpm2-rs-client and tpm2-rs-base are not yet on crates.io; use the git source:
+##   tpm2-rs-client = { git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9" }
+##   tpm2-rs-base   = { git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9" }
+tss = []
 
 [dependencies]
 # wolftpm-sys must be a direct [dependency] so that Cargo propagates
 # DEP_WOLFTPM_SRC_* and link metadata to downstream consumers.
 wolftpm-sys = { version = "0.1.0", path = "../wolftpm-sys" }
 wolfcrypt-sys = { version = "0.1.3", path = "../wolfcrypt-sys" }
-
-# tpm-rs TSS client traits.  Not yet published to crates.io; pinned by commit.
-# Enable with the `tss` feature.
-tpm2-rs-client = { version = "0.1.0", git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }
-tpm2-rs-base = { version = "0.1.0", git = "https://github.com/tpm-rs/tpm-rs", rev = "a7bf0e9126bab6c607a27a30e2f3df65f7e95371", optional = true }
