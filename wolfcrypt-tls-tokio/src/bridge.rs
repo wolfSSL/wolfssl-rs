@@ -1,28 +1,32 @@
-// wolfSSL custom IO callback registration and shims.
+// wolfSSL custom IO callback shims.
 //
-// wolfSSL_CTX_SetIORecv / wolfSSL_CTX_SetIOSend are registered here.
-// The callbacks draw from / append to the in-memory network buffers
+// The recv/send callbacks draw from / append to the in-memory network buffers
 // (net_in / net_out) held by TlsStream, completely decoupling wolfSSL's
 // synchronous C calls from the async executor.
 //
-// Safety invariant: the callbacks receive a raw pointer to a `Buffers`
-// value that is pinned for the lifetime of the WOLFSSL session.  The
-// pointer is set via wolfSSL_SetIOReadCtx / wolfSSL_SetIOWriteCtx.
+// Registration is done via TlsClientConfig::new_ssl_with_io_callbacks /
+// TlsServerConfig::new_ssl_with_io_callbacks (wolfcrypt-tls option-3 API),
+// not by calling wolfSSL_CTX_SetIORecv directly from this crate.
+//
+// Safety invariant: the callbacks receive a raw pointer to a `NetBuffers`
+// value that is heap-allocated and lives for the entire lifetime of the
+// WOLFSSL session.  The pointer is passed as `io_ctx` to
+// new_ssl_with_io_callbacks and installed via wolfSSL_SetIOReadCtx /
+// wolfSSL_SetIOWriteCtx by wolfcrypt-tls.
 
 use bytes::{Buf, BufMut, BytesMut};
-use wolfcrypt_sys::{WOLFSSL, WOLFSSL_CTX};
+use wolfcrypt_sys::WOLFSSL;
 
 // Return codes expected by wolfSSL custom IO callbacks.
-const WOLFSSL_CBIO_ERR_WANT_READ: std::ffi::c_int = -2;
-const WOLFSSL_CBIO_ERR_WANT_WRITE: std::ffi::c_int = -2;
-const WOLFSSL_CBIO_ERR_GENERAL: std::ffi::c_int = -1;
+pub(crate) const CBIO_ERR_WANT_READ: std::ffi::c_int = -2;
+pub(crate) const CBIO_ERR_WANT_WRITE: std::ffi::c_int = -2;
+pub(crate) const CBIO_ERR_GENERAL: std::ffi::c_int = -1;
 
 /// The pair of network-side byte buffers shared between the async driver
 /// and the wolfSSL custom IO callbacks.
 ///
-/// This struct is heap-allocated and pinned; the raw pointer is stored in
-/// the wolfSSL session context via `wolfSSL_SetIOReadCtx` /
-/// `wolfSSL_SetIOWriteCtx`.
+/// Heap-allocated via `Box::new`; the raw pointer is passed as `io_ctx` to
+/// `new_ssl_with_io_callbacks` and stored inside the wolfSSL session.
 pub(crate) struct NetBuffers {
     /// Encrypted bytes read from the network, waiting for wolfSSL to consume.
     pub net_in: BytesMut,
@@ -39,44 +43,44 @@ impl NetBuffers {
     }
 }
 
-/// Register the custom recv/send callbacks on a WOLFSSL_CTX.
+/// Custom recv callback: drain bytes from `net_in` into wolfSSL's buffer.
+///
+/// Returns the number of bytes copied, or `CBIO_ERR_WANT_READ` if `net_in`
+/// is empty (wolfSSL will retry after the async layer refills it).
 ///
 /// # Safety
-/// `ctx` must be a valid, non-null WOLFSSL_CTX pointer for its entire lifetime.
-pub(crate) unsafe fn register_callbacks(ctx: *mut WOLFSSL_CTX) {
-    todo!("wolfSSL_CTX_SetIORecv / wolfSSL_CTX_SetIOSend registration")
-}
-
-/// Install the NetBuffers pointer as the IO context for a WOLFSSL session.
-///
-/// # Safety
-/// `ssl` must be valid and `buffers` must outlive the session.
-pub(crate) unsafe fn set_io_ctx(ssl: *mut WOLFSSL, buffers: *mut NetBuffers) {
-    todo!("wolfSSL_SetIOReadCtx / wolfSSL_SetIOWriteCtx")
-}
-
-/// Custom recv callback: copy bytes from `net_in` into wolfSSL's buffer.
-///
-/// # Safety
-/// Called from wolfSSL C code; `ctx` is a `*mut NetBuffers` cast to `*mut c_void`.
-unsafe extern "C" fn recv_cb(
+/// Called from wolfSSL C code. `ctx` is a `*mut NetBuffers` cast to
+/// `*mut c_void`, installed via `wolfSSL_SetIOReadCtx`.
+pub(crate) unsafe extern "C" fn recv_cb(
     _ssl: *mut WOLFSSL,
     buf: *mut std::ffi::c_char,
     sz: std::ffi::c_int,
     ctx: *mut std::ffi::c_void,
 ) -> std::ffi::c_int {
-    todo!("drain net_in into buf")
+    todo!("drain net_in into buf; return byte count or CBIO_ERR_WANT_READ")
 }
 
-/// Custom send callback: append wolfSSL's output bytes to `net_out`.
+/// Custom send callback: append wolfSSL's output bytes into `net_out`.
+///
+/// Always succeeds immediately — the bytes are buffered in `net_out` and
+/// flushed to the network asynchronously by the poll_write driver.
 ///
 /// # Safety
-/// Called from wolfSSL C code; `ctx` is a `*mut NetBuffers` cast to `*mut c_void`.
-unsafe extern "C" fn send_cb(
+/// Called from wolfSSL C code. `ctx` is a `*mut NetBuffers` cast to
+/// `*mut c_void`, installed via `wolfSSL_SetIOWriteCtx`.
+pub(crate) unsafe extern "C" fn send_cb(
     _ssl: *mut WOLFSSL,
     buf: *mut std::ffi::c_char,
     sz: std::ffi::c_int,
     ctx: *mut std::ffi::c_void,
 ) -> std::ffi::c_int {
-    todo!("append buf into net_out")
+    todo!("append buf into net_out; return sz")
 }
+
+/// The recv callback as a `CallbackIORecv` option value for passing to
+/// `new_ssl_with_io_callbacks`.
+pub(crate) const RECV_CB: wolfssl::CallbackIORecv = Some(recv_cb);
+
+/// The send callback as a `CallbackIOSend` option value for passing to
+/// `new_ssl_with_io_callbacks`.
+pub(crate) const SEND_CB: wolfssl::CallbackIOSend = Some(send_cb);

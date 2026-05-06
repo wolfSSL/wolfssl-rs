@@ -26,3 +26,5 @@ pub use wolfssl::{
     Certificate, PrivateKey, ProtocolVersion, RootCertStore, TlsClientConfig,
     TlsClientConfigBuilder, TlsError, TlsServerConfig, TlsServerConfigBuilder,
 };
+// Re-export ensure_init so callers don't need to depend on wolfcrypt-tls directly.
+pub use wolfssl::ensure_init;

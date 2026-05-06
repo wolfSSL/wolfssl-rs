@@ -9,15 +9,30 @@
 // The recv/send callbacks (bridge.rs) always succeed immediately against
 // net_in/net_out.  All actual async network I/O happens here in poll_read /
 // poll_write before and after calling into wolfSSL.
+//
+// Session allocation is done via wolfcrypt-tls's option-3 API:
+//   TlsClientConfig::new_ssl_with_io_callbacks (client side)
+//   TlsServerConfig::new_ssl_with_io_callbacks (server side)
+// This keeps WOLFSSL_CTX creation and cert/key loading in wolfcrypt-tls.
 
 use std::io;
 use std::pin::Pin;
+use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use bytes::BytesMut;
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
+use wolfssl::{TlsClientConfig, TlsServerConfig};
+
 use crate::bridge::NetBuffers;
+
+/// Keeps the `WOLFSSL_CTX` (owned by the config's `Arc<CtxInner>`) alive
+/// for the entire lifetime of the `WOLFSSL` session.
+pub(crate) enum ConfigHolder {
+    Client(Arc<TlsClientConfig>),
+    Server(Arc<TlsServerConfig>),
+}
 
 /// A TLS stream wrapping an async IO transport.
 ///
@@ -32,7 +47,8 @@ pub struct TlsStream<IO> {
     pub(crate) ssl: *mut wolfcrypt_sys::WOLFSSL,
 
     /// Network-side buffers shared with the custom IO callbacks.
-    /// Heap-allocated and pinned so the raw pointer in wolfSSL stays valid.
+    /// Heap-allocated; the raw pointer stored in wolfSSL is valid for as
+    /// long as this Box is alive.
     pub(crate) net: Box<NetBuffers>,
 
     /// Decrypted application data ready for the caller.
@@ -40,6 +56,9 @@ pub struct TlsStream<IO> {
 
     /// Application data from the caller, waiting to be fed to wolfSSL_write.
     pub(crate) write_buf: BytesMut,
+
+    /// Keeps the WOLFSSL_CTX alive for the lifetime of this session.
+    pub(crate) _config: ConfigHolder,
 }
 
 // SAFETY: The WOLFSSL pointer is accessed only through &mut self, which
@@ -50,9 +69,19 @@ unsafe impl<IO: Send> Send for TlsStream<IO> {}
 impl<IO> Drop for TlsStream<IO> {
     fn drop(&mut self) {
         if !self.ssl.is_null() {
-            unsafe { wolfcrypt_sys::wolfSSL_free(self.ssl) };
+            // SAFETY: ssl was created by wolfSSL_new and has not been freed.
+            // Best-effort shutdown; errors intentionally ignored during drop.
+            unsafe {
+                let _ = wolfcrypt_sys::wolfSSL_shutdown(self.ssl);
+                wolfcrypt_sys::wolfSSL_free(self.ssl);
+            }
             self.ssl = std::ptr::null_mut();
         }
+        // net (NetBuffers) is dropped here via Box — the Box::into_raw /
+        // Box::from_raw contract: the NetBuffers box was created in
+        // connector.rs / acceptor.rs with Box::new and stored directly as
+        // pub(crate) net: Box<NetBuffers>.  Drop of TlsStream drops the Box
+        // normally, no manual from_raw needed.
     }
 }
 

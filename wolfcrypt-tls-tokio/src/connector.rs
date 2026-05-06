@@ -1,16 +1,20 @@
 // TlsConnector and Connect future — client-side TLS handshake.
+//
+// Session allocation delegates to TlsClientConfig::new_ssl_with_io_callbacks
+// (wolfcrypt-tls option-3 API), which creates the WOLFSSL* and wires up
+// bridge::recv_cb / send_cb in one call.
 
 use std::future::Future;
-use std::io;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use tokio::io::{AsyncRead, AsyncWrite};
 
-use wolfssl::{TlsClientConfig, TlsClientConfigBuilder};
+use wolfssl::TlsClientConfig;
 
-use crate::error::Result;
+use crate::bridge::{NetBuffers, RECV_CB, SEND_CB};
+use crate::error::{Error, Result};
 use crate::stream::TlsStream;
 
 /// Client-side TLS connector.  Cheap to clone; config is behind an `Arc`.
@@ -27,13 +31,41 @@ impl TlsConnector {
 
     /// Begin a TLS handshake on `stream`, verifying against `server_name`.
     ///
-    /// Returns a `Connect` future that resolves to a ready `TlsStream`.
+    /// Allocates a `WOLFSSL` session via
+    /// `TlsClientConfig::new_ssl_with_io_callbacks`, wiring bridge::recv_cb /
+    /// send_cb as the IO callbacks.  Returns a `Connect` future that drives
+    /// `wolfSSL_connect` until the handshake completes.
     pub fn connect<IO: AsyncRead + AsyncWrite + Unpin>(
         &self,
         server_name: &str,
         stream: IO,
-    ) -> Connect<IO> {
-        todo!("allocate WOLFSSL session, wire callbacks, return Connect future")
+    ) -> Result<Connect<IO>> {
+        // Heap-allocate the network buffers.  The raw pointer is passed as
+        // io_ctx to new_ssl_with_io_callbacks and stored inside wolfSSL.
+        // Box::into_raw transfers ownership; TlsStream::drop must Box::from_raw
+        // it back to free the allocation.
+        let net = Box::new(NetBuffers::new());
+        let io_ctx = Box::as_ref(&net) as *const NetBuffers as *mut core::ffi::c_void;
+
+        // SAFETY: recv_cb / send_cb are valid for the lifetime of the session.
+        // io_ctx points to the NetBuffers box which is kept alive inside TlsStream.
+        let ssl = unsafe {
+            self.config
+                .new_ssl_with_io_callbacks(server_name, RECV_CB, SEND_CB, io_ctx)
+                .map_err(Error::Tls)?
+        };
+
+        Ok(Connect {
+            state: Some(TlsStream {
+                io: stream,
+                ssl,
+                net,
+                read_buf: bytes::BytesMut::new(),
+                write_buf: bytes::BytesMut::new(),
+                // Keep the config alive so the WOLFSSL_CTX outlives the session.
+                _config: crate::stream::ConfigHolder::Client(self.config.clone()),
+            }),
+        })
     }
 }
 
