@@ -77,15 +77,14 @@ impl<IO> Drop for TlsStream<IO> {
             // wolfSSL_free quiesces callback use before returning, so it is
             // safe to drop self.net immediately after.
             //
-            // wolfSSL_shutdown is called here for best-effort: it writes a
-            // close_notify into net_out so wolfSSL's internal state is clean.
-            // The close_notify in net_out cannot be flushed asynchronously
-            // from Drop; it will be discarded when self.net is dropped.
-            // The underlying IO half closes when self.io drops, which the
-            // peer will see as EOF.  For a clean mutual shutdown, call
-            // poll_shutdown / shutdown().await explicitly before dropping.
+            // Call wolfSSL_shutdown only if poll_shutdown has not already done
+            // so.  Calling it twice would send duplicate close_notify records
+            // into net_out (which cannot be flushed from Drop anyway).
+            // For a clean bidirectional shutdown call shutdown().await first.
             unsafe {
-                let _ = wolfcrypt_sys::wolfSSL_shutdown(self.ssl);
+                if !self.shutdown_sent {
+                    let _ = wolfcrypt_sys::wolfSSL_shutdown(self.ssl);
+                }
                 wolfcrypt_sys::wolfSSL_free(self.ssl);
             }
             self.ssl = std::ptr::null_mut();

@@ -58,11 +58,12 @@ impl<IO> Drop for TlsStream<IO> {
     fn drop(&mut self) {
         if !self.ssl.is_null() {
             // SAFETY: ssl created by wolfSSL_new, not yet freed.
-            // wolfSSL_shutdown is called for best-effort; the resulting
-            // close_notify in net_out is discarded (cannot flush from Drop).
-            // Use poll_close / close().await for a clean mutual shutdown.
+            // Only call wolfSSL_shutdown if poll_close has not already done so;
+            // a second call would send a duplicate close_notify into net_out.
             unsafe {
-                let _ = wolfcrypt_sys::wolfSSL_shutdown(self.ssl);
+                if !self.shutdown_sent {
+                    let _ = wolfcrypt_sys::wolfSSL_shutdown(self.ssl);
+                }
                 wolfcrypt_sys::wolfSSL_free(self.ssl);
             }
             self.ssl = std::ptr::null_mut();
