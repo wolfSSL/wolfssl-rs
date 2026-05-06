@@ -52,9 +52,9 @@ impl TlsConnector {
                 ssl,
                 net,
                 read_buf: bytes::BytesMut::new(),
-                write_buf: bytes::BytesMut::new(),
                 _config: crate::stream::ConfigHolder::Client(self.config.clone()),
             }),
+            handshake_done: false,
         })
     }
 }
@@ -65,12 +65,51 @@ impl TlsConnector {
 /// fatal error occurs.
 pub struct Connect<IO> {
     state: Option<TlsStream<IO>>,
+    handshake_done: bool,
 }
 
 impl<IO: AsyncRead + AsyncWrite + Unpin> Future for Connect<IO> {
     type Output = Result<TlsStream<IO>>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        todo!("loop: fill_net_in → wolfSSL_connect → flush_net_out → check result")
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let want_read = wolfcrypt_sys::WOLFSSL_ERROR_WANT_READ as i32;
+        let want_write = wolfcrypt_sys::WOLFSSL_ERROR_WANT_WRITE as i32;
+        let success = wolfcrypt_sys::WOLFSSL_SUCCESS as i32;
+
+        loop {
+            if !self.handshake_done {
+                let stream = self.state.as_mut().expect("Connect polled after completion");
+                let ret = unsafe { wolfcrypt_sys::wolfSSL_connect(stream.ssl) };
+
+                if ret == success {
+                    self.handshake_done = true;
+                } else {
+                    let err = unsafe { wolfcrypt_sys::wolfSSL_get_error(stream.ssl, ret) };
+                    if err != want_read && err != want_write {
+                        return Poll::Ready(Err(Error::Tls(wolfssl::TlsError::Ffi {
+                            code: err,
+                            func: "wolfSSL_connect",
+                        })));
+                    }
+                    match stream.flush_net_out(cx) {
+                        Poll::Pending => return Poll::Pending,
+                        Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
+                        Poll::Ready(Ok(())) => {}
+                    }
+                    match stream.fill_net_in(cx) {
+                        Poll::Pending => return Poll::Pending,
+                        Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
+                        Poll::Ready(Ok(())) => continue,
+                    }
+                }
+            }
+
+            let stream = self.state.as_mut().unwrap();
+            match stream.flush_net_out(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
+                Poll::Ready(Ok(())) => return Poll::Ready(Ok(self.state.take().unwrap())),
+            }
+        }
     }
 }

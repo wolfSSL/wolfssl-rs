@@ -31,4 +31,4 @@ bytes          = "1"
 smol           = "2"
 # async-io for in-process duplex IO in tests (mirrors tokio::io::duplex).
 async-io       = "2"
-futures-util   = "0.3"
+futures-util   = { version = "0.3", features = ["io"] }

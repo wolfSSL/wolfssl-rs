@@ -1,8 +1,8 @@
 // TlsConnector and Connect future — client-side TLS handshake.
 //
-// NetBuffers implements wolfssl::IOCallbacks. Session allocation delegates to
-// TlsClientConfig::new_ssl_with_io_callbacks, which registers wolfcrypt-tls's
-// generated extern "C" shims pointing at the NetBuffers instance.
+// NetBuffers implements wolfssl::IOCallbacks.  new_session_with_io registers
+// the wolfcrypt-tls generic shims (io_recv_shim<NetBuffers> / io_send_shim)
+// and returns an ssl pointer ready to drive wolfSSL_connect.
 
 use std::future::Future;
 use std::pin::Pin;
@@ -58,10 +58,9 @@ impl TlsConnector {
                 ssl,
                 net,
                 read_buf: bytes::BytesMut::new(),
-                write_buf: bytes::BytesMut::new(),
-                // Keep the config alive so the WOLFSSL_CTX outlives the session.
                 _config: crate::stream::ConfigHolder::Client(self.config.clone()),
             }),
+            handshake_done: false,
         })
     }
 }
@@ -72,12 +71,60 @@ impl TlsConnector {
 /// until the handshake completes or a fatal error occurs.
 pub struct Connect<IO> {
     state: Option<TlsStream<IO>>,
+    /// Set to true once wolfSSL_connect returns WOLFSSL_SUCCESS.
+    /// Prevents calling wolfSSL_connect again while we drain net_out.
+    handshake_done: bool,
 }
 
 impl<IO: AsyncRead + AsyncWrite + Unpin> Future for Connect<IO> {
     type Output = Result<TlsStream<IO>>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        todo!("loop: fill_net_in → wolfSSL_connect → flush_net_out → check result")
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let want_read = wolfcrypt_sys::WOLFSSL_ERROR_WANT_READ as i32;
+        let want_write = wolfcrypt_sys::WOLFSSL_ERROR_WANT_WRITE as i32;
+        let success = wolfcrypt_sys::WOLFSSL_SUCCESS as i32;
+
+        loop {
+            if !self.handshake_done {
+                let stream = self.state.as_mut().expect("Connect polled after completion");
+                // Drive the handshake one step.  On first call net_in is empty;
+                // wolfSSL generates the ClientHello into net_out, returns WANT_READ.
+                // SAFETY: ssl is valid; exclusive access via &mut stream.
+                let ret = unsafe { wolfcrypt_sys::wolfSSL_connect(stream.ssl) };
+
+                if ret == success {
+                    self.handshake_done = true;
+                    // Fall through to final flush below.
+                } else {
+                    let err =
+                        unsafe { wolfcrypt_sys::wolfSSL_get_error(stream.ssl, ret) };
+                    if err != want_read && err != want_write {
+                        return Poll::Ready(Err(Error::Tls(wolfssl::TlsError::Ffi {
+                            code: err,
+                            func: "wolfSSL_connect",
+                        })));
+                    }
+                    // WANT_READ/WRITE: flush what we produced, then get more data.
+                    match stream.flush_net_out(cx) {
+                        Poll::Pending => return Poll::Pending,
+                        Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
+                        Poll::Ready(Ok(())) => {}
+                    }
+                    match stream.fill_net_in(cx) {
+                        Poll::Pending => return Poll::Pending,
+                        Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
+                        Poll::Ready(Ok(())) => continue,
+                    }
+                }
+            }
+
+            // Handshake complete — flush any remaining output then return.
+            let stream = self.state.as_mut().unwrap();
+            match stream.flush_net_out(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
+                Poll::Ready(Ok(())) => return Poll::Ready(Ok(self.state.take().unwrap())),
+            }
+        }
     }
 }

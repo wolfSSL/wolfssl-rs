@@ -95,7 +95,7 @@ pub(crate) unsafe extern "C" fn io_recv_shim<IOCB: IOCallbacks>(
     sz: core::ffi::c_int,
     ctx: *mut core::ffi::c_void,
 ) -> core::ffi::c_int {
-    use wolfcrypt_sys::{IOerrors_WOLFSSL_CBIO_ERR_WANT_READ, IOerrors_WOLFSSL_CBIO_ERR_WANT_WRITE};
+    use wolfcrypt_sys::IOerrors_WOLFSSL_CBIO_ERR_WANT_READ;
     debug_assert!(!ctx.is_null());
     let io = unsafe { &mut *(ctx as *mut IOCB) };
     let buf = unsafe { std::slice::from_raw_parts_mut(buf as *mut u8, sz as usize) };
