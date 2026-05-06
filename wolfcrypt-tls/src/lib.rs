@@ -114,13 +114,32 @@ mod tests {
     }
 
     #[test]
-    fn want_read_write_error_codes_are_negative() {
+    fn want_read_write_internal_codes_are_negative() {
+        // NOTE: these are INTERNAL callback return codes used by wolfSSL's
+        // custom IO callback mechanism, NOT the values that wolfSSL_get_error()
+        // returns. Do not use these in match arms on wolfSSL_get_error output.
         let want_read = wolfcrypt_sys::wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_READ_E;
         let want_write = wolfcrypt_sys::wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_WRITE_E;
         assert!(want_read < 0, "WANT_READ_E should be negative (got {want_read})");
         assert!(want_write < 0, "WANT_WRITE_E should be negative (got {want_write})");
         assert_eq!(want_read, -2, "WANT_READ_E should be -2");
         assert_eq!(want_write, -3, "WANT_WRITE_E should be -3");
+    }
+
+    #[test]
+    fn wolfssl_get_error_codes_are_positive() {
+        // wolfSSL_get_error() returns the OpenSSL-compatible positive values,
+        // not the negative _E internal callback codes.
+        assert_eq!(
+            wolfcrypt_sys::WOLFSSL_ERROR_WANT_READ as core::ffi::c_int,
+            2,
+            "WOLFSSL_ERROR_WANT_READ should be 2"
+        );
+        assert_eq!(
+            wolfcrypt_sys::WOLFSSL_ERROR_WANT_WRITE as core::ffi::c_int,
+            3,
+            "WOLFSSL_ERROR_WANT_WRITE should be 3"
+        );
     }
 
     #[test]

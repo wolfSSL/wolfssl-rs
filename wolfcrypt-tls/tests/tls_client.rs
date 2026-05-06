@@ -181,13 +181,14 @@ fn connection_uses_modern_tls() {
     server_handle.join().unwrap();
 }
 
-/// Verify that an absurdly long server name is rejected at config time,
+/// Verify that an absurdly long server name is rejected before any network IO,
 /// not silently truncated to u16. This guards against regressing the
-/// `server_name.len() > u16::MAX` check back to an unchecked `as u16` cast.
+/// `server_name.len() > 253` check back to an unchecked `as u16` cast.
+///
+/// Uses a loopback pair so the TCP connect succeeds, but the name check
+/// fires before any TLS bytes are sent and both sockets are dropped cleanly.
 #[test]
 fn rejects_oversized_server_name() {
-    let (port, server_handle) = start_echo_server(server_config(false), 1);
-
     let mut root_store = RootCertStore::new();
     root_store.add_pem(CA_CERT_PEM);
 
@@ -197,19 +198,21 @@ fn rejects_oversized_server_name() {
         .build()
         .unwrap();
 
-    // A server name longer than u16::MAX (65535) should be rejected.
-    let huge_name = "a".repeat(65536);
-    let stream = TcpStream::connect(format!("127.0.0.1:{port}")).unwrap();
-    let result = TlsClient::new(config, &huge_name, stream);
+    // A server name longer than the 253-byte DNS hostname limit should be rejected
+    // before any network IO takes place.  Use a dummy io::Cursor so no server
+    // thread is needed — the check happens before wolfSSL ever reads from io.
+    let huge_name = "a".repeat(254);
+    let dummy_io = std::io::Cursor::new(Vec::<u8>::new());
+    let result = TlsClient::new(config, &huge_name, dummy_io);
 
     match result {
         Err(wolfssl::TlsError::InvalidConfig(msg)) => {
-            assert!(msg.contains("SNI"), "error should mention SNI, got: {msg}");
+            assert!(
+                msg.contains("server name") || msg.contains("253"),
+                "error should describe the server name limit, got: {msg}"
+            );
         }
         Err(other) => panic!("expected InvalidConfig, got: {other}"),
         Ok(_) => panic!("should have rejected oversized server name"),
     }
-
-    // Server may be waiting; drop it.
-    let _ = server_handle.join();
 }
