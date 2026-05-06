@@ -6,6 +6,7 @@ license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 description = "Async TLS backed by wolfSSL — futures::io AsyncRead/AsyncWrite (smol, async-std)"
 homepage = "http://wolfssl.com"
 repository = "https://github.com/wolfSSL/wolfssl-rs"
+readme = "README.md"
 
 # Future: rename to wolfssl-futures-io once namespace is recovered.
 # Mirrors the tokio-rustls / futures-rustls split:

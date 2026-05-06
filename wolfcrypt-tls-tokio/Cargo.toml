@@ -6,6 +6,7 @@ license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 description = "Async TLS backed by wolfSSL — tokio AsyncRead/AsyncWrite"
 homepage = "http://wolfssl.com"
 repository = "https://github.com/wolfSSL/wolfssl-rs"
+readme = "README.md"
 
 # Future: rename to wolfssl-tokio once namespace is recovered.
 

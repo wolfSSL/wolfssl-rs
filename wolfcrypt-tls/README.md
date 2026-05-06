@@ -13,11 +13,10 @@ server deployments. `wolfcrypt-tls` gives you:
   [contact wolfSSL](https://www.wolfssl.com/license/))
 - **Small footprint** — designed for embedded targets alongside full server
   deployments; a single dependency chain, no OpenSSL
-- **Familiar Rust API** — `TlsClient`/`TlsServer` types that wrap standard
-  `std::io::Read + Write` streams
-- **Async-ready** — config types expose raw `WOLFSSL_CTX` and `WOLFSSL`
-  pointers and a session builder with custom IO callbacks, so async runtimes
-  (e.g. `wolfcrypt-tls-tokio`) can build on top without duplicating
+- **Familiar API** — `TlsClient` / `TlsServer` implement `std::io::Read +
+  Write` so they drop into any existing synchronous code
+- **Async-ready** — the config types expose session builders with typed IO
+  callbacks so async runtimes can build on top without duplicating
   cert/key loading logic
 
 ## Usage
@@ -88,7 +87,7 @@ let config = TlsClientConfig::builder()
     .build()?;
 ```
 
-### Protocol version control
+### Protocol version pinning
 
 ```rust
 use wolfssl::ProtocolVersion;
@@ -111,37 +110,38 @@ wolfcrypt-tls    Safe TlsClient / TlsServer API (this crate)
                  Exported as lib.name = "wolfssl"
 ```
 
-`TlsClientConfig` and `TlsServerConfig` wrap `WOLFSSL_CTX` in an
-`Arc`-backed RAII type. `TlsClient` and `TlsServer` wrap `WOLFSSL` session
-objects and implement `Read + Write`. The underlying transport is plugged in
-via wolfSSL's custom IO callback mechanism (`wolfSSL_SSLSetIORecv` /
-`wolfSSL_SSLSetIOSend`); any type implementing `Read + Write` satisfies the
-[`IOCallbacks`] trait automatically.
+`TlsClientConfig` and `TlsServerConfig` wrap `WOLFSSL_CTX` in an `Arc`-backed
+RAII type. `TlsClient` and `TlsServer` wrap `WOLFSSL` session objects and
+implement `Read + Write`. The underlying transport is plugged in via wolfSSL's
+custom IO callback mechanism (`wolfSSL_SSLSetIORecv` / `wolfSSL_SSLSetIOSend`);
+any type implementing `Read + Write` satisfies the `IOCallbacks` trait
+automatically, so `TcpStream`, `UnixStream`, in-memory cursors, and custom
+transports all work without adaptation.
 
-For async runtimes, the config types expose `new_ssl_with_io_callbacks` — a
-session builder that wires hand-rolled `extern "C"` recv/send callbacks and
-returns an owned `*mut WOLFSSL`. See `wolfcrypt-tls-tokio` for the tokio
-async layer built on this API.
+For async runtimes the config types expose `new_session_with_io`, a typed
+session builder that wires wolfSSL callbacks and returns an owned `*mut
+WOLFSSL`. See `wolfcrypt-tls-tokio` and `wolfcrypt-tls-futures-io` for the
+async layers built on this API.
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
+| Feature    | Description |
+|------------|-------------|
 | `vendored` | Compile wolfSSL from source (requires `WOLFSSL_SRC` or pkg-config) |
-| `fips` | Enable the wolfSSL FIPS 140-3 code path |
+| `fips`     | Enable the wolfSSL FIPS 140-3 code path |
 
 FIPS 140-3 validated builds require a wolfSSL commercial license and the
 validated source tree. [Contact wolfSSL](https://www.wolfssl.com/license/)
-for a commercial FIPS license. See the
-[workspace README](https://github.com/wolfSSL/wolfssl-rs) for details.
+for details. See the [workspace README](https://github.com/wolfSSL/wolfssl-rs)
+for FIPS build instructions.
 
 ## Status
 
 - TLS 1.2 and TLS 1.3
 - Client and server, including mutual TLS (mTLS)
 - Blocking I/O over any `Read + Write` transport
-- Async IO callback API for building async adapters
-- Unix and Windows socket support
+- Typed IO callback API for building async adapters
+- Tested on Linux (x86-64 and aarch64)
 
 ## Copyright
 
