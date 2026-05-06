@@ -34,6 +34,9 @@ pub struct TlsStream<IO> {
     pub(crate) net: Box<NetBuffers>,
     pub(crate) read_buf: BytesMut,
     pub(crate) _config: ConfigHolder,
+    /// True once wolfSSL_shutdown has been called in poll_close.
+    /// Prevents sending duplicate close_notify alerts on re-polls.
+    pub(crate) shutdown_sent: bool,
 }
 
 unsafe impl<IO: Send> Send for TlsStream<IO> {}
@@ -41,6 +44,10 @@ unsafe impl<IO: Send> Send for TlsStream<IO> {}
 impl<IO> Drop for TlsStream<IO> {
     fn drop(&mut self) {
         if !self.ssl.is_null() {
+            // SAFETY: ssl created by wolfSSL_new, not yet freed.
+            // wolfSSL_shutdown is called for best-effort; the resulting
+            // close_notify in net_out is discarded (cannot flush from Drop).
+            // Use poll_close / close().await for a clean mutual shutdown.
             unsafe {
                 let _ = wolfcrypt_sys::wolfSSL_shutdown(self.ssl);
                 wolfcrypt_sys::wolfSSL_free(self.ssl);
@@ -55,31 +62,38 @@ const READ_CHUNK: usize = 4096;
 impl<IO: AsyncRead + AsyncWrite + Unpin> TlsStream<IO> {
     /// Fill `net_in` from the underlying futures::io transport.
     ///
-    /// futures::io::AsyncRead::poll_read takes `&mut [u8]` (initialized).
-    /// We use `chunk_mut()` to reach the spare BytesMut region without
-    /// zero-initializing it — sound because we only advance_mut by the bytes
-    /// poll_read confirms it wrote.
+    /// `futures::io::AsyncRead::poll_read` takes `&mut [u8]` — an initialized
+    /// slice per the trait contract.  We use `resize` to zero-initialize the
+    /// spare region before passing it to `poll_read`, then truncate back if
+    /// fewer bytes were written.  This avoids the UB of passing uninit memory
+    /// to a safe trait method.
     pub(crate) fn fill_net_in(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        self.net.net_in.reserve(READ_CHUNK);
-        let spare_len = self.net.net_in.spare_capacity_mut().len();
+        let old_len = self.net.net_in.len();
+        // Extend with zeros to make the spare region initialized and accessible
+        // as &mut [u8].  resize() only zeroes the new bytes (old_len..old_len+READ_CHUNK).
+        self.net.net_in.resize(old_len + READ_CHUNK, 0);
 
-        // SAFETY: chunk_mut() points into uninitialized spare capacity.
-        // We only expose the region to poll_read and advance by what it wrote.
-        let buf_slice = unsafe {
-            let ptr = self.net.net_in.chunk_mut().as_mut_ptr();
-            std::slice::from_raw_parts_mut(ptr, spare_len)
-        };
-
-        match Pin::new(&mut self.io).poll_read(cx, buf_slice) {
-            Poll::Pending => Poll::Pending,
-            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
-            Poll::Ready(Ok(0)) => Poll::Ready(Err(io::Error::new(
-                io::ErrorKind::UnexpectedEof,
-                "peer closed the connection",
-            ))),
+        match Pin::new(&mut self.io).poll_read(cx, &mut self.net.net_in[old_len..]) {
+            Poll::Pending => {
+                // No bytes read; undo the resize to avoid leaving zero-padding
+                // in net_in that wolfSSL would try to parse.
+                self.net.net_in.truncate(old_len);
+                Poll::Pending
+            }
+            Poll::Ready(Err(e)) => {
+                self.net.net_in.truncate(old_len);
+                Poll::Ready(Err(e))
+            }
+            Poll::Ready(Ok(0)) => {
+                self.net.net_in.truncate(old_len);
+                Poll::Ready(Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "peer closed the connection",
+                )))
+            }
             Poll::Ready(Ok(n)) => {
-                // SAFETY: poll_read wrote n bytes into the spare region.
-                unsafe { self.net.net_in.advance_mut(n) };
+                // Keep exactly the bytes that were written.
+                self.net.net_in.truncate(old_len + n);
                 Poll::Ready(Ok(()))
             }
         }
@@ -135,6 +149,8 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncRead for TlsStream<IO> {
             }
 
             loop {
+                let net_in_before = this.net.net_in.len();
+
                 let mut tmp = [0u8; 16385];
                 let len = tmp.len().min(i32::MAX as usize) as i32;
                 // SAFETY: ssl is valid; exclusive access via &mut self.
@@ -158,6 +174,18 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncRead for TlsStream<IO> {
                 let want_read = wolfcrypt_sys::WOLFSSL_ERROR_WANT_READ as i32;
                 let want_write = wolfcrypt_sys::WOLFSSL_ERROR_WANT_WRITE as i32;
                 if err == want_read {
+                    let net_in_after = this.net.net_in.len();
+                    // Only call fill_net_in immediately if net_in was non-empty
+                    // but wolfSSL consumed nothing — genuine stall needing more
+                    // ciphertext to complete a record.  If net_in was already
+                    // empty, normal WANT_READ: break to outer loop.
+                    if net_in_before > 0 && net_in_after == net_in_before {
+                        match this.fill_net_in(cx) {
+                            Poll::Pending => return Poll::Pending,
+                            Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
+                            Poll::Ready(Ok(())) => continue,
+                        }
+                    }
                     break;
                 } else if err == want_write {
                     let _ = this.flush_net_out(cx);
@@ -222,21 +250,27 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
     /// futures::io uses `poll_close`; tokio uses `poll_shutdown`.
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let this = &mut *self;
-        // SAFETY: ssl is valid.
-        let ret = unsafe { wolfcrypt_sys::wolfSSL_shutdown(this.ssl) };
+
+        // Only call wolfSSL_shutdown once — re-calling it on subsequent polls
+        // would send duplicate close_notify records.
+        if !this.shutdown_sent {
+            // SAFETY: ssl is valid.
+            let ret = unsafe { wolfcrypt_sys::wolfSSL_shutdown(this.ssl) };
+            this.shutdown_sent = true;
+
+            if ret < 0 {
+                let err = unsafe { wolfcrypt_sys::wolfSSL_get_error(this.ssl, ret) };
+                return Poll::Ready(Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("wolfSSL_shutdown error {err}: {}", wolfssl_error_string(err)),
+                )));
+            }
+        }
 
         match this.flush_net_out(cx) {
             Poll::Pending => return Poll::Pending,
             Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
             Poll::Ready(Ok(())) => {}
-        }
-
-        if ret < 0 {
-            let err = unsafe { wolfcrypt_sys::wolfSSL_get_error(this.ssl, ret) };
-            return Poll::Ready(Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!("wolfSSL_shutdown error {err}: {}", wolfssl_error_string(err)),
-            )));
         }
 
         Pin::new(&mut this.io).poll_close(cx)

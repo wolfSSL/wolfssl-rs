@@ -29,8 +29,7 @@ async fn tls12_handshake_and_data_exchange() {
                     .build()
                     .unwrap(),
             );
-            let connector = TlsConnector::from(cfg);
-            let mut tls = connector.connect("localhost", client_io).unwrap().await?;
+            let mut tls = TlsConnector::from(cfg).connect("localhost", client_io).unwrap().await?;
             tls.write_all(b"tls12-client").await?;
             tls.flush().await?;
             let mut buf = [0u8; 12];
@@ -50,8 +49,7 @@ async fn tls12_handshake_and_data_exchange() {
                     .build()
                     .unwrap(),
             );
-            let acceptor = TlsAcceptor::from(cfg);
-            let mut tls = acceptor.accept(server_io).unwrap().await?;
+            let mut tls = TlsAcceptor::from(cfg).accept(server_io).unwrap().await?;
             let mut buf = [0u8; 12];
             tls.read_exact(&mut buf).await?;
             tls.write_all(&buf).await?;
