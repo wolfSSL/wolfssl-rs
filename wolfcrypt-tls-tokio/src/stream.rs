@@ -52,6 +52,8 @@ pub struct TlsStream<IO> {
 
 // SAFETY: accessed only via &mut self; WOLFSSL sessions are not Sync.
 unsafe impl<IO: Send> Send for TlsStream<IO> {}
+// Not Sync: WOLFSSL sessions require exclusive access (&mut self) for all
+// I/O operations and are not internally synchronized.
 
 impl<IO> TlsStream<IO> {
     /// Return the TLS protocol version negotiated during the handshake.
@@ -241,8 +243,16 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncRead for TlsStream<IO> {
                     // Normal WANT_READ: break to outer loop to fill net_in.
                     break;
                 } else if err == want_write {
-                    // wolfSSL produced output (e.g. renegotiation) — flush it.
-                    let _ = this.flush_net_out(cx);
+                    // wolfSSL produced output (e.g. renegotiation handshake
+                    // record) and needs it sent before it can continue.
+                    // Flush properly: if the write side is not ready, register
+                    // a write waker and return Pending so we're re-woken when
+                    // the transport becomes writable.
+                    match this.flush_net_out(cx) {
+                        Poll::Pending => return Poll::Pending,
+                        Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
+                        Poll::Ready(Ok(())) => {}
+                    }
                     break;
                 } else {
                     return Poll::Ready(Err(io::Error::new(
