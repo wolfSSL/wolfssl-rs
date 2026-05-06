@@ -259,9 +259,8 @@ fn mtls_rejection_client_without_cert() {
         };
 
         let (c, s) = futures_util::future::join(client_fut, server_fut).await;
-        assert!(
-            c.is_err() || s.is_err(),
-            "expected handshake failure when client presents no cert"
-        );
+        // Both sides must fail — server sends fatal alert, client receives it.
+        assert!(c.is_err(), "client should fail when server requires cert");
+        assert!(s.is_err(), "server should reject client with no cert");
     });
 }

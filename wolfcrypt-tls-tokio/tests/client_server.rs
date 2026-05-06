@@ -205,9 +205,9 @@ async fn mtls_rejection_client_without_cert() {
             .expect("accept init"),
     );
 
-    // At least one side must fail — the server rejects a client with no cert.
-    assert!(
-        client_result.is_err() || server_result.is_err(),
-        "expected handshake failure when client presents no cert"
-    );
+    // Both sides must fail — the server sends a fatal alert rejecting the client,
+    // which causes the server to error and the client to receive the alert and
+    // also error.
+    assert!(client_result.is_err(), "client should fail when server requires cert");
+    assert!(server_result.is_err(), "server should reject client with no cert");
 }

@@ -65,6 +65,12 @@ pub trait IOCallbacks {
 /// This means `TcpStream`, `UnixStream`, `std::io::Cursor<Vec<u8>>`, etc.
 /// all work with `TlsClient::new` and `TlsAcceptor::accept` with no
 /// changes to call sites.
+///
+/// **`Ok(0)` semantics**: When `Read::read` returns `Ok(0)` (TCP EOF / end of
+/// stream), this impl returns `IOCallbackResult::Ok(0)`, which the shim passes
+/// to wolfSSL as `0`.  wolfSSL's IO callback contract treats a `0` return as
+/// `CBIO_ERR_CONN_CLOSE` — peer closed the connection.  This is the correct
+/// mapping for a clean TCP half-close and is intentional.
 impl<T: io::Read + io::Write> IOCallbacks for T {
     fn recv(&mut self, buf: &mut [u8]) -> IOCallbackResult<usize> {
         match self.read(buf) {

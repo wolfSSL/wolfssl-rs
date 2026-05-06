@@ -75,6 +75,10 @@ impl From<io::Error> for TlsError {
 /// For the `Io` variant, equality is based on `ErrorKind` only — two errors
 /// with the same kind but different OS codes or messages compare as equal.
 /// For all other variants, field values are compared normally.
+///
+/// `Eq` holds: the impl is reflexive, symmetric, and transitive.
+impl Eq for TlsError {}
+
 impl PartialEq for TlsError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {

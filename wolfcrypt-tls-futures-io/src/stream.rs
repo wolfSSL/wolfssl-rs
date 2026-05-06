@@ -57,7 +57,11 @@ impl<IO: std::fmt::Debug> std::fmt::Debug for TlsStream<IO> {
 }
 
 impl<IO> TlsStream<IO> {
-    /// Return the TLS protocol version negotiated during the handshake.
+    /// Return the TLS protocol version for this session.
+    ///
+    /// Before the handshake completes, returns the configured method version.
+    /// After the handshake, returns the actually negotiated version.
+    /// Returns `None` only if the version code is unrecognised.
     pub fn negotiated_version(&self) -> Option<wolfssl::ProtocolVersion> {
         // SAFETY: ssl is valid; wolfSSL_version does not mutate session state.
         let v = unsafe { wolfcrypt_sys::wolfSSL_version(self.ssl) } as u32;
