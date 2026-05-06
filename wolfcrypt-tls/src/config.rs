@@ -38,7 +38,14 @@ pub struct TlsClientConfig {
     pub(crate) inner: Arc<CtxInner>,
 }
 
+impl std::fmt::Debug for TlsClientConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TlsClientConfig").finish_non_exhaustive()
+    }
+}
+
 /// Builder for [`TlsClientConfig`].
+#[must_use = "builder does nothing unless .build() is called"]
 pub struct TlsClientConfigBuilder {
     protocol_versions: Option<Vec<ProtocolVersion>>,
     root_store: Option<RootCertStore>,
@@ -223,13 +230,16 @@ impl TlsClientConfig {
 impl TlsClientConfigBuilder {
     /// Set the allowed TLS protocol versions.
     ///
-    /// If not called, defaults to TLS 1.2 and 1.3.
+    /// If not called, defaults to flexible version negotiation with TLS 1.2 as
+    /// the minimum (enforced via `wolfSSL_CTX_SetMinVersion`).
+    #[must_use]
     pub fn with_protocol_versions(mut self, versions: &[ProtocolVersion]) -> Self {
         self.protocol_versions = Some(versions.to_vec());
         self
     }
 
     /// Set the trusted root CA certificates.
+    #[must_use]
     pub fn with_root_certificates(mut self, store: RootCertStore) -> Self {
         self.root_store = Some(store);
         self
@@ -239,11 +249,13 @@ impl TlsClientConfigBuilder {
     ///
     /// This is the default and a no-op — it exists so that the builder chain
     /// reads explicitly (`.with_no_client_auth()` vs silently omitting the call).
+    #[must_use]
     pub fn with_no_client_auth(self) -> Self {
         self
     }
 
     /// Use client certificate authentication (mTLS).
+    #[must_use]
     pub fn with_client_auth(mut self, cert: Certificate, key: PrivateKey) -> Self {
         self.client_cert = Some(cert);
         self.client_key = Some(key);
@@ -251,6 +263,7 @@ impl TlsClientConfigBuilder {
     }
 
     /// Build the configuration.
+    #[must_use = "discarding the built config has no effect"]
     pub fn build(self) -> Result<TlsClientConfig> {
         ensure_init();
 

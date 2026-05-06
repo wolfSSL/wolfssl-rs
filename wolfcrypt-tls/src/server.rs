@@ -20,7 +20,14 @@ pub struct TlsServerConfig {
     pub(crate) inner: Arc<CtxInner>,
 }
 
+impl std::fmt::Debug for TlsServerConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TlsServerConfig").finish_non_exhaustive()
+    }
+}
+
 /// Builder for [`TlsServerConfig`].
+#[must_use = "builder does nothing unless .build() is called"]
 pub struct TlsServerConfigBuilder {
     protocol_versions: Option<Vec<ProtocolVersion>>,
     cert: Option<Certificate>,
@@ -124,12 +131,14 @@ impl TlsServerConfig {
 
 impl TlsServerConfigBuilder {
     /// Set the allowed TLS protocol versions.
+    #[must_use]
     pub fn with_protocol_versions(mut self, versions: &[ProtocolVersion]) -> Self {
         self.protocol_versions = Some(versions.to_vec());
         self
     }
 
     /// Set the server certificate chain and private key.
+    #[must_use]
     pub fn with_certificate_chain(mut self, cert: Certificate, key: PrivateKey) -> Self {
         self.cert = Some(cert);
         self.key = Some(key);
@@ -137,17 +146,20 @@ impl TlsServerConfigBuilder {
     }
 
     /// No client certificate authentication required (default, no-op).
+    #[must_use]
     pub fn with_no_client_auth(self) -> Self {
         self
     }
 
     /// Require client certificate authentication (mTLS).
+    #[must_use]
     pub fn with_client_auth(mut self, client_ca_store: RootCertStore) -> Self {
         self.client_ca_store = Some(client_ca_store);
         self
     }
 
     /// Build the configuration.
+    #[must_use = "discarding the built config has no effect"]
     pub fn build(self) -> Result<TlsServerConfig> {
         ensure_init();
 
@@ -227,6 +239,9 @@ impl TlsServerConfigBuilder {
 }
 
 /// Accepts TLS connections using a [`TlsServerConfig`].
+///
+/// Cheap to clone; the configuration is `Arc`-backed.
+#[derive(Clone)]
 pub struct TlsAcceptor {
     config: TlsServerConfig,
 }
@@ -306,6 +321,7 @@ impl<IOCB: IOCallbacks> std::fmt::Debug for TlsServer<IOCB> {
 
 // SAFETY: exclusive &mut self for I/O; WOLFSSL pointer can be moved across threads.
 unsafe impl<IOCB: IOCallbacks + Send> Send for TlsServer<IOCB> {}
+// Not Sync: same reasoning as TlsClient.
 
 impl<IOCB: IOCallbacks> TlsServer<IOCB> {
     /// Return the underlying `WOLFSSL` session pointer.
@@ -389,6 +405,10 @@ impl<IOCB: IOCallbacks> Write for TlsServer<IOCB> {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
+        // wolfSSL flushes its internal record buffer on every write call.
+        // The underlying transport is accessed only through IOCallbacks, which
+        // does not expose a flush operation.  There is no buffering layer here
+        // to flush — wolf SSL writes directly to the transport on each call.
         Ok(())
     }
 }

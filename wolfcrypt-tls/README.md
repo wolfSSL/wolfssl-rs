@@ -24,7 +24,7 @@ server deployments. `wolfcrypt-tls` gives you:
 
 ```toml
 [dependencies]
-wolfcrypt-tls = "0.1"
+wolfcrypt-tls = "0.2"
 ```
 
 ### TLS client
@@ -114,13 +114,14 @@ wolfcrypt-tls    Safe TlsClient / TlsServer API (this crate)
 `TlsClientConfig` and `TlsServerConfig` wrap `WOLFSSL_CTX` in an
 `Arc`-backed RAII type. `TlsClient` and `TlsServer` wrap `WOLFSSL` session
 objects and implement `Read + Write`. The underlying transport is plugged in
-via `wolfSSL_set_fd`; any type implementing `AsRawFd` (Unix) or
-`AsRawSocket` (Windows) works.
+via wolfSSL's custom IO callback mechanism (`wolfSSL_SSLSetIORecv` /
+`wolfSSL_SSLSetIOSend`); any type implementing `Read + Write` satisfies the
+[`IOCallbacks`] trait automatically.
 
-For async runtimes that cannot hand wolfSSL a raw file descriptor, the config
-types expose `new_ssl_with_io_callbacks` — a session builder that wires custom
-recv/send callbacks and returns an owned `*mut WOLFSSL`. See
-`wolfcrypt-tls-tokio` for the tokio async layer built on this API.
+For async runtimes, the config types expose `new_ssl_with_io_callbacks` — a
+session builder that wires hand-rolled `extern "C"` recv/send callbacks and
+returns an owned `*mut WOLFSSL`. See `wolfcrypt-tls-tokio` for the tokio
+async layer built on this API.
 
 ## Features
 
@@ -138,7 +139,7 @@ for a commercial FIPS license. See the
 
 - TLS 1.2 and TLS 1.3
 - Client and server, including mutual TLS (mTLS)
-- Blocking I/O over any `Read + Write + AsRawFd` transport
+- Blocking I/O over any `Read + Write` transport
 - Async IO callback API for building async adapters
 - Unix and Windows socket support
 

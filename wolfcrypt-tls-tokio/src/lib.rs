@@ -10,11 +10,11 @@
 // wolfssl crate) so callers share one config-building API across both the
 // blocking and async layers.
 
-pub mod acceptor;
-pub mod bridge;
-pub mod connector;
-pub mod error;
-pub mod stream;
+pub(crate) mod acceptor;
+pub(crate) mod bridge;
+pub(crate) mod connector;
+pub(crate) mod error;
+pub(crate) mod stream;
 
 pub use acceptor::{Accept, TlsAcceptor};
 pub use connector::{Connect, TlsConnector};

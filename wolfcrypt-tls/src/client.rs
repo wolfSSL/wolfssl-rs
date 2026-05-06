@@ -42,6 +42,8 @@ impl<IOCB: IOCallbacks> std::fmt::Debug for TlsClient<IOCB> {
 // SAFETY: WOLFSSL is not internally synchronized, but we require &mut self
 // for Read/Write, which provides exclusive access.
 unsafe impl<IOCB: IOCallbacks + Send> Send for TlsClient<IOCB> {}
+// Not Sync: WOLFSSL sessions are not internally synchronized; concurrent
+// &self access would require a Mutex around every wolfSSL call.
 
 impl<IOCB: IOCallbacks> TlsClient<IOCB> {
     /// Create a new TLS client connection over the given transport.
@@ -211,6 +213,10 @@ impl<IOCB: IOCallbacks> Write for TlsClient<IOCB> {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
+        // wolfSSL flushes its internal record buffer on every write call.
+        // The underlying transport is accessed only through IOCallbacks, which
+        // does not expose a flush operation.  There is no buffering layer here
+        // to flush — wolf SSL writes directly to the transport on each call.
         Ok(())
     }
 }
