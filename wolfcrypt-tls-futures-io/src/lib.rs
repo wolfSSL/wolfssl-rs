@@ -15,11 +15,11 @@
 // Tokio users: use wolfcrypt-tls-tokio instead.  If you need to bridge
 // between the two trait families, tokio-util's Compat wrapper works well.
 
-pub mod acceptor;
-pub mod bridge;
-pub mod connector;
-pub mod error;
-pub mod stream;
+pub(crate) mod acceptor;
+pub(crate) mod bridge;
+pub(crate) mod connector;
+pub(crate) mod error;
+pub(crate) mod stream;
 
 pub use acceptor::{Accept, TlsAcceptor};
 pub use connector::{Connect, TlsConnector};

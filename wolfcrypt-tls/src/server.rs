@@ -408,7 +408,7 @@ impl<IOCB: IOCallbacks> Write for TlsServer<IOCB> {
         // wolfSSL flushes its internal record buffer on every write call.
         // The underlying transport is accessed only through IOCallbacks, which
         // does not expose a flush operation.  There is no buffering layer here
-        // to flush — wolf SSL writes directly to the transport on each call.
+        // to flush — wolfSSL writes directly to the transport on each call.
         Ok(())
     }
 }

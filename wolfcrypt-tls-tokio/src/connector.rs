@@ -2,7 +2,7 @@
 //
 // NetBuffers implements wolfssl::IOCallbacks.  new_session_with_io registers
 // the wolfcrypt-tls generic shims (io_recv_shim<NetBuffers> / io_send_shim)
-// and returns an ssl pointer ready to drive wolfSSL_connect.
+// and returns a WOLFSSL* ready to drive wolfSSL_connect.
 
 use std::future::Future;
 use std::pin::Pin;
@@ -35,18 +35,16 @@ impl From<Arc<TlsClientConfig>> for TlsConnector {
 
 impl TlsConnector {
     /// Allocates a `WOLFSSL` session via
-    /// `TlsClientConfig::new_ssl_with_io_callbacks`, wiring bridge::recv_cb /
-    /// send_cb as the IO callbacks.  Returns a `Connect` future that drives
+    /// `TlsClientConfig::new_session_with_io`, wiring the typed `NetBuffers`
+    /// IO callbacks.  Returns a `Connect` future that drives
     /// `wolfSSL_connect` until the handshake completes.
     pub fn connect<IO: AsyncRead + AsyncWrite + Unpin>(
         &self,
         server_name: &str,
         stream: IO,
     ) -> Result<Connect<IO>> {
-        // Heap-allocate the network buffers.  The raw pointer is passed as
-        // io_ctx to new_ssl_with_io_callbacks and stored inside wolfSSL.
-        // Box::into_raw transfers ownership; TlsStream::drop must Box::from_raw
-        // it back to free the allocation.
+        // Heap-allocate the network buffers.  The Box address is stable and
+        // passed to new_session_with_io as the IO callbacks context.
         let mut net = Box::new(NetBuffers::new());
 
         // new_session_with_io registers the shims for NetBuffers: IOCallbacks

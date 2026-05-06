@@ -1,8 +1,7 @@
 // TlsAcceptor and Accept future — server-side TLS handshake.
 //
-// Session allocation delegates to TlsServerConfig::new_ssl_with_io_callbacks
-// (wolfcrypt-tls option-3 API), which creates the WOLFSSL* and wires up
-// bridge::recv_cb / send_cb in one call.
+// Session allocation uses TlsServerConfig::new_session_with_io, which creates
+// the WOLFSSL* and wires up the typed NetBuffers IO callbacks in one call.
 
 use std::future::Future;
 use std::pin::Pin;
@@ -34,8 +33,8 @@ impl TlsAcceptor {
     /// Begin a TLS handshake on an incoming `stream`.
     ///
     /// Allocates a `WOLFSSL` session via
-    /// `TlsServerConfig::new_ssl_with_io_callbacks`, wiring bridge::recv_cb /
-    /// send_cb as the IO callbacks.  Returns an `Accept` future that drives
+    /// `TlsServerConfig::new_session_with_io`, wiring the typed `NetBuffers`
+    /// IO callbacks.  Returns an `Accept` future that drives
     /// `wolfSSL_accept` until the handshake completes.
     pub fn accept<IO: AsyncRead + AsyncWrite + Unpin>(&self, stream: IO) -> Result<Accept<IO>> {
         let mut net = Box::new(NetBuffers::new());

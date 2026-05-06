@@ -258,48 +258,56 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
         }
         let this = &mut *self;
         let len = buf.len().min(i32::MAX as usize) as i32;
-        // SAFETY: ssl is valid.
-        let ret = unsafe {
-            wolfcrypt_sys::wolfSSL_write(
-                this.ssl,
-                buf.as_ptr() as *const core::ffi::c_void,
-                len,
-            )
-        };
-        if ret > 0 {
-            // Flush ciphertext best-effort. Per AsyncWrite contract, poll_write
-            // only needs to buffer; callers must poll_flush for guaranteed
-            // delivery.
-            let _ = this.flush_net_out(cx);
-            return Poll::Ready(Ok(ret as usize));
-        }
-        let err = unsafe { wolfcrypt_sys::wolfSSL_get_error(this.ssl, ret) };
         let want_read = wolfcrypt_sys::WOLFSSL_ERROR_WANT_READ as i32;
         let want_write = wolfcrypt_sys::WOLFSSL_ERROR_WANT_WRITE as i32;
-        if err == want_write {
-            // wolfSSL cannot proceed with the write yet; flush pending output
-            // and return Pending so the caller retries.
-            match this.flush_net_out(cx) {
-                Poll::Pending => return Poll::Pending,
-                Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
-                Poll::Ready(Ok(())) => {}
+
+        // Loop to handle TLS renegotiation (WANT_READ/WANT_WRITE from wolfSSL_write).
+        // In normal operation (TLS 1.3), wolfSSL_write succeeds or fails fatally on
+        // the first call.  TLS 1.2 renegotiation may require servicing read/write events
+        // before the write can proceed.
+        loop {
+            // SAFETY: ssl is valid.
+            let ret = unsafe {
+                wolfcrypt_sys::wolfSSL_write(
+                    this.ssl,
+                    buf.as_ptr() as *const core::ffi::c_void,
+                    len,
+                )
+            };
+            if ret > 0 {
+                // Flush ciphertext best-effort. Per AsyncWrite contract, poll_write
+                // only needs to buffer; callers must poll_flush for guaranteed
+                // delivery.
+                let _ = this.flush_net_out(cx);
+                return Poll::Ready(Ok(ret as usize));
             }
-            return Poll::Pending;
-        }
-        if err == want_read {
-            // TLS renegotiation (TLS 1.2): wolfSSL needs inbound data before
-            // it can encrypt.  Register a read waker and return Pending.
-            match this.fill_net_in(cx) {
-                Poll::Pending => return Poll::Pending,
-                Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
-                Poll::Ready(Ok(())) => {}
+            let err = unsafe { wolfcrypt_sys::wolfSSL_get_error(this.ssl, ret) };
+            if err == want_write {
+                // wolfSSL cannot proceed with the write yet; flush pending output.
+                match this.flush_net_out(cx) {
+                    Poll::Pending => return Poll::Pending,
+                    Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
+                    Poll::Ready(Ok(())) => {}
+                }
+                // Flush succeeded; retry wolfSSL_write.
+                continue;
             }
-            return Poll::Pending;
+            if err == want_read {
+                // TLS renegotiation (TLS 1.2): wolfSSL needs inbound data before
+                // it can encrypt.  Fill net_in; if data arrives immediately, retry
+                // wolfSSL_write rather than returning Pending without a waker.
+                match this.fill_net_in(cx) {
+                    Poll::Pending => return Poll::Pending,
+                    Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
+                    Poll::Ready(Ok(())) => {} // data arrived; retry wolfSSL_write
+                }
+                continue;
+            }
+            return Poll::Ready(Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("wolfSSL_write error {err}: {}", wolfssl_error_string(err)),
+            )));
         }
-        Poll::Ready(Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("wolfSSL_write error {err}: {}", wolfssl_error_string(err)),
-        )))
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
