@@ -20,7 +20,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use bytes::BytesMut;
+use bytes::{Buf, BufMut, BytesMut};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
 use wolfssl::{TlsClientConfig, TlsServerConfig};
@@ -85,15 +85,74 @@ impl<IO> Drop for TlsStream<IO> {
     }
 }
 
+// Read chunk size for fill_net_in.  Large enough to amortize poll overhead;
+// small enough to avoid excessive allocation on idle connections.
+const READ_CHUNK: usize = 4096;
+
 impl<IO: AsyncRead + AsyncWrite + Unpin> TlsStream<IO> {
     /// Poll the underlying IO to fill `net.net_in` with encrypted bytes.
+    ///
+    /// Returns `Ready(Ok(()))` as soon as at least one byte has been placed
+    /// into `net_in`.  The handshake / poll_read loops call this repeatedly
+    /// until wolfSSL's recv callback can make progress.
+    ///
+    /// Returns `Ready(Err(UnexpectedEof))` on clean EOF from the peer (zero-
+    /// byte read), so callers don't have to special-case it.
     pub(crate) fn fill_net_in(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        todo!("read from self.io into self.net.net_in")
+        // Ensure there is spare capacity for at least READ_CHUNK bytes so we
+        // always give the underlying IO a non-empty buffer.
+        self.net.net_in.reserve(READ_CHUNK);
+
+        // Build a ReadBuf over the uninitialized spare region of net_in.
+        // SAFETY: ReadBuf tracks the initialized portion; we advance_mut only
+        // by the number of bytes the poll confirmed were written.
+        let spare = self.net.net_in.spare_capacity_mut();
+        let mut read_buf = ReadBuf::uninit(spare);
+
+        match Pin::new(&mut self.io).poll_read(cx, &mut read_buf) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            Poll::Ready(Ok(())) => {
+                let n = read_buf.filled().len();
+                if n == 0 {
+                    // Peer closed the underlying stream cleanly.
+                    return Poll::Ready(Err(io::Error::new(
+                        io::ErrorKind::UnexpectedEof,
+                        "peer closed the connection",
+                    )));
+                }
+                // SAFETY: poll_read wrote exactly n bytes into the spare region.
+                unsafe { self.net.net_in.advance_mut(n) };
+                Poll::Ready(Ok(()))
+            }
+        }
     }
 
     /// Poll the underlying IO to flush `net.net_out` to the wire.
+    ///
+    /// Loops until `net_out` is empty or the underlying IO returns `Pending`.
+    /// Returns `Ready(Ok(()))` only when `net_out` is fully drained.
     pub(crate) fn flush_net_out(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        todo!("write self.net.net_out to self.io")
+        use bytes::Buf;
+
+        while !self.net.net_out.is_empty() {
+            // poll_write may write fewer bytes than requested; loop to drain.
+            match Pin::new(&mut self.io).poll_write(cx, self.net.net_out.chunk()) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
+                Poll::Ready(Ok(0)) => {
+                    // A write of zero bytes means the sink is closed.
+                    return Poll::Ready(Err(io::Error::new(
+                        io::ErrorKind::WriteZero,
+                        "underlying IO accepted zero bytes",
+                    )));
+                }
+                Poll::Ready(Ok(n)) => {
+                    self.net.net_out.advance(n);
+                }
+            }
+        }
+        Poll::Ready(Ok(()))
     }
 }
 

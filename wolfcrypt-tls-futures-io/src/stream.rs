@@ -6,26 +6,18 @@
 //   read_buf — decrypted application data ready for the caller's poll_read
 //   write_buf — app data from the caller, waiting to be fed to wolfSSL_write
 //
-// The key difference from the tokio crate: the IO bound is
-//   futures::io::AsyncRead + AsyncWrite + Unpin
-// instead of tokio::io::AsyncRead + AsyncWrite + Unpin.
-//
-// The poll_read signature also differs:
-//   futures: poll_read(Pin<&mut Self>, &mut Context, &mut [u8]) -> Poll<io::Result<usize>>
-//   tokio:   poll_read(Pin<&mut Self>, &mut Context, &mut ReadBuf<'_>) -> Poll<io::Result<()>>
-//
-// poll_close (futures::io::AsyncWrite) instead of poll_shutdown (tokio).
-//
-// Session allocation delegates to wolfcrypt-tls's option-3 API:
-//   TlsClientConfig::new_ssl_with_io_callbacks (client side)
-//   TlsServerConfig::new_ssl_with_io_callbacks (server side)
+// Key differences from the tokio crate:
+//   - IO bound: futures::io::AsyncRead + AsyncWrite + Unpin
+//   - poll_read: buf is &mut [u8], returns Poll<io::Result<usize>>
+//   - poll_close instead of poll_shutdown
+//   - fill_net_in uses the futures::io poll_read signature (no ReadBuf)
 
 use std::io;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use bytes::BytesMut;
+use bytes::{Buf, BufMut, BytesMut};
 use futures_io::{AsyncRead, AsyncWrite};
 
 use wolfssl::{TlsClientConfig, TlsServerConfig};
@@ -82,21 +74,64 @@ impl<IO> Drop for TlsStream<IO> {
     }
 }
 
+const READ_CHUNK: usize = 4096;
+
 impl<IO: AsyncRead + AsyncWrite + Unpin> TlsStream<IO> {
     /// Poll the underlying IO to fill `net.net_in` with encrypted bytes.
     ///
-    /// Uses `futures::io::AsyncRead::poll_read` — `&mut [u8]` buffer, returns
-    /// `usize` on success.  This is the key difference from the tokio version
-    /// which uses `ReadBuf<'_>`.
+    /// `futures::io::AsyncRead::poll_read` takes `&mut [u8]` (initialized),
+    /// unlike tokio's `ReadBuf` which works with uninitialized memory.
+    ///
+    /// We use `chunk_mut()` to get a pointer into the spare capacity region
+    /// and cast it to `&mut [u8]` without zero-initializing — this is sound
+    /// because futures-io's contract is that the implementation writes the
+    /// returned number of bytes and we only advance by that count.
     pub(crate) fn fill_net_in(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        todo!("read from self.io (futures::io::AsyncRead) into self.net.net_in")
+        self.net.net_in.reserve(READ_CHUNK);
+
+        // SAFETY: chunk_mut() returns the spare capacity region.  We cast
+        // to *mut u8 to build an initialized slice reference for poll_read.
+        // We only advance_mut by n (the bytes actually written by poll_read),
+        // so no uninit bytes are ever exposed as initialized.
+        let spare_len = self.net.net_in.spare_capacity_mut().len();
+        let buf_slice = unsafe {
+            let ptr = self.net.net_in.chunk_mut().as_mut_ptr();
+            std::slice::from_raw_parts_mut(ptr, spare_len)
+        };
+
+        match Pin::new(&mut self.io).poll_read(cx, buf_slice) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            Poll::Ready(Ok(0)) => Poll::Ready(Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "peer closed the connection",
+            ))),
+            Poll::Ready(Ok(n)) => {
+                // SAFETY: poll_read wrote exactly n bytes into the spare region.
+                unsafe { self.net.net_in.advance_mut(n) };
+                Poll::Ready(Ok(()))
+            }
+        }
     }
 
     /// Poll the underlying IO to flush `net.net_out` to the wire.
-    ///
-    /// Uses `futures::io::AsyncWrite::poll_write`.
     pub(crate) fn flush_net_out(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        todo!("write self.net.net_out to self.io (futures::io::AsyncWrite)")
+        while !self.net.net_out.is_empty() {
+            match Pin::new(&mut self.io).poll_write(cx, self.net.net_out.chunk()) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
+                Poll::Ready(Ok(0)) => {
+                    return Poll::Ready(Err(io::Error::new(
+                        io::ErrorKind::WriteZero,
+                        "underlying IO accepted zero bytes",
+                    )));
+                }
+                Poll::Ready(Ok(n)) => {
+                    self.net.net_out.advance(n);
+                }
+            }
+        }
+        Poll::Ready(Ok(()))
     }
 }
 
