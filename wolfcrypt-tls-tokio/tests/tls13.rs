@@ -29,12 +29,17 @@ async fn tls13_handshake_and_data_exchange() {
                     .build()
                     .unwrap(),
             );
-            let mut tls = TlsConnector::from(cfg).connect("localhost", client_io).unwrap().await?;
-            tls.write_all(b"tls13-client").await?;
-            tls.flush().await?;
-            let mut buf = [0u8; 12];
-            tls.read_exact(&mut buf).await?;
-            assert_eq!(&buf, b"tls13-client");
+        let mut tls = TlsConnector::from(cfg).connect("localhost", client_io).unwrap().await?;
+        assert_eq!(
+            tls.negotiated_version(),
+            Some(ProtocolVersion::Tls13),
+            "expected TLS 1.3 to be negotiated"
+        );
+        tls.write_all(b"tls13-client").await?;
+        tls.flush().await?;
+        let mut buf = [0u8; 12];
+        tls.read_exact(&mut buf).await?;
+        assert_eq!(&buf, b"tls13-client");
             Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
         },
         async {

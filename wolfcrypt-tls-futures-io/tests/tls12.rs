@@ -41,6 +41,11 @@ fn tls12_handshake_and_data_exchange() {
                     .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?
                     .await
                     .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+                assert_eq!(
+                    tls.negotiated_version(),
+                    Some(ProtocolVersion::Tls12),
+                    "expected TLS 1.2 to be negotiated"
+                );
                 tls.write_all(b"tls12").await?;
                 tls.flush().await?;
                 let mut buf = [0u8; 5];

@@ -29,12 +29,18 @@ async fn tls12_handshake_and_data_exchange() {
                     .build()
                     .unwrap(),
             );
-            let mut tls = TlsConnector::from(cfg).connect("localhost", client_io).unwrap().await?;
-            tls.write_all(b"tls12-client").await?;
-            tls.flush().await?;
-            let mut buf = [0u8; 12];
-            tls.read_exact(&mut buf).await?;
-            assert_eq!(&buf, b"tls12-client");
+        let mut tls = TlsConnector::from(cfg).connect("localhost", client_io).unwrap().await?;
+        // Verify the negotiated protocol is actually TLS 1.2, not a fallback.
+        assert_eq!(
+            tls.negotiated_version(),
+            Some(ProtocolVersion::Tls12),
+            "expected TLS 1.2 to be negotiated"
+        );
+        tls.write_all(b"tls12-client").await?;
+        tls.flush().await?;
+        let mut buf = [0u8; 12];
+        tls.read_exact(&mut buf).await?;
+        assert_eq!(&buf, b"tls12-client");
             Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
         },
         async {

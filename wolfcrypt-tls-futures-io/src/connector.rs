@@ -22,12 +22,13 @@ pub struct TlsConnector {
     config: Arc<TlsClientConfig>,
 }
 
-impl TlsConnector {
-    /// Create a connector from an already-built `TlsClientConfig`.
-    pub fn from(config: Arc<TlsClientConfig>) -> Self {
+impl From<Arc<TlsClientConfig>> for TlsConnector {
+    fn from(config: Arc<TlsClientConfig>) -> Self {
         TlsConnector { config }
     }
+}
 
+impl TlsConnector {
     /// Begin a TLS handshake on `stream`, verifying against `server_name`.
     ///
     /// `stream` must implement `futures::io::AsyncRead + AsyncWrite + Unpin` —

@@ -23,12 +23,14 @@ pub struct TlsAcceptor {
     config: Arc<TlsServerConfig>,
 }
 
-impl TlsAcceptor {
-    /// Create an acceptor from an already-built `TlsServerConfig`.
-    pub fn from(config: Arc<TlsServerConfig>) -> Self {
+impl From<Arc<TlsServerConfig>> for TlsAcceptor {
+    /// Create a `TlsAcceptor` from a shared server configuration.
+    fn from(config: Arc<TlsServerConfig>) -> Self {
         TlsAcceptor { config }
     }
+}
 
+impl TlsAcceptor {
     /// Begin a TLS handshake on an incoming `stream`.
     ///
     /// Allocates a `WOLFSSL` session via

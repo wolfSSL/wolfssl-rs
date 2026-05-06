@@ -41,6 +41,19 @@ pub struct TlsStream<IO> {
 
 unsafe impl<IO: Send> Send for TlsStream<IO> {}
 
+impl<IO> TlsStream<IO> {
+    /// Return the TLS protocol version negotiated during the handshake.
+    pub fn negotiated_version(&self) -> Option<wolfssl::ProtocolVersion> {
+        // SAFETY: ssl is valid; wolfSSL_version does not mutate session state.
+        let v = unsafe { wolfcrypt_sys::wolfSSL_version(self.ssl) } as u32;
+        match v {
+            wolfcrypt_sys::TLS1_2_VERSION => Some(wolfssl::ProtocolVersion::Tls12),
+            wolfcrypt_sys::TLS1_3_VERSION => Some(wolfssl::ProtocolVersion::Tls13),
+            _ => None,
+        }
+    }
+}
+
 impl<IO> Drop for TlsStream<IO> {
     fn drop(&mut self) {
         if !self.ssl.is_null() {

@@ -41,6 +41,11 @@ fn tls13_handshake_and_data_exchange() {
                     .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?
                     .await
                     .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+                assert_eq!(
+                    tls.negotiated_version(),
+                    Some(ProtocolVersion::Tls13),
+                    "expected TLS 1.3 to be negotiated"
+                );
                 tls.write_all(b"tls13").await?;
                 tls.flush().await?;
                 let mut buf = [0u8; 5];

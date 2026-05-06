@@ -23,14 +23,17 @@ pub struct TlsConnector {
     config: Arc<TlsClientConfig>,
 }
 
-impl TlsConnector {
-    /// Create a connector from an already-built `TlsClientConfig`.
-    pub fn from(config: Arc<TlsClientConfig>) -> Self {
+impl From<Arc<TlsClientConfig>> for TlsConnector {
+    /// Create a `TlsConnector` from a shared client configuration.
+    ///
+    /// Mirrors `tokio-rustls`'s `TlsConnector::from(Arc<ClientConfig>)`.
+    /// Also accessible as `TlsConnector::from(config)` or `config.into()`.
+    fn from(config: Arc<TlsClientConfig>) -> Self {
         TlsConnector { config }
     }
+}
 
-    /// Begin a TLS handshake on `stream`, verifying against `server_name`.
-    ///
+impl TlsConnector {
     /// Allocates a `WOLFSSL` session via
     /// `TlsClientConfig::new_ssl_with_io_callbacks`, wiring bridge::recv_cb /
     /// send_cb as the IO callbacks.  Returns a `Connect` future that drives
