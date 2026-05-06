@@ -10,9 +10,6 @@
 use bytes::{Buf, BufMut, BytesMut};
 use wolfssl::{IOCallbackResult, IOCallbacks};
 
-pub(crate) const CBIO_ERR_WANT_READ: std::ffi::c_int = -2;
-pub(crate) const CBIO_ERR_WANT_WRITE: std::ffi::c_int = -2;
-
 /// The pair of network-side byte buffers shared between the async driver
 /// and the wolfSSL IO callbacks.
 pub(crate) struct NetBuffers {
@@ -30,11 +27,22 @@ impl NetBuffers {
 }
 
 impl IOCallbacks for NetBuffers {
+    /// Drain bytes from `net_in` into wolfSSL's buffer.
+    /// Returns `WouldBlock` when empty; the async driver refills via `fill_net_in`.
     fn recv(&mut self, buf: &mut [u8]) -> IOCallbackResult<usize> {
-        todo!("drain net_in into buf; return Ok(n) or WouldBlock")
+        if self.net_in.is_empty() {
+            return IOCallbackResult::WouldBlock;
+        }
+        let n = buf.len().min(self.net_in.len());
+        buf[..n].copy_from_slice(&self.net_in[..n]);
+        self.net_in.advance(n);
+        IOCallbackResult::Ok(n)
     }
 
+    /// Append wolfSSL's encrypted output into `net_out`.
+    /// Always succeeds — `net_out` is unbounded and flushed asynchronously.
     fn send(&mut self, buf: &[u8]) -> IOCallbackResult<usize> {
-        todo!("append buf into net_out; return Ok(buf.len())")
+        self.net_out.put_slice(buf);
+        IOCallbackResult::Ok(buf.len())
     }
 }
