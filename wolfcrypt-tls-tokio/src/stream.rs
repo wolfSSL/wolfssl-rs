@@ -324,20 +324,7 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
     }
 }
 
-/// Look up a human-readable wolfSSL error string for an error code.
-fn wolfssl_error_string(code: core::ffi::c_int) -> String {
-    // Reuse the error_string from wolfcrypt-tls via its public re-export.
-    // Cast through c_uint to zero-extend negative codes (not sign-extend).
-    unsafe {
-        let ptr = wolfcrypt_sys::wolfSSL_ERR_reason_error_string(
-            (code as core::ffi::c_uint) as core::ffi::c_ulong,
-        );
-        if ptr.is_null() {
-            return format!("unknown error {code}");
-        }
-        std::ffi::CStr::from_ptr(ptr)
-            .to_str()
-            .unwrap_or("unknown")
-            .to_owned()
-    }
+/// Delegate to `wolfssl::error_string` for a human-readable error description.
+fn wolfssl_error_string(code: core::ffi::c_int) -> &'static str {
+    wolfssl::error_string(code)
 }

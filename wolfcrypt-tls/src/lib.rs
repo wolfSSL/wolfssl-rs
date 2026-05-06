@@ -43,7 +43,7 @@ pub use callback::{IOCallbackResult, IOCallbacks};
 pub use certificate::{Certificate, PrivateKey, RootCertStore};
 pub use client::TlsClient;
 pub use config::{TlsClientConfig, TlsClientConfigBuilder};
-pub use error::{Result, TlsError};
+pub use error::{error_string, Result, TlsError};
 pub use protocol::ProtocolVersion;
 pub use server::{TlsAcceptor, TlsServer, TlsServerConfig, TlsServerConfigBuilder};
 // Raw callback type aliases from wolfcrypt-sys, re-exported so callers of
@@ -95,7 +95,12 @@ pub fn ensure_init() {
     INIT.call_once(|| {
         // SAFETY: wolfSSL_Init is safe to call once at startup.
         let ret = unsafe { wolfSSL_Init() };
-        assert!(ret >= 0, "wolfSSL_Init failed with code {ret}");
+        // wolfSSL_Init returns WOLFSSL_SUCCESS (1) on success; 0 is not documented
+        // as a success value, so check for equality rather than >= 0.
+        assert!(
+            ret == WOLFSSL_SUCCESS as core::ffi::c_int,
+            "wolfSSL_Init failed with code {ret}"
+        );
     });
 }
 

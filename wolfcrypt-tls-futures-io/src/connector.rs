@@ -42,9 +42,12 @@ impl TlsConnector {
     ) -> Result<Connect<IO>> {
         let mut net = Box::new(NetBuffers::new());
 
-        let ssl = self.config
-            .new_session_with_io(server_name, &mut *net)
-            .map_err(Error::Tls)?;
+        // SAFETY: net is Box-allocated and kept alive in TlsStream; wolfSSL_free
+        // is called in TlsStream::drop before net is dropped.
+        let ssl = unsafe {
+            self.config.new_session_with_io(server_name, &mut *net)
+        }
+        .map_err(Error::Tls)?;
 
         Ok(Connect {
             state: Some(TlsStream {

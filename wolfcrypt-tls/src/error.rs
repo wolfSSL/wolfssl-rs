@@ -73,7 +73,10 @@ impl From<io::Error> for TlsError {
 ///
 /// Falls back to `wc_GetErrorString` for wolfCrypt-only codes, and finally
 /// to `"unknown error"` if neither function recognises the code.
-pub(crate) fn error_string(code: core::ffi::c_int) -> &'static str {
+///
+/// Re-exported as `wolfssl::error_string` so async adapter crates can use
+/// it without duplicating the lookup logic.
+pub fn error_string(code: core::ffi::c_int) -> &'static str {
     // Try the SSL-level lookup first — it handles the full error range.
     // Cast through c_uint first to zero-extend (not sign-extend) negative
     // codes into c_ulong. On LP64 platforms c_ulong is 64-bit; a direct

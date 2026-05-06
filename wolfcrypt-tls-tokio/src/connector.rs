@@ -48,9 +48,12 @@ impl TlsConnector {
 
         // new_session_with_io registers the shims for NetBuffers: IOCallbacks
         // and returns the raw WOLFSSL* without driving a handshake.
-        let ssl = self.config
-            .new_session_with_io(server_name, &mut *net)
-            .map_err(Error::Tls)?;
+        // SAFETY: net is Box-allocated and kept alive in TlsStream; wolfSSL_free
+        // is called in TlsStream::drop before net is dropped.
+        let ssl = unsafe {
+            self.config.new_session_with_io(server_name, &mut *net)
+        }
+        .map_err(Error::Tls)?;
 
         Ok(Connect {
             state: Some(TlsStream {

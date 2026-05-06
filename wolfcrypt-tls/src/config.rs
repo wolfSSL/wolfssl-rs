@@ -65,16 +65,28 @@ impl TlsClientConfig {
     /// The caller passes a `&mut IOCB`; wolfcrypt-tls registers the shims
     /// and returns the raw session pointer.
     ///
-    /// The caller must keep `io` alive for the entire lifetime of the
-    /// returned `*mut WOLFSSL` — the pointer stored in wolfSSL points into
-    /// `io`.  `wolfSSL_free` quiesces callbacks before returning, so it is
-    /// safe to drop `io` after calling `wolfSSL_free`.
-    ///
     /// Optionally sets SNI if `server_name` is non-empty.
     ///
     /// # Errors
     /// Returns `TlsError` if `wolfSSL_new` or `wolfSSL_UseSNI` fails.
-    pub fn new_session_with_io<IOCB: crate::callback::IOCallbacks>(
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for ensuring:
+    ///
+    /// 1. `io` must remain valid and at its current address for the entire
+    ///    lifetime of the returned `*mut WOLFSSL` session.  The pointer to
+    ///    `io` is stored inside wolfSSL; wolfSSL will call back into `io`
+    ///    on every read/write/handshake operation.  Moving or dropping `io`
+    ///    before the session is freed is undefined behavior.
+    ///
+    /// 2. The caller must call `wolfSSL_free` on the returned pointer before
+    ///    dropping `io`.  `wolfSSL_free` quiesces all callback use before
+    ///    returning, so it is safe to drop `io` immediately after.
+    ///
+    /// 3. The `WOLFSSL_CTX` backing this config must remain alive for the
+    ///    session's lifetime (keep a clone of this `TlsClientConfig`).
+    pub unsafe fn new_session_with_io<IOCB: crate::callback::IOCallbacks>(
         &self,
         server_name: &str,
         io: &mut IOCB,

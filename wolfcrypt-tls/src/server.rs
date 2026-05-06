@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use wolfcrypt_sys::*;
 
-use crate::callback::{errorkind_to_cbio, IOCallbackResult, IOCallbacks};
+use crate::callback::{io_recv_shim, io_send_shim, IOCallbacks};
 use crate::certificate::{Certificate, PrivateKey, RootCertStore};
 use crate::config::CtxInner;
 use crate::error::{expect_wolfssl_success, Result, TlsError};
@@ -52,26 +52,24 @@ impl TlsServerConfig {
         self.inner.ctx
     }
 
-    /// Allocate a new `WOLFSSL` session from this config with raw custom IO
-    /// callbacks.
-    ///
     /// Allocate a new `WOLFSSL` session from this config with a typed
     /// [`IOCallbacks`] implementation.
     ///
     /// The server-side equivalent of `TlsClientConfig::new_session_with_io`.
-    /// The caller passes a `&mut IOCB`; wolfcrypt-tls registers the shims and
-    /// returns the raw session pointer.
-    ///
-    /// The caller must keep `io` alive for the lifetime of the returned
-    /// `*mut WOLFSSL`. `wolfSSL_free` quiesces callbacks before returning.
     ///
     /// # Errors
     /// Returns `TlsError` if `wolfSSL_new` fails.
-    pub fn new_session_with_io<IOCB: crate::callback::IOCallbacks>(
+    ///
+    /// # Safety
+    ///
+    /// Same contract as `TlsClientConfig::new_session_with_io`:
+    /// `io` must remain valid at its current address for the entire lifetime
+    /// of the returned `*mut WOLFSSL`, and `wolfSSL_free` must be called
+    /// before `io` is dropped.
+    pub unsafe fn new_session_with_io<IOCB: crate::callback::IOCallbacks>(
         &self,
         io: &mut IOCB,
     ) -> crate::error::Result<*mut wolfcrypt_sys::WOLFSSL> {
-        use crate::callback::{io_recv_shim, io_send_shim};
         use crate::error::TlsError;
 
         let ssl = unsafe { wolfSSL_new(self.inner.ctx) };
@@ -240,11 +238,12 @@ impl TlsAcceptor {
 
         let mut io = Box::new(io);
 
+        // Use the generic shims from callback.rs (same as TlsClient and config path).
         // SAFETY: shims are 'static; io is behind a Box (stable address);
         // wolfSSL_free quiesces callbacks before io is dropped.
         unsafe {
-            wolfSSL_SSLSetIORecv(guard.as_ptr(), Some(TlsServer::<IOCB>::io_recv_shim));
-            wolfSSL_SSLSetIOSend(guard.as_ptr(), Some(TlsServer::<IOCB>::io_send_shim));
+            wolfSSL_SSLSetIORecv(guard.as_ptr(), Some(io_recv_shim::<IOCB>));
+            wolfSSL_SSLSetIOSend(guard.as_ptr(), Some(io_send_shim::<IOCB>));
             let ctx = &mut *io as *mut IOCB as *mut c_void;
             wolfSSL_SetIOReadCtx(guard.as_ptr(), ctx);
             wolfSSL_SetIOWriteCtx(guard.as_ptr(), ctx);
@@ -277,6 +276,8 @@ impl TlsAcceptor {
 pub struct TlsServer<IOCB: IOCallbacks> {
     ssl: *mut WOLFSSL,
     /// Boxed for a stable heap address used by the IO callbacks.
+    /// Held for its Drop side-effect — the Box must outlive `ssl`.
+    #[allow(dead_code)]
     io: Box<IOCB>,
     /// Keeps the WOLFSSL_CTX alive for the lifetime of this session.
     #[allow(dead_code)]
@@ -303,41 +304,6 @@ impl<IOCB: IOCallbacks> TlsServer<IOCB> {
         self.ssl
     }
 
-    unsafe extern "C" fn io_recv_shim(
-        _ssl: *mut WOLFSSL,
-        buf: *mut core::ffi::c_char,
-        sz: core::ffi::c_int,
-        ctx: *mut c_void,
-    ) -> core::ffi::c_int {
-        debug_assert!(!ctx.is_null());
-        let io = unsafe { &mut *(ctx as *mut IOCB) };
-        let buf = unsafe { std::slice::from_raw_parts_mut(buf as *mut u8, sz as usize) };
-        match io.recv(buf) {
-            IOCallbackResult::Ok(n) => n as core::ffi::c_int,
-            IOCallbackResult::WouldBlock => IOerrors_WOLFSSL_CBIO_ERR_WANT_READ,
-            IOCallbackResult::Err(e) => {
-                errorkind_to_cbio(e.kind(), IOerrors_WOLFSSL_CBIO_ERR_WANT_READ)
-            }
-        }
-    }
-
-    unsafe extern "C" fn io_send_shim(
-        _ssl: *mut WOLFSSL,
-        buf: *mut core::ffi::c_char,
-        sz: core::ffi::c_int,
-        ctx: *mut c_void,
-    ) -> core::ffi::c_int {
-        debug_assert!(!ctx.is_null());
-        let io = unsafe { &mut *(ctx as *mut IOCB) };
-        let buf = unsafe { std::slice::from_raw_parts(buf as *const u8, sz as usize) };
-        match io.send(buf) {
-            IOCallbackResult::Ok(n) => n as core::ffi::c_int,
-            IOCallbackResult::WouldBlock => IOerrors_WOLFSSL_CBIO_ERR_WANT_WRITE,
-            IOCallbackResult::Err(e) => {
-                errorkind_to_cbio(e.kind(), IOerrors_WOLFSSL_CBIO_ERR_WANT_WRITE)
-            }
-        }
-    }
 }
 
 impl<IOCB: IOCallbacks> Read for TlsServer<IOCB> {

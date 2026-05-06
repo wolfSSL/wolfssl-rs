@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 
 use wolfcrypt_sys::*;
 
-use crate::callback::{errorkind_to_cbio, IOCallbackResult, IOCallbacks};
+use crate::callback::{io_recv_shim, io_send_shim, IOCallbacks};
 use crate::config::TlsClientConfig;
 use crate::error::{Result, TlsError};
 use crate::SslGuard;
@@ -85,12 +85,13 @@ impl<IOCB: IOCallbacks> TlsClient<IOCB> {
         let mut io = Box::new(io);
 
         // Register the custom IO callbacks and context pointer.
+        // Uses the generic shims from callback.rs to avoid duplication.
         // SAFETY: shims are 'static; io is behind a Box so the address is
         // stable; wolfSSL_free (called in Drop) quiesces callbacks before
         // io is dropped.
         unsafe {
-            wolfSSL_SSLSetIORecv(guard.as_ptr(), Some(Self::io_recv_shim));
-            wolfSSL_SSLSetIOSend(guard.as_ptr(), Some(Self::io_send_shim));
+            wolfSSL_SSLSetIORecv(guard.as_ptr(), Some(io_recv_shim::<IOCB>));
+            wolfSSL_SSLSetIOSend(guard.as_ptr(), Some(io_send_shim::<IOCB>));
             let ctx = &mut *io as *mut IOCB as *mut c_void;
             wolfSSL_SetIOReadCtx(guard.as_ptr(), ctx);
             wolfSSL_SetIOWriteCtx(guard.as_ptr(), ctx);
@@ -135,51 +136,6 @@ impl<IOCB: IOCallbacks> TlsClient<IOCB> {
         self.ssl
     }
 
-    /// Custom recv shim: called by wolfSSL to receive bytes.
-    ///
-    /// # Safety
-    /// Called from wolfSSL C code. `ctx` is `*mut IOCB` cast to `*mut c_void`.
-    unsafe extern "C" fn io_recv_shim(
-        _ssl: *mut WOLFSSL,
-        buf: *mut core::ffi::c_char,
-        sz: core::ffi::c_int,
-        ctx: *mut c_void,
-    ) -> core::ffi::c_int {
-        debug_assert!(!ctx.is_null());
-        // SAFETY: ctx is &mut *self.io, exclusively accessed via &mut self.
-        let io = unsafe { &mut *(ctx as *mut IOCB) };
-        // SAFETY: wolfSSL guarantees buf is valid for sz bytes.
-        let buf = unsafe { std::slice::from_raw_parts_mut(buf as *mut u8, sz as usize) };
-        match io.recv(buf) {
-            IOCallbackResult::Ok(n) => n as core::ffi::c_int,
-            IOCallbackResult::WouldBlock => IOerrors_WOLFSSL_CBIO_ERR_WANT_READ,
-            IOCallbackResult::Err(e) => {
-                errorkind_to_cbio(e.kind(), IOerrors_WOLFSSL_CBIO_ERR_WANT_READ)
-            }
-        }
-    }
-
-    /// Custom send shim: called by wolfSSL to send bytes.
-    ///
-    /// # Safety
-    /// Called from wolfSSL C code. `ctx` is `*mut IOCB` cast to `*mut c_void`.
-    unsafe extern "C" fn io_send_shim(
-        _ssl: *mut WOLFSSL,
-        buf: *mut core::ffi::c_char,
-        sz: core::ffi::c_int,
-        ctx: *mut c_void,
-    ) -> core::ffi::c_int {
-        debug_assert!(!ctx.is_null());
-        let io = unsafe { &mut *(ctx as *mut IOCB) };
-        let buf = unsafe { std::slice::from_raw_parts(buf as *const u8, sz as usize) };
-        match io.send(buf) {
-            IOCallbackResult::Ok(n) => n as core::ffi::c_int,
-            IOCallbackResult::WouldBlock => IOerrors_WOLFSSL_CBIO_ERR_WANT_WRITE,
-            IOCallbackResult::Err(e) => {
-                errorkind_to_cbio(e.kind(), IOerrors_WOLFSSL_CBIO_ERR_WANT_WRITE)
-            }
-        }
-    }
 }
 
 impl<IOCB: IOCallbacks> Read for TlsClient<IOCB> {
