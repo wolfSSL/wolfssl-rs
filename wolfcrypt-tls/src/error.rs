@@ -70,6 +70,28 @@ impl From<io::Error> for TlsError {
     }
 }
 
+/// Manual `PartialEq` because `io::Error` is not `PartialEq`.
+///
+/// For the `Io` variant, equality is based on `ErrorKind` only — two errors
+/// with the same kind but different OS codes or messages compare as equal.
+/// For all other variants, field values are compared normally.
+impl PartialEq for TlsError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (TlsError::InvalidConfig(a), TlsError::InvalidConfig(b)) => a == b,
+            (TlsError::CertificateVerification(a), TlsError::CertificateVerification(b)) => a == b,
+            (TlsError::Io(a), TlsError::Io(b)) => a.kind() == b.kind(),
+            (TlsError::AllocFailed { func: a }, TlsError::AllocFailed { func: b }) => a == b,
+            (
+                TlsError::Ffi { code: ca, func: fa },
+                TlsError::Ffi { code: cb, func: fb },
+            ) => ca == cb && fa == fb,
+            (TlsError::Closed, TlsError::Closed) => true,
+            _ => false,
+        }
+    }
+}
+
 /// Look up the human-readable description for a wolfSSL / wolfCrypt error code.
 ///
 /// Uses `wolfSSL_ERR_reason_error_string` which covers both SSL-level errors

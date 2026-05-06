@@ -33,6 +33,12 @@ pub enum IOCallbackResult<T> {
 /// `IOCallbacks`, so `TcpStream`, `UnixStream`, in-memory `Cursor`, etc.
 /// all work out of the box.
 ///
+/// **Limitation**: because this is a blanket impl, you cannot implement
+/// `IOCallbacks` directly on a type that also implements both `Read` and
+/// `Write` — the blanket impl is the only valid impl for such types.  If
+/// you need custom callback behavior on a `Read+Write` type, wrap it in a
+/// newtype that does *not* implement both `Read` and `Write`.
+///
 /// # Async
 /// For async runtimes, implement `IOCallbacks` on a type that holds
 /// `net_in` / `net_out` byte buffers (as in `wolfcrypt-tls-tokio` and
@@ -77,10 +83,6 @@ impl<T: io::Read + io::Write> IOCallbacks for T {
     }
 }
 
-/// Convert an `io::ErrorKind` into the appropriate wolfSSL CBIO error code.
-///
-/// `would_block_code` is either `WOLFSSL_CBIO_ERR_WANT_READ` or
-/// `WOLFSSL_CBIO_ERR_WANT_WRITE` depending on which callback is calling.
 /// Generic `extern "C"` recv shim for any `IOCB: IOCallbacks`.
 ///
 /// Used by `TlsClientConfig::new_session_with_io` and
@@ -97,6 +99,7 @@ pub(crate) unsafe extern "C" fn io_recv_shim<IOCB: IOCallbacks>(
 ) -> core::ffi::c_int {
     use wolfcrypt_sys::IOerrors_WOLFSSL_CBIO_ERR_WANT_READ;
     debug_assert!(!ctx.is_null());
+    debug_assert!(sz > 0, "wolfSSL passed non-positive sz to recv shim: {sz}");
     let io = unsafe { &mut *(ctx as *mut IOCB) };
     let buf = unsafe { std::slice::from_raw_parts_mut(buf as *mut u8, sz as usize) };
     match io.recv(buf) {
@@ -118,6 +121,7 @@ pub(crate) unsafe extern "C" fn io_send_shim<IOCB: IOCallbacks>(
 ) -> core::ffi::c_int {
     use wolfcrypt_sys::{IOerrors_WOLFSSL_CBIO_ERR_WANT_WRITE};
     debug_assert!(!ctx.is_null());
+    debug_assert!(sz > 0, "wolfSSL passed non-positive sz to send shim: {sz}");
     let io = unsafe { &mut *(ctx as *mut IOCB) };
     let buf = unsafe { std::slice::from_raw_parts(buf as *const u8, sz as usize) };
     match io.send(buf) {
@@ -127,6 +131,10 @@ pub(crate) unsafe extern "C" fn io_send_shim<IOCB: IOCallbacks>(
     }
 }
 
+/// Convert an `io::ErrorKind` into the appropriate wolfSSL CBIO error code.
+///
+/// `would_block_code` is either `WOLFSSL_CBIO_ERR_WANT_READ` or
+/// `WOLFSSL_CBIO_ERR_WANT_WRITE` depending on which callback is calling.
 pub(crate) fn errorkind_to_cbio(
     kind: io::ErrorKind,
     would_block_code: core::ffi::c_int,

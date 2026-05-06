@@ -7,7 +7,7 @@
 
 use std::io;
 use std::pin::Pin;
-use std::sync::Arc;
+
 use std::task::{Context, Poll};
 
 use bytes::{Buf, BytesMut};
@@ -18,10 +18,13 @@ use wolfssl::{TlsClientConfig, TlsServerConfig};
 use crate::bridge::NetBuffers;
 
 /// Keeps the `WOLFSSL_CTX` alive for the lifetime of the WOLFSSL session.
+///
+/// `TlsClientConfig` / `TlsServerConfig` are already `Arc`-backed internally,
+/// so cloning one is a cheap refcount bump.  No outer `Arc` wrapping needed.
 #[allow(dead_code)]
 pub(crate) enum ConfigHolder {
-    Client(Arc<TlsClientConfig>),
-    Server(Arc<TlsServerConfig>),
+    Client(TlsClientConfig),
+    Server(TlsServerConfig),
 }
 
 /// An established TLS connection over a futures::io async transport.
@@ -42,6 +45,16 @@ pub struct TlsStream<IO> {
 unsafe impl<IO: Send> Send for TlsStream<IO> {}
 // Not Sync: WOLFSSL sessions require exclusive access (&mut self) for all
 // I/O operations and are not internally synchronized.
+
+impl<IO: std::fmt::Debug> std::fmt::Debug for TlsStream<IO> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TlsStream")
+            .field("ssl", &self.ssl)
+            .field("negotiated_version", &self.negotiated_version())
+            .field("shutdown_sent", &self.shutdown_sent)
+            .finish_non_exhaustive()
+    }
+}
 
 impl<IO> TlsStream<IO> {
     /// Return the TLS protocol version negotiated during the handshake.
@@ -79,37 +92,23 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> TlsStream<IO> {
     /// Fill `net_in` from the underlying futures::io transport.
     ///
     /// `futures::io::AsyncRead::poll_read` takes `&mut [u8]` — an initialized
-    /// slice per the trait contract.  We use `resize` to zero-initialize the
-    /// spare region before passing it to `poll_read`, then truncate back if
-    /// fewer bytes were written.  This avoids the UB of passing uninit memory
-    /// to a safe trait method.
+    /// slice per the trait contract.  We use a zero-initialized stack buffer,
+    /// call `poll_read` into it, then `extend_from_slice` only on success.
+    /// This avoids leaving stale zero bytes in `net_in` if `poll_read` panics
+    /// (unlike the resize+truncate approach which modifies `net_in` before the
+    /// call and relies on cleanup code that never runs on unwind).
     pub(crate) fn fill_net_in(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let old_len = self.net.net_in.len();
-        // Extend with zeros to make the spare region initialized and accessible
-        // as &mut [u8].  resize() only zeroes the new bytes (old_len..old_len+READ_CHUNK).
-        self.net.net_in.resize(old_len + READ_CHUNK, 0);
-
-        match Pin::new(&mut self.io).poll_read(cx, &mut self.net.net_in[old_len..]) {
-            Poll::Pending => {
-                // No bytes read; undo the resize to avoid leaving zero-padding
-                // in net_in that wolfSSL would try to parse.
-                self.net.net_in.truncate(old_len);
-                Poll::Pending
-            }
-            Poll::Ready(Err(e)) => {
-                self.net.net_in.truncate(old_len);
-                Poll::Ready(Err(e))
-            }
-            Poll::Ready(Ok(0)) => {
-                self.net.net_in.truncate(old_len);
-                Poll::Ready(Err(io::Error::new(
-                    io::ErrorKind::UnexpectedEof,
-                    "peer closed the connection",
-                )))
-            }
+        let mut tmp = [0u8; READ_CHUNK];
+        match Pin::new(&mut self.io).poll_read(cx, &mut tmp) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            Poll::Ready(Ok(0)) => Poll::Ready(Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "peer closed the connection",
+            ))),
             Poll::Ready(Ok(n)) => {
-                // Keep exactly the bytes that were written.
-                self.net.net_in.truncate(old_len + n);
+                // Only append the bytes that were actually written.
+                self.net.net_in.extend_from_slice(&tmp[..n]);
                 Poll::Ready(Ok(()))
             }
         }

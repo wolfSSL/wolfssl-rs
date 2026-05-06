@@ -5,6 +5,7 @@ use std::io;
 
 /// Errors that can occur during async TLS operations.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     /// An error from the underlying wolfSSL session (propagated from wolfcrypt-tls).
     Tls(wolfssl::TlsError),

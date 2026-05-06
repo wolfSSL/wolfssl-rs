@@ -193,6 +193,13 @@ impl TlsClientConfig {
         use crate::error::TlsError;
         use wolfcrypt_sys::*;
 
+        // Validate inputs before any FFI call.
+        if server_name.len() > 253 {
+            return Err(TlsError::InvalidConfig(
+                "server name exceeds maximum DNS hostname length (253 bytes)",
+            ));
+        }
+
         let ssl = wolfSSL_new(self.inner.ctx);
         if ssl.is_null() {
             return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
@@ -207,11 +214,6 @@ impl TlsClientConfig {
 
         // Set SNI if provided.
         if !server_name.is_empty() {
-            if server_name.len() > 253 {
-                return Err(TlsError::InvalidConfig(
-                    "server name exceeds maximum DNS hostname length (253 bytes)",
-                ));
-            }
             let ret = wolfSSL_UseSNI(
                 guard.as_ptr(),
                 WOLFSSL_SNI_HOST_NAME as core::ffi::c_uchar,

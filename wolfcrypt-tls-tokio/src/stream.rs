@@ -11,7 +11,7 @@
 
 use std::io;
 use std::pin::Pin;
-use std::sync::Arc;
+
 use std::task::{Context, Poll};
 
 use bytes::{Buf, BufMut, BytesMut};
@@ -21,13 +21,14 @@ use wolfssl::{TlsClientConfig, TlsServerConfig};
 
 use crate::bridge::NetBuffers;
 
-
 /// Keeps the `WOLFSSL_CTX` alive for the entire lifetime of the WOLFSSL session.
-/// Fields are held for their Drop side-effect (Arc refcount), not read directly.
+///
+/// `TlsClientConfig` / `TlsServerConfig` are already `Arc`-backed internally,
+/// so cloning one is a cheap refcount bump.  No outer `Arc` wrapping needed.
 #[allow(dead_code)]
 pub(crate) enum ConfigHolder {
-    Client(Arc<TlsClientConfig>),
-    Server(Arc<TlsServerConfig>),
+    Client(TlsClientConfig),
+    Server(TlsServerConfig),
 }
 
 /// An established TLS connection over an async transport.
@@ -54,6 +55,16 @@ pub struct TlsStream<IO> {
 unsafe impl<IO: Send> Send for TlsStream<IO> {}
 // Not Sync: WOLFSSL sessions require exclusive access (&mut self) for all
 // I/O operations and are not internally synchronized.
+
+impl<IO: std::fmt::Debug> std::fmt::Debug for TlsStream<IO> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TlsStream")
+            .field("ssl", &self.ssl)
+            .field("negotiated_version", &self.negotiated_version())
+            .field("shutdown_sent", &self.shutdown_sent)
+            .finish_non_exhaustive()
+    }
+}
 
 impl<IO> TlsStream<IO> {
     /// Return the TLS protocol version negotiated during the handshake.

@@ -17,7 +17,7 @@ use crate::error::{Error, Result};
 use crate::stream::TlsStream;
 
 /// Server-side TLS acceptor.  Cheap to clone; config is behind an `Arc`.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TlsAcceptor {
     config: Arc<TlsServerConfig>,
 }
@@ -53,7 +53,7 @@ impl TlsAcceptor {
                 net,
                 read_buf: bytes::BytesMut::new(),
                 shutdown_sent: false,
-                _config: crate::stream::ConfigHolder::Server(self.config.clone()),
+                _config: crate::stream::ConfigHolder::Server((*self.config).clone()),
             }),
             handshake_done: false,
         })
@@ -67,6 +67,14 @@ impl TlsAcceptor {
 pub struct Accept<IO> {
     state: Option<TlsStream<IO>>,
     handshake_done: bool,
+}
+
+impl<IO: std::fmt::Debug> std::fmt::Debug for Accept<IO> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Accept")
+            .field("handshake_done", &self.handshake_done)
+            .finish_non_exhaustive()
+    }
 }
 
 impl<IO: AsyncRead + AsyncWrite + Unpin> Future for Accept<IO> {
@@ -116,11 +124,11 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> Future for Accept<IO> {
                 }
             }
 
-            let stream = self.state.as_mut().unwrap();
+            let stream = self.state.as_mut().expect("polled after completion");
             match stream.flush_net_out(cx) {
                 Poll::Pending => return Poll::Pending,
                 Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
-                Poll::Ready(Ok(())) => return Poll::Ready(Ok(self.state.take().unwrap())),
+                Poll::Ready(Ok(())) => return Poll::Ready(Ok(self.state.take().expect("state was None after handshake_done"))),
             }
         }
     }

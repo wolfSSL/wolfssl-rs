@@ -117,6 +117,12 @@ impl Certificate {
     }
 }
 
+impl AsRef<[u8]> for Certificate {
+    fn as_ref(&self) -> &[u8] {
+        &self.data
+    }
+}
+
 /// A private key (PEM or DER encoded).
 ///
 /// The key material is zeroized on drop.

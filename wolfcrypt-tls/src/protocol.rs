@@ -4,7 +4,7 @@ use crate::error::Result;
 use crate::error::TlsError;
 
 /// TLS protocol version to use.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum ProtocolVersion {
     /// TLS 1.2

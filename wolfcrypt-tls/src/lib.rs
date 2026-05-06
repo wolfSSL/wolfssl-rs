@@ -61,6 +61,12 @@ use wolfcrypt_sys::*;
 /// transfer ownership to the caller.
 pub(crate) struct SslGuard(pub(crate) *mut wolfcrypt_sys::WOLFSSL);
 
+impl std::fmt::Debug for SslGuard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("SslGuard").field(&self.0).finish()
+    }
+}
+
 impl Drop for SslGuard {
     fn drop(&mut self) {
         // SAFETY: the WOLFSSL pointer was created by wolfSSL_new and has
