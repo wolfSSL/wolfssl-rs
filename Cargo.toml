@@ -31,6 +31,7 @@ members = [
     "ssh-key-wolfcrypt",
     "wolfcrypt-tls",
     "wolfcrypt-tls-tokio",
+    "wolfcrypt-tls-futures-io",
     "wolfhsm-src",
     "wolfhsm-sys",
     "wolfhsm",

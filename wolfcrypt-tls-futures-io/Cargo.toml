@@ -1,0 +1,34 @@
+[package]
+name = "wolfcrypt-tls-futures-io"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
+description = "Async TLS backed by wolfSSL — futures::io AsyncRead/AsyncWrite (smol, async-std)"
+homepage = "http://wolfssl.com"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+
+# Future: rename to wolfssl-futures-io once namespace is recovered.
+# Mirrors the tokio-rustls / futures-rustls split:
+#   wolfcrypt-tls-tokio      → tokio::io::AsyncRead + AsyncWrite
+#   wolfcrypt-tls-futures-io → futures::io::AsyncRead + AsyncWrite (this crate)
+
+[lib]
+name = "wolfssl_futures_io"
+
+[features]
+default = []
+vendored = ["wolfcrypt-tls/vendored"]
+fips = ["wolfcrypt-tls/fips"]
+
+[dependencies]
+wolfcrypt-tls = { version = "0.1.4", path = "../wolfcrypt-tls" }
+wolfcrypt-sys  = { version = "0.1.4", path = "../wolfcrypt-sys" }
+futures-io     = "0.3"
+bytes          = "1"
+
+[dev-dependencies]
+# smol as the test executor — the primary target runtime for this crate.
+smol           = "2"
+# async-io for in-process duplex IO in tests (mirrors tokio::io::duplex).
+async-io       = "2"
+futures-util   = "0.3"
