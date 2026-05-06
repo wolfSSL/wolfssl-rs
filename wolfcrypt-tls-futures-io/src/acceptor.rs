@@ -12,7 +12,7 @@ use futures_io::{AsyncRead, AsyncWrite};
 
 use wolfssl::TlsServerConfig;
 
-use crate::bridge::{NetBuffers, RECV_CB, SEND_CB};
+use crate::bridge::NetBuffers;
 use crate::error::{Error, Result};
 use crate::stream::TlsStream;
 
@@ -36,16 +36,11 @@ impl TlsAcceptor {
     /// Returns an `Accept` future that drives `wolfSSL_accept` until the
     /// handshake completes.
     pub fn accept<IO: AsyncRead + AsyncWrite + Unpin>(&self, stream: IO) -> Result<Accept<IO>> {
-        let net = Box::new(NetBuffers::new());
-        let io_ctx = Box::as_ref(&net) as *const NetBuffers as *mut core::ffi::c_void;
+        let mut net = Box::new(NetBuffers::new());
 
-        // SAFETY: recv_cb / send_cb are valid for the lifetime of the session.
-        // io_ctx points to the NetBuffers box kept alive inside TlsStream.
-        let ssl = unsafe {
-            self.config
-                .new_ssl_with_io_callbacks(RECV_CB, SEND_CB, io_ctx)
-                .map_err(Error::Tls)?
-        };
+        let ssl = self.config
+            .new_session_with_io(&mut *net)
+            .map_err(Error::Tls)?;
 
         Ok(Accept {
             state: Some(TlsStream {

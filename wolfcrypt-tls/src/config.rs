@@ -57,6 +57,68 @@ impl TlsClientConfig {
         }
     }
 
+    /// Allocate a new `WOLFSSL` session from this config with a typed
+    /// [`IOCallbacks`] implementation.
+    ///
+    /// This is the preferred entry point for async layers that manage their
+    /// own transport buffers (e.g. `wolfcrypt-tls-tokio`'s `NetBuffers`).
+    /// The caller passes a `&mut IOCB`; wolfcrypt-tls registers the shims
+    /// and returns the raw session pointer.
+    ///
+    /// The caller must keep `io` alive for the entire lifetime of the
+    /// returned `*mut WOLFSSL` — the pointer stored in wolfSSL points into
+    /// `io`.  `wolfSSL_free` quiesces callbacks before returning, so it is
+    /// safe to drop `io` after calling `wolfSSL_free`.
+    ///
+    /// Optionally sets SNI if `server_name` is non-empty.
+    ///
+    /// # Errors
+    /// Returns `TlsError` if `wolfSSL_new` or `wolfSSL_UseSNI` fails.
+    pub fn new_session_with_io<IOCB: crate::callback::IOCallbacks>(
+        &self,
+        server_name: &str,
+        io: &mut IOCB,
+    ) -> crate::error::Result<*mut wolfcrypt_sys::WOLFSSL> {
+        use crate::callback::{io_recv_shim, io_send_shim};
+        use crate::error::TlsError;
+        use wolfcrypt_sys::*;
+
+        if server_name.len() > u16::MAX as usize {
+            return Err(TlsError::InvalidConfig("server name exceeds maximum SNI length"));
+        }
+
+        let ssl = unsafe { wolfSSL_new(self.inner.ctx) };
+        if ssl.is_null() {
+            return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
+        }
+        let guard = crate::SslGuard(ssl);
+
+        if !server_name.is_empty() {
+            let ret = unsafe {
+                wolfSSL_UseSNI(
+                    guard.as_ptr(),
+                    WOLFSSL_SNI_HOST_NAME as core::ffi::c_uchar,
+                    server_name.as_ptr() as *const core::ffi::c_void,
+                    server_name.len() as u16,
+                )
+            };
+            if ret != WOLFSSL_SUCCESS as core::ffi::c_int {
+                return Err(TlsError::Ffi { code: ret, func: "wolfSSL_UseSNI" });
+            }
+        }
+
+        // SAFETY: shims are 'static; io ptr is valid for the caller-guaranteed lifetime.
+        unsafe {
+            wolfSSL_SSLSetIORecv(guard.as_ptr(), Some(io_recv_shim::<IOCB>));
+            wolfSSL_SSLSetIOSend(guard.as_ptr(), Some(io_send_shim::<IOCB>));
+            let ctx = io as *mut IOCB as *mut core::ffi::c_void;
+            wolfSSL_SetIOReadCtx(guard.as_ptr(), ctx);
+            wolfSSL_SetIOWriteCtx(guard.as_ptr(), ctx);
+        }
+
+        Ok(guard.into_raw())
+    }
+
     /// Return the underlying `WOLFSSL_CTX` pointer.
     ///
     /// The pointer is valid for as long as this `TlsClientConfig` (or any
@@ -70,13 +132,12 @@ impl TlsClientConfig {
         self.inner.ctx
     }
 
-    /// Allocate a new `WOLFSSL` session from this config, register custom IO
-    /// callbacks on it, and return the raw pointer.
+    /// Allocate a new `WOLFSSL` session from this config with raw custom IO
+    /// callbacks.
     ///
-    /// This is the entry point for async IO layers (e.g. `wolfcrypt-tls-tokio`)
-    /// that cannot use `wolfSSL_set_fd`. The returned session is configured
-    /// with `recv_cb` / `send_cb` as its IO callbacks and `io_ctx` as the
-    /// context pointer passed to both callbacks on every call.
+    /// Prefer [`TlsClient::new`] with an [`IOCallbacks`] implementation.
+    /// This lower-level method exists for async layers that manage their own
+    /// callback types.
     ///
     /// Optionally sets SNI if `server_name` is non-empty.
     ///

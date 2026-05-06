@@ -36,46 +36,23 @@ cp -rf source dest          # NOT: cp -r source dest
 - `apt-get` - use `-y` flag
 - `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
 
-<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker
 
-This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
-
-### Quick Reference
+This project uses **bd (beads)** for issue tracking. Run `bd prime` for full workflow context.
 
 ```bash
 bd ready              # Find available work
 bd show <id>          # View issue details
-bd update <id> --claim  # Claim work
+bd update <id> --claim  # Claim work atomically
 bd close <id>         # Complete work
+bd dolt push          # Push beads data to remote
 ```
 
-### Rules
+**Beads is the only task and planning tool.** Do NOT use:
+- TodoWrite / markdown TODO lists
+- Scratchpad or audit files (`audit-*.md`, `plan-scratch.md`, or any similar throwaway planning file)
+- MEMORY.md or any other markdown file as a knowledge store
 
-- Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
-- Run `bd prime` for detailed command reference and session close protocol
-- Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
-
-## Session Completion
-
-**When ending a work session**, complete ALL steps below.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **SYNC BEADS DATA**:
-   ```bash
-   git pull --rebase
-   bd dolt push
-   git status
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Report to user** - State what is staged/unstaged; ask for approval before committing or pushing
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- git commit and git push require explicit user approval — never run them without asking
-- Stage changes and report what is ready; wait for the user to say "commit" or "push"
-<!-- END BEADS INTEGRATION -->
+The only permitted markdown planning artifact is a crate's `PLAN.md`, which is a permanent
+design document checked into the repo — not a scratchpad. Use `bd remember` for persistent
+knowledge and `bd create` for all task tracking.

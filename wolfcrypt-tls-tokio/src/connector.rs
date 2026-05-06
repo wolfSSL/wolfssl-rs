@@ -1,8 +1,8 @@
 // TlsConnector and Connect future — client-side TLS handshake.
 //
-// Session allocation delegates to TlsClientConfig::new_ssl_with_io_callbacks
-// (wolfcrypt-tls option-3 API), which creates the WOLFSSL* and wires up
-// bridge::recv_cb / send_cb in one call.
+// NetBuffers implements wolfssl::IOCallbacks. Session allocation delegates to
+// TlsClientConfig::new_ssl_with_io_callbacks, which registers wolfcrypt-tls's
+// generated extern "C" shims pointing at the NetBuffers instance.
 
 use std::future::Future;
 use std::pin::Pin;
@@ -13,7 +13,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 
 use wolfssl::TlsClientConfig;
 
-use crate::bridge::{NetBuffers, RECV_CB, SEND_CB};
+use crate::bridge::NetBuffers;
 use crate::error::{Error, Result};
 use crate::stream::TlsStream;
 
@@ -44,16 +44,13 @@ impl TlsConnector {
         // io_ctx to new_ssl_with_io_callbacks and stored inside wolfSSL.
         // Box::into_raw transfers ownership; TlsStream::drop must Box::from_raw
         // it back to free the allocation.
-        let net = Box::new(NetBuffers::new());
-        let io_ctx = Box::as_ref(&net) as *const NetBuffers as *mut core::ffi::c_void;
+        let mut net = Box::new(NetBuffers::new());
 
-        // SAFETY: recv_cb / send_cb are valid for the lifetime of the session.
-        // io_ctx points to the NetBuffers box which is kept alive inside TlsStream.
-        let ssl = unsafe {
-            self.config
-                .new_ssl_with_io_callbacks(server_name, RECV_CB, SEND_CB, io_ctx)
-                .map_err(Error::Tls)?
-        };
+        // new_session_with_io registers the shims for NetBuffers: IOCallbacks
+        // and returns the raw WOLFSSL* without driving a handshake.
+        let ssl = self.config
+            .new_session_with_io(server_name, &mut *net)
+            .map_err(Error::Tls)?;
 
         Ok(Connect {
             state: Some(TlsStream {

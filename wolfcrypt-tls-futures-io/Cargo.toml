@@ -21,7 +21,7 @@ vendored = ["wolfcrypt-tls/vendored"]
 fips = ["wolfcrypt-tls/fips"]
 
 [dependencies]
-wolfcrypt-tls = { version = "0.1.5", path = "../wolfcrypt-tls" }
+wolfcrypt-tls = { version = "0.2.0", path = "../wolfcrypt-tls" }
 wolfcrypt-sys  = { version = "0.1.4", path = "../wolfcrypt-sys" }
 futures-io     = "0.3"
 bytes          = "1"

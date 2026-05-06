@@ -1,13 +1,15 @@
+use std::ffi::c_void;
 use std::io::{Read, Write};
 use std::sync::Arc;
 
 use wolfcrypt_sys::*;
 
+use crate::callback::{errorkind_to_cbio, IOCallbackResult, IOCallbacks};
 use crate::certificate::{Certificate, PrivateKey, RootCertStore};
 use crate::config::CtxInner;
 use crate::error::{expect_wolfssl_success, Result, TlsError};
 use crate::protocol::{self, ProtocolVersion};
-use crate::{ensure_init, SslGuard, TlsSocket};
+use crate::{ensure_init, SslGuard};
 
 /// Configuration for TLS server connections.
 ///
@@ -41,59 +43,77 @@ impl TlsServerConfig {
 
     /// Return the underlying `WOLFSSL_CTX` pointer.
     ///
-    /// The pointer is valid for as long as this `TlsServerConfig` (or any
-    /// clone of it) is alive. Callers must not call `wolfSSL_CTX_free` on it.
+    /// Valid for as long as this `TlsServerConfig` (or any clone) is alive.
+    /// Callers must not call `wolfSSL_CTX_free` on it.
     ///
     /// # Safety
-    /// The caller must not free the pointer or use it after this config and
-    /// all of its clones have been dropped.
+    /// Must not be freed or used after all clones of this config are dropped.
     pub unsafe fn as_raw_ctx(&self) -> *mut wolfcrypt_sys::WOLFSSL_CTX {
         self.inner.ctx
     }
 
-    /// Allocate a new `WOLFSSL` session from this config, register custom IO
-    /// callbacks on it, and return the raw pointer.
+    /// Allocate a new `WOLFSSL` session from this config with raw custom IO
+    /// callbacks.
     ///
-    /// This is the entry point for async IO layers (e.g. `wolfcrypt-tls-tokio`)
-    /// that cannot use `wolfSSL_set_fd`.  The returned session is configured
-    /// with `recv_cb` / `send_cb` as its IO callbacks and `io_ctx` as the
-    /// context pointer passed to both callbacks on every call.
+    /// Allocate a new `WOLFSSL` session from this config with a typed
+    /// [`IOCallbacks`] implementation.
     ///
-    /// The caller takes ownership of the returned `*mut WOLFSSL` and is
-    /// responsible for calling `wolfSSL_free` when done.  The `WOLFSSL_CTX`
-    /// backing this config must remain alive for the entire lifetime of the
-    /// returned session — keeping a clone of this `TlsServerConfig` alongside
-    /// the session is the simplest way to ensure that.
+    /// The server-side equivalent of `TlsClientConfig::new_session_with_io`.
+    /// The caller passes a `&mut IOCB`; wolfcrypt-tls registers the shims and
+    /// returns the raw session pointer.
+    ///
+    /// The caller must keep `io` alive for the lifetime of the returned
+    /// `*mut WOLFSSL`. `wolfSSL_free` quiesces callbacks before returning.
     ///
     /// # Errors
     /// Returns `TlsError` if `wolfSSL_new` fails.
+    pub fn new_session_with_io<IOCB: crate::callback::IOCallbacks>(
+        &self,
+        io: &mut IOCB,
+    ) -> crate::error::Result<*mut wolfcrypt_sys::WOLFSSL> {
+        use crate::callback::{io_recv_shim, io_send_shim};
+        use crate::error::TlsError;
+
+        let ssl = unsafe { wolfSSL_new(self.inner.ctx) };
+        if ssl.is_null() {
+            return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
+        }
+        let guard = crate::SslGuard(ssl);
+
+        // SAFETY: shims are 'static; io ptr is valid for caller-guaranteed lifetime.
+        unsafe {
+            wolfSSL_SSLSetIORecv(guard.as_ptr(), Some(io_recv_shim::<IOCB>));
+            wolfSSL_SSLSetIOSend(guard.as_ptr(), Some(io_send_shim::<IOCB>));
+            let ctx = io as *mut IOCB as *mut c_void;
+            wolfSSL_SetIOReadCtx(guard.as_ptr(), ctx);
+            wolfSSL_SetIOWriteCtx(guard.as_ptr(), ctx);
+        }
+
+        Ok(guard.into_raw())
+    }
+
+    /// Prefer [`TlsAcceptor::accept`] with an [`IOCallbacks`] implementation.
+    /// This lower-level method exists for async layers that manage their own
+    /// callback types.
     ///
     /// # Safety
-    /// - `recv_cb` and `send_cb` must be valid function pointers for the
-    ///   lifetime of the returned session.
-    /// - `io_ctx` must be valid for the lifetime of the returned session and
-    ///   must be the type that the callbacks expect to receive.
+    /// `recv_cb` and `send_cb` must be valid for the lifetime of the returned
+    /// session. `io_ctx` must be valid and of the type the callbacks expect.
     pub unsafe fn new_ssl_with_io_callbacks(
         &self,
         recv_cb: wolfcrypt_sys::CallbackIORecv,
         send_cb: wolfcrypt_sys::CallbackIOSend,
         io_ctx: *mut core::ffi::c_void,
     ) -> crate::error::Result<*mut wolfcrypt_sys::WOLFSSL> {
-        use crate::error::TlsError;
-        use wolfcrypt_sys::*;
-
         let ssl = wolfSSL_new(self.inner.ctx);
         if ssl.is_null() {
             return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
         }
         let guard = crate::SslGuard(ssl);
-
-        // Register the custom IO callbacks on this session.
         wolfSSL_SSLSetIORecv(guard.as_ptr(), recv_cb);
         wolfSSL_SSLSetIOSend(guard.as_ptr(), send_cb);
         wolfSSL_SetIOReadCtx(guard.as_ptr(), io_ctx);
         wolfSSL_SetIOWriteCtx(guard.as_ptr(), io_ctx);
-
         Ok(guard.into_raw())
     }
 }
@@ -112,18 +132,12 @@ impl TlsServerConfigBuilder {
         self
     }
 
-    /// No client certificate authentication required.
-    ///
-    /// This is the default and a no-op — it exists so that the builder chain
-    /// reads explicitly (`.with_no_client_auth()` vs silently omitting the call).
+    /// No client certificate authentication required (default, no-op).
     pub fn with_no_client_auth(self) -> Self {
         self
     }
 
     /// Require client certificate authentication (mTLS).
-    ///
-    /// The `client_ca_store` contains trusted CA certificates against which
-    /// client certificates will be verified during the handshake.
     pub fn with_client_auth(mut self, client_ca_store: RootCertStore) -> Self {
         self.client_ca_store = Some(client_ca_store);
         self
@@ -153,53 +167,40 @@ impl TlsServerConfigBuilder {
             });
         }
 
-        // Wrap immediately so Drop frees the CTX if any subsequent call fails.
         let inner = Arc::new(CtxInner { ctx });
 
-        // Load server certificate.
-        // SAFETY: inner.ctx is valid (created above, freed by CtxInner::drop).
         let ret = unsafe {
             wolfSSL_CTX_use_certificate_buffer(
                 inner.ctx,
                 cert.data().as_ptr(),
-                // Certificate/key data is bounded by practical PKI limits (< 1 MB); no runtime clamp needed.
                 cert.data().len() as core::ffi::c_long,
                 cert.format().as_c_int(),
             )
         };
         expect_wolfssl_success(ret, "wolfSSL_CTX_use_certificate_buffer")?;
 
-        // Load server private key.
-        // SAFETY: inner.ctx is owned by CtxInner and has not been freed.
         let ret = unsafe {
             wolfSSL_CTX_use_PrivateKey_buffer(
                 inner.ctx,
                 key.data().as_ptr(),
-                // Certificate/key data is bounded by practical PKI limits (< 1 MB); no runtime clamp needed.
                 key.data().len() as core::ffi::c_long,
                 key.format().as_c_int(),
             )
         };
         expect_wolfssl_success(ret, "wolfSSL_CTX_use_PrivateKey_buffer")?;
 
-        // Configure client certificate authentication (mTLS) if a CA store
-        // was provided via with_client_auth().
         if let Some(ref ca_store) = self.client_ca_store {
             for (cert_data, format) in ca_store.iter() {
-                // SAFETY: inner.ctx is owned by CtxInner and has not been freed.
                 let ret = unsafe {
                     wolfSSL_CTX_load_verify_buffer(
                         inner.ctx,
                         cert_data.as_ptr(),
-                        // Certificate/key data is bounded by practical PKI limits (< 1 MB); no runtime clamp needed.
                         cert_data.len() as core::ffi::c_long,
                         format.as_c_int(),
                     )
                 };
                 expect_wolfssl_success(ret, "wolfSSL_CTX_load_verify_buffer")?;
             }
-
-            // SAFETY: inner.ctx is owned by CtxInner and has not been freed.
             unsafe {
                 wolfSSL_CTX_set_verify(
                     inner.ctx,
@@ -224,38 +225,32 @@ impl TlsAcceptor {
         TlsAcceptor { config }
     }
 
-    /// Accept a TLS connection on the given stream.
+    /// Accept a TLS connection on the given transport.
     ///
-    /// Performs the TLS handshake. On success, returns a [`TlsServer`] that
-    /// implements [`Read`] and [`Write`].
-    ///
-    /// The stream must implement [`TlsSocket`], which is automatically
-    /// provided for `TcpStream` and any type implementing `AsRawFd` (Unix)
-    /// or `AsRawSocket` (Windows).
-    pub fn accept<S: Read + Write + TlsSocket>(&self, stream: S) -> Result<TlsServer<S>> {
+    /// `io` must implement [`IOCallbacks`], which is automatically satisfied
+    /// by any `Read + Write` type (e.g. [`std::net::TcpStream`]).
+    pub fn accept<IOCB: IOCallbacks>(&self, io: IOCB) -> Result<TlsServer<IOCB>> {
         // SAFETY: config.inner.ctx is owned by Arc<CtxInner> and not freed
         // while we hold a reference to it.
         let ssl = unsafe { wolfSSL_new(self.config.inner.ctx) };
         if ssl.is_null() {
-            return Err(TlsError::AllocFailed {
-                func: "wolfSSL_new",
-            });
+            return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
         }
-        // Guard ensures wolfSSL_free is called on every error path.
         let guard = SslGuard(ssl);
 
-        let fd = stream.tls_raw_fd();
-        // SAFETY: ssl was returned by wolfSSL_new above and has not been freed.
-        let ret = unsafe { wolfSSL_set_fd(guard.as_ptr(), fd) };
-        if ret != WOLFSSL_SUCCESS as core::ffi::c_int {
-            return Err(TlsError::Ffi {
-                code: ret,
-                func: "wolfSSL_set_fd",
-            });
+        let mut io = Box::new(io);
+
+        // SAFETY: shims are 'static; io is behind a Box (stable address);
+        // wolfSSL_free quiesces callbacks before io is dropped.
+        unsafe {
+            wolfSSL_SSLSetIORecv(guard.as_ptr(), Some(TlsServer::<IOCB>::io_recv_shim));
+            wolfSSL_SSLSetIOSend(guard.as_ptr(), Some(TlsServer::<IOCB>::io_send_shim));
+            let ctx = &mut *io as *mut IOCB as *mut c_void;
+            wolfSSL_SetIOReadCtx(guard.as_ptr(), ctx);
+            wolfSSL_SetIOWriteCtx(guard.as_ptr(), ctx);
         }
 
         // Perform the TLS handshake (server side).
-        // SAFETY: ssl has not been freed, and fd was set above.
         let ret = unsafe { wolfSSL_accept(guard.as_ptr()) };
         if ret != WOLFSSL_SUCCESS as core::ffi::c_int {
             let err = unsafe { wolfSSL_get_error(guard.as_ptr(), ret) };
@@ -267,57 +262,155 @@ impl TlsAcceptor {
 
         Ok(TlsServer {
             ssl: guard.into_raw(),
-            stream,
-            // Clone is cheap (Arc::clone) — keeps the WOLFSSL_CTX alive
-            // for the lifetime of this WOLFSSL session.
+            io,
             config: self.config.clone(),
         })
     }
 }
 
-/// A TLS server connection wrapping a stream.
+/// A TLS server connection wrapping an IO transport.
 ///
 /// Implements [`Read`] and [`Write`] for encrypted I/O.
 ///
-/// The stream `S` must implement [`TlsSocket`], which is automatically
-/// provided for any type implementing `AsRawFd` (Unix) or `AsRawSocket`
-/// (Windows) — e.g. [`std::net::TcpStream`].
-///
 /// **Drop behavior**: dropping a `TlsServer` sends a TLS `close_notify`
 /// via `wolfSSL_shutdown`, which may block on the underlying transport.
-pub struct TlsServer<S> {
+pub struct TlsServer<IOCB: IOCallbacks> {
     ssl: *mut WOLFSSL,
-    /// Kept alive so the underlying fd remains valid for wolfSSL I/O.
-    #[allow(dead_code)]
-    stream: S,
-    /// Kept alive so the `WOLFSSL_CTX` (owned by `Arc<CtxInner>`) outlives
-    /// the `WOLFSSL` session.
+    /// Boxed for a stable heap address used by the IO callbacks.
+    io: Box<IOCB>,
+    /// Keeps the WOLFSSL_CTX alive for the lifetime of this session.
     #[allow(dead_code)]
     config: TlsServerConfig,
 }
 
-impl<S> std::fmt::Debug for TlsServer<S> {
+impl<IOCB: IOCallbacks> std::fmt::Debug for TlsServer<IOCB> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TlsServer").field("ssl", &self.ssl).finish()
     }
 }
 
-// SAFETY: Same reasoning as TlsClient — exclusive &mut self for I/O,
-// and the WOLFSSL pointer can be moved across threads.
-unsafe impl<S: Send> Send for TlsServer<S> {}
+// SAFETY: exclusive &mut self for I/O; WOLFSSL pointer can be moved across threads.
+unsafe impl<IOCB: IOCallbacks + Send> Send for TlsServer<IOCB> {}
 
-impl<S> TlsServer<S> {
+impl<IOCB: IOCallbacks> TlsServer<IOCB> {
     /// Return the underlying `WOLFSSL` session pointer.
     ///
-    /// The pointer is valid for as long as this `TlsServer` is alive.
-    /// Callers must not call `wolfSSL_free` on it.
+    /// Valid for as long as this `TlsServer` is alive. Do not free it.
     ///
     /// # Safety
-    /// The caller must not free the pointer or use it after this `TlsServer`
-    /// has been dropped.
-    pub unsafe fn as_raw_ssl(&self) -> *mut wolfcrypt_sys::WOLFSSL {
+    /// Must not be freed or used after this `TlsServer` is dropped.
+    pub unsafe fn as_raw_ssl(&self) -> *mut WOLFSSL {
         self.ssl
+    }
+
+    unsafe extern "C" fn io_recv_shim(
+        _ssl: *mut WOLFSSL,
+        buf: *mut core::ffi::c_char,
+        sz: core::ffi::c_int,
+        ctx: *mut c_void,
+    ) -> core::ffi::c_int {
+        debug_assert!(!ctx.is_null());
+        let io = unsafe { &mut *(ctx as *mut IOCB) };
+        let buf = unsafe { std::slice::from_raw_parts_mut(buf as *mut u8, sz as usize) };
+        match io.recv(buf) {
+            IOCallbackResult::Ok(n) => n as core::ffi::c_int,
+            IOCallbackResult::WouldBlock => IOerrors_WOLFSSL_CBIO_ERR_WANT_READ,
+            IOCallbackResult::Err(e) => {
+                errorkind_to_cbio(e.kind(), IOerrors_WOLFSSL_CBIO_ERR_WANT_READ)
+            }
+        }
+    }
+
+    unsafe extern "C" fn io_send_shim(
+        _ssl: *mut WOLFSSL,
+        buf: *mut core::ffi::c_char,
+        sz: core::ffi::c_int,
+        ctx: *mut c_void,
+    ) -> core::ffi::c_int {
+        debug_assert!(!ctx.is_null());
+        let io = unsafe { &mut *(ctx as *mut IOCB) };
+        let buf = unsafe { std::slice::from_raw_parts(buf as *const u8, sz as usize) };
+        match io.send(buf) {
+            IOCallbackResult::Ok(n) => n as core::ffi::c_int,
+            IOCallbackResult::WouldBlock => IOerrors_WOLFSSL_CBIO_ERR_WANT_WRITE,
+            IOCallbackResult::Err(e) => {
+                errorkind_to_cbio(e.kind(), IOerrors_WOLFSSL_CBIO_ERR_WANT_WRITE)
+            }
+        }
     }
 }
 
-crate::impl_tls_io!(TlsServer);
+impl<IOCB: IOCallbacks> Read for TlsServer<IOCB> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if buf.is_empty() {
+            return Ok(0);
+        }
+        let len = buf.len().min(core::ffi::c_int::MAX as usize) as core::ffi::c_int;
+        let ret = unsafe {
+            wolfSSL_read(self.ssl, buf.as_mut_ptr() as *mut core::ffi::c_void, len)
+        };
+        if ret > 0 {
+            Ok(ret as usize)
+        } else if ret == 0 {
+            Ok(0)
+        } else {
+            let err = unsafe { wolfSSL_get_error(self.ssl, ret) };
+            match err {
+                wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_READ_E
+                | wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_WRITE_E => {
+                    Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
+                }
+                _ => Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!(
+                        "wolfSSL_read: {} (error {err})",
+                        crate::error::error_string(err)
+                    ),
+                )),
+            }
+        }
+    }
+}
+
+impl<IOCB: IOCallbacks> Write for TlsServer<IOCB> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        if buf.is_empty() {
+            return Ok(0);
+        }
+        let len = buf.len().min(core::ffi::c_int::MAX as usize) as core::ffi::c_int;
+        let ret = unsafe {
+            wolfSSL_write(self.ssl, buf.as_ptr() as *const core::ffi::c_void, len)
+        };
+        if ret > 0 {
+            Ok(ret as usize)
+        } else {
+            let err = unsafe { wolfSSL_get_error(self.ssl, ret) };
+            match err {
+                wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_READ_E
+                | wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_WRITE_E => {
+                    Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
+                }
+                _ => Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!(
+                        "wolfSSL_write: {} (error {err})",
+                        crate::error::error_string(err)
+                    ),
+                )),
+            }
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+impl<IOCB: IOCallbacks> Drop for TlsServer<IOCB> {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = wolfSSL_shutdown(self.ssl);
+            wolfSSL_free(self.ssl);
+        }
+    }
+}
