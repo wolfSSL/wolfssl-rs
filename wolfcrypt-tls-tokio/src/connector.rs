@@ -111,17 +111,25 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> Future for Connect<IO> {
                             func: "wolfSSL_connect",
                         })));
                     }
-                    // WANT_READ/WRITE: flush what we produced, then get more data.
+                    // Always flush any output wolfSSL produced before continuing.
                     match stream.flush_net_out(cx) {
                         Poll::Pending => return Poll::Pending,
                         Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
                         Poll::Ready(Ok(())) => {}
                     }
-                    match stream.fill_net_in(cx) {
-                        Poll::Pending => return Poll::Pending,
-                        Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
-                        Poll::Ready(Ok(())) => continue,
+                    if err == want_read {
+                        // wolfSSL needs inbound data from the peer to continue.
+                        match stream.fill_net_in(cx) {
+                            Poll::Pending => return Poll::Pending,
+                            Poll::Ready(Err(e)) => return Poll::Ready(Err(Error::Io(e))),
+                            Poll::Ready(Ok(())) => {}
+                        }
                     }
+                    // WANT_WRITE: flushed successfully; loop back to call
+                    // wolfSSL_connect again.
+                    // WANT_READ: filled net_in (or registered read waker);
+                    // loop back to call wolfSSL_connect again.
+                    continue
                 }
             }
 

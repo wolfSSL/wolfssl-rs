@@ -10,7 +10,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use bytes::{Buf, BufMut, BytesMut};
+use bytes::{Buf, BytesMut};
 use futures_io::{AsyncRead, AsyncWrite};
 
 use wolfssl::{TlsClientConfig, TlsServerConfig};
@@ -265,6 +265,28 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
             return Poll::Ready(Ok(ret as usize));
         }
         let err = unsafe { wolfcrypt_sys::wolfSSL_get_error(this.ssl, ret) };
+        let want_read = wolfcrypt_sys::WOLFSSL_ERROR_WANT_READ as i32;
+        let want_write = wolfcrypt_sys::WOLFSSL_ERROR_WANT_WRITE as i32;
+        if err == want_write {
+            // wolfSSL cannot proceed with the write yet; flush pending output
+            // and return Pending so the caller retries.
+            match this.flush_net_out(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
+                Poll::Ready(Ok(())) => {}
+            }
+            return Poll::Pending;
+        }
+        if err == want_read {
+            // TLS renegotiation (TLS 1.2): wolfSSL needs inbound data before
+            // it can encrypt.  Register a read waker and return Pending.
+            match this.fill_net_in(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
+                Poll::Ready(Ok(())) => {}
+            }
+            return Poll::Pending;
+        }
         Poll::Ready(Err(io::Error::new(
             io::ErrorKind::Other,
             format!("wolfSSL_write error {err}: {}", wolfssl_error_string(err)),
