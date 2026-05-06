@@ -42,6 +42,9 @@ pub use config::{TlsClientConfig, TlsClientConfigBuilder};
 pub use error::{Result, TlsError};
 pub use protocol::ProtocolVersion;
 pub use server::{TlsAcceptor, TlsServer, TlsServerConfig, TlsServerConfigBuilder};
+// Raw callback type aliases from wolfcrypt-sys, re-exported so callers of
+// new_ssl_with_io_callbacks don't need to depend on wolfcrypt-sys directly.
+pub use wolfcrypt_sys::{CallbackIORecv, CallbackIOSend};
 
 use std::sync::Once;
 

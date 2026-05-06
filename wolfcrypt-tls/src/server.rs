@@ -38,6 +38,64 @@ impl TlsServerConfig {
             client_ca_store: None,
         }
     }
+
+    /// Return the underlying `WOLFSSL_CTX` pointer.
+    ///
+    /// The pointer is valid for as long as this `TlsServerConfig` (or any
+    /// clone of it) is alive. Callers must not call `wolfSSL_CTX_free` on it.
+    ///
+    /// # Safety
+    /// The caller must not free the pointer or use it after this config and
+    /// all of its clones have been dropped.
+    pub unsafe fn as_raw_ctx(&self) -> *mut wolfcrypt_sys::WOLFSSL_CTX {
+        self.inner.ctx
+    }
+
+    /// Allocate a new `WOLFSSL` session from this config, register custom IO
+    /// callbacks on it, and return the raw pointer.
+    ///
+    /// This is the entry point for async IO layers (e.g. `wolfcrypt-tls-tokio`)
+    /// that cannot use `wolfSSL_set_fd`.  The returned session is configured
+    /// with `recv_cb` / `send_cb` as its IO callbacks and `io_ctx` as the
+    /// context pointer passed to both callbacks on every call.
+    ///
+    /// The caller takes ownership of the returned `*mut WOLFSSL` and is
+    /// responsible for calling `wolfSSL_free` when done.  The `WOLFSSL_CTX`
+    /// backing this config must remain alive for the entire lifetime of the
+    /// returned session — keeping a clone of this `TlsServerConfig` alongside
+    /// the session is the simplest way to ensure that.
+    ///
+    /// # Errors
+    /// Returns `TlsError` if `wolfSSL_new` fails.
+    ///
+    /// # Safety
+    /// - `recv_cb` and `send_cb` must be valid function pointers for the
+    ///   lifetime of the returned session.
+    /// - `io_ctx` must be valid for the lifetime of the returned session and
+    ///   must be the type that the callbacks expect to receive.
+    pub unsafe fn new_ssl_with_io_callbacks(
+        &self,
+        recv_cb: wolfcrypt_sys::CallbackIORecv,
+        send_cb: wolfcrypt_sys::CallbackIOSend,
+        io_ctx: *mut core::ffi::c_void,
+    ) -> crate::error::Result<*mut wolfcrypt_sys::WOLFSSL> {
+        use crate::error::TlsError;
+        use wolfcrypt_sys::*;
+
+        let ssl = wolfSSL_new(self.inner.ctx);
+        if ssl.is_null() {
+            return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
+        }
+        let guard = crate::SslGuard(ssl);
+
+        // Register the custom IO callbacks on this session.
+        wolfSSL_SSLSetIORecv(guard.as_ptr(), recv_cb);
+        wolfSSL_SSLSetIOSend(guard.as_ptr(), send_cb);
+        wolfSSL_SetIOReadCtx(guard.as_ptr(), io_ctx);
+        wolfSSL_SetIOWriteCtx(guard.as_ptr(), io_ctx);
+
+        Ok(guard.into_raw())
+    }
 }
 
 impl TlsServerConfigBuilder {
@@ -247,5 +305,19 @@ impl<S> std::fmt::Debug for TlsServer<S> {
 // SAFETY: Same reasoning as TlsClient — exclusive &mut self for I/O,
 // and the WOLFSSL pointer can be moved across threads.
 unsafe impl<S: Send> Send for TlsServer<S> {}
+
+impl<S> TlsServer<S> {
+    /// Return the underlying `WOLFSSL` session pointer.
+    ///
+    /// The pointer is valid for as long as this `TlsServer` is alive.
+    /// Callers must not call `wolfSSL_free` on it.
+    ///
+    /// # Safety
+    /// The caller must not free the pointer or use it after this `TlsServer`
+    /// has been dropped.
+    pub unsafe fn as_raw_ssl(&self) -> *mut wolfcrypt_sys::WOLFSSL {
+        self.ssl
+    }
+}
 
 crate::impl_tls_io!(TlsServer);

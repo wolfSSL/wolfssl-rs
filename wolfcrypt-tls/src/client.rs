@@ -126,4 +126,18 @@ impl<S: Read + Write + TlsSocket> TlsClient<S> {
     }
 }
 
+impl<S> TlsClient<S> {
+    /// Return the underlying `WOLFSSL` session pointer.
+    ///
+    /// The pointer is valid for as long as this `TlsClient` is alive.
+    /// Callers must not call `wolfSSL_free` on it.
+    ///
+    /// # Safety
+    /// The caller must not free the pointer or use it after this `TlsClient`
+    /// has been dropped.
+    pub unsafe fn as_raw_ssl(&self) -> *mut wolfcrypt_sys::WOLFSSL {
+        self.ssl
+    }
+}
+
 crate::impl_tls_io!(TlsClient);
