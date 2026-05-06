@@ -178,10 +178,21 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncRead for TlsStream<IO> {
 
                 if ret > 0 {
                     this.read_buf.extend_from_slice(&tmp[..ret as usize]);
+                    // Session-ticket or post-handshake record from wolfSSL;
+                    // best-effort flush.
+                    // Error discarded: the plaintext was already delivered to
+                    // the caller.
                     let _ = this.flush_net_out(cx);
                     continue;
                 }
                 if ret == 0 {
+                    // Deliver any buffered plaintext before signaling EOF.
+                    if !this.read_buf.is_empty() {
+                        let n = buf.len().min(this.read_buf.len());
+                        buf[..n].copy_from_slice(&this.read_buf[..n]);
+                        this.read_buf.advance(n);
+                        return Poll::Ready(Ok(n));
+                    }
                     return Poll::Ready(Ok(0));
                 }
                 let err = unsafe { wolfcrypt_sys::wolfSSL_get_error(this.ssl, ret) };
@@ -247,6 +258,9 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
             )
         };
         if ret > 0 {
+            // Flush ciphertext best-effort. Per AsyncWrite contract, poll_write
+            // only needs to buffer; callers must poll_flush for guaranteed
+            // delivery.
             let _ = this.flush_net_out(cx);
             return Poll::Ready(Ok(ret as usize));
         }
@@ -274,10 +288,16 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
 
             if ret < 0 {
                 let err = unsafe { wolfcrypt_sys::wolfSSL_get_error(this.ssl, ret) };
-                return Poll::Ready(Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    format!("wolfSSL_shutdown error {err}: {}", wolfssl_error_string(err)),
-                )));
+                let want_read = wolfcrypt_sys::WOLFSSL_ERROR_WANT_READ as i32;
+                let want_write = wolfcrypt_sys::WOLFSSL_ERROR_WANT_WRITE as i32;
+                if err != want_read && err != want_write {
+                    return Poll::Ready(Err(io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("wolfSSL_shutdown error {err}: {}", wolfssl_error_string(err)),
+                    )));
+                }
+                // WANT_READ or WANT_WRITE: close_notify is pending on a
+                // non-blocking transport; fall through to flush_net_out.
             }
         }
 

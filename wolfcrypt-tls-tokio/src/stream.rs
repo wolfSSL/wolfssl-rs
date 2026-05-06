@@ -191,15 +191,24 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncRead for TlsStream<IO> {
 
                 if ret > 0 {
                     this.read_buf.extend_from_slice(&tmp[..ret as usize]);
-                    // wolfSSL may have produced handshake records (e.g. session
-                    // tickets); flush them out best-effort.
+                    // Session-ticket or post-handshake record from wolfSSL;
+                    // best-effort flush.
+                    // Error discarded: the plaintext was already delivered to
+                    // the caller.
                     let _ = this.flush_net_out(cx);
                     // Keep looping — there may be more records buffered.
                     continue;
                 }
 
                 if ret == 0 {
-                    // Clean close_notify from peer.
+                    // Clean close_notify from peer. Deliver any buffered
+                    // plaintext first before signaling EOF.
+                    if !this.read_buf.is_empty() {
+                        let n = buf.remaining().min(this.read_buf.len());
+                        buf.put_slice(&this.read_buf[..n]);
+                        this.read_buf.advance(n);
+                        return Poll::Ready(Ok(()));
+                    }
                     return Poll::Ready(Ok(()));
                 }
 
@@ -288,7 +297,9 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
         };
 
         if ret > 0 {
-            // Best-effort flush; we accepted the bytes regardless.
+            // Flush ciphertext best-effort. Per AsyncWrite contract, poll_write
+            // only needs to buffer; callers must poll_flush for guaranteed
+            // delivery.
             let _ = this.flush_net_out(cx);
             return Poll::Ready(Ok(ret as usize));
         }
@@ -317,12 +328,18 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
 
             if ret < 0 {
                 let err = unsafe { wolfcrypt_sys::wolfSSL_get_error(this.ssl, ret) };
-                return Poll::Ready(Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    format!("wolfSSL_shutdown error {err}: {}", wolfssl_error_string(err)),
-                )));
+                let want_read = wolfcrypt_sys::WOLFSSL_ERROR_WANT_READ as i32;
+                let want_write = wolfcrypt_sys::WOLFSSL_ERROR_WANT_WRITE as i32;
+                if err != want_read && err != want_write {
+                    return Poll::Ready(Err(io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("wolfSSL_shutdown error {err}: {}", wolfssl_error_string(err)),
+                    )));
+                }
+                // WANT_READ or WANT_WRITE: close_notify is pending on a
+                // non-blocking transport; fall through to flush_net_out.
             }
-            // ret == 0 (WOLFSSL_SHUTDOWN_NOT_DONE) or 1 (SUCCESS): either way,
+            // ret == 0 (WOLFSSL_SHUTDOWN_NOT_DONE), 1 (SUCCESS), or WANT_*:
             // flush what wolfSSL put in net_out (our close_notify record) and
             // close the underlying IO.  We do not wait for the peer's
             // close_notify — doing so would require another async read cycle.
