@@ -5,19 +5,17 @@ Published as the `wolfssl` crate (`lib.name = "wolfssl"`).
 
 ## Why
 
-wolfSSL is a FIPS 140-3 validated TLS library used in billions of embedded and
-server deployments. `wolfcrypt-tls` gives you:
+wolfSSL is a FIPS 140-3 validated TLS library used in billions of embedded
+and server deployments. This crate wraps it in an idiomatic Rust API:
 
-- **FIPS 140-3** — TLS with a validated crypto backend for regulated
-  environments (commercial license required;
+- **FIPS 140-3** — TLS with a validated crypto backend, required by some
+  regulated environments (commercial license;
   [contact wolfSSL](https://www.wolfssl.com/license/))
-- **Small footprint** — designed for embedded targets alongside full server
-  deployments; a single dependency chain, no OpenSSL
-- **Familiar API** — `TlsClient` / `TlsServer` implement `std::io::Read +
-  Write` so they drop into any existing synchronous code
-- **Async-ready** — the config types expose session builders with typed IO
-  callbacks so async runtimes can build on top without duplicating
-  cert/key loading logic
+- **Small footprint** — one dependency chain, no OpenSSL; works on embedded
+  targets and servers alike
+- **Transport-agnostic** — any `Read + Write` type is a valid transport;
+  `TcpStream`, `UnixStream`, in-memory pipes, and custom types all work
+  without adaptation
 
 ## Usage
 
@@ -74,13 +72,13 @@ for stream in listener.incoming() {
 ### Mutual TLS (mTLS)
 
 ```rust
-// Server: require client certificates
+// Server — require a client certificate
 let config = TlsServerConfig::builder()
     .with_certificate_chain(cert, key)
     .with_client_auth(client_ca_store)
     .build()?;
 
-// Client: present a certificate
+// Client — present a certificate
 let config = TlsClientConfig::builder()
     .with_root_certificates(roots)
     .with_client_auth(client_cert, client_key)
@@ -102,46 +100,37 @@ let config = TlsClientConfig::builder()
 ## How it works
 
 ```text
-wolfssl-src      Compiles wolfSSL C source via the cc crate
+wolfssl-src      Compiles wolfSSL C source (cc crate)
       │
-wolfcrypt-sys    bindgen FFI bindings to wolfSSL
+wolfcrypt-sys    bindgen FFI bindings
       │
-wolfcrypt-tls    Safe TlsClient / TlsServer API (this crate)
-                 Exported as lib.name = "wolfssl"
+wolfcrypt-tls    TlsClient / TlsServer / TlsAcceptor  ← this crate
+                 lib.name = "wolfssl"
 ```
 
 `TlsClientConfig` and `TlsServerConfig` wrap `WOLFSSL_CTX` in an `Arc`-backed
-RAII type. `TlsClient` and `TlsServer` wrap `WOLFSSL` session objects and
-implement `Read + Write`. The underlying transport is plugged in via wolfSSL's
-custom IO callback mechanism (`wolfSSL_SSLSetIORecv` / `wolfSSL_SSLSetIOSend`);
-any type implementing `Read + Write` satisfies the `IOCallbacks` trait
-automatically, so `TcpStream`, `UnixStream`, in-memory cursors, and custom
-transports all work without adaptation.
+RAII type. `TlsClient` and `TlsServer` wrap `WOLFSSL` session pointers and
+implement `Read + Write`. The transport is wired through wolfSSL's custom IO
+callback mechanism (`wolfSSL_SSLSetIORecv` / `wolfSSL_SSLSetIOSend`) rather
+than a file descriptor, which is what makes any `Read + Write` type work as a
+transport.
 
-For async runtimes the config types expose `new_session_with_io`, a typed
-session builder that wires wolfSSL callbacks and returns an owned `*mut
-WOLFSSL`. See `wolfcrypt-tls-tokio` and `wolfcrypt-tls-futures-io` for the
-async layers built on this API.
-
-## Features
+For async use, the config types expose `new_session_with_io`, a typed session
+builder that wires the callbacks and returns an owned `*mut WOLFSSL`.
+`wolfcrypt-tls-tokio` and `wolfcrypt-tls-futures-io` build their async layers
+on top of this without duplicating any cert/key loading logic.
 
 | Feature    | Description |
 |------------|-------------|
 | `vendored` | Compile wolfSSL from source (requires `WOLFSSL_SRC` or pkg-config) |
-| `fips`     | Enable the wolfSSL FIPS 140-3 code path |
+| `fips`     | Enable the wolfSSL FIPS 140-3 code path (commercial license required) |
 
-FIPS 140-3 validated builds require a wolfSSL commercial license and the
-validated source tree. [Contact wolfSSL](https://www.wolfssl.com/license/)
-for details. See the [workspace README](https://github.com/wolfSSL/wolfssl-rs)
-for FIPS build instructions.
+## References
 
-## Status
-
-- TLS 1.2 and TLS 1.3
-- Client and server, including mutual TLS (mTLS)
-- Blocking I/O over any `Read + Write` transport
-- Typed IO callback API for building async adapters
-- Tested on Linux (x86-64 and aarch64)
+- [wolfSSL documentation](https://www.wolfssl.com/documentation/)
+- [wolfcrypt-tls-tokio](../wolfcrypt-tls-tokio) — tokio async layer
+- [wolfcrypt-tls-futures-io](../wolfcrypt-tls-futures-io) — futures-io async layer
+- [workspace README](https://github.com/wolfSSL/wolfssl-rs)
 
 ## Copyright
 

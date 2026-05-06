@@ -1,26 +1,21 @@
 # wolfcrypt-tls-tokio
 
 Async TLS for [tokio](https://tokio.rs) backed by [wolfSSL](https://wolfssl.com).
-
-`TlsStream<IO>` implements `tokio::io::AsyncRead + AsyncWrite` over any async
-transport. The API mirrors `tokio-rustls` so existing code can drop in with
-minimal changes.
+`TlsStream<IO>` implements `tokio::io::AsyncRead + AsyncWrite`.
 
 ## Why
 
-wolfSSL is a FIPS 140-3 validated TLS library. `wolfcrypt-tls-tokio` brings
-that to async Rust:
+The same reasons to choose `wolfcrypt-tls` for blocking I/O apply here — FIPS
+140-3 validation, small footprint, no OpenSSL — but for async Rust with tokio:
 
-- **FIPS 140-3** — the only async Rust TLS crate backed by a validated crypto
-  module, for regulated environments (commercial license required;
+- **FIPS 140-3** — the only async tokio TLS crate backed by a FIPS-validated
+  crypto module (commercial license;
   [contact wolfSSL](https://www.wolfssl.com/license/))
-- **tokio-rustls compatible API** — same connector/acceptor/stream shapes;
-  swap the import and adjust the config builder
-- **Pure async IO** — uses wolfSSL custom IO callbacks, not `wolfSSL_set_fd`;
-  works over any `AsyncRead + AsyncWrite + Unpin` transport including
-  `tokio::net::TcpStream`, `tokio::io::duplex`, and Unix domain sockets
-- **No spawn_blocking** — the wolfSSL state machine runs inline in the async
-  task; no OS thread is consumed per connection
+- **tokio-rustls-compatible API** — `TlsConnector` / `TlsAcceptor` /
+  `TlsStream<IO>` have the same shapes; swap the import and adjust the config
+  builder
+- **No `spawn_blocking`** — wolfSSL runs inline in the async task over
+  in-memory buffers; one connection does not consume one OS thread
 
 ## Usage
 
@@ -48,16 +43,12 @@ let config = Arc::new(
 );
 
 let stream = TcpStream::connect("example.com:443").await?;
-let connector = TlsConnector::from(config);
-let mut tls = connector.connect("example.com", stream)?.await?;
-// tls: TlsStream<TcpStream> — implements AsyncRead + AsyncWrite
-
+let mut tls = TlsConnector::from(config).connect("example.com", stream)?.await?;
 tls.write_all(b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n").await?;
 ```
 
-`connect()` returns `Result<Connect<IO>>`, where `Connect<IO>` is the
-handshake future. The `?` after `connect()` checks for config errors; the
-subsequent `.await?` drives the handshake to completion.
+`connect()` returns `Result<Connect<IO>>`; the `?` checks for config errors and
+the `.await?` drives the handshake to completion.
 
 ### TLS server
 
@@ -84,7 +75,7 @@ loop {
     let acceptor = acceptor.clone();
     tokio::spawn(async move {
         let mut tls = acceptor.accept(stream)?.await?;
-        // tls: TlsStream<TcpStream> — implements AsyncRead + AsyncWrite
+        // tls: TlsStream<TcpStream> — AsyncRead + AsyncWrite
         Ok::<_, wolfssl_tokio::Error>(())
     });
 }
@@ -93,42 +84,17 @@ loop {
 ### Mutual TLS (mTLS)
 
 ```rust
-use wolfssl_tokio::{ProtocolVersion, RootCertStore, Certificate, PrivateKey};
-
-// Server: require client certificates
+// Server — require a client certificate
 let config = TlsServerConfig::builder()
     .with_certificate_chain(cert, key)
     .with_client_auth(client_ca_store)
     .build()?;
 
-// Client: present a certificate
+// Client — present a certificate
 let config = TlsClientConfig::builder()
     .with_root_certificates(roots)
     .with_client_auth(client_cert, client_key)
     .build()?;
-```
-
-### Splitting the stream
-
-`TlsStream<IO>` implements both `AsyncRead` and `AsyncWrite` and works with
-`tokio::io::split`:
-
-```rust
-let (mut reader, mut writer) = tokio::io::split(tls);
-```
-
-### Inspecting the negotiated version
-
-```rust
-use wolfssl_tokio::ProtocolVersion;
-
-if let Some(version) = tls.negotiated_version() {
-    match version {
-        ProtocolVersion::Tls12 => println!("TLS 1.2"),
-        ProtocolVersion::Tls13 => println!("TLS 1.3"),
-        _ => {}
-    }
-}
 ```
 
 ## How it works
@@ -138,48 +104,47 @@ wolfssl-src            Compiles wolfSSL C source
       │
 wolfcrypt-sys          bindgen FFI bindings
       │
-wolfcrypt-tls          Config types, cert/key loading  (lib name: wolfssl)
+wolfcrypt-tls          Config types, cert/key loading  (lib.name = "wolfssl")
       │
-wolfcrypt-tls-tokio    Async IO bridge + TlsStream      (this crate)
+wolfcrypt-tls-tokio    TlsConnector / TlsAcceptor / TlsStream  ← this crate
       │
 tokio                  AsyncRead, AsyncWrite, TcpStream
 ```
 
-Instead of `wolfSSL_set_fd`, this crate uses wolfSSL's **custom IO callback**
-mechanism. Two callbacks (`recv_cb`, `send_cb`) operate on in-memory byte
-buffers (`net_in` / `net_out`) rather than a file descriptor:
+Instead of `wolfSSL_set_fd`, the crate drives wolfSSL through custom IO
+callbacks over two in-memory byte buffers (`net_in` / `net_out`):
 
 ```text
-                    ┌─────────────────────────────────────┐
-                    │           TlsStream<IO>              │
- poll_read  ◄───────┤  read_buf  (decrypted plaintext)     │
- poll_write ───────►│  wolfSSL session                     │
-                    │    recv_cb ◄── net_in                │
-                    │    send_cb ──► net_out               │
- network IO ◄───────┤  flush net_out   fill net_in ───────►│  network IO
-  (cipher)          │                             (cipher) │
-                    └─────────────────────────────────────┘
+                    ┌───────────────────────────────────┐
+                    │         TlsStream<IO>              │
+ poll_read  ◄───────┤  read_buf (decrypted plaintext)    │
+ poll_write ───────►│  wolfSSL session                   │
+                    │    recv_cb ◄── net_in              │
+                    │    send_cb ──► net_out             │
+ network IO ◄───────┤  flush net_out / fill net_in ─────►│  network IO
+   (cipher)         └───────────────────────────────────┘   (cipher)
 ```
 
-The callbacks operate synchronously on the in-memory buffers and never
-block or return WANT_READ/WANT_WRITE. All real async network I/O happens in
-`poll_read` / `poll_write` around the wolfSSL calls. This is the same
-architecture used by `tokio-rustls`.
-
-## Relationship to `wolfcrypt-tls`
+The callbacks are synchronous and never block. All real async network I/O
+happens in `poll_read` / `poll_write` around the wolfSSL calls — the same
+architecture as `tokio-rustls`.
 
 Config types (`TlsClientConfig`, `TlsServerConfig`, `Certificate`,
 `PrivateKey`, `RootCertStore`, `ProtocolVersion`) are re-exported from
-`wolfcrypt-tls`. There is no duplication of cert/key loading logic. Both
-crates can coexist in the same binary — use `wolfcrypt-tls` for blocking I/O
-and `wolfcrypt-tls-tokio` for async I/O with the same config objects.
-
-## Features
+`wolfcrypt-tls`. The `wolfcrypt-tls-futures-io` crate provides the same
+session logic for the `futures::io` trait family (smol, async-std).
 
 | Feature    | Description |
 |------------|-------------|
 | `vendored` | Compile wolfSSL from source (passes through to `wolfcrypt-tls`) |
-| `fips`     | Enable the wolfSSL FIPS 140-3 code path |
+| `fips`     | Enable the wolfSSL FIPS 140-3 code path (commercial license required) |
+
+## References
+
+- [wolfSSL documentation](https://www.wolfssl.com/documentation/)
+- [wolfcrypt-tls](../wolfcrypt-tls) — blocking API and config types
+- [wolfcrypt-tls-futures-io](../wolfcrypt-tls-futures-io) — futures::io variant
+- [workspace README](https://github.com/wolfSSL/wolfssl-rs)
 
 ## Copyright
 
