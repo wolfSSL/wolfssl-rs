@@ -49,9 +49,9 @@ impl<IOCB: IOCallbacks> TlsClient<IOCB> {
     /// Performs the TLS handshake immediately. On success, the connection
     /// is ready for reading and writing.
     pub fn new(config: TlsClientConfig, server_name: &str, io: IOCB) -> Result<Self> {
-        if server_name.len() > u16::MAX as usize {
+        if server_name.len() > 253 {
             return Err(TlsError::InvalidConfig(
-                "server name exceeds maximum SNI length",
+                "server name exceeds maximum DNS hostname length (253 bytes)",
             ));
         }
 
@@ -138,6 +138,11 @@ impl<IOCB: IOCallbacks> TlsClient<IOCB> {
 
 }
 
+// wolfSSL_get_error returns the OpenSSL-compatible positive values (2, 3),
+// not the negative internal _E callback codes. Define consts for use in match.
+const WANT_READ: core::ffi::c_int = WOLFSSL_ERROR_WANT_READ as core::ffi::c_int;
+const WANT_WRITE: core::ffi::c_int = WOLFSSL_ERROR_WANT_WRITE as core::ffi::c_int;
+
 impl<IOCB: IOCallbacks> Read for TlsClient<IOCB> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if buf.is_empty() {
@@ -156,8 +161,7 @@ impl<IOCB: IOCallbacks> Read for TlsClient<IOCB> {
             // SAFETY: ssl is valid.
             let err = unsafe { wolfSSL_get_error(self.ssl, ret) };
             match err {
-                wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_READ_E
-                | wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_WRITE_E => {
+                WANT_READ | WANT_WRITE => {
                     Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
                 }
                 _ => Err(std::io::Error::new(
@@ -184,11 +188,15 @@ impl<IOCB: IOCallbacks> Write for TlsClient<IOCB> {
         };
         if ret > 0 {
             Ok(ret as usize)
+        } else if ret == 0 {
+            // wolfSSL_write returning 0 is not documented as a normal condition.
+            // Return WouldBlock so the caller can retry.
+            Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
         } else {
+            // SAFETY: ssl is valid.
             let err = unsafe { wolfSSL_get_error(self.ssl, ret) };
             match err {
-                wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_READ_E
-                | wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_WRITE_E => {
+                WANT_READ | WANT_WRITE => {
                     Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
                 }
                 _ => Err(std::io::Error::new(

@@ -173,6 +173,14 @@ impl TlsServerConfigBuilder {
 
         let inner = Arc::new(CtxInner { ctx });
 
+        // Enforce TLS 1.2 minimum; this is a no-op for pinned-version methods
+        // (wolfTLSv1_2/1_3) but prevents TLS 1.0/1.1 negotiation when using
+        // wolfSSLv23 (flexible version negotiation).
+        let ret = unsafe {
+            wolfSSL_CTX_SetMinVersion(inner.ctx, WOLFSSL_TLSV1_2 as core::ffi::c_int)
+        };
+        expect_wolfssl_success(ret, "wolfSSL_CTX_SetMinVersion")?;
+
         let ret = unsafe {
             wolfSSL_CTX_use_certificate_buffer(
                 inner.ctx,
@@ -312,6 +320,11 @@ impl<IOCB: IOCallbacks> TlsServer<IOCB> {
 
 }
 
+// wolfSSL_get_error returns the OpenSSL-compatible positive values (2, 3),
+// not the negative internal _E callback codes. Define consts for use in match.
+const WANT_READ: core::ffi::c_int = WOLFSSL_ERROR_WANT_READ as core::ffi::c_int;
+const WANT_WRITE: core::ffi::c_int = WOLFSSL_ERROR_WANT_WRITE as core::ffi::c_int;
+
 impl<IOCB: IOCallbacks> Read for TlsServer<IOCB> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if buf.is_empty() {
@@ -328,8 +341,7 @@ impl<IOCB: IOCallbacks> Read for TlsServer<IOCB> {
         } else {
             let err = unsafe { wolfSSL_get_error(self.ssl, ret) };
             match err {
-                wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_READ_E
-                | wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_WRITE_E => {
+                WANT_READ | WANT_WRITE => {
                     Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
                 }
                 _ => Err(std::io::Error::new(
@@ -355,11 +367,14 @@ impl<IOCB: IOCallbacks> Write for TlsServer<IOCB> {
         };
         if ret > 0 {
             Ok(ret as usize)
+        } else if ret == 0 {
+            // wolfSSL_write returning 0 is not documented as a normal condition.
+            // Return WouldBlock so the caller can retry.
+            Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
         } else {
             let err = unsafe { wolfSSL_get_error(self.ssl, ret) };
             match err {
-                wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_READ_E
-                | wolfSSL_ErrorCodes_WOLFSSL_ERROR_WANT_WRITE_E => {
+                WANT_READ | WANT_WRITE => {
                     Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
                 }
                 _ => Err(std::io::Error::new(

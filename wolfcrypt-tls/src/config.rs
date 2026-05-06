@@ -95,8 +95,10 @@ impl TlsClientConfig {
         use crate::error::TlsError;
         use wolfcrypt_sys::*;
 
-        if server_name.len() > u16::MAX as usize {
-            return Err(TlsError::InvalidConfig("server name exceeds maximum SNI length"));
+        if server_name.len() > 253 {
+            return Err(TlsError::InvalidConfig(
+                "server name exceeds maximum DNS hostname length (253 bytes)",
+            ));
         }
 
         let ssl = unsafe { wolfSSL_new(self.inner.ctx) };
@@ -198,8 +200,10 @@ impl TlsClientConfig {
 
         // Set SNI if provided.
         if !server_name.is_empty() {
-            if server_name.len() > u16::MAX as usize {
-                return Err(TlsError::InvalidConfig("server name exceeds maximum SNI length"));
+            if server_name.len() > 253 {
+                return Err(TlsError::InvalidConfig(
+                    "server name exceeds maximum DNS hostname length (253 bytes)",
+                ));
             }
             let ret = wolfSSL_UseSNI(
                 guard.as_ptr(),
@@ -269,6 +273,14 @@ impl TlsClientConfigBuilder {
 
         // Wrap immediately so Drop frees the CTX if any subsequent call fails.
         let inner = Arc::new(CtxInner { ctx });
+
+        // Enforce TLS 1.2 minimum; this is a no-op for pinned-version methods
+        // (wolfTLSv1_2/1_3) but prevents TLS 1.0/1.1 negotiation when using
+        // wolfSSLv23 (flexible version negotiation).
+        let ret = unsafe {
+            wolfSSL_CTX_SetMinVersion(inner.ctx, WOLFSSL_TLSV1_2 as core::ffi::c_int)
+        };
+        expect_wolfssl_success(ret, "wolfSSL_CTX_SetMinVersion")?;
 
         // Load root certificates.
         for (cert_data, format) in root_store.iter() {

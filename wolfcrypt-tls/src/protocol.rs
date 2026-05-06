@@ -44,7 +44,8 @@ pub(crate) unsafe fn resolve_method(
         },
 
         // "v23" is an OpenSSL legacy name retained by wolfSSL — it means
-        // "negotiate the highest mutually supported version" (TLS 1.2+).
+        // "negotiate the highest mutually supported version". We enforce a
+        // TLS 1.2 floor via wolfSSL_CTX_SetMinVersion in the build() methods.
         (None, Side::Client)
         | (Some([ProtocolVersion::Tls12, ProtocolVersion::Tls13]), Side::Client)
         | (Some([ProtocolVersion::Tls13, ProtocolVersion::Tls12]), Side::Client) => unsafe {
