@@ -26,7 +26,12 @@ pub enum TlsError {
     AllocFailed { func: &'static str },
     /// A wolfSSL FFI call returned a non-success error code.
     Ffi { code: i32, func: &'static str },
-    /// Connection has been shut down.
+    /// Connection has been shut down by the peer (TLS close_notify received).
+    ///
+    /// This variant is reserved for future use.  Currently, a clean peer
+    /// close is signalled to `std::io::Read` callers via `Ok(0)` (the
+    /// standard EOF convention) rather than this error variant, because
+    /// `Read::read` returns `io::Result<usize>` not `Result<usize, TlsError>`.
     Closed,
 }
 

@@ -90,9 +90,15 @@ impl TlsServerConfig {
         Ok(guard.into_raw())
     }
 
-    /// Prefer [`TlsAcceptor::accept`] with an [`IOCallbacks`] implementation.
-    /// This lower-level method exists for async layers that manage their own
-    /// callback types.
+    /// Allocate a new `WOLFSSL` session from this config with raw custom IO
+    /// callbacks — the server-side counterpart of
+    /// [`TlsClientConfig::new_ssl_with_io_callbacks`].
+    ///
+    /// Use this when you need hand-rolled `extern "C"` callbacks that cannot
+    /// be expressed through the [`IOCallbacks`] trait (e.g. DTLS with
+    /// datagram-aware chunking, or a non-standard async runtime).  For the
+    /// common case, prefer [`TlsServerConfig::new_session_with_io`] which is
+    /// typed and requires no `unsafe` at the call site.
     ///
     /// # Safety
     /// `recv_cb` and `send_cb` must be valid for the lifetime of the returned

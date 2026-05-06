@@ -147,17 +147,24 @@ impl TlsClientConfig {
     /// Allocate a new `WOLFSSL` session from this config with raw custom IO
     /// callbacks.
     ///
-    /// Prefer [`TlsClient::new`] with an [`IOCallbacks`] implementation.
-    /// This lower-level method exists for async layers that manage their own
-    /// callback types.
+    /// This is the lowest-level session-creation path.  Use it when you need
+    /// to register hand-rolled `extern "C"` callbacks that cannot be expressed
+    /// through the [`IOCallbacks`] trait — for example:
+    ///
+    /// - A DTLS transport that needs MTU-aware datagram chunking
+    /// - A runtime other than tokio or smol with its own buffer type
+    /// - Integration with an existing C library that manages its own buffers
+    ///
+    /// For the common case (Rust async runtime), prefer
+    /// [`new_session_with_io`][Self::new_session_with_io] which is typed and
+    /// requires no `unsafe` call site code.
     ///
     /// Optionally sets SNI if `server_name` is non-empty.
     ///
     /// The caller takes ownership of the returned `*mut WOLFSSL` and is
-    /// responsible for calling `wolfSSL_free` when done.  The `WOLFSSL_CTX`
-    /// backing this config must remain alive for the entire lifetime of the
-    /// returned session — keeping a clone of this `TlsClientConfig` alongside
-    /// the session is the simplest way to ensure that.
+    /// responsible for calling `wolfSSL_free` when done.  Keep a clone of
+    /// this `TlsClientConfig` alive alongside the session to prevent the
+    /// `WOLFSSL_CTX` from being freed prematurely.
     ///
     /// # Errors
     /// Returns `TlsError` if `wolfSSL_new` or `wolfSSL_UseSNI` fails.
