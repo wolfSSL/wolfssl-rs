@@ -1,0 +1,28 @@
+[package]
+name = "wolfcrypt-tls-tokio"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
+description = "Async TLS backed by wolfSSL — tokio AsyncRead/AsyncWrite"
+homepage = "http://wolfssl.com"
+repository = "https://github.com/wolfSSL/wolfssl-rs"
+
+# Future: rename to wolfssl-tokio once namespace is recovered.
+
+[lib]
+name = "wolfssl_tokio"
+
+[features]
+default = []
+vendored = ["wolfcrypt-tls/vendored"]
+fips = ["wolfcrypt-tls/fips"]
+
+[dependencies]
+wolfcrypt-tls = { version = "0.1.4", path = "../wolfcrypt-tls" }
+wolfcrypt-sys  = { version = "0.1.4", path = "../wolfcrypt-sys" }
+tokio          = { version = "1", features = ["io-util", "net", "rt"] }
+bytes          = "1"
+
+[dev-dependencies]
+tokio          = { version = "1", features = ["full"] }
+tokio-test     = "0.4"

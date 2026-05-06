@@ -30,6 +30,7 @@ members = [
     "wolfcrypt-dpe-conformance",
     "ssh-key-wolfcrypt",
     "wolfcrypt-tls",
+    "wolfcrypt-tls-tokio",
     "wolfhsm-src",
     "wolfhsm-sys",
     "wolfhsm",
