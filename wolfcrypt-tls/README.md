@@ -93,7 +93,7 @@ use wolfssl::ProtocolVersion;
 let config = TlsClientConfig::builder()
     .with_root_certificates(roots)
     .with_no_client_auth()
-    .with_protocol_versions(&[ProtocolVersion::Tls13])
+    .with_protocol_versions([ProtocolVersion::Tls13])
     .build()?;
 ```
 
