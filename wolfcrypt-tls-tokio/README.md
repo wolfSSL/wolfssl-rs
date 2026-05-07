@@ -141,10 +141,19 @@ session logic for the `futures::io` trait family (smol, async-std).
 
 ## References
 
-- [wolfSSL documentation](https://www.wolfssl.com/documentation/)
 - [wolfcrypt-tls](../wolfcrypt-tls) — blocking API and config types
-- [wolfcrypt-tls-futures-io](../wolfcrypt-tls-futures-io) — futures::io variant
-- [workspace README](https://github.com/wolfSSL/wolfssl-rs)
+  re-exported here
+- [wolfcrypt-tls-futures-io](../wolfcrypt-tls-futures-io) —
+  `futures::io` variant of the same session logic
+- [tokio](https://tokio.rs) — async runtime providing `AsyncRead` /
+  `AsyncWrite` and the `TcpStream` / `TcpListener` types used in the
+  examples
+- [tokio-rustls](https://github.com/rustls/tokio-rustls) — API model
+  this crate mirrors (`TlsConnector` / `TlsAcceptor` / `TlsStream<IO>`)
+- [wolfSSL documentation](https://www.wolfssl.com/documentation/)
+- [RFC 8446](https://datatracker.ietf.org/doc/html/rfc8446) — TLS 1.3
+- [RFC 5246](https://datatracker.ietf.org/doc/html/rfc5246) — TLS 1.2
+- [workspace README](../README.md)
 
 ## Copyright
 
