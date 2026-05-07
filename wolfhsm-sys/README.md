@@ -34,7 +34,7 @@ opaque in the Rust FFI and cannot be zero-initialized from Rust.
   a breaking-change version bump on `wolfhsm`.
 - Downstream crates with unusual requirements can use the raw bindings without
   pulling in the opinionated safe API.
-- The `links = "wolfhsm_sys"` key prevents multiple copies of the wolfHSM
+- The `links = "wolfhsm"` key prevents multiple copies of the wolfHSM
   static archive from being linked into the same binary.
 
 ## How it works
