@@ -54,12 +54,10 @@ Copyright (C) 2006-2026 wolfSSL Inc.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+GPL-3.0-only OR LicenseRef-wolfSSL-commercial.
 
-The [MIT License](https://opensource.org/licenses/MIT) applies to the Rust
-source code in this crate.  The underlying wolfSSL/wolfCrypt C library is
-licensed under GPL-2.0-or-later with a commercial option available from
-[wolfSSL Inc.](https://www.wolfssl.com/license/)
+The underlying wolfSSL C library is licensed under GPL-2.0-or-later with a
+commercial option available from [wolfSSL Inc.](https://www.wolfssl.com/license/)
 
 Need FIPS 140-3 validation in your Rust application?  wolfCrypt is FIPS 140-3
 validated.  [Contact wolfSSL](https://www.wolfssl.com/license/) for a

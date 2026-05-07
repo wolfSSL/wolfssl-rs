@@ -126,22 +126,10 @@ crate, copyright RustCrypto developers.
 
 ## License
 
-Licensed under either of:
+GPL-3.0-only OR LicenseRef-wolfSSL-commercial.
 
- * [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
- * [MIT license](http://opensource.org/licenses/MIT)
-
-at your option.
-
-The underlying wolfSSL/wolfCrypt C library is licensed under GPL-2.0-or-later
-with a commercial option available from
-[wolfSSL Inc.](https://www.wolfssl.com/license/)
-
-### Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
-dual licensed as above, without any additional terms or conditions.
+The underlying wolfSSL C library is licensed under GPL-2.0-or-later with a
+commercial option available from [wolfSSL Inc.](https://www.wolfssl.com/license/)
 
 [upstream]: https://github.com/RustCrypto/SSH/tree/master/ssh-key
 [wolfCrypt]: https://www.wolfssl.com/products/wolfcrypt/

@@ -115,8 +115,8 @@ validated build.** FIPS 140-3 validation requires:
 4. The FIPS self-test (`wc_RunAllCast()`) must pass at startup.
 
 Without a commercial license and the validated source, enabling `fips` builds
-against unvalidated code. The MIT license on these Rust crates does not grant
-any FIPS compliance rights; those come from wolfSSL Inc. exclusively.
+against unvalidated code. The Rust crate license does not grant any FIPS
+compliance rights; those come from wolfSSL Inc. exclusively.
 
 ## Copyright
 
@@ -124,16 +124,10 @@ Copyright (C) 2006-2026 wolfSSL Inc.
 
 ## License
 
-All `wolfcrypt*`, `wolfssl-src`, and `wolfcrypt-rs` crates are licensed under
-MIT.  See individual crate directories for `LICENSE` files.
+All workspace crates are licensed under
+GPL-3.0-only OR LicenseRef-wolfSSL-commercial. For the commercial option,
+[contact wolfSSL](https://www.wolfssl.com/license/).
 
-`ssh-key-wolfcrypt`, `ssh-encoding`, and `ssh-cipher` are licensed under
-Apache-2.0 OR MIT (inherited from upstream RustCrypto).
-
-The `wolfhsm*` and `wolftpm*` crates are licensed under
-`GPL-3.0-only OR LicenseRef-wolfSSL-commercial`.  For proprietary or commercial
-use a commercial license is available from
+The underlying wolfSSL, wolfHSM, and wolfTPM C libraries are each licensed
+under GPL-2.0-or-later with a commercial option available from
 [wolfSSL Inc.](https://www.wolfssl.com/license/)
-
-The underlying wolfSSL C library is licensed under GPL-2.0-or-later with a
-commercial option; see [wolfSSL licensing](https://www.wolfssl.com/license/).
