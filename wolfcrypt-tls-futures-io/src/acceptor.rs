@@ -53,7 +53,7 @@ impl TlsAcceptor {
                 net,
                 read_buf: bytes::BytesMut::new(),
                 shutdown_sent: false,
-                _config: crate::stream::ConfigHolder::Server((*self.config).clone()),
+                _config: wolfssl::ConfigHolder::Server((*self.config).clone()),
             }),
             handshake_done: false,
         })

@@ -21,6 +21,22 @@ pub enum IOCallbackResult<T> {
     Err(io::Error),
 }
 
+/// Convert from `std::io::Result<usize>` by extracting `WouldBlock`.
+///
+/// This is the canonical bridge from `Read::read` / `Write::write` results
+/// into `IOCallbackResult`.  Custom [`IOCallbacks`] implementations that
+/// delegate to a `Read + Write` transport can write
+/// `transport.read(buf).into()` instead of repeating the match.
+impl From<io::Result<usize>> for IOCallbackResult<usize> {
+    fn from(result: io::Result<usize>) -> Self {
+        match result {
+            Ok(n) => IOCallbackResult::Ok(n),
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => IOCallbackResult::WouldBlock,
+            Err(e) => IOCallbackResult::Err(e),
+        }
+    }
+}
+
 /// Transport abstraction for a wolfSSL session.
 ///
 /// Implement this trait on your transport type to use it with
@@ -73,19 +89,11 @@ pub trait IOCallbacks {
 /// mapping for a clean TCP half-close and is intentional.
 impl<T: io::Read + io::Write> IOCallbacks for T {
     fn recv(&mut self, buf: &mut [u8]) -> IOCallbackResult<usize> {
-        match self.read(buf) {
-            Ok(n) => IOCallbackResult::Ok(n),
-            Err(e) if e.kind() == io::ErrorKind::WouldBlock => IOCallbackResult::WouldBlock,
-            Err(e) => IOCallbackResult::Err(e),
-        }
+        self.read(buf).into()
     }
 
     fn send(&mut self, buf: &[u8]) -> IOCallbackResult<usize> {
-        match self.write(buf) {
-            Ok(n) => IOCallbackResult::Ok(n),
-            Err(e) if e.kind() == io::ErrorKind::WouldBlock => IOCallbackResult::WouldBlock,
-            Err(e) => IOCallbackResult::Err(e),
-        }
+        self.write(buf).into()
     }
 }
 

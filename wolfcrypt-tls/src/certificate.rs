@@ -26,6 +26,24 @@ struct CertEntry {
 }
 
 /// A collection of trusted root CA certificates.
+///
+/// # Naming
+///
+/// `RootCertStore` deliberately mirrors `rustls::RootCertStore` so that
+/// users coming from rustls find a familiar entry point.  The wolfcrypt-tls
+/// builder pattern (`TlsConnector` / `TlsAcceptor` / `TlsStream`,
+/// `with_root_certificates`, `with_client_auth`) is itself a rustls-shaped
+/// API on top of wolfSSL's C library, and this type is part of that mirror.
+///
+/// The two types are not interchangeable:
+///
+/// - `rustls::RootCertStore` stores parsed `webpki::TrustAnchor` entries.
+/// - `wolfssl::RootCertStore` stores raw PEM or DER bytes; wolfSSL parses
+///   them inside `wolfSSL_CTX_load_verify_buffer` when the config is built.
+///
+/// If both rustls and wolfcrypt-tls are pulled in by the same binary,
+/// disambiguate at the import site (`use wolfssl::RootCertStore as
+/// WolfRootCertStore;` etc.).
 #[derive(Debug, Clone)]
 pub struct RootCertStore {
     entries: Vec<CertEntry>,

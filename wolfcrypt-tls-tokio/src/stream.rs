@@ -17,19 +17,9 @@ use std::task::{Context, Poll};
 use bytes::{Buf, BufMut, BytesMut};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
-use wolfssl::{TlsClientConfig, TlsServerConfig};
+use wolfssl::ConfigHolder;
 
 use crate::bridge::NetBuffers;
-
-/// Keeps the `WOLFSSL_CTX` alive for the entire lifetime of the WOLFSSL session.
-///
-/// `TlsClientConfig` / `TlsServerConfig` are already `Arc`-backed internally,
-/// so cloning one is a cheap refcount bump.  No outer `Arc` wrapping needed.
-#[allow(dead_code)]
-pub(crate) enum ConfigHolder {
-    Client(TlsClientConfig),
-    Server(TlsServerConfig),
-}
 
 /// An established TLS connection over an async transport.
 ///

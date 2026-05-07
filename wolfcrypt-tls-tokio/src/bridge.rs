@@ -12,6 +12,13 @@
 // send() — called by wolfSSL to write encrypted bytes:
 //   append to net_out (drained asynchronously by flush_net_out in stream.rs)
 //   always succeeds immediately (unbounded buffer)
+//
+// SISTER FILE: wolfcrypt-tls-futures-io/src/bridge.rs holds a byte-for-byte
+// identical NetBuffers struct + IOCallbacks impl.  This duplication is
+// intentional: consolidating into wolfcrypt-tls would force the base crate
+// to take a `bytes` dependency that blocking-only users do not need.  Any
+// change to the recv/send semantics here MUST be mirrored in the futures-io
+// copy.
 
 use bytes::{Buf, BufMut, BytesMut};
 use wolfssl::{IOCallbackResult, IOCallbacks};

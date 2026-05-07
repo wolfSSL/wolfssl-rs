@@ -131,9 +131,13 @@ impl TlsServerConfig {
 
 impl TlsServerConfigBuilder {
     /// Set the allowed TLS protocol versions.
+    ///
+    /// Accepts anything that dereferences to a `[ProtocolVersion]` slice —
+    /// `&[ProtocolVersion::Tls13]`, `vec![ProtocolVersion::Tls12]`, a fixed
+    /// array, etc.
     #[must_use]
-    pub fn with_protocol_versions(mut self, versions: &[ProtocolVersion]) -> Self {
-        self.protocol_versions = Some(versions.to_vec());
+    pub fn with_protocol_versions(mut self, versions: impl AsRef<[ProtocolVersion]>) -> Self {
+        self.protocol_versions = Some(versions.as_ref().to_vec());
         self
     }
 

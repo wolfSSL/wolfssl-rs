@@ -35,6 +35,8 @@ mod callback;
 mod certificate;
 mod client;
 mod config;
+#[doc(hidden)]
+pub mod config_holder;
 mod error;
 mod protocol;
 mod server;
@@ -43,6 +45,8 @@ pub use callback::{IOCallbackResult, IOCallbacks};
 pub use certificate::{Certificate, PrivateKey, RootCertStore};
 pub use client::TlsClient;
 pub use config::{TlsClientConfig, TlsClientConfigBuilder};
+#[doc(hidden)]
+pub use config_holder::ConfigHolder;
 pub use error::{error_string, Result, TlsError};
 pub use protocol::ProtocolVersion;
 pub use server::{TlsAcceptor, TlsServer, TlsServerConfig, TlsServerConfigBuilder};

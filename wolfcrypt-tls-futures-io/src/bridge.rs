@@ -6,6 +6,12 @@
 //
 // The only difference from the tokio crate is the async driver (stream.rs)
 // which uses futures::io::AsyncRead/AsyncWrite instead of tokio's variants.
+//
+// SISTER FILE: wolfcrypt-tls-tokio/src/bridge.rs holds a byte-for-byte
+// identical NetBuffers struct + IOCallbacks impl.  This duplication is
+// intentional: consolidating into wolfcrypt-tls would force the base crate
+// to take a `bytes` dependency that blocking-only users do not need.  Any
+// change to the recv/send semantics here MUST be mirrored in the tokio copy.
 
 use bytes::{Buf, BufMut, BytesMut};
 use wolfssl::{IOCallbackResult, IOCallbacks};
