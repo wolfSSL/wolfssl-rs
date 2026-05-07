@@ -1,150 +1,164 @@
 # wolfhsm
 
-Safe Rust client for [wolfHSM](https://github.com/wolfSSL/wolfHSM) hardware security modules.
-
-## What
-
-[wolfHSM](https://github.com/wolfSSL/wolfHSM) is an open-source C firmware library from wolfSSL that implements the server side of a hardware security module (HSM). It runs on secure microcontrollers — Infineon TC3xx, Microchip PIC32CZ, Renesas RH850, and others — and exposes cryptographic services to a host processor over a transport layer (TCP, Unix socket, or shared memory).
-
-This crate wraps the wolfHSM C **client** library with an idiomatic Rust API. Your application links this crate; the wolfHSM server runs separately (on secure hardware or a POSIX simulator). The crate provides:
-
-- **Hardware-isolated keys** — ECC P-256, Ed25519, Curve25519, RSA, ML-DSA — generated and stored inside the secure enclave; private key material never leaves
-- **Symmetric crypto** — AES-GCM encryption/decryption, CMAC, HKDF key derivation
-- **NV storage** — tamper-resistant object store for keys, certificates, counters, and arbitrary data
-- **CryptoCb integration** — register the HSM as a wolfcrypt CryptoCb device so existing wolfcrypt code routes operations to the HSM transparently
-- **RustCrypto traits** — `EccP256Key` and `Ed25519Key` implement `signature::Signer`
+Safe Rust client for [wolfHSM](https://github.com/wolfSSL/wolfHSM) hardware
+security modules. Wraps the wolfHSM C client library with an idiomatic Rust
+API; the wolfHSM server runs separately on secure hardware (Infineon TC3xx,
+Microchip PIC32CZ, Renesas RH850, etc.) or a POSIX simulator.
 
 ## Why
 
-### Why wolfHSM?
+The wolfHSM C client is portable and small, but it is a raw C API. This
+crate adds the Rust guarantees the C API cannot express:
 
-wolfHSM is self-contained (depends only on wolfSSL/wolfCrypt), compiles to a small footprint, and is designed from the ground up for embedded and automotive HSM targets. The client library is portable C that is straightforward to wrap.
+- **Hardware-isolated keys** — ECC P-256, Ed25519, Curve25519, RSA, ML-DSA,
+  AES, CMAC keys are generated and stored inside the secure enclave;
+  private key material never crosses the transport.
+- **RAII cache-slot management** — closure-based key APIs guarantee server
+  cache slots are evicted on every path, including when the closure
+  returns `Err`.
+- **Typed key handles** — `EccP256Key`, `RsaKey`, `Ed25519Key`, `AesKey`,
+  `Curve25519Key`, `MlDsaKey`, `CmacKey` prevent mixing key types at
+  compile time.
+- **`Result` everywhere** — no raw C return-code checking in application
+  code.
+- **RustCrypto interop** — `EccP256Key::signer` and `Ed25519Key::signer`
+  return `signature::Signer` adapters, so HSM keys plug into any code
+  expecting a `signature::Signer`.
+- **`&mut Client` enforces protocol** — the wolfHSM transport allows only
+  one in-flight request; requiring `&mut Client` on every method makes
+  the borrow checker enforce that invariant.
 
-### Why this crate?
-
-`wolfhsm` adds the Rust guarantees the C API cannot express:
-
-- **RAII key management** — cache slots are always released on drop, even if the closure returns `Err`
-- **Typed key handles** — `EccP256Key`, `RsaKey`, `AesKey` prevent mixing key types at compile time
-- **`Result` everywhere** — no raw C return code checking in application code
-- **RustCrypto interop** — use HSM keys anywhere a `signature::Signer` is accepted
-
-## How it works
-
-### Crate stack
-
-```text
-wolfhsm-src     Compiles the wolfHSM C client library from source via the
-│               cc crate; emits DEP_WOLFHSM_SRC_{INCLUDE,LIB} for downstream
-│
-wolfhsm-sys     bindgen-generated FFI bindings to wh_client.h and friends;
-│               also compiles C shims for key operations (wolfcrypt structs
-│               are zero-sized in the Rust FFI and must be stack-allocated
-│               on the C side)
-│
-wolfhsm         Safe Rust API — Client, typed key handles, NVM, counters,
-                CryptoCb, RustCrypto trait impls (this crate)
-```
-
-### Communication model
-
-```text
-Your app (Rust) → wolfhsm → wolfHSM C client lib → TCP/UDS/SHM → wolfHSM server
-```
-
-The server is a separate process (or secure element firmware). This crate handles the client side only. The server must be started independently before calling `Client::connect`.
-
-## Quick start
+## Usage
 
 ```toml
-wolfhsm = { version = "0.1" }
+[dependencies]
+wolfhsm = "0.1"
 ```
+
+### Connect and sign
 
 ```rust
 use wolfhsm::{Client, Transport};
 
 let mut client = Client::connect(
     Transport::Tcp { ip: "127.0.0.1".into(), port: 8080 },
-    1,
+    1, // client id
 )?;
 
-// Generate a P-256 key, sign, then evict — guaranteed even on error.
-let digest = sha2::Sha256::digest(b"hello world");
+let digest = [0u8; 32]; // SHA-256 of the data to sign
 let sig = client.with_ecc_p256_key(|key, client| {
     key.sign_digest(client, &digest)
 })?;
 ```
 
-## Crypto operations
+`with_ecc_p256_key` generates the key, runs the closure, and always evicts
+the cache slot — even if the closure returns `Err`.
 
-| Operation | API |
-|-----------|-----|
-| ECC P-256 keygen, sign, verify, ECDH | `Client::with_ecc_p256_key` |
-| RSA keygen, raw op, public key export | `Client::with_rsa_key` |
-| Ed25519 keygen, sign, verify | `Client::with_ed25519_key` |
-| AES-GCM encrypt/decrypt | `Client::with_aes_key` |
-| CMAC | `Client::with_cmac_key` |
-| CryptoCb device registration | `CryptoCbGuard` |
-
-`EccP256Key` also implements `signature::Signer<p256::ecdsa::DerSignature>` via `EccP256Key::signer()`.
-
-## Key management
-
-Key handles hold a cache slot on the HSM server. The closure-based API ensures slots are always released:
+### Multiple operations on the same key
 
 ```rust
-client.with_ecc_p256_key(|key, client| {
+let (pub_der, sig) = client.with_ecc_p256_key(|key, client| {
     let pub_der = key.public_key_der(client)?;
     let sig = key.sign_digest(client, &digest)?;
     Ok((pub_der, sig))
 })?;
-// Cache slot is evicted here, whether the closure succeeded or failed.
+// Cache slot evicted here, regardless of outcome.
 ```
 
-## NVM
-
-Persistent key and object storage on the HSM:
+### NVM (persistent object store)
 
 ```rust
-client.nvm_add(id, 0, 0, b"my-key", &key_bytes)?;
-let data = client.nvm_read(id)?;
-client.nvm_erase(id)?;
+use wolfhsm::NvmId;
+
+let id: NvmId = /* … */;
+client.nvm_add(id, /* access */ 0, /* flags */ 0, b"my-key", &key_bytes)?;
+let data = client.nvm_read(id, /* offset */ 0)?;
+client.nvm_delete(id)?;
 ```
 
-## Feature flags
+### CryptoCb integration
+
+Register the HSM as a wolfCrypt CryptoCb device so existing wolfCrypt code
+routes operations to the HSM transparently:
+
+```rust
+use wolfhsm::CryptoCbGuard;
+
+let _guard = CryptoCbGuard::register(&mut client)?;
+// While `_guard` is alive, wolfCrypt operations using DEV_ID are
+// dispatched to the HSM. Dropped on scope exit.
+```
+
+### RustCrypto `Signer`
+
+```rust
+use signature::Signer;
+
+client.with_ecc_p256_key(|key, client| {
+    let signer = key.signer(client);
+    let sig: p256::ecdsa::DerSignature = signer.sign(b"message");
+    Ok(sig)
+})?;
+```
+
+## How it works
+
+```text
+wolfhsm-src     Compiles the wolfHSM C client library from source via the
+│               cc crate; emits DEP_WOLFHSM_SRC_{INCLUDE,LIB}.
+│
+wolfhsm-sys     bindgen-generated FFI to wh_client.h plus C shims that
+│               stack-allocate wolfCrypt key/context structs on the
+│               C side (those types are opaque from Rust).
+│
+wolfhsm         Safe Rust API — Client, typed key handles, NVM,
+                counters, CryptoCb, RustCrypto adapters (this crate).
+```
+
+The communication model is request/response over a transport:
+
+```text
+Your app (Rust) → wolfhsm → wolfHSM C client → TCP/UDS/SHM → wolfHSM server
+```
+
+The server is a separate process or secure-element firmware. It must be
+running before `Client::connect` is called.
+
+### Transport variants
+
+| Variant | Mechanism |
+|---------|-----------|
+| `Transport::Tcp` | TCP/IP socket |
+| `Transport::Uds` | Unix domain socket |
+| `Transport::Shm` | POSIX shared memory (same host, zero-copy) |
+
+### Feature flags
 
 | Feature | What it enables |
 |---------|----------------|
 | `cert`  | Certificate management (`wh_Client_Cert*`) — store, read, and verify DER certificates against trusted roots in NVM |
 | `auth`  | Authentication and user management (`wh_Client_Auth*`) |
-| `she`   | SHE (Secure Hardware Extension) automotive key management |
+| `she`   | SHE (Secure Hardware Extension) AutoSAR automotive key management; requires `WOLFSSL_AES_DIRECT` and `HAVE_AES_ECB` in the linked wolfSSL |
 | `mldsa` | ML-DSA (Dilithium) key support; requires `HAVE_DILITHIUM` in the linked wolfSSL |
 
-## Transport
+### Build prerequisites
 
-| Variant | Description |
-|---------|-------------|
-| `Transport::Tcp` | TCP/IP socket |
-| `Transport::Uds` | Unix domain socket |
-| `Transport::Shm` | POSIX shared memory (same host, zero-copy) |
-
-## Building
-
-Requires a wolfHSM source tree and a compiled wolfSSL:
-
-```sh
-export WOLFHSM_SRC=/path/to/wolfHSM
-export WOLFSSL_DIR=/path/to/wolfssl-install
-cargo build
-```
-
-wolfSSL must be built with `WOLF_CRYPTO_CB` enabled. See the [workspace README](https://github.com/wolfSSL/wolfssl-rs) for full build instructions.
+A wolfHSM source tree and a compiled wolfSSL with `WOLF_CRYPTO_CB` enabled
+are required at build time. Configuration is handled by
+[`wolfhsm-src`](../wolfhsm-src) and [`wolfhsm-sys`](../wolfhsm-sys); see
+those crates for the full set of supported environment variables
+(`WOLFHSM_SRC`, `WOLFSSL_DIR`, `WOLFSSL_INCLUDE_DIR`, `WOLFSSL_SRC`).
 
 ## References
 
+- [wolfhsm-sys](../wolfhsm-sys) — raw FFI bindings; use this only if you
+  need a wolfHSM C symbol that is not yet wrapped here
+- [wolfhsm-src](../wolfhsm-src) — vendored wolfHSM C source build
+- [wolfcrypt-tls](../wolfcrypt-tls) — safe Rust TLS using wolfSSL (the
+  `wolfssl` crate name)
 - [wolfHSM repository](https://github.com/wolfSSL/wolfHSM)
 - [wolfHSM documentation](https://www.wolfssl.com/documentation/manuals/wolfhsm/)
-- [wolfssl-rs workspace](https://github.com/wolfSSL/wolfssl-rs)
+- [workspace README](../README.md)
 
 ## Copyright
 

@@ -1,82 +1,121 @@
 # wolfssl-src
 
-Build-script crate that compiles [wolfSSL](https://github.com/wolfSSL/wolfssl)
-from C source as part of a Cargo build.  Used by `wolfcrypt-sys` when the
-`vendored` feature is enabled.
-
-## What
-
-`wolfssl-src` is a build-infrastructure crate.  It has no public Rust API.
-Its only job is to compile the wolfSSL/wolfCrypt C library and make the
-resulting static archive and headers available to `wolfcrypt-sys`.
+Build-script crate that compiles
+[wolfSSL](https://github.com/wolfSSL/wolfssl) from C source as part of a
+Cargo build. Used by [`wolfcrypt-sys`](../wolfcrypt-sys) when its
+`vendored` feature is enabled, modelled on the
+[`openssl-src`](https://crates.io/crates/openssl-src) /
+[`openssl-sys`](https://crates.io/crates/openssl-sys) pattern.
 
 ## Why
 
-The three-crate split (`wolfssl-src` → `wolfcrypt-sys` → `wolfcrypt-rs`)
-separates concerns cleanly:
+The three-crate split (`wolfssl-src` → `wolfcrypt-sys` →
+`wolfcrypt-rs`) separates concerns so each layer can change
+independently:
 
-- `wolfssl-src` owns the C build; it can be versioned independently of the FFI
-  or the safe Rust API.
-- `wolfcrypt-sys` owns the FFI boundary and bindgen invocation.
-- `wolfcrypt-rs` owns the safe Rust wrapper and re-exports build metadata.
+- `wolfssl-src` owns the C build; it can be versioned independently of
+  the FFI or the safe Rust API.
+- [`wolfcrypt-sys`](../wolfcrypt-sys) owns the FFI boundary and bindgen
+  invocation.
+- [`wolfcrypt-rs`](../wolfcrypt-rs) owns the safe Rust wrapper and
+  re-exports build metadata.
 
-Having the C build in its own crate means that multiple crates in the same
-workspace (e.g. `wolfcrypt-sys` and `wolftpm-sys`) can share the compiled
-wolfSSL without recompiling it.
+Having the C build in its own crate means multiple crates in the same
+workspace (`wolfcrypt-sys`, `wolftpm-sys`, `wolfhsm-sys`) can share the
+compiled wolfSSL without recompiling it.
 
-## How it works
+## Usage
 
-`build.rs` selects one of several pre-configured `user_settings.h` files based
-on Cargo features, then uses the `cc` crate to compile the wolfSSL source tree
-against that settings file.  The compiled static library and include directory
-are exposed via Cargo metadata so `wolfcrypt-sys` can link against them.
-
-Feature-to-config mapping:
-
-| Feature | user_settings.h used | Purpose |
-|---|---|---|
-| *(default)* | full-featured | OpenSSL compat, all algorithms, `WOLF_CRYPTO_CB` |
-| `cryptocb-only` | crypto-callback only | All calls dispatched to CryptoCb callbacks |
-| `cryptocb-pure` | minimal | CryptoCb + type defs only; no software math |
-| `riscv-bare-metal` | bare-metal | No stdio/pthread; for RISC-V firmware |
-
-## How to use
-
-This crate is not intended to be used directly.  Enable it through
-`wolfcrypt-sys`:
+This crate is normally consumed transitively through `wolfcrypt-sys`:
 
 ```toml
+[dependencies]
 wolfcrypt-sys = { version = "0.1", features = ["vendored"] }
 ```
 
-To use `wolfssl-src` directly (e.g. to link wolfSSL into your own build),
-declare it as a `[dependency]` (not `[build-dependency]`) so Cargo propagates
-its metadata to your build script.
+For direct use in your own build pipeline:
 
-## Configuration
+```toml
+[dependencies]
+wolfssl-src = "0.1"
+```
 
-| Environment variable | Description |
-|---------------------|-------------|
-| `WOLFSSL_SRC` | Path to a wolfSSL source tree.  Required when `vendored` is enabled. |
+```rust,no_run
+// Build wolfSSL from source and report where the artefacts landed.
+let artifacts = wolfssl_src::Build::new()
+    .fips(false)              // pass true for FIPS 140-3 builds (commercial)
+    .build();
 
-The `riscv-bare-metal` feature selects a minimal configuration for
-`riscv32imc-unknown-none-elf` targets (Caliptra firmware).
+println!("lib dir:      {}", artifacts.lib_dir.display());
+println!("include dir:  {}", artifacts.include_dir.display());
+println!("settings dir: {}", artifacts.settings_include_dir.display());
+```
 
-## Features
+`Artifacts` exposes the static-archive directory, the wolfSSL header
+include path, the directory containing the active `user_settings.h`,
+and the parsed set of `#define` names from that settings file.
 
-| Feature | Description |
-|---|---|
-| `cryptocb-only` | CryptoCb dispatch only — all crypto routed to callbacks |
-| `cryptocb-pure` | Absolute minimum — CryptoCb + type defs, no SP math |
-| `riscv-bare-metal` | Bare-metal RISC-V platform stubs (Caliptra) |
+When using `wolfssl-src` from another crate's `build.rs`, declare it as
+a regular `[dependency]` (not a `[build-dependency]`) so Cargo
+propagates the `DEP_WOLFSSL_SRC_*` metadata to your build script.
 
-## FIPS 140-3
+### Source resolution
 
-Need FIPS 140-3 validation in your Rust application?  wolfCrypt is FIPS 140-3
-validated.  FIPS builds require the specific wolfSSL source tree submitted for
-validation (not an arbitrary checkout) and a commercial license.
-[Contact wolfSSL](https://www.wolfssl.com/license/) for a commercial FIPS
-license and the validated source tree.
+`Build::build()` discovers the wolfSSL source tree in this priority
+order:
+
+1. `Build::source_dir(...)` — explicit programmatic override.
+2. `WOLFSSL_SRC` environment variable.
+3. Bundled submodule at `wolfssl-src/wolfssl/` (after
+   `git submodule update --init`).
+4. `pkg-config` — looks for a `wolfssl` package whose prefix contains
+   source files.
+
+### FIPS 140-3
+
+wolfCrypt is FIPS 140-3 validated. FIPS builds require:
+
+- The specific wolfSSL source tree submitted for validation (not an
+  arbitrary checkout) — supplied by wolfSSL Inc. under commercial
+  license.
+- A `user_settings_fips.h` configuration header in this crate's
+  manifest directory.
+
+Set `Build::fips(true)` to enable the FIPS code path.
+[Contact wolfSSL](https://www.wolfssl.com/license/) for a commercial
+FIPS license and the validated source tree.
+
+## How it works
+
+`build.rs` selects one of several pre-configured `user_settings.h`
+files based on Cargo features, then uses the [`cc`](https://crates.io/crates/cc)
+crate to compile the wolfSSL source tree against that settings file.
+Feature precedence is `cryptocb-pure` > `cryptocb-only` >
+`riscv-bare-metal` > default (verified in `src/lib.rs`).
+
+| Feature | `user_settings.h` used | Purpose |
+|---|---|---|
+| *(default)* | `user_settings.h` | OpenSSL compat, all algorithms, `WOLF_CRYPTO_CB` |
+| `cryptocb-only` | `user_settings_cryptocb_only.h` | All crypto routed to CryptoCb callbacks; SP math excluded |
+| `cryptocb-pure` | `user_settings_cryptocb_pure.h` | Minimum: CryptoCb routing + type defs only; no OpenSSL EVP, no HKDF, no ASN template |
+| `riscv-bare-metal` | `user_settings_riscv.h` | No stdio/pthread; for `riscv32imc-unknown-none-elf` (Caliptra firmware) |
+
+The compiled static library and include directory are exposed via
+Cargo metadata (`DEP_WOLFSSL_SRC_*`) so that downstream sys crates can
+link against them without re-running the C build.
+
+## References
+
+- [wolfcrypt-sys](../wolfcrypt-sys) — primary consumer; the FFI binding
+  layer
+- [wolfcrypt-rs](../wolfcrypt-rs) — typed Rust wrapper above
+  `wolfcrypt-sys`
+- [wolfhsm-src](../wolfhsm-src) — sibling source-build crate for wolfHSM
+- [wolftpm-src](../wolftpm-src) — sibling source-build crate for wolfTPM
+- [wolfSSL repository](https://github.com/wolfSSL/wolfssl)
+- [wolfSSL documentation](https://www.wolfssl.com/documentation/)
+- [`cc` crate](https://crates.io/crates/cc) — C build dependency
+- [workspace README](../README.md)
 
 ## Copyright
 
