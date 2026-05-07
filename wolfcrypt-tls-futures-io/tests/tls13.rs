@@ -30,7 +30,7 @@ fn tls13_handshake_and_data_exchange() {
                 roots.add_pem(CA_CERT_PEM);
                 let cfg = Arc::new(
                     TlsClientConfig::builder()
-                        .with_protocol_versions(&[ProtocolVersion::Tls13])
+                        .with_protocol_versions([ProtocolVersion::Tls13])
                         .with_root_certificates(roots)
                         .with_no_client_auth()
                         .build()
@@ -57,7 +57,7 @@ fn tls13_handshake_and_data_exchange() {
                 let (stream, _) = listener.accept().await?;
                 let cfg = Arc::new(
                     TlsServerConfig::builder()
-                        .with_protocol_versions(&[ProtocolVersion::Tls13])
+                        .with_protocol_versions([ProtocolVersion::Tls13])
                         .with_certificate_chain(
                             Certificate::from_pem(SERVER_CERT_PEM),
                             PrivateKey::from_pem(SERVER_KEY_PEM),

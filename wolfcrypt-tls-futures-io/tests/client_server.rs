@@ -138,7 +138,7 @@ fn mtls_both_sides_authenticated() {
         ca_store.add_pem(CA_CERT_PEM);
         let srv_cfg = Arc::new(
             TlsServerConfig::builder()
-                .with_protocol_versions(&[ProtocolVersion::Tls12])
+                .with_protocol_versions([ProtocolVersion::Tls12])
                 .with_certificate_chain(
                     Certificate::from_pem(SERVER_CERT_PEM),
                     PrivateKey::from_pem(SERVER_KEY_PEM),
@@ -153,7 +153,7 @@ fn mtls_both_sides_authenticated() {
         roots.add_pem(CA_CERT_PEM);
         let cli_cfg = Arc::new(
             TlsClientConfig::builder()
-                .with_protocol_versions(&[ProtocolVersion::Tls12])
+                .with_protocol_versions([ProtocolVersion::Tls12])
                 .with_root_certificates(roots)
                 .with_client_auth(
                     Certificate::from_pem(CLIENT_CERT_PEM),
@@ -213,7 +213,7 @@ fn mtls_rejection_client_without_cert() {
         ca_store.add_pem(CA_CERT_PEM);
         let srv_cfg = Arc::new(
             TlsServerConfig::builder()
-                .with_protocol_versions(&[ProtocolVersion::Tls12])
+                .with_protocol_versions([ProtocolVersion::Tls12])
                 .with_certificate_chain(
                     Certificate::from_pem(SERVER_CERT_PEM),
                     PrivateKey::from_pem(SERVER_KEY_PEM),
@@ -227,7 +227,7 @@ fn mtls_rejection_client_without_cert() {
         roots.add_pem(CA_CERT_PEM);
         let cli_cfg = Arc::new(
             TlsClientConfig::builder()
-                .with_protocol_versions(&[ProtocolVersion::Tls12])
+                .with_protocol_versions([ProtocolVersion::Tls12])
                 .with_root_certificates(roots)
                 .with_no_client_auth()
                 .build()

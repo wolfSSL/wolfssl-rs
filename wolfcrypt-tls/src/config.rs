@@ -232,15 +232,20 @@ impl TlsClientConfig {
 impl TlsClientConfigBuilder {
     /// Set the allowed TLS protocol versions.
     ///
-    /// Accepts anything that dereferences to a `[ProtocolVersion]` slice —
-    /// `&[ProtocolVersion::Tls13]`, `vec![ProtocolVersion::Tls12]`, a fixed
-    /// array `[ProtocolVersion::Tls12, ProtocolVersion::Tls13]`, etc.
+    /// Accepts any iterable of `ProtocolVersion`:
+    /// - `[ProtocolVersion::Tls13]` (fixed-size array)
+    /// - `[ProtocolVersion::Tls12, ProtocolVersion::Tls13]`
+    /// - `vec![ProtocolVersion::Tls12]`
+    /// - any `Iterator<Item = ProtocolVersion>`
     ///
     /// If not called, defaults to flexible version negotiation with TLS 1.2 as
     /// the minimum (enforced via `wolfSSL_CTX_SetMinVersion`).
     #[must_use]
-    pub fn with_protocol_versions(mut self, versions: impl AsRef<[ProtocolVersion]>) -> Self {
-        self.protocol_versions = Some(versions.as_ref().to_vec());
+    pub fn with_protocol_versions(
+        mut self,
+        versions: impl IntoIterator<Item = ProtocolVersion>,
+    ) -> Self {
+        self.protocol_versions = Some(versions.into_iter().collect());
         self
     }
 

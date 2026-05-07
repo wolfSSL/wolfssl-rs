@@ -161,7 +161,7 @@ fn connection_uses_modern_tls() {
     root_store.add_pem(CA_CERT_PEM);
 
     let config = TlsClientConfig::builder()
-        .with_protocol_versions(&[ProtocolVersion::Tls13])
+        .with_protocol_versions([ProtocolVersion::Tls13])
         .with_root_certificates(root_store)
         .with_no_client_auth()
         .build()

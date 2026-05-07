@@ -64,7 +64,7 @@ fn mtls_rejection_client_without_cert() {
     let mut ca_store = RootCertStore::new();
     ca_store.add_pem(CA_CERT_PEM);
     let srv_config = TlsServerConfig::builder()
-        .with_protocol_versions(&[wolfssl::ProtocolVersion::Tls12])
+        .with_protocol_versions([wolfssl::ProtocolVersion::Tls12])
         .with_certificate_chain(cert, key)
         .with_client_auth(ca_store)
         .build()
@@ -76,7 +76,7 @@ fn mtls_rejection_client_without_cert() {
     let mut root_store = RootCertStore::new();
     root_store.add_pem(CA_CERT_PEM);
     let cfg = TlsClientConfig::builder()
-        .with_protocol_versions(&[wolfssl::ProtocolVersion::Tls12])
+        .with_protocol_versions([wolfssl::ProtocolVersion::Tls12])
         .with_root_certificates(root_store)
         .with_no_client_auth()
         .build()

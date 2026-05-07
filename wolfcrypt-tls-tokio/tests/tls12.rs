@@ -23,7 +23,7 @@ async fn tls12_handshake_and_data_exchange() {
             roots.add_pem(CA_CERT_PEM);
             let cfg = Arc::new(
                 TlsClientConfig::builder()
-                    .with_protocol_versions(&[ProtocolVersion::Tls12])
+                    .with_protocol_versions([ProtocolVersion::Tls12])
                     .with_root_certificates(roots)
                     .with_no_client_auth()
                     .build()
@@ -46,7 +46,7 @@ async fn tls12_handshake_and_data_exchange() {
         async {
             let cfg = Arc::new(
                 TlsServerConfig::builder()
-                    .with_protocol_versions(&[ProtocolVersion::Tls12])
+                    .with_protocol_versions([ProtocolVersion::Tls12])
                     .with_certificate_chain(
                         Certificate::from_pem(SERVER_CERT_PEM),
                         PrivateKey::from_pem(SERVER_KEY_PEM),

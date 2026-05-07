@@ -132,12 +132,17 @@ impl TlsServerConfig {
 impl TlsServerConfigBuilder {
     /// Set the allowed TLS protocol versions.
     ///
-    /// Accepts anything that dereferences to a `[ProtocolVersion]` slice —
-    /// `&[ProtocolVersion::Tls13]`, `vec![ProtocolVersion::Tls12]`, a fixed
-    /// array, etc.
+    /// Accepts any iterable of `ProtocolVersion`:
+    /// - `[ProtocolVersion::Tls13]` (fixed-size array)
+    /// - `[ProtocolVersion::Tls12, ProtocolVersion::Tls13]`
+    /// - `vec![ProtocolVersion::Tls12]`
+    /// - any `Iterator<Item = ProtocolVersion>`
     #[must_use]
-    pub fn with_protocol_versions(mut self, versions: impl AsRef<[ProtocolVersion]>) -> Self {
-        self.protocol_versions = Some(versions.as_ref().to_vec());
+    pub fn with_protocol_versions(
+        mut self,
+        versions: impl IntoIterator<Item = ProtocolVersion>,
+    ) -> Self {
+        self.protocol_versions = Some(versions.into_iter().collect());
         self
     }
 
