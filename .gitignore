@@ -19,9 +19,6 @@ Cargo.lock
 lcov.info
 /.zed/
 
-# Headless-review dispatcher logs (scripts/review-rusty-crate.sh).
-/.review-logs/
-
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
