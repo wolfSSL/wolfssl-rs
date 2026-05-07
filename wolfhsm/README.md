@@ -156,5 +156,5 @@ wolfHSM is copyright wolfSSL Inc. and its contributors.
 
 GPL-3.0-only OR LicenseRef-wolfSSL-commercial.
 
-The underlying wolfHSM C library is licensed under GPL-2.0-or-later with a
+The underlying wolfHSM C library is licensed under GPL-3.0-or-later with a
 commercial option available from [wolfSSL Inc.](https://www.wolfssl.com/license/)

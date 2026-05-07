@@ -129,5 +129,5 @@ GPL-3.0-only OR LicenseRef-wolfSSL-commercial. For the commercial option,
 [contact wolfSSL](https://www.wolfssl.com/license/).
 
 The underlying wolfSSL, wolfHSM, and wolfTPM C libraries are each licensed
-under GPL-2.0-or-later with a commercial option available from
+under GPL-3.0-or-later with a commercial option available from
 [wolfSSL Inc.](https://www.wolfssl.com/license/)
