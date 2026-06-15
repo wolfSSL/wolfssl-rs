@@ -7,6 +7,7 @@
 //! [`X448PublicKey`], and [`X448SharedSecret`] backed by wolfCrypt's Curve448
 //! implementation (RFC 7748).
 
+use crate::WolfCryptError;
 use wolfcrypt_rs::{
     wc_FreeRng, wc_InitRng, wc_curve25519_export_key_raw_ex, wc_curve25519_free,
     wc_curve25519_import_private_raw_ex, wc_curve25519_import_public_ex, wc_curve25519_init,
