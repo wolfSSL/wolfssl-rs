@@ -106,15 +106,24 @@ impl DhSecret {
     }
 
     /// Return the public key as big-endian bytes, zero-padded to the group size.
-    pub fn public_key_bytes(&self) -> Vec<u8> {
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if wolfCrypt fails to export the public key.
+    pub fn public_key_bytes(&self) -> Result<Vec<u8>, WolfCryptError> {
         let mut buf = vec![0u8; self.group_sz];
         let mut len = self.group_sz as u32;
         // SAFETY: buf is group_sz bytes, which is the declared output size.
         let rc =
             unsafe { wolfcrypt_rs::wolfcrypt_dh_public_key(self.ctx, buf.as_mut_ptr(), &mut len) };
-        assert_eq!(rc, 0, "wolfcrypt_dh_public_key failed");
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wolfcrypt_dh_public_key",
+            });
+        }
         buf.truncate(len as usize);
-        buf
+        Ok(buf)
     }
 
     /// Return the DH parameter size in bytes (size of the shared secret).

@@ -203,7 +203,7 @@ pub struct Key {
     /// Store the raw key bytes so we can re-init on clone.
     /// wolfSSL doesn't support CMAC_CTX_copy, so we re-create
     /// the context from scratch when cloning.
-    key_bytes: Vec<u8>,
+    key_bytes: zeroize::Zeroizing<Vec<u8>>,
 }
 
 impl Clone for Key {
@@ -278,7 +278,7 @@ impl Key {
         Ok(Self {
             algorithm,
             ctx,
-            key_bytes: key_value.to_vec(),
+            key_bytes: zeroize::Zeroizing::new(key_value.to_vec()),
         })
     }
 

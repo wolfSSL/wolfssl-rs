@@ -17,8 +17,8 @@ fn dh_ffdhe2048_round_trip() {
     let alice = DhSecret::generate_ffdhe2048().expect("Alice keygen failed");
     let bob = DhSecret::generate_ffdhe2048().expect("Bob keygen failed");
 
-    let alice_pub = alice.public_key_bytes();
-    let bob_pub = bob.public_key_bytes();
+    let alice_pub = alice.public_key_bytes().expect("export pub key");
+    let bob_pub = bob.public_key_bytes().expect("export pub key");
 
     // Public keys should be non-trivial.
     assert!(
@@ -49,10 +49,10 @@ fn dh_ffdhe3072_round_trip() {
     let bob = DhSecret::generate(FfdheGroup::Ffdhe3072).expect("Bob keygen failed");
 
     let alice_secret = alice
-        .compute_shared_secret(&bob.public_key_bytes())
+        .compute_shared_secret(&bob.public_key_bytes().expect("export pub key"))
         .expect("Alice compute failed");
     let bob_secret = bob
-        .compute_shared_secret(&alice.public_key_bytes())
+        .compute_shared_secret(&alice.public_key_bytes().expect("export pub key"))
         .expect("Bob compute failed");
 
     assert_eq!(alice_secret, bob_secret);
@@ -67,10 +67,10 @@ fn dh_ffdhe4096_round_trip() {
     let bob = DhSecret::generate(FfdheGroup::Ffdhe4096).expect("Bob keygen failed");
 
     let alice_secret = alice
-        .compute_shared_secret(&bob.public_key_bytes())
+        .compute_shared_secret(&bob.public_key_bytes().expect("export pub key"))
         .expect("Alice compute failed");
     let bob_secret = bob
-        .compute_shared_secret(&alice.public_key_bytes())
+        .compute_shared_secret(&alice.public_key_bytes().expect("export pub key"))
         .expect("Bob compute failed");
 
     assert_eq!(alice_secret, bob_secret);
@@ -84,7 +84,7 @@ fn dh_shared_secret_length() {
     let bob = DhSecret::generate_ffdhe2048().expect("keygen failed");
 
     let secret = alice
-        .compute_shared_secret(&bob.public_key_bytes())
+        .compute_shared_secret(&bob.public_key_bytes().expect("export pub key"))
         .expect("compute failed");
 
     // FFDHE2048 → 2048-bit prime → 256 bytes.
@@ -102,8 +102,8 @@ fn dh_distinct_keys() {
     let a = DhSecret::generate_ffdhe2048().expect("keygen failed");
     let b = DhSecret::generate_ffdhe2048().expect("keygen failed");
     assert_ne!(
-        a.public_key_bytes(),
-        b.public_key_bytes(),
+        a.public_key_bytes().expect("export pub key"),
+        b.public_key_bytes().expect("export pub key"),
         "Two independent DH key pairs should have different public keys"
     );
 }
