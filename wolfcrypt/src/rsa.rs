@@ -1333,6 +1333,10 @@ fn der_encode_unsigned_integer(bytes: &[u8]) -> alloc::vec::Vec<u8> {
 }
 
 /// Push a DER length encoding into `out`.
+///
+/// # Panics
+/// Panics if `len` exceeds 0xFF_FFFF (16 MiB), which cannot occur for
+/// any valid RSA key component.
 #[cfg(feature = "rsa-direct")]
 fn der_push_length(len: usize, out: &mut alloc::vec::Vec<u8>) {
     if len < 0x80 {
@@ -1340,10 +1344,17 @@ fn der_push_length(len: usize, out: &mut alloc::vec::Vec<u8>) {
     } else if len < 0x100 {
         out.push(0x81);
         out.push(len as u8);
-    } else {
+    } else if len < 0x10000 {
         out.push(0x82);
         out.push((len >> 8) as u8);
         out.push(len as u8);
+    } else if len < 0x100_0000 {
+        out.push(0x83);
+        out.push((len >> 16) as u8);
+        out.push((len >> 8) as u8);
+        out.push(len as u8);
+    } else {
+        panic!("DER length {len} exceeds maximum supported (0xFFFFFF)");
     }
 }
 

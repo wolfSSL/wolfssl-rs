@@ -331,7 +331,10 @@ impl<L: MlDsaLevel> signature_trait::Signer<MlDsaSignature<L>> for MlDsaSigningK
             return Err(signature_trait::Error::new());
         }
 
-        sig_buf.truncate(sig_len as usize);
+        if sig_len as usize != L::SIG_SIZE {
+            return Err(signature_trait::Error::new());
+        }
+
         Ok(MlDsaSignature {
             bytes: sig_buf,
             _level: PhantomData,
