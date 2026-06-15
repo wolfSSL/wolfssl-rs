@@ -5,7 +5,7 @@
 [package]
 name = "wolfcrypt"
 authors = ["WolfSSL Inc"]
-version = "0.1.4"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
@@ -57,7 +57,7 @@ cryptocb-pure = ["wolfcrypt-rs/cryptocb-pure"]
 require-dev-id = []
 
 [dependencies]
-wolfcrypt-rs = { version = "0.1.3", path = "../wolfcrypt-rs" }
+wolfcrypt-rs = { version = "0.2.0", path = "../wolfcrypt-rs" }
 
 # RustCrypto trait crates (renamed to avoid module name collision).
 #

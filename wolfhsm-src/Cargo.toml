@@ -1,6 +1,6 @@
 [package]
 name = "wolfhsm-src"
-version = "0.1.4"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Compile wolfHSM from source for use by wolfhsm-sys"

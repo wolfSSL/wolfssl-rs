@@ -1,6 +1,6 @@
 [package]
 name = "wolftpm-sys"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Auto-generated Rust FFI bindings to wolfTPM"
@@ -10,11 +10,11 @@ readme = "README.md"
 links = "wolftpm_sys"
 
 [dependencies]
-wolfcrypt-sys = { version = "0.1.3", path = "../wolfcrypt-sys" }
+wolfcrypt-sys = { version = "0.2.0", path = "../wolfcrypt-sys" }
 # wolftpm-src must be a direct [dependency] (not build-dep) so that Cargo
 # propagates DEP_WOLFTPM_SRC_* metadata to our build script.  The crate's
 # lib.rs is empty; the cost is negligible.
-wolftpm-src = { version = "0.2.0", path = "../wolftpm-src" }
+wolftpm-src = { version = "0.3.0", path = "../wolftpm-src" }
 libc = { version = "0.2", optional = true }
 
 [features]

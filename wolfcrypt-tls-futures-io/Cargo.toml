@@ -1,6 +1,6 @@
 [package]
 name = "wolfcrypt-tls-futures-io"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
@@ -23,8 +23,8 @@ vendored = ["wolfcrypt-tls/vendored"]
 fips = ["wolfcrypt-tls/fips"]
 
 [dependencies]
-wolfcrypt-tls = { version = "0.2.0", path = "../wolfcrypt-tls" }
-wolfcrypt-sys  = { version = "0.1.4", path = "../wolfcrypt-sys" }
+wolfcrypt-tls = { version = "0.3.0", path = "../wolfcrypt-tls" }
+wolfcrypt-sys  = { version = "0.2.0", path = "../wolfcrypt-sys" }
 futures-io     = "0.3"
 bytes          = "1"
 
