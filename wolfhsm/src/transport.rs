@@ -13,6 +13,7 @@
 /// | `Tcp`   | `posixTransportTcpConfig` | TCP/IP socket               |
 /// | `Uds`   | `posixTransportUdsConfig` | Unix Domain Socket          |
 /// | `Shm`   | `posixTransportShmConfig` | POSIX shared memory (`shm_open`) |
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum Transport {
     /// TCP/IP connection to a wolfHSM server.

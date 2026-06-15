@@ -24,6 +24,7 @@ use crate::{TlsClientConfig, TlsServerConfig};
 /// use it.  End-user code should never need to construct or match on
 /// `ConfigHolder` directly.
 #[doc(hidden)]
+#[non_exhaustive]
 pub enum ConfigHolder {
     Client(TlsClientConfig),
     Server(TlsServerConfig),

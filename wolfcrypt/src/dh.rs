@@ -21,6 +21,7 @@ const WC_FFDHE_3072: i32 = 257;
 const WC_FFDHE_4096: i32 = 258;
 
 /// Predefined FFDHE group selection.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FfdheGroup {
     /// FFDHE2048 (RFC 7919) — 2048-bit prime.

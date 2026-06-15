@@ -156,6 +156,20 @@ pub(crate) fn verify_error_string(code: core::ffi::c_long) -> &'static str {
     "unknown verification error"
 }
 
+/// Cast a `usize` length to `c_int` for wolfSSL FFI calls.
+///
+/// # Panics
+///
+/// Panics if the value exceeds `c_int::MAX` (~2 GB).
+#[inline(always)]
+pub(crate) fn len_as_c_int(n: usize) -> core::ffi::c_int {
+    assert!(
+        n <= core::ffi::c_int::MAX as usize,
+        "buffer length {n} exceeds c_int::MAX; wolfSSL FFI would truncate",
+    );
+    n as core::ffi::c_int
+}
+
 /// Assert that a wolfSSL FFI call returned `WOLFSSL_SUCCESS`.
 ///
 /// Only for functions whose success value is `WOLFSSL_SUCCESS` (1), not for

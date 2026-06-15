@@ -34,9 +34,9 @@ use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
 
-use crate::error::WolfCryptError;
+use crate::error::{len_as_u32, WolfCryptError};
 #[cfg(feature = "rsa-direct")]
-use crate::error::{check, len_as_u32};
+use crate::error::check;
 use wolfcrypt_rs::{
     wolfcrypt_rsa_export_private_pkcs1, wolfcrypt_rsa_export_public_spki, wolfcrypt_rsa_free,
     wolfcrypt_rsa_generate, wolfcrypt_rsa_import_private_pkcs1, wolfcrypt_rsa_import_public_spki,
@@ -127,6 +127,7 @@ impl From<RsaPssSignature> for Box<[u8]> {
 // ---------------------------------------------------------------------------
 
 /// Hash algorithm used for RSA signing/verification.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RsaDigest {
     /// SHA-1 (20-byte digest). Required for legacy SSH `ssh-rsa` signatures.
@@ -180,7 +181,7 @@ unsafe fn native_oaep_encrypt_sha256(
         let rc = wolfcrypt_rsa_oaep_encrypt_sha256(
             ctx,
             plaintext.as_ptr(),
-            plaintext.len() as u32,
+            len_as_u32(plaintext.len()),
             out.as_mut_ptr(),
             key_size as u32,
         );
@@ -215,7 +216,7 @@ unsafe fn native_oaep_decrypt_sha256(
         let rc = wolfcrypt_rsa_oaep_decrypt_sha256(
             ctx,
             ciphertext.as_ptr(),
-            ciphertext.len() as u32,
+            len_as_u32(ciphertext.len()),
             out.as_mut_ptr(),
             key_size as u32,
         );
@@ -259,7 +260,7 @@ unsafe fn native_pkcs1v15_sign(
             ctx,
             hash_bits,
             msg.as_ptr(),
-            msg.len() as u32,
+            len_as_u32(msg.len()),
             sig.as_mut_ptr(),
             &mut sig_len,
         );
@@ -291,9 +292,9 @@ unsafe fn native_pkcs1v15_verify(
             ctx,
             hash_bits,
             msg.as_ptr(),
-            msg.len() as u32,
+            len_as_u32(msg.len()),
             sig.as_ptr(),
-            sig.len() as u32,
+            len_as_u32(sig.len()),
         );
         if rc != 0 {
             return Err(WolfCryptError::Ffi {
@@ -334,7 +335,7 @@ unsafe fn native_pss_sign(
             ctx,
             hash_bits,
             msg.as_ptr(),
-            msg.len() as u32,
+            len_as_u32(msg.len()),
             sig.as_mut_ptr(),
             &mut sig_len,
         );
@@ -365,9 +366,9 @@ unsafe fn native_pss_verify(
             ctx,
             hash_bits,
             msg.as_ptr(),
-            msg.len() as u32,
+            len_as_u32(msg.len()),
             sig.as_ptr(),
-            sig.len() as u32,
+            len_as_u32(sig.len()),
         );
         if rc != 0 {
             return Err(WolfCryptError::Ffi {
@@ -403,7 +404,7 @@ unsafe fn native_pkcs1v15_encrypt(
         let rc = wolfcrypt_rsa_pkcs1v15_encrypt(
             ctx,
             plaintext.as_ptr(),
-            plaintext.len() as u32,
+            len_as_u32(plaintext.len()),
             out.as_mut_ptr(),
             key_size as u32,
         );
@@ -442,7 +443,7 @@ unsafe fn native_pkcs1v15_decrypt(
         let rc = wolfcrypt_rsa_pkcs1v15_decrypt(
             ctx,
             ciphertext.as_ptr(),
-            ciphertext.len() as u32,
+            len_as_u32(ciphertext.len()),
             out.as_mut_ptr(),
             key_size as u32,
         );
@@ -488,7 +489,7 @@ impl RsaPrivateKey {
             if ctx.is_null() {
                 return Err(WolfCryptError::ALLOC_FAILED);
             }
-            let rc = wolfcrypt_rsa_import_private_pkcs1(ctx, der.as_ptr(), der.len() as u32);
+            let rc = wolfcrypt_rsa_import_private_pkcs1(ctx, der.as_ptr(), len_as_u32(der.len()));
             if rc != 0 {
                 wolfcrypt_rsa_free(ctx);
                 return Err(WolfCryptError::Ffi {
@@ -509,7 +510,7 @@ impl RsaPrivateKey {
             let ctx = *self.ctx.get();
             // 4096 bytes is sufficient for any RSA key up to 4096 bits.
             let mut buf = vec![0u8; 4096];
-            let mut len = buf.len() as u32;
+            let mut len = len_as_u32(buf.len());
             let rc = wolfcrypt_rsa_export_private_pkcs1(ctx, buf.as_mut_ptr(), &mut len);
             if rc != 0 {
                 return Err(WolfCryptError::Ffi {
@@ -556,7 +557,7 @@ impl RsaPrivateKey {
 
             // Export the public component as SPKI DER.
             let mut spki = vec![0u8; 4096];
-            let mut spki_len = spki.len() as u32;
+            let mut spki_len = len_as_u32(spki.len());
             let rc = wolfcrypt_rsa_export_public_spki(ctx, spki.as_mut_ptr(), &mut spki_len);
             assert!(rc == 0, "wolfcrypt_rsa_export_public_spki failed: {rc}");
             spki.truncate(spki_len as usize);
@@ -698,7 +699,7 @@ impl RsaPublicKey {
             if ctx.is_null() {
                 return Err(WolfCryptError::ALLOC_FAILED);
             }
-            let rc = wolfcrypt_rsa_import_public_spki(ctx, der.as_ptr(), der.len() as u32);
+            let rc = wolfcrypt_rsa_import_public_spki(ctx, der.as_ptr(), len_as_u32(der.len()));
             if rc != 0 {
                 wolfcrypt_rsa_free(ctx);
                 return Err(WolfCryptError::Ffi {

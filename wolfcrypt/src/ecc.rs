@@ -39,6 +39,7 @@ use wolfcrypt_rs::{
 };
 
 /// Supported ECC curve IDs.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
 pub enum EccCurveId {

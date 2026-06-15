@@ -10,6 +10,7 @@ use crate::client::Client;
 use crate::error::Error;
 
 /// wolfHSM authentication method.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum AuthMethod {

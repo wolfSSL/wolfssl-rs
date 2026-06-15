@@ -19,6 +19,7 @@ use crate::key::{with_key, KeyId};
 /// - verification: [`PublicDecrypt`][RsaRawOp::PublicDecrypt]
 /// - encryption:  [`PublicEncrypt`][RsaRawOp::PublicEncrypt]
 /// - decryption:  [`PrivateDecrypt`][RsaRawOp::PrivateDecrypt]
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
 pub enum RsaRawOp {

@@ -7,7 +7,7 @@ use wolfcrypt_sys::*;
 use crate::callback::{io_recv_shim, io_send_shim, IOCallbacks};
 use crate::certificate::{Certificate, PrivateKey, RootCertStore};
 use crate::config::CtxInner;
-use crate::error::{expect_wolfssl_success, Result, TlsError};
+use crate::error::{expect_wolfssl_success, len_as_c_int, Result, TlsError};
 use crate::protocol::{self, ProtocolVersion};
 use crate::{ensure_init, SslGuard};
 
@@ -206,7 +206,7 @@ impl TlsServerConfigBuilder {
             wolfSSL_CTX_use_certificate_buffer(
                 inner.ctx,
                 cert.data().as_ptr(),
-                cert.data().len() as core::ffi::c_long,
+                len_as_c_int(cert.data().len()) as core::ffi::c_long,
                 cert.format().as_c_int(),
             )
         };
@@ -216,7 +216,7 @@ impl TlsServerConfigBuilder {
             wolfSSL_CTX_use_PrivateKey_buffer(
                 inner.ctx,
                 key.data().as_ptr(),
-                key.data().len() as core::ffi::c_long,
+                len_as_c_int(key.data().len()) as core::ffi::c_long,
                 key.format().as_c_int(),
             )
         };
@@ -228,7 +228,7 @@ impl TlsServerConfigBuilder {
                     wolfSSL_CTX_load_verify_buffer(
                         inner.ctx,
                         cert_data.as_ptr(),
-                        cert_data.len() as core::ffi::c_long,
+                        len_as_c_int(cert_data.len()) as core::ffi::c_long,
                         format.as_c_int(),
                     )
                 };

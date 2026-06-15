@@ -9,6 +9,7 @@
 use std::io;
 
 /// The result of a single IO callback invocation.
+#[non_exhaustive]
 #[derive(Debug)]
 pub enum IOCallbackResult<T> {
     /// The operation completed successfully.

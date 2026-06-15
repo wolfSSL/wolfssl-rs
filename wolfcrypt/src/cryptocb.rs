@@ -58,6 +58,7 @@ use crate::error::{check, WolfCryptError};
 // ---------------------------------------------------------------------------
 
 /// Result of a crypto callback operation.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CryptoCallbackResult {
     /// The operation was handled successfully.
@@ -173,6 +174,7 @@ pub struct AesCbcRequest<'a> {
 }
 
 /// A symmetric cipher callback request.
+#[non_exhaustive]
 pub enum CipherRequest<'a> {
     /// AES-GCM encryption.
     AesGcmEncrypt(AesGcmEncRequest<'a>),
@@ -257,6 +259,7 @@ pub struct EcKeyGenRequest {
 }
 
 /// A public-key callback request.
+#[non_exhaustive]
 pub enum PkRequest<'a> {
     /// ECDSA sign.
     EcdsaSign(EcdsaSignRequest<'a>),
