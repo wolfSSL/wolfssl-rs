@@ -168,7 +168,7 @@ fn pad_private<const N: usize>(bytes: &[u8]) -> Result<[u8; N]> {
 }
 
 /// Elliptic Curve Digital Signature Algorithm (ECDSA) private/public keypair.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum EcdsaKeypair {
     /// NIST P-256 ECDSA keypair.
     NistP256 {
@@ -196,6 +196,12 @@ pub enum EcdsaKeypair {
         /// Private key.
         private: EcdsaPrivateKey<66>,
     },
+}
+
+impl core::fmt::Debug for EcdsaKeypair {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("EcdsaKeypair").finish_non_exhaustive()
+    }
 }
 
 impl EcdsaKeypair {

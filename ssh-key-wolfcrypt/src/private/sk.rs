@@ -9,7 +9,7 @@ use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
 /// Security Key (FIDO/U2F) ECDSA/NIST P-256 private key as specified in
 /// [PROTOCOL.u2f](https://cvsweb.openbsd.org/src/usr.bin/ssh/PROTOCOL.u2f?annotate=HEAD).
 #[cfg(all(feature = "alloc", feature = "ecdsa"))]
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct SkEcdsaSha2NistP256 {
     /// Public key.
     public: public::SkEcdsaSha2NistP256,
@@ -22,6 +22,15 @@ pub struct SkEcdsaSha2NistP256 {
 
     /// Reserved data.
     reserved: Vec<u8>,
+}
+
+#[cfg(feature = "ecdsa")]
+impl core::fmt::Debug for SkEcdsaSha2NistP256 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SkEcdsaSha2NistP256")
+            .field("public", &self.public)
+            .finish_non_exhaustive()
+    }
 }
 
 #[cfg(feature = "ecdsa")]
@@ -101,7 +110,7 @@ impl Encode for SkEcdsaSha2NistP256 {
 /// Security Key (FIDO/U2F) Ed25519 private key as specified in
 /// [PROTOCOL.u2f](https://cvsweb.openbsd.org/src/usr.bin/ssh/PROTOCOL.u2f?annotate=HEAD).
 #[cfg(feature = "alloc")]
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct SkEd25519 {
     /// Public key.
     public: public::SkEd25519,
@@ -114,6 +123,14 @@ pub struct SkEd25519 {
 
     /// Reserved data.
     reserved: Vec<u8>,
+}
+
+impl core::fmt::Debug for SkEd25519 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SkEd25519")
+            .field("public", &self.public)
+            .finish_non_exhaustive()
+    }
 }
 
 impl SkEd25519 {
