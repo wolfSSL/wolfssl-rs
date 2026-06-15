@@ -141,9 +141,10 @@ impl AeadCtx {
                 wc_AesDelete(aes, core::ptr::null_mut());
                 return Err(Unspecified);
             }
-            let mut full_tag = [0u8; AES_GCM_TAG_LEN];
-            let copy_len = core::cmp::min(tag.len(), AES_GCM_TAG_LEN);
-            full_tag[..copy_len].copy_from_slice(&tag[..copy_len]);
+            if tag.len() != AES_GCM_TAG_LEN {
+                wc_AesDelete(aes, core::ptr::null_mut());
+                return Err(Unspecified);
+            }
             let ret = wc_AesGcmDecrypt(
                 aes,
                 in_out.as_mut_ptr(),
@@ -151,8 +152,8 @@ impl AeadCtx {
                 ciphertext_len as u32,
                 nonce.as_ptr(),
                 nonce.len() as u32,
-                full_tag.as_ptr(),
-                copy_len as u32,
+                tag.as_ptr(),
+                AES_GCM_TAG_LEN as u32,
                 ad.as_ptr(),
                 ad.len() as u32,
             );

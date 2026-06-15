@@ -638,6 +638,67 @@ fn make_less_safe_key(algorithm: &'static aead::Algorithm, key: &[u8]) -> aead::
     aead::LessSafeKey::new(key)
 }
 
+#[test]
+fn open_separate_gather_rejects_truncated_tag() {
+    let key_bytes = [0u8; 16];
+    let nonce_bytes = [0u8; NONCE_LEN];
+    let plaintext = b"hello world";
+
+    let key = make_less_safe_key(&AES_128_GCM, &key_bytes);
+    let mut ct = Vec::from(&plaintext[..]);
+    key.seal_in_place_append_tag(
+        Nonce::try_assume_unique_for_key(&nonce_bytes).unwrap(),
+        aead::Aad::empty(),
+        &mut ct,
+    )
+    .unwrap();
+
+    let tag_len = AES_128_GCM.tag_len();
+    let (ciphertext, tag) = ct.split_at(ct.len() - tag_len);
+
+    // Full-length tag must succeed
+    let mut out = vec![0u8; ciphertext.len()];
+    assert!(key
+        .open_separate_gather(
+            Nonce::try_assume_unique_for_key(&nonce_bytes).unwrap(),
+            aead::Aad::empty(),
+            ciphertext,
+            tag,
+            &mut out,
+        )
+        .is_ok());
+
+    // Truncated tags (1 byte through tag_len-1) must all be rejected
+    for short_len in 0..tag_len {
+        let mut out = vec![0u8; ciphertext.len()];
+        let result = key.open_separate_gather(
+            Nonce::try_assume_unique_for_key(&nonce_bytes).unwrap(),
+            aead::Aad::empty(),
+            ciphertext,
+            &tag[..short_len],
+            &mut out,
+        );
+        assert!(
+            result.is_err(),
+            "expected rejection for {short_len}-byte tag"
+        );
+    }
+
+    // Oversized tag must also be rejected
+    let mut long_tag = tag.to_vec();
+    long_tag.push(0xff);
+    let mut out = vec![0u8; ciphertext.len()];
+    assert!(key
+        .open_separate_gather(
+            Nonce::try_assume_unique_for_key(&nonce_bytes).unwrap(),
+            aead::Aad::empty(),
+            ciphertext,
+            &long_tag,
+            &mut out,
+        )
+        .is_err());
+}
+
 struct OneNonceSequence(Option<Nonce>);
 
 impl OneNonceSequence {

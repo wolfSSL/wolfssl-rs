@@ -70,12 +70,12 @@ impl UnboundKey {
     ) -> Result<(), Unspecified> {
         self.check_per_nonce_max_bytes(in_ciphertext.len())?;
 
-        {
-            let actual = in_ciphertext.len();
-            let expected = out_plaintext.len();
-            if actual != expected {
-                return Err(Unspecified);
-            }
+        if in_tag.len() != self.algorithm().tag_len() {
+            return Err(Unspecified);
+        }
+
+        if in_ciphertext.len() != out_plaintext.len() {
+            return Err(Unspecified);
         }
 
         let nonce = nonce.as_ref();
