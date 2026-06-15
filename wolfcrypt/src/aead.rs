@@ -163,6 +163,9 @@ macro_rules! impl_aes_gcm {
                 if rc == 0 {
                     Ok(())
                 } else {
+                    // Zeroize the buffer to prevent the caller from observing
+                    // unauthenticated plaintext after a tag verification failure.
+                    zeroize::Zeroize::zeroize(buffer);
                     Err(aead_trait::Error)
                 }
             }

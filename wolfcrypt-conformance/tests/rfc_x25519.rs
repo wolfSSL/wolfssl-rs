@@ -53,7 +53,7 @@ fn rfc7748_bob_pubkey() {
 fn rfc7748_shared_secret_alice_to_bob() {
     let alice = X25519StaticSecret::from_bytes(&ALICE_PRIVATE);
     let bob_pub = X25519PublicKey::from_bytes(&BOB_PUBLIC);
-    let ss = alice.diffie_hellman(&bob_pub);
+    let ss = alice.diffie_hellman(&bob_pub).expect("X25519 DH alice->bob");
     assert_eq!(
         ss.as_bytes(),
         &SHARED_SECRET,
@@ -66,7 +66,7 @@ fn rfc7748_shared_secret_alice_to_bob() {
 fn rfc7748_shared_secret_bob_to_alice() {
     let bob = X25519StaticSecret::from_bytes(&BOB_PRIVATE);
     let alice_pub = X25519PublicKey::from_bytes(&ALICE_PUBLIC);
-    let ss = bob.diffie_hellman(&alice_pub);
+    let ss = bob.diffie_hellman(&alice_pub).expect("X25519 DH bob->alice");
     assert_eq!(
         ss.as_bytes(),
         &SHARED_SECRET,
@@ -109,7 +109,7 @@ fn rfc7748_wolf_matches_dalek() {
     let wolf_alice = X25519StaticSecret::from_bytes(&ALICE_PRIVATE);
     let wolf_bob_for_pub = X25519StaticSecret::from_bytes(&BOB_PRIVATE);
     let wolf_bob_pub = wolf_bob_for_pub.public_key();
-    let wolf_ss = wolf_alice.diffie_hellman(&wolf_bob_pub);
+    let wolf_ss = wolf_alice.diffie_hellman(&wolf_bob_pub).expect("X25519 DH");
 
     let dalek_alice = x25519_dalek::StaticSecret::from(ALICE_PRIVATE);
     let dalek_bob = x25519_dalek::StaticSecret::from(BOB_PRIVATE);

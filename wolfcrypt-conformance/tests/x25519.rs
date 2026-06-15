@@ -35,7 +35,7 @@ fn shared_secret_equiv() {
     let wolf_bob = X25519StaticSecret::from_bytes(&bob_bytes);
     let wolf_bob_pub = wolf_bob.public_key();
     let wolf_alice = X25519StaticSecret::from_bytes(&alice_bytes);
-    let wolf_ss = wolf_alice.diffie_hellman(&wolf_bob_pub);
+    let wolf_ss = wolf_alice.diffie_hellman(&wolf_bob_pub).expect("X25519 DH");
 
     // Dalek: alice DH with bob's pub
     let dalek_alice = x25519_dalek::StaticSecret::from(alice_bytes);
@@ -66,11 +66,11 @@ fn cross_dh_commutativity() {
 
     // DH in both directions
     let wolf_a = X25519StaticSecret::from_bytes(&a_bytes);
-    let ss_a_to_b = wolf_a.diffie_hellman(&wolf_b_pub);
+    let ss_a_to_b = wolf_a.diffie_hellman(&wolf_b_pub).expect("X25519 DH a->b");
 
     // Wolf: B does DH with A's pub (consumes wolf_b)
     let wolf_b = X25519StaticSecret::from_bytes(&b_bytes);
-    let ss_b_to_a = wolf_b.diffie_hellman(&wolf_a_pub);
+    let ss_b_to_a = wolf_b.diffie_hellman(&wolf_a_pub).expect("X25519 DH b->a");
 
     assert_eq!(
         ss_a_to_b.as_bytes(),
@@ -127,7 +127,7 @@ fn multiple_random_pairs() {
 
         // Wolf: DH(a, B_pub)
         let wolf_a = X25519StaticSecret::from_bytes(&a_bytes);
-        let wolf_ss = wolf_a.diffie_hellman(&wolf_b_pub);
+        let wolf_ss = wolf_a.diffie_hellman(&wolf_b_pub).expect("X25519 DH");
 
         // Dalek: DH(a, B_pub)
         let dalek_ss = dalek_a.diffie_hellman(&dalek_b_pub);
@@ -152,13 +152,13 @@ fn canary_different_keys_different_secrets() {
     let wolf_b = X25519StaticSecret::from_bytes(&b_bytes);
     let wolf_b_pub = wolf_b.public_key();
     let wolf_a = X25519StaticSecret::from_bytes(&a_bytes);
-    let ss_ab = wolf_a.diffie_hellman(&wolf_b_pub);
+    let ss_ab = wolf_a.diffie_hellman(&wolf_b_pub).expect("X25519 DH a-b");
 
     // Wolf: DH(a, C_pub)
     let wolf_c = X25519StaticSecret::from_bytes(&c_bytes);
     let wolf_c_pub = wolf_c.public_key();
     let wolf_a2 = X25519StaticSecret::from_bytes(&a_bytes);
-    let ss_ac = wolf_a2.diffie_hellman(&wolf_c_pub);
+    let ss_ac = wolf_a2.diffie_hellman(&wolf_c_pub).expect("X25519 DH a-c");
 
     assert_ne!(
         ss_ab.as_bytes(),

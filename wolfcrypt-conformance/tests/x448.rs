@@ -29,10 +29,10 @@ fn round_trip() {
 
     // DH in both directions (each consumes self)
     let a = X448StaticSecret::from_bytes(&a_bytes);
-    let ss_a_to_b = a.diffie_hellman(&b_pub);
+    let ss_a_to_b = a.diffie_hellman(&b_pub).expect("X448 DH a->b");
 
     let b = X448StaticSecret::from_bytes(&b_bytes);
-    let ss_b_to_a = b.diffie_hellman(&a_pub);
+    let ss_b_to_a = b.diffie_hellman(&a_pub).expect("X448 DH b->a");
 
     assert_eq!(
         ss_a_to_b.as_bytes(),
@@ -52,13 +52,13 @@ fn different_peers_different_secrets() {
     let b = X448StaticSecret::from_bytes(&b_bytes);
     let b_pub = b.public_key();
     let a1 = X448StaticSecret::from_bytes(&a_bytes);
-    let ss_ab = a1.diffie_hellman(&b_pub);
+    let ss_ab = a1.diffie_hellman(&b_pub).expect("X448 DH a-b");
 
     // DH(a, C_pub)
     let c = X448StaticSecret::from_bytes(&c_bytes);
     let c_pub = c.public_key();
     let a2 = X448StaticSecret::from_bytes(&a_bytes);
-    let ss_ac = a2.diffie_hellman(&c_pub);
+    let ss_ac = a2.diffie_hellman(&c_pub).expect("X448 DH a-c");
 
     assert_ne!(
         ss_ab.as_bytes(),
@@ -102,10 +102,10 @@ fn multiple_random_pairs() {
 
         // DH both directions
         let a = X448StaticSecret::from_bytes(&a_bytes);
-        let ss_a_to_b = a.diffie_hellman(&b_pub);
+        let ss_a_to_b = a.diffie_hellman(&b_pub).expect("X448 DH a->b");
 
         let b = X448StaticSecret::from_bytes(&b_bytes);
-        let ss_b_to_a = b.diffie_hellman(&a_pub);
+        let ss_b_to_a = b.diffie_hellman(&a_pub).expect("X448 DH b->a");
 
         assert_eq!(
             ss_a_to_b.as_bytes(),

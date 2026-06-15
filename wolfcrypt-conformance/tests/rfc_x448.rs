@@ -73,7 +73,7 @@ fn rfc7748_bob_pubkey() {
 fn rfc7748_shared_secret_alice_to_bob() {
     let alice = X448StaticSecret::from_bytes(&ALICE_PRIVATE);
     let bob_pub = X448PublicKey::from_bytes(&BOB_PUBLIC);
-    let ss = alice.diffie_hellman(&bob_pub);
+    let ss = alice.diffie_hellman(&bob_pub).expect("X448 DH alice->bob");
     assert_eq!(
         ss.as_bytes(),
         &SHARED_SECRET,
@@ -86,7 +86,7 @@ fn rfc7748_shared_secret_alice_to_bob() {
 fn rfc7748_shared_secret_bob_to_alice() {
     let bob = X448StaticSecret::from_bytes(&BOB_PRIVATE);
     let alice_pub = X448PublicKey::from_bytes(&ALICE_PUBLIC);
-    let ss = bob.diffie_hellman(&alice_pub);
+    let ss = bob.diffie_hellman(&alice_pub).expect("X448 DH bob->alice");
     assert_eq!(
         ss.as_bytes(),
         &SHARED_SECRET,

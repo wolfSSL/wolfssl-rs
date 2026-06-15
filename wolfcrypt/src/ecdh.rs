@@ -157,7 +157,15 @@ impl X25519StaticSecret {
     /// Perform X25519 Diffie-Hellman with the given peer public key.
     ///
     /// Consumes `self` so the private key is freed after use.
-    pub fn diffie_hellman(mut self, peer_public: &X25519PublicKey) -> SharedSecret {
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if the peer public key is invalid (e.g. all-zeros,
+    /// low-order point) or if the RNG cannot be initialised.
+    pub fn diffie_hellman(
+        mut self,
+        peer_public: &X25519PublicKey,
+    ) -> Result<SharedSecret, WolfCryptError> {
         // wolfSSL enables Curve25519 blinding by default, which requires
         // an RNG attached to the private key for scalar multiplication.
         // Create a temporary RNG for this operation.
@@ -165,19 +173,38 @@ impl X25519StaticSecret {
 
         // SAFETY: `rng` is zero-initialized; `wc_InitRng` initialises it.
         let rc = unsafe { wc_InitRng(&mut rng) };
-        assert_eq!(rc, 0, "wc_InitRng failed (entropy source unavailable)");
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_InitRng",
+            });
+        }
 
         // SAFETY: `self.key` is initialized, `rng` is initialized.
         // This sets the RNG pointer inside the key struct for blinding.
         let rc = unsafe { wc_curve25519_set_rng(&mut self.key, &mut rng) };
-        assert_eq!(rc, 0, "wc_curve25519_set_rng failed (null RNG)");
+        if rc != 0 {
+            // SAFETY: `rng` was initialised; free it before returning.
+            unsafe { wc_FreeRng(&mut rng) };
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_curve25519_set_rng",
+            });
+        }
 
         // Build a temporary key struct holding the peer's public key.
         let mut peer_key = wc_curve25519_key::zeroed();
 
         // SAFETY: `peer_key` is zero-initialized; init will set it up.
         let rc = unsafe { wc_curve25519_init(&mut peer_key) };
-        assert_eq!(rc, 0, "wc_curve25519_init (peer) failed (OOM)");
+        if rc != 0 {
+            // SAFETY: `rng` was initialised; free it before returning.
+            unsafe { wc_FreeRng(&mut rng) };
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_curve25519_init",
+            });
+        }
 
         // SAFETY: `peer_key` is initialized, peer bytes are KEY_LEN.
         let rc = unsafe {
@@ -188,10 +215,17 @@ impl X25519StaticSecret {
                 EC25519_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(
-            rc, 0,
-            "wc_curve25519_import_public_ex failed (invalid public key)"
-        );
+        if rc != 0 {
+            // SAFETY: `peer_key` and `rng` were initialised; free before returning.
+            unsafe {
+                wc_curve25519_free(&mut peer_key);
+                wc_FreeRng(&mut rng);
+            }
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_curve25519_import_public_ex",
+            });
+        }
 
         let mut out = [0u8; KEY_LEN];
         let mut out_len = KEY_LEN as u32;
@@ -208,10 +242,6 @@ impl X25519StaticSecret {
                 EC25519_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(
-            rc, 0,
-            "wc_curve25519_shared_secret_ex failed (invalid key or buffer)"
-        );
 
         // SAFETY: `peer_key` and `rng` were initialized; free them now.
         unsafe {
@@ -219,7 +249,14 @@ impl X25519StaticSecret {
             wc_FreeRng(&mut rng);
         }
 
-        SharedSecret(out)
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_curve25519_shared_secret_ex",
+            });
+        }
+
+        Ok(SharedSecret(out))
     }
 }
 
@@ -422,13 +459,26 @@ impl X448StaticSecret {
     /// Perform X448 Diffie-Hellman with the given peer public key.
     ///
     /// Consumes `self` so the private key is freed after use.
-    pub fn diffie_hellman(mut self, peer_public: &X448PublicKey) -> X448SharedSecret {
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if the peer public key is invalid (e.g. all-zeros,
+    /// low-order point).
+    pub fn diffie_hellman(
+        mut self,
+        peer_public: &X448PublicKey,
+    ) -> Result<X448SharedSecret, WolfCryptError> {
         // Build a temporary key struct holding the peer's public key.
         let mut peer_key = wc_curve448_key::zeroed();
 
         // SAFETY: `peer_key` is zero-initialized; init will set it up.
         let rc = unsafe { wc_curve448_init(&mut peer_key) };
-        assert_eq!(rc, 0, "wc_curve448_init (peer) failed (OOM)");
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_curve448_init",
+            });
+        }
 
         // SAFETY: `peer_key` is initialized, peer bytes are X448_KEY_LEN.
         let rc = unsafe {
@@ -439,10 +489,14 @@ impl X448StaticSecret {
                 EC448_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(
-            rc, 0,
-            "wc_curve448_import_public_ex failed (invalid public key)"
-        );
+        if rc != 0 {
+            // SAFETY: `peer_key` was initialised; free before returning.
+            unsafe { wc_curve448_free(&mut peer_key) };
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_curve448_import_public_ex",
+            });
+        }
 
         let mut out = [0u8; X448_KEY_LEN];
         let mut out_len = X448_KEY_LEN as u32;
@@ -459,17 +513,18 @@ impl X448StaticSecret {
                 EC448_LITTLE_ENDIAN,
             )
         };
-        assert_eq!(
-            rc, 0,
-            "wc_curve448_shared_secret_ex failed (invalid key or buffer)"
-        );
 
         // SAFETY: `peer_key` was initialized; free it now.
-        unsafe {
-            wc_curve448_free(&mut peer_key);
+        unsafe { wc_curve448_free(&mut peer_key) };
+
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_curve448_shared_secret_ex",
+            });
         }
 
-        X448SharedSecret(out)
+        Ok(X448SharedSecret(out))
     }
 }
 
