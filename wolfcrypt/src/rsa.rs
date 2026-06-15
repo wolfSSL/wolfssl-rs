@@ -898,27 +898,13 @@ impl NativeRsaKey {
         Ok(key)
     }
 
-    /// Generate a new RSA key pair of the given bit size (e.g. 2048, 3072, 4096).
-    ///
-    /// Uses wolfCrypt's `wc_MakeRsaKey` with public exponent 65537.
+    /// Deprecated alias for [`Self::generate`].
+    #[deprecated(note = "use `generate` instead")]
     pub fn generate_native(
         bits: u32,
         rng: &mut crate::rand::WolfRng,
     ) -> Result<Self, WolfCryptError> {
-        let key = Self::alloc()?;
-        // SAFETY: key is a valid RsaKey pointer from alloc(); rng is a valid WC_RNG
-        let rc = unsafe {
-            wolfcrypt_rs::wc_MakeRsaKey(key, bits as core::ffi::c_int, 65537, &mut rng.rng)
-        };
-        if rc != 0 {
-            // SAFETY: key is a valid RsaKey pointer that must be freed on error
-            unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()) };
-            return Err(WolfCryptError::Ffi {
-                code: rc,
-                func: "wc_MakeRsaKey",
-            });
-        }
-        Ok(Self { key })
+        Self::generate(bits, rng)
     }
 
     /// Export the key to PKCS#1 DER format (`RSAPrivateKey`).
