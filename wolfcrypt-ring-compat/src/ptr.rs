@@ -143,8 +143,6 @@ impl<T> ConstPointer<'static, T> {
     /// # Safety
     /// `ptr` must point to a valid object with `'static` lifetime.
     pub unsafe fn new_static(ptr: *const T) -> Result<Self, ()> {
-        // SAFETY: caller guarantees ptr points to a valid object with 'static lifetime.
-        // Null check below rejects invalid pointers.
         if ptr.is_null() {
             return Err(());
         }

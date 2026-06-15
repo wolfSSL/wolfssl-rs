@@ -322,7 +322,6 @@ impl Key {
     }
 
     unsafe fn get_hmac_ctx_ptr(&mut self) -> *mut HMAC_CTX {
-        // SAFETY: self.ctx is a valid LcHmacCtx; as_mut_ptr returns a non-null pointer.
         self.ctx.as_mut_ptr()
     }
 
