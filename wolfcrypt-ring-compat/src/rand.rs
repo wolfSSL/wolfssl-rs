@@ -56,7 +56,7 @@ use core::fmt::Debug;
 /// ```
 #[cfg(any(dev_tests_only, wolfcrypt_ring_compat_docsrs))]
 #[cfg_attr(wolfcrypt_ring_compat_docsrs, doc(cfg(feature = "dev-tests-only")))]
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 pub mod unsealed {
     pub use super::sealed::*;
 }

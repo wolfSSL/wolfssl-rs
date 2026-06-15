@@ -3,7 +3,7 @@
 //! (via RFC 6979 deterministic ECDSA) and that signatures can be verified
 //! independently using the p384/p256 crates.
 
-#![allow(unreachable_patterns)]
+#![expect(unreachable_patterns)]
 
 mod helpers;
 

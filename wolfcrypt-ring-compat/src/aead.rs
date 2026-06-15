@@ -979,7 +979,7 @@ mod tests {
         let nonce: [u8; NONCE_LEN] = og_nonce.as_slice().try_into().unwrap();
         let mut in_out = Vec::from(plaintext.as_slice());
 
-        #[allow(deprecated)]
+        #[expect(deprecated)]
         less_safe_key
             // Test coverage for `seal_in_place`, which calls `seal_in_place_append_tag`.
             .seal_in_place(Nonce(FixedLength::from(nonce)), Aad::empty(), &mut in_out)

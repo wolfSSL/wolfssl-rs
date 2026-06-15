@@ -21,12 +21,12 @@ impl LcCBB {
     }
 
     /// Write raw bytes
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub(crate) fn extend(&mut self, data: &[u8]) {
         self.buf.extend_from_slice(data);
     }
 
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub(crate) fn len(&self) -> usize {
         self.buf.len()
     }
@@ -47,7 +47,7 @@ impl LcCBB {
     }
 
     /// Add an ASN.1 BOOLEAN value.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub(crate) fn add_asn1_bool(&mut self, value: bool) {
         self.buf.push(0x01); // BOOLEAN tag
         self.buf.push(0x01); // length

@@ -56,7 +56,7 @@ impl CachedSigningKey {
                 .map_err(from_wolfcrypt)?;
                 Ok(Self::P384(sk))
             }
-            #[allow(unreachable_patterns)]
+            #[expect(unreachable_patterns)]
             _ => Err(CryptoError::NotImplemented),
         }
     }
@@ -75,7 +75,7 @@ fn curve_size(alg: SignatureAlgorithm) -> Result<usize, CryptoError> {
     match alg {
         SignatureAlgorithm::Ecdsa(EcdsaAlgorithm::Bit256) => Ok(32),
         SignatureAlgorithm::Ecdsa(EcdsaAlgorithm::Bit384) => Ok(48),
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => Err(CryptoError::NotImplemented),
     }
 }
@@ -123,7 +123,7 @@ fn pubkey_to_uncompressed(pub_key: &PubKey) -> Result<Vec<u8>, CryptoError> {
             bytes.extend_from_slice(y);
             Ok(bytes)
         }
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => Err(CryptoError::NotImplemented),
     }
 }
@@ -220,7 +220,7 @@ pub(crate) fn derive_key_pair(
             let pub_key = parse_uncompressed_pubkey(pub_bytes, size)?;
             Ok((priv_bytes, pub_key))
         }
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => Err(CryptoError::NotImplemented),
     }
 }
@@ -247,7 +247,7 @@ pub(crate) fn sign_with_key(
                     .map_err(from_wolfcrypt)?;
             sign_p384(&sk, data)
         }
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => Err(CryptoError::NotImplemented),
     }
 }

@@ -25,11 +25,11 @@ pub struct TlsClient<IOCB: IOCallbacks> {
     /// inside wolfSSL via wolfSSL_SetIOReadCtx / wolfSSL_SetIOWriteCtx.
     /// wolfSSL_free (called in Drop) quiesces all callback use before io
     /// is dropped, so the pointer is always valid when callbacks fire.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     io: Box<IOCB>,
     /// Kept alive so the `WOLFSSL_CTX` (owned by `Arc<CtxInner>`) outlives
     /// the `WOLFSSL` session.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     config: TlsClientConfig,
 }
 

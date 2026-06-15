@@ -155,7 +155,7 @@ impl OaepPublicEncryptingKey {
     /// Returns the max plaintext that could be decrypted using this key and with the provided algorithm.
     #[must_use]
     pub fn max_plaintext_size(&self, algorithm: &'static OaepAlgorithm) -> usize {
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         let hash_len: usize = match algorithm.id() {
             EncryptionAlgorithmId::OaepSha1Mgf1sha1 => 20,
             EncryptionAlgorithmId::OaepSha256Mgf1sha256 => 32,

@@ -1,5 +1,5 @@
 /// Retrieve the FIPS module service status.
-#[allow(dead_code)] // appease clippy
+#[expect(dead_code)] // appease clippy
 #[cfg(all(feature = "fips", feature = "std", debug_assertions))]
 pub(crate) fn get_fips_service_status() -> FipsServiceStatus<()> {
     if let Some(status) = indicator::get_status() {
@@ -19,7 +19,7 @@ pub(crate) fn set_fips_service_status_unapproved() {
     indicator::set_unapproved();
 }
 
-#[allow(dead_code)]
+#[expect(dead_code)]
 #[cfg(all(feature = "fips", feature = "std", debug_assertions))]
 #[inline]
 pub(crate) fn clear_fips_service_status() {
@@ -70,7 +70,7 @@ pub(crate) fn service_indicator_after_call() -> u64 {
 }
 
 /// The FIPS Module Service Status
-#[allow(dead_code)] // appease clippy
+#[expect(dead_code)] // appease clippy
 #[cfg(all(feature = "fips", feature = "std", debug_assertions))]
 #[allow(clippy::module_name_repetitions)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -91,7 +91,7 @@ pub(crate) enum FipsServiceStatus<R> {
 #[cfg(all(feature = "fips", feature = "std", debug_assertions))]
 impl<R> FipsServiceStatus<R> {
     /// Maps a `ServiceStatus<R>` to a `ServiceStatus<S>` by applying a function to a contained value.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn map<S, F>(self, op: F) -> FipsServiceStatus<S>
     where
         F: FnOnce(R) -> S,
@@ -129,7 +129,7 @@ macro_rules! indicator_check {
 
 pub(crate) use indicator_check;
 
-#[allow(unused_macros)]
+#[expect(unused_macros)]
 #[cfg(all(feature = "fips", feature = "std", debug_assertions))]
 macro_rules! check_fips_service_status {
     ($function:expr) => {{
@@ -143,11 +143,11 @@ macro_rules! check_fips_service_status {
     }};
 }
 
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 #[cfg(all(feature = "fips", feature = "std", debug_assertions))]
 pub(crate) use check_fips_service_status;
 
-#[allow(unused_macros)]
+#[expect(unused_macros)]
 #[cfg(all(feature = "fips", feature = "std", debug_assertions))]
 macro_rules! assert_fips_status_indicator {
     ($function:expr, $expect:path) => {
@@ -161,7 +161,7 @@ macro_rules! assert_fips_status_indicator {
     }};
 }
 
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 #[cfg(all(feature = "fips", feature = "std", debug_assertions))]
 pub(crate) use assert_fips_status_indicator;
 

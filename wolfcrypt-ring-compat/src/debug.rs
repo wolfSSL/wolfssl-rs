@@ -19,7 +19,7 @@ macro_rules! derive_debug_via_id {
 }
 pub(crate) use derive_debug_via_id;
 
-#[allow(unused_macros)]
+#[expect(unused_macros)]
 macro_rules! derive_debug_via_field {
     ($type:ty, $field:ident) => {
         derive_debug_via_field!($type, stringify!($type), $field);
@@ -38,7 +38,7 @@ macro_rules! derive_debug_via_field {
 
 // Generates an implementation of the Debug trait for a type that outputs the
 // hex encoding of the byte slice representation of the value.
-#[allow(unused_macros)]
+#[expect(unused_macros)]
 macro_rules! derive_debug_self_as_ref_hex_bytes {
     ($typename:ident) => {
         impl ::core::fmt::Debug for $typename {

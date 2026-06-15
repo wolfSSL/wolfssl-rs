@@ -19,7 +19,6 @@ const KEY_LEN: usize = 2 * BLOCK_LEN;
 
 impl Key {
     #[inline]
-    #[allow(dead_code)]
     pub(super) fn new(key_and_nonce: [u8; KEY_LEN]) -> Self {
         Self { key_and_nonce }
     }

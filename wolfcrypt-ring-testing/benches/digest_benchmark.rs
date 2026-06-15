@@ -47,7 +47,7 @@ macro_rules! benchmark_digest {
                 let _: Digest = ctx.finish();
             }
 
-            #[allow(unused_must_use)]
+            #[expect(unused_must_use)]
             pub fn run_digest_one_shot(config: &DigestConfig, chunk: &[u8]) {
                 digest::digest(algorithm(&config), &chunk);
             }

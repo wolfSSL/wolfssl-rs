@@ -73,7 +73,7 @@ pub fn pubkey_to_uncompressed(pub_key: &PubKey) -> Vec<u8> {
             bytes.extend_from_slice(y);
             bytes
         }
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => panic!("Expected ECDSA public key"),
     }
 }
@@ -88,7 +88,7 @@ pub fn sig_to_fixed(sig: &Signature) -> Vec<u8> {
             bytes.extend_from_slice(s);
             bytes
         }
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => panic!("Expected ECDSA signature"),
     }
 }
@@ -97,7 +97,7 @@ pub fn sig_to_fixed(sig: &Signature) -> Vec<u8> {
 pub fn pubkey_xy(pub_key: &PubKey) -> (&[u8], &[u8]) {
     match pub_key {
         PubKey::Ecdsa(ecdsa_pub) => ecdsa_pub.as_slice(),
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => panic!("Expected ECDSA public key"),
     }
 }

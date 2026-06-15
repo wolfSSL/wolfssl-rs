@@ -266,7 +266,6 @@ impl Algorithm {
     }
 
     /// Return an error indicating this algorithm is unsupported.
-    #[allow(dead_code)]
     pub(crate) fn unsupported_error(self) -> Error {
         Error::AlgorithmUnsupported { algorithm: self }
     }

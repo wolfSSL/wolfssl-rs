@@ -10,49 +10,49 @@ use crate::error::Unspecified;
 use crate::ptr::ConstPointer;
 
 /// SSKDF with HMAC-SHA224
-#[allow(dead_code)]
+#[expect(dead_code)]
 const SSKDF_HMAC_SHA224: SskdfHmacAlgorithm = SskdfHmacAlgorithm {
     id: SskdfHmacAlgorithmId::Sha224,
 };
 
 /// SSKDF with HMAC-SHA256
-#[allow(dead_code)]
+#[expect(dead_code)]
 const SSKDF_HMAC_SHA256: SskdfHmacAlgorithm = SskdfHmacAlgorithm {
     id: SskdfHmacAlgorithmId::Sha256,
 };
 
 /// SSKDF with HMAC-SHA384
-#[allow(dead_code)]
+#[expect(dead_code)]
 const SSKDF_HMAC_SHA384: SskdfHmacAlgorithm = SskdfHmacAlgorithm {
     id: SskdfHmacAlgorithmId::Sha384,
 };
 
 /// SSKDF with HMAC-SHA512
-#[allow(dead_code)]
+#[expect(dead_code)]
 const SSKDF_HMAC_SHA512: SskdfHmacAlgorithm = SskdfHmacAlgorithm {
     id: SskdfHmacAlgorithmId::Sha512,
 };
 
 /// SSKDF with SHA224
-#[allow(dead_code)]
+#[expect(dead_code)]
 const SSKDF_DIGEST_SHA224: SskdfDigestAlgorithm = SskdfDigestAlgorithm {
     id: SskdfDigestAlgorithmId::Sha224,
 };
 
 /// SSKDF with SHA256
-#[allow(dead_code)]
+#[expect(dead_code)]
 const SSKDF_DIGEST_SHA256: SskdfDigestAlgorithm = SskdfDigestAlgorithm {
     id: SskdfDigestAlgorithmId::Sha256,
 };
 
 /// SSKDF with SHA384
-#[allow(dead_code)]
+#[expect(dead_code)]
 const SSKDF_DIGEST_SHA384: SskdfDigestAlgorithm = SskdfDigestAlgorithm {
     id: SskdfDigestAlgorithmId::Sha384,
 };
 
 /// SSKDF with SHA512
-#[allow(dead_code)]
+#[expect(dead_code)]
 const SSKDF_DIGEST_SHA512: SskdfDigestAlgorithm = SskdfDigestAlgorithm {
     id: SskdfDigestAlgorithmId::Sha512,
 };

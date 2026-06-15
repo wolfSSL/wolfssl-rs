@@ -320,10 +320,10 @@ pub struct TlsServer<IOCB: IOCallbacks> {
     ssl: *mut WOLFSSL,
     /// Boxed for a stable heap address used by the IO callbacks.
     /// Held for its Drop side-effect — the Box must outlive `ssl`.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     io: Box<IOCB>,
     /// Keeps the WOLFSSL_CTX alive for the lifetime of this session.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     config: TlsServerConfig,
 }
 

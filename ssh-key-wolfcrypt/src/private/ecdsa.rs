@@ -214,7 +214,7 @@ impl EcdsaKeypair {
         feature = "rand_core",
         any(feature = "p256", feature = "p384", feature = "p521")
     ))]
-    #[allow(unused_variables)]
+    #[expect(unused_variables)]
     pub fn random<R: CryptoRng + ?Sized>(rng: &mut R, curve: EcdsaCurve) -> Result<Self> {
         use wolfcrypt::rand::WolfRng;
 

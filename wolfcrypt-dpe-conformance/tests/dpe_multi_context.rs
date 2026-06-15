@@ -118,7 +118,7 @@ fn derive_chain_certify_each() {
             // CertifyKey requires platform alias key; skip if not configured.
             eprintln!("SKIPPED: CertifyKey requires alias key");
         }
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => panic!("Expected CertifyKey P384, got unexpected response"),
     }
 }

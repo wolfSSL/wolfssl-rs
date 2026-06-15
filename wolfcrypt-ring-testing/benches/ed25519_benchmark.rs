@@ -1,4 +1,4 @@
-#![allow(deprecated, dead_code)]
+#![expect(deprecated, dead_code)]
 
 #[cfg(feature = "ring-sig-verify")]
 use criterion::{criterion_group, criterion_main, Criterion};
@@ -40,7 +40,7 @@ macro_rules! benchmark_ed25519 {
                     .expect(&format!("Unable to build Ed25519KeyPair: {:?}", config))
             }
 
-            #[allow(unused_must_use)]
+            #[expect(unused_must_use)]
             pub fn sign(key_pair: &Ed25519KeyPair, msg: &[u8]) {
                 key_pair.sign(msg);
             }

@@ -148,12 +148,12 @@ fn interop_derive_key_pair_deterministic_p384() {
     // Extract (x, y) byte slices from both public keys
     let (pub1_x, pub1_y) = match &pub1 {
         PubKey::Ecdsa(ecdsa_key) => ecdsa_key.as_slice(),
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => panic!("expected ECDSA public key"),
     };
     let (pub2_x, pub2_y) = match &pub2 {
         PubKey::Ecdsa(ecdsa_key) => ecdsa_key.as_slice(),
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => panic!("expected ECDSA public key"),
     };
 

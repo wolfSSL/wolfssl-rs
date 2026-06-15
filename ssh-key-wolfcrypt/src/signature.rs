@@ -267,7 +267,7 @@ impl Signer<Signature> for PrivateKey {
 }
 
 impl Signer<Signature> for private::KeypairData {
-    #[allow(unused_variables)]
+    #[expect(unused_variables)]
     fn try_sign(&self, message: &[u8]) -> signature::Result<Signature> {
         match self {
             #[cfg(any(feature = "p256", feature = "p384", feature = "p521"))]
@@ -288,7 +288,7 @@ impl Verifier<Signature> for PublicKey {
 }
 
 impl Verifier<Signature> for public::KeyData {
-    #[allow(unused_variables)]
+    #[expect(unused_variables)]
     fn verify(&self, message: &[u8], signature: &Signature) -> signature::Result<()> {
         match self {
             #[cfg(any(feature = "p256", feature = "p384", feature = "p521"))]
@@ -301,7 +301,6 @@ impl Verifier<Signature> for public::KeyData {
             Self::SkEcdsaSha2NistP256(pk) => pk.verify(message, signature),
             #[cfg(feature = "rsa")]
             Self::Rsa(pk) => pk.verify(message, signature),
-            #[allow(unreachable_patterns)]
             _ => Err(self.algorithm().unsupported_error().into()),
         }
     }

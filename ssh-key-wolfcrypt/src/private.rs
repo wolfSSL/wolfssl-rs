@@ -546,7 +546,7 @@ impl PrivateKey {
     /// # Returns
     /// - `Error::AlgorithmUnknown` if the algorithm is unsupported.
     #[cfg(feature = "rand_core")]
-    #[allow(unreachable_code, unused_variables)]
+    #[expect(unreachable_code, unused_variables)]
     pub fn random<R: CryptoRng + ?Sized>(rng: &mut R, algorithm: Algorithm) -> Result<Self> {
         use rand_core::Rng;
         let mut wc_rng = wolfcrypt::rand::WolfRng::new().map_err(Error::from)?;

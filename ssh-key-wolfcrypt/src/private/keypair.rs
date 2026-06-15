@@ -105,7 +105,6 @@ impl KeypairData {
     pub fn ed25519(&self) -> Option<&Ed25519Keypair> {
         match self {
             Self::Ed25519(key) => Some(key),
-            #[allow(unreachable_patterns)]
             _ => None,
         }
     }
@@ -263,7 +262,7 @@ impl KeypairData {
             algorithm @ Algorithm::Other(_) => {
                 OpaqueKeypair::decode_as(reader, algorithm).map(Self::Other)
             }
-            #[allow(unreachable_patterns)]
+            #[expect(unreachable_patterns)]
             _ => Err(Error::AlgorithmUnknown),
         }
     }
@@ -296,7 +295,6 @@ impl ConstantTimeEq for KeypairData {
             }
             #[cfg(feature = "alloc")]
             (Self::Other(a), Self::Other(b)) => a.ct_eq(b),
-            #[allow(unreachable_patterns)]
             _ => Choice::from(0),
         }
     }

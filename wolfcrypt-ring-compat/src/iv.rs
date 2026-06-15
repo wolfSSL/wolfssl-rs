@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: ISC
 // Modifications copyright wolfSSL Inc.
 // SPDX-License-Identifier: MIT
-#![allow(dead_code)]
-
 //! Initialization Vector (IV) cryptographic primitives
 
 use crate::error::Unspecified;

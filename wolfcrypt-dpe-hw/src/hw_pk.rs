@@ -526,7 +526,7 @@ fn dispatch_mldsa87_pqc(pk_type: u32) -> c_int {
 /// Stub — wire-format compatibility with Adams Bridge is unverified.
 /// Gated behind `mldsa87-hw` feature so it is never compiled by default.
 #[cfg(feature = "mldsa87-hw")]
-#[allow(dead_code)]
+#[expect(dead_code)]
 pub(crate) unsafe fn dispatch_mldsa87_sign(_info: &mut wc_CryptoInfo) -> c_int {
     crate::CRYPTOCB_UNAVAILABLE
 }
@@ -536,7 +536,7 @@ pub(crate) unsafe fn dispatch_mldsa87_sign(_info: &mut wc_CryptoInfo) -> c_int {
 /// Stub — wire-format compatibility with Adams Bridge is unverified.
 /// Gated behind `mldsa87-hw` feature so it is never compiled by default.
 #[cfg(feature = "mldsa87-hw")]
-#[allow(dead_code)]
+#[expect(dead_code)]
 pub(crate) unsafe fn dispatch_mldsa87_verify(_info: &mut wc_CryptoInfo) -> c_int {
     crate::CRYPTOCB_UNAVAILABLE
 }

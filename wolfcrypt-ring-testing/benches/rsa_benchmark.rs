@@ -1,9 +1,9 @@
-#![allow(deprecated, dead_code)]
+#![expect(deprecated, dead_code)]
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use wolfcrypt_ring_compat::{test, test_file};
 
-#[allow(dead_code)]
+#[expect(dead_code)]
 pub struct RsaConfig {
     padding: &'static RsaPadding,
     digest: &'static RsaDigest,

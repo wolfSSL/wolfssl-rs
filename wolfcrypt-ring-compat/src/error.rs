@@ -227,7 +227,7 @@ impl From<Unspecified> for KeyRejected {
     }
 }
 
-#[allow(deprecated, unused_imports)]
+#[expect(deprecated, unused_imports)]
 #[cfg(test)]
 mod tests {
     use crate::error::KeyRejected;

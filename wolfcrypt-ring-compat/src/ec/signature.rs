@@ -82,7 +82,7 @@ impl AlgorithmID {
     }
     // Compressed public key length in bytes
     #[inline]
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     const fn compressed_pub_key_len(&self) -> usize {
         match self {
             AlgorithmID::ECDSA_P256 | AlgorithmID::ECDSA_P256K1 => {
@@ -97,7 +97,7 @@ impl AlgorithmID {
 /// Elliptic curve public key.
 #[derive(Clone)]
 pub struct PublicKey {
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     algorithm: &'static EcdsaSigningAlgorithm,
     evp_pkey: LcPtr<EVP_PKEY>,
     octets: Box<[u8]>,

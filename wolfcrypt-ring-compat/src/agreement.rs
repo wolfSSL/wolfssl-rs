@@ -815,7 +815,6 @@ impl AsRef<[u8]> for ParsedPublicKey {
 }
 
 impl<B: AsRef<[u8]>> UnparsedPublicKey<B> {
-    #[allow(dead_code)]
     fn parse(&self) -> Result<ParsedPublicKey, KeyRejected> {
         ParsedPublicKey::new(&self.bytes, self.alg.id.nid())
     }

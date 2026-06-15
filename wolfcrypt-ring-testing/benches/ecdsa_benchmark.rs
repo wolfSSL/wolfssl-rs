@@ -1,11 +1,11 @@
-#![allow(deprecated, dead_code)]
+#![expect(deprecated, dead_code)]
 
 #[cfg(feature = "ring-sig-verify")]
 use criterion::{criterion_group, criterion_main, Criterion};
 #[cfg(feature = "ring-sig-verify")]
 use wolfcrypt_ring_compat::{test, test_file};
 
-#[allow(dead_code)]
+#[expect(dead_code)]
 #[derive(Debug)]
 pub struct EcdsaConfig {
     curve: &'static EcdsaCurve,

@@ -100,7 +100,6 @@ impl KeyData {
     pub fn ed25519(&self) -> Option<&Ed25519PublicKey> {
         match self {
             Self::Ed25519(key) => Some(key),
-            #[allow(unreachable_patterns)]
             _ => None,
         }
     }
@@ -231,7 +230,7 @@ impl KeyData {
             Algorithm::SkEd25519 => SkEd25519::decode(reader).map(Self::SkEd25519),
             #[cfg(feature = "alloc")]
             Algorithm::Other(_) => OpaquePublicKey::decode_as(reader, algorithm).map(Self::Other),
-            #[allow(unreachable_patterns)]
+            #[expect(unreachable_patterns)]
             _ => Err(Error::AlgorithmUnknown),
         }
     }

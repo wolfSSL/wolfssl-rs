@@ -46,7 +46,7 @@ impl AlgorithmID {
 
     /// Combined key size: private key + public key concatenated.
     /// This is the format used by `from_raw_private_key` and `as_raw_bytes`.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub(crate) const fn combined_key_size_bytes(&self) -> usize {
         self.priv_key_size_bytes() + self.pub_key_size_bytes()
     }

@@ -18,7 +18,6 @@ impl DotSsh {
     ///
     /// Returns `None` if the home directory couldn't be located.
     pub fn new() -> Option<Self> {
-        #[allow(deprecated)] // NOTE: no longer deprecated as of Rust 1.86
         env::home_dir().map(|path| Self::open(path.join(".ssh")))
     }
 

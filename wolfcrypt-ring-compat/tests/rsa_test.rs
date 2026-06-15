@@ -344,7 +344,7 @@ fn rsa_test_public_key_coverage() {
     assert_eq!(pubkey.as_ref(), PUBLIC_KEY);
 
     // Test `Clone`.
-    #[allow(let_underscore_drop)]
+    #[expect(let_underscore_drop)]
     let _: RsaSubjectPublicKey = pubkey.clone();
 
     #[cfg(feature = "ring-io")]

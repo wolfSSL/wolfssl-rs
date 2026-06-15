@@ -110,7 +110,7 @@ pub enum HwError {
 
 // Error category for HwError in the wolfcrypt-dpe CryptoError space.
 // Uses the next available high-byte after 0x07_0000.
-#[allow(dead_code)]
+#[expect(dead_code)]
 const ERR_HW_BASE: u32 = 0x08_0000;
 
 // ---------------------------------------------------------------------------

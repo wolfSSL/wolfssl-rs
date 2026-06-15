@@ -143,7 +143,7 @@ fn test_aead_append_within(config: &AeadConfig, in_out: &[u8]) -> Result<Vec<u8>
     let plaintext = in_out.to_owned();
     println!("Plaintext: {plaintext:?}");
     let mut sized_in_out = in_out.to_vec();
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     sealing_key
         .seal_in_place(config.aad(), &mut sized_in_out)
         .map_err(|x| x.to_string())?;

@@ -1,10 +1,10 @@
 //! Known Answer Tests for ECDSA key derivation and signing.
 
 // Future-proof: caliptra-dpe may add ML-DSA variants to PubKey/Signature enums.
-#![allow(unreachable_patterns)]
+#![expect(unreachable_patterns)]
 
 // CryptoSuite must be in scope for get_pubkey_serial() method resolution.
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 use caliptra_dpe_crypto::{
     Crypto, CryptoSuite, Digest, PubKey, Sha256, Sha384, SignData, Signature,
 };

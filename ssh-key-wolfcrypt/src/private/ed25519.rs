@@ -32,7 +32,7 @@ impl Ed25519PrivateKey {
     /// entropy source is unavailable).  The return type is `Self` (not
     /// `Result`) to match the upstream `ssh-key` API.
     #[cfg(feature = "rand_core")]
-    #[allow(unused_variables)]
+    #[expect(unused_variables)]
     pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
         use rand_core::Rng;
         let mut wc_rng = wolfcrypt::rand::WolfRng::new().expect("wolfCrypt RNG init failed");

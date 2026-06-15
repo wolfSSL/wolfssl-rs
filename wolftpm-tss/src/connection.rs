@@ -113,7 +113,6 @@ impl Drop for WolfTpmDev {
 /// ```
 pub struct WolfTpmLinuxDev {
     // Accessed by the `tss` feature's Connection impl and by Drop propagation.
-    #[allow(dead_code)]
     inner: WolfTpmDev,
 }
 
@@ -193,7 +192,7 @@ impl Connection for WolfTpmLinuxDev {
 #[cfg(feature = "swtpm")]
 pub struct WolfTpmSwtpm {
     // Accessed by the `tss` feature's Connection impl and by Drop propagation.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     inner: WolfTpmDev,
 }
 

@@ -82,7 +82,7 @@ const RSA_PRIVATE_KEY: &str = include_str!("examples/id_rsa_3072");
 const RSA_PUBLIC_KEY: &str = include_str!("examples/id_rsa_3072.pub");
 
 /// Example message to be signed/verified.
-#[allow(dead_code)]
+#[expect(dead_code)]
 const MSG_EXAMPLE: &[u8] = b"testing";
 
 /// Example domain/namespace used for the message.

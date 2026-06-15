@@ -59,7 +59,7 @@ const DIGEST_MAX_INPUT_LEN: u64 = u64::MAX;
 /// SHA-1 as specified in [FIPS 180-4]. Deprecated.
 ///
 /// [FIPS 180-4]: http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub const SHA1_FOR_LEGACY_USE_ONLY: Algorithm = Algorithm {
     output_len: SHA1_OUTPUT_LEN,
     chaining_len: SHA1_OUTPUT_LEN,
@@ -74,7 +74,7 @@ pub const SHA1_FOR_LEGACY_USE_ONLY: Algorithm = Algorithm {
 /// SHA-224 as specified in [FIPS 180-4].
 ///
 /// [FIPS 180-4]: http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub const SHA224: Algorithm = Algorithm {
     output_len: SHA224_OUTPUT_LEN,
 
@@ -92,7 +92,7 @@ pub const SHA224: Algorithm = Algorithm {
 /// SHA-256 as specified in [FIPS 180-4].
 ///
 /// [FIPS 180-4]: http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub const SHA256: Algorithm = Algorithm {
     output_len: SHA256_OUTPUT_LEN,
     chaining_len: SHA256_OUTPUT_LEN,
@@ -107,7 +107,7 @@ pub const SHA256: Algorithm = Algorithm {
 /// SHA-384 as specified in [FIPS 180-4].
 ///
 /// [FIPS 180-4]: http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub const SHA384: Algorithm = Algorithm {
     output_len: SHA384_OUTPUT_LEN,
 
@@ -125,7 +125,7 @@ pub const SHA384: Algorithm = Algorithm {
 /// SHA-512 as specified in [FIPS 180-4].
 ///
 /// [FIPS 180-4]: http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub const SHA512: Algorithm = Algorithm {
     output_len: SHA512_OUTPUT_LEN,
     chaining_len: SHA512_OUTPUT_LEN,
@@ -140,7 +140,7 @@ pub const SHA512: Algorithm = Algorithm {
 /// SHA-512/256 as specified in [FIPS 180-4].
 ///
 /// [FIPS 180-4]: http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub const SHA512_256: Algorithm = Algorithm {
     output_len: SHA512_256_OUTPUT_LEN,
     chaining_len: SHA512_OUTPUT_LEN,
@@ -155,7 +155,7 @@ pub const SHA512_256: Algorithm = Algorithm {
 /// SHA3-256 as specified in [FIPS 202].
 ///
 /// [FIPS 202]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub const SHA3_256: Algorithm = Algorithm {
     output_len: SHA3_256_OUTPUT_LEN,
     chaining_len: SHA3_256_OUTPUT_LEN,
@@ -170,7 +170,7 @@ pub const SHA3_256: Algorithm = Algorithm {
 /// SHA3-384 as specified in [FIPS 202].
 ///
 /// [FIPS 202]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub const SHA3_384: Algorithm = Algorithm {
     output_len: SHA3_384_OUTPUT_LEN,
     chaining_len: SHA3_384_OUTPUT_LEN,
@@ -185,7 +185,7 @@ pub const SHA3_384: Algorithm = Algorithm {
 /// SHA3-512 as specified in [FIPS 202].
 ///
 /// [FIPS 202]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub const SHA3_512: Algorithm = Algorithm {
     output_len: SHA3_512_OUTPUT_LEN,
     chaining_len: SHA3_512_OUTPUT_LEN,

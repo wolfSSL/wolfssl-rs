@@ -6,7 +6,6 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::useless_transmute)]
-#![allow(dead_code)]
 #![allow(improper_ctypes)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]

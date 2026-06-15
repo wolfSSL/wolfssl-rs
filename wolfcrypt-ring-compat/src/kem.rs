@@ -136,7 +136,7 @@ where
     }
 
     #[inline]
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub(crate) fn decapsulate_key_size(&self) -> usize {
         self.decapsulate_key_size
     }

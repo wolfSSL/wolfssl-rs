@@ -271,7 +271,7 @@ pub fn try_fips_mode() -> Result<(), &'static str> {
     }
 }
 
-#[allow(dead_code)]
+#[expect(dead_code)]
 unsafe fn dump_error() {
     // SAFETY: ERR_get_error/wc_GetErrorString are read-only diagnostic functions;
     // CStr::from_ptr requires the returned pointer to be a valid null-terminated C string,

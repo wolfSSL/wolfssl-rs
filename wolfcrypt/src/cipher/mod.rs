@@ -8,17 +8,17 @@
 // their corresponding mode's cfg is active; unused_imports is allowed here
 // to avoid a fragile cascade of `not(...)` cfg guards that must be updated
 // every time a new cipher mode is added.
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 pub(crate) use cipher_trait::generic_array::GenericArray;
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 pub(crate) use cipher_trait::inout::InOut;
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 pub(crate) use cipher_trait::{
     Block, BlockBackend, BlockCipher, BlockClosure, BlockDecrypt, BlockDecryptMut, BlockEncrypt,
     BlockEncryptMut, BlockSizeUser, IvSizeUser, KeyInit, KeyIvInit, KeySizeUser, ParBlocksSizeUser,
     StreamCipher, StreamCipherError,
 };
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 pub(crate) use typenum::{U1, U16};
 
 pub use cipher_trait;

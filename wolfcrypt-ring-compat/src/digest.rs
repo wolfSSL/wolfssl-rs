@@ -321,7 +321,7 @@ impl Algorithm {
     #[must_use]
     pub fn chaining_len(&self) -> usize {
         // clippy warns on deprecated functions accessing deprecated fields
-        #![allow(deprecated)]
+        #![expect(deprecated)]
         self.chaining_len
     }
 

@@ -10,25 +10,25 @@ use crate::error::Unspecified;
 use crate::ptr::ConstPointer;
 
 /// KBKDF in Counter Mode with HMAC-SHA224
-#[allow(dead_code)]
+#[expect(dead_code)]
 const KBKDF_CTR_HMAC_SHA224: KbkdfCtrHmacAlgorithm = KbkdfCtrHmacAlgorithm {
     id: KbkdfCtrHmacAlgorithmId::Sha224,
 };
 
 /// KBKDF in Counter Mode with HMAC-SHA256
-#[allow(dead_code)]
+#[expect(dead_code)]
 const KBKDF_CTR_HMAC_SHA256: KbkdfCtrHmacAlgorithm = KbkdfCtrHmacAlgorithm {
     id: KbkdfCtrHmacAlgorithmId::Sha256,
 };
 
 /// KBKDF in Counter Mode with HMAC-SHA384
-#[allow(dead_code)]
+#[expect(dead_code)]
 const KBKDF_CTR_HMAC_SHA384: KbkdfCtrHmacAlgorithm = KbkdfCtrHmacAlgorithm {
     id: KbkdfCtrHmacAlgorithmId::Sha384,
 };
 
 /// KBKDF in Counter Mode with HMAC-SHA512
-#[allow(dead_code)]
+#[expect(dead_code)]
 const KBKDF_CTR_HMAC_SHA512: KbkdfCtrHmacAlgorithm = KbkdfCtrHmacAlgorithm {
     id: KbkdfCtrHmacAlgorithmId::Sha512,
 };

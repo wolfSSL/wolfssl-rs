@@ -169,7 +169,7 @@ mod digest_shavs {
                 ctx.update(&mds[1]);
                 ctx.update(&mds[2]);
                 let md_i = ctx.finish();
-                #[allow(let_underscore_drop)]
+                #[expect(let_underscore_drop)]
                 let _: Vec<u8> = mds.remove(0);
                 mds.push(Vec::from(md_i.as_ref()));
             }

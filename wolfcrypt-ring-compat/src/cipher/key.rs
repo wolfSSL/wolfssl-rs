@@ -113,7 +113,7 @@ impl SymmetricCipherKey {
         }
     }
 
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     #[inline]
     pub(crate) fn encrypt_block(&self, block: Block) -> Block {
         match self {

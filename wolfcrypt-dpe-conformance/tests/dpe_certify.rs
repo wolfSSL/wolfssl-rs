@@ -88,7 +88,7 @@ fn certify_default_context() {
         CertifyKeyResp::P384(r) => {
             assert!(r.cert_size > 0, "Certificate should not be empty");
         }
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => panic!("Expected P384 CertifyKey response"),
     }
 }
@@ -148,7 +148,7 @@ fn certify_pubkey_in_response() {
                 "pubkey_y should be non-zero"
             );
         }
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => panic!("Expected P384 CertifyKey response"),
     }
 }

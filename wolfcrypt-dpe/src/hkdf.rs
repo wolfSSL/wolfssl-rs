@@ -15,7 +15,7 @@ fn hkdf_output_size(algs: SignatureAlgorithm) -> Result<usize, CryptoError> {
     match algs {
         SignatureAlgorithm::Ecdsa(EcdsaAlgorithm::Bit256) => Ok(32),
         SignatureAlgorithm::Ecdsa(EcdsaAlgorithm::Bit384) => Ok(48),
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => Err(CryptoError::NotImplemented),
     }
 }
@@ -41,7 +41,7 @@ fn hkdf_extract_expand(
             hkdf.expand(info, &mut out).map_err(from_wolfcrypt)?;
             Ok(out)
         }
-        #[allow(unreachable_patterns)]
+        #[expect(unreachable_patterns)]
         _ => Err(CryptoError::NotImplemented),
     }
 }

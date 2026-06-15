@@ -409,7 +409,7 @@ fn test_mldsa_zero_signature() {
 
 #[cfg(feature = "ring-sig-verify")]
 #[test]
-#[allow(deprecated)]
+#[expect(deprecated)]
 fn test_mldsa_ring_sig_verify() {
     for (signing_alg, verify_alg) in [
         (&ML_DSA_44_SIGNING, &ML_DSA_44),
