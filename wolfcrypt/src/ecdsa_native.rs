@@ -226,7 +226,7 @@ impl<C: EcdsaCurve> core::fmt::Debug for EcdsaSignature<C> {
 }
 
 impl<C: EcdsaCurve> signature_trait::SignatureEncoding for EcdsaSignature<C> {
-    type Repr = Vec<u8>;
+    type Repr = GenericArray<u8, C::SigSize>;
 }
 
 impl<C: EcdsaCurve> TryFrom<&[u8]> for EcdsaSignature<C> {
@@ -236,9 +236,9 @@ impl<C: EcdsaCurve> TryFrom<&[u8]> for EcdsaSignature<C> {
     }
 }
 
-impl<C: EcdsaCurve> From<EcdsaSignature<C>> for Vec<u8> {
-    fn from(sig: EcdsaSignature<C>) -> Vec<u8> {
-        sig.bytes.to_vec()
+impl<C: EcdsaCurve> From<EcdsaSignature<C>> for GenericArray<u8, C::SigSize> {
+    fn from(sig: EcdsaSignature<C>) -> Self {
+        sig.bytes
     }
 }
 
@@ -309,6 +309,9 @@ pub struct EcdsaSigningKey<C: EcdsaCurve> {
     /// `UnsafeCell` makes this type `!Sync`, which is the correct contract:
     /// wolfCrypt contexts are not thread-safe.
     key: UnsafeCell<*mut wc_ecc_key>,
+    /// Persistent RNG context reused across sign operations, avoiding
+    /// per-call `wc_InitRng` / `wc_FreeRng` overhead.
+    rng: UnsafeCell<WC_RNG>,
     _curve: PhantomData<C>,
 }
 
@@ -317,6 +320,8 @@ unsafe impl<C: EcdsaCurve> Send for EcdsaSigningKey<C> {}
 
 impl<C: EcdsaCurve> Drop for EcdsaSigningKey<C> {
     fn drop(&mut self) {
+        // SAFETY: rng was initialised during construction; freed exactly once.
+        unsafe { wc_FreeRng(self.rng.get_mut()) };
         let key = *self.key.get_mut();
         if !key.is_null() {
             // SAFETY: key is non-null and was allocated by wc_ecc_key_new; freed exactly once.
@@ -326,6 +331,20 @@ impl<C: EcdsaCurve> Drop for EcdsaSigningKey<C> {
 }
 
 impl<C: EcdsaCurve> EcdsaSigningKey<C> {
+    /// Initialise a persistent RNG for this signing key.
+    fn init_rng() -> Result<WC_RNG, WolfCryptError> {
+        let mut rng = WC_RNG::zeroed();
+        // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
+        let rc = unsafe { wc_InitRng(&mut rng) };
+        if rc != 0 {
+            return Err(WolfCryptError::Ffi {
+                code: rc,
+                func: "wc_InitRng",
+            });
+        }
+        Ok(rng)
+    }
+
     /// Generate a fresh random ECDSA signing key on curve `C`.
     pub fn generate() -> Result<Self, WolfCryptError> {
         // SAFETY: null heap hint is valid; returns heap-allocated key or null.
@@ -334,25 +353,17 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
 
-        let mut rng = WC_RNG::zeroed();
-        // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
-        let rc = unsafe { wc_InitRng(&mut rng) };
-        if rc != 0 {
+        let mut rng = Self::init_rng().map_err(|e| {
             // SAFETY: key is non-null and was allocated above; freed on error path.
             unsafe { wc_ecc_key_free(key) };
-            return Err(WolfCryptError::Ffi {
-                code: rc,
-                func: "wc_InitRng",
-            });
-        }
+            e
+        })?;
 
         // SAFETY: key and rng are both initialised; FIELD_SIZE matches CURVE_ID.
         let rc = unsafe { wc_ecc_make_key_ex(&mut rng, C::FIELD_SIZE as c_int, key, C::CURVE_ID) };
-        // Always free the RNG, success or failure.
-        // SAFETY: rng was successfully initialised by wc_InitRng above.
-        unsafe { wc_FreeRng(&mut rng) };
         if rc != 0 {
-            // SAFETY: key is non-null and was allocated above; freed on error path.
+            // SAFETY: rng and key must both be freed on error.
+            unsafe { wc_FreeRng(&mut rng) };
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -362,6 +373,7 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
 
         Ok(Self {
             key: UnsafeCell::new(key),
+            rng: UnsafeCell::new(rng),
             _curve: PhantomData,
         })
     }
@@ -399,8 +411,14 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
                 func: "wc_ecc_import_private_key_ex",
             });
         }
+        let rng = Self::init_rng().map_err(|e| {
+            // SAFETY: key is non-null; freed on error path.
+            unsafe { wc_ecc_key_free(key) };
+            e
+        })?;
         Ok(Self {
             key: UnsafeCell::new(key),
+            rng: UnsafeCell::new(rng),
             _curve: PhantomData,
         })
     }
@@ -448,8 +466,14 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
                 func: "wc_ecc_make_pub",
             });
         }
+        let rng = Self::init_rng().map_err(|e| {
+            // SAFETY: key is non-null; freed on error path.
+            unsafe { wc_ecc_key_free(key) };
+            e
+        })?;
         Ok(Self {
             key: UnsafeCell::new(key),
+            rng: UnsafeCell::new(rng),
             _curve: PhantomData,
         })
     }
@@ -479,32 +503,19 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         if hash.len() != C::HASH_LEN {
             return Err(WolfCryptError::INVALID_INPUT);
         }
-        // SAFETY: self.key is non-null and initialised; dereferencing the UnsafeCell pointer.
+        // SAFETY: self.key and self.rng are initialised; dereferencing UnsafeCell pointers.
         let key = unsafe { *self.key.get() };
+        let rng = unsafe { &mut *self.rng.get() };
 
         // Max DER ECDSA signature: SEQUENCE + 2 * (INTEGER + optional-zero + field).
         let mut der = vec![0u8; C::FIELD_SIZE * 2 + 16];
         let mut der_len = der.len() as u32;
 
-        // Initialise a per-call RNG for ECC_TIMING_RESISTANT scalar-multiplication
-        // blinding.  Required on software builds; harmless on CryptoCb builds where
-        // the dispatch ignores it.
-        let mut rng = WC_RNG::zeroed();
-        // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
-        let rc = unsafe { wc_InitRng(&mut rng) };
-        if rc != 0 {
-            return Err(WolfCryptError::Ffi {
-                code: rc,
-                func: "wc_InitRng (sign)",
-            });
-        }
-
-        // Attach the RNG to the key so internal timing-resistant code can use it.
+        // Attach the persistent RNG to the key for timing-resistant
+        // scalar-multiplication blinding.
         // SAFETY: key is initialised and non-null; rng is live.
-        let rc = unsafe { wc_ecc_set_rng(key, &mut rng) };
+        let rc = unsafe { wc_ecc_set_rng(key, rng) };
         if rc != 0 {
-            // SAFETY: rng was successfully initialised; freed on error path.
-            unsafe { wc_FreeRng(&mut rng) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
                 func: "wc_ecc_set_rng",
@@ -512,24 +523,16 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         }
 
         // SAFETY: hash is HASH_LEN bytes; key holds the private key; rng is live.
-        //
-        // Note: the same `rng` is passed both as the key-attached RNG (via
-        // `wc_ecc_set_rng` above, used for scalar-multiplication blinding) and
-        // as the explicit RNG argument here (used for nonce generation).
-        // wolfCrypt accepts the same object for both roles; this is intentional.
         let rc = unsafe {
             wc_ecc_sign_hash(
                 hash.as_ptr(),
                 hash.len() as u32,
                 der.as_mut_ptr(),
                 &mut der_len,
-                &mut rng,
+                rng,
                 key,
             )
         };
-        // Always free the RNG regardless of outcome.
-        // SAFETY: rng was successfully initialised above.
-        unsafe { wc_FreeRng(&mut rng) };
         if rc != 0 {
             return Err(WolfCryptError::Ffi {
                 code: rc,
