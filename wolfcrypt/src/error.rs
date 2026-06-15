@@ -5,7 +5,7 @@ use core::fmt;
 /// Distinguishes between errors originating from the wolfCrypt C library
 /// (which carry a negative integer error code) and errors detected on the
 /// Rust side before calling into C.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum WolfCryptError {
     /// A wolfCrypt FFI call returned a non-zero error code.
     ///
