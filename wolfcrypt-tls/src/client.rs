@@ -110,10 +110,10 @@ impl<IOCB: IOCallbacks> TlsClient<IOCB> {
             };
             drop(guard);
             if verify_result != X509_V_OK as core::ffi::c_long {
-                let reason = crate::error::verify_error_string(verify_result);
-                return Err(TlsError::CertificateVerification(format!(
-                    "{reason} (X509 error {verify_result})"
-                )));
+                return Err(TlsError::CertificateVerification {
+                    code: verify_result,
+                    reason: crate::error::verify_error_string(verify_result),
+                });
             }
             return Err(TlsError::Ffi {
                 code: err,

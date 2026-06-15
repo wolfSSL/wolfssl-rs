@@ -19,7 +19,12 @@ pub enum TlsError {
     /// certificates or server certificate/key).
     InvalidConfig(&'static str),
     /// Certificate verification failed.
-    CertificateVerification(String),
+    CertificateVerification {
+        /// X509 verification error code from `wolfSSL_get_verify_result`.
+        code: i64,
+        /// Human-readable reason from `wolfSSL_X509_verify_cert_error_string`.
+        reason: &'static str,
+    },
     /// I/O error from the underlying transport.
     Io(io::Error),
     /// A wolfSSL allocation or initialization function returned NULL.
@@ -39,8 +44,8 @@ impl fmt::Display for TlsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TlsError::InvalidConfig(msg) => write!(f, "invalid TLS config: {msg}"),
-            TlsError::CertificateVerification(msg) => {
-                write!(f, "certificate verification failed: {msg}")
+            TlsError::CertificateVerification { code, reason } => {
+                write!(f, "certificate verification failed: {reason} (X509 error {code})")
             }
             TlsError::AllocFailed { func } => {
                 write!(f, "{func} returned NULL (allocation failed)")
@@ -83,7 +88,10 @@ impl PartialEq for TlsError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (TlsError::InvalidConfig(a), TlsError::InvalidConfig(b)) => a == b,
-            (TlsError::CertificateVerification(a), TlsError::CertificateVerification(b)) => a == b,
+            (
+                TlsError::CertificateVerification { code: ca, reason: ra },
+                TlsError::CertificateVerification { code: cb, reason: rb },
+            ) => ca == cb && ra == rb,
             (TlsError::Io(a), TlsError::Io(b)) => a.kind() == b.kind(),
             (TlsError::AllocFailed { func: a }, TlsError::AllocFailed { func: b }) => a == b,
             (
@@ -199,7 +207,7 @@ mod tests {
         assert!(msg.contains("wolfSSL_connect"));
         assert!(msg.contains("-308"));
 
-        let err = TlsError::CertificateVerification("expired".into());
+        let err = TlsError::CertificateVerification { code: 10, reason: "certificate has expired" };
         assert!(format!("{err}").contains("expired"));
 
         let err = TlsError::Closed;

@@ -50,7 +50,7 @@ fn client_rejects_self_signed_cert_without_ca() {
 
     assert!(result.is_err(), "connection should fail without trusted CA");
     match result.unwrap_err() {
-        wolfssl::TlsError::CertificateVerification(_) => {} // expected
+        wolfssl::TlsError::CertificateVerification { .. } => {} // expected
         wolfssl::TlsError::Ffi { code, func } => {
             // wolfSSL may report this as a generic handshake error
             eprintln!("got Ffi error: {func} code={code} (acceptable)");
