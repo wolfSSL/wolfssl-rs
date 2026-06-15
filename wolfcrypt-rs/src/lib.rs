@@ -716,6 +716,7 @@ extern "C" {
     pub fn wolfcrypt_sha256_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
     pub fn wolfcrypt_sha256_free(ctx: *mut c_void);
     pub fn wolfcrypt_sha256_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+    pub fn wolfcrypt_sha256_reset(ctx: *mut c_void) -> c_int;
 }
 
 #[cfg(wolfssl_sha384)]
@@ -730,6 +731,7 @@ extern "C" {
     pub fn wolfcrypt_sha384_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
     pub fn wolfcrypt_sha384_free(ctx: *mut c_void);
     pub fn wolfcrypt_sha384_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+    pub fn wolfcrypt_sha384_reset(ctx: *mut c_void) -> c_int;
 }
 
 #[cfg(wolfssl_des3)]
@@ -939,6 +941,7 @@ extern "C" {
     pub fn wolfcrypt_sha1_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
     pub fn wolfcrypt_sha1_free(ctx: *mut c_void);
     pub fn wolfcrypt_sha1_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+    pub fn wolfcrypt_sha1_reset(ctx: *mut c_void) -> c_int;
 }
 
 #[cfg(wolfssl_sha224)]
@@ -948,6 +951,7 @@ extern "C" {
     pub fn wolfcrypt_sha224_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
     pub fn wolfcrypt_sha224_free(ctx: *mut c_void);
     pub fn wolfcrypt_sha224_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+    pub fn wolfcrypt_sha224_reset(ctx: *mut c_void) -> c_int;
 }
 
 #[cfg(wolfssl_sha512)]
@@ -961,12 +965,14 @@ extern "C" {
     pub fn wolfcrypt_sha512_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
     pub fn wolfcrypt_sha512_free(ctx: *mut c_void);
     pub fn wolfcrypt_sha512_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+    pub fn wolfcrypt_sha512_reset(ctx: *mut c_void) -> c_int;
 
     pub fn wolfcrypt_sha512_256_ctx_new() -> *mut c_void;
     pub fn wolfcrypt_sha512_256_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
     pub fn wolfcrypt_sha512_256_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
     pub fn wolfcrypt_sha512_256_free(ctx: *mut c_void);
     pub fn wolfcrypt_sha512_256_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+    pub fn wolfcrypt_sha512_256_reset(ctx: *mut c_void) -> c_int;
 }
 
 #[cfg(wolfssl_sha3)]
@@ -976,18 +982,21 @@ extern "C" {
     pub fn wolfcrypt_sha3_256_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
     pub fn wolfcrypt_sha3_256_free(ctx: *mut c_void);
     pub fn wolfcrypt_sha3_256_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+    pub fn wolfcrypt_sha3_256_reset(ctx: *mut c_void) -> c_int;
 
     pub fn wolfcrypt_sha3_384_ctx_new() -> *mut c_void;
     pub fn wolfcrypt_sha3_384_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
     pub fn wolfcrypt_sha3_384_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
     pub fn wolfcrypt_sha3_384_free(ctx: *mut c_void);
     pub fn wolfcrypt_sha3_384_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+    pub fn wolfcrypt_sha3_384_reset(ctx: *mut c_void) -> c_int;
 
     pub fn wolfcrypt_sha3_512_ctx_new() -> *mut c_void;
     pub fn wolfcrypt_sha3_512_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
     pub fn wolfcrypt_sha3_512_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
     pub fn wolfcrypt_sha3_512_free(ctx: *mut c_void);
     pub fn wolfcrypt_sha3_512_copy(src: *const c_void, dst: *mut *mut c_void) -> c_int;
+    pub fn wolfcrypt_sha3_512_reset(ctx: *mut c_void) -> c_int;
 }
 
 // ============================================================

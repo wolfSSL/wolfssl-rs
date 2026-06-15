@@ -1318,6 +1318,11 @@ int wolfcrypt_sha256_copy(const void *src, void **dst_out) {
     *dst_out = dst;
     return 0;
 }
+
+int wolfcrypt_sha256_reset(void *ctx) {
+    wc_Sha256Free((wc_Sha256*)ctx);
+    return wc_InitSha256((wc_Sha256*)ctx);
+}
 #endif /* !NO_SHA256 */
 
 #ifdef WOLFSSL_SHA384
@@ -1358,6 +1363,11 @@ int wolfcrypt_sha384_copy(const void *src, void **dst_out) {
     }
     *dst_out = dst;
     return 0;
+}
+
+int wolfcrypt_sha384_reset(void *ctx) {
+    wc_Sha384Free((wc_Sha384*)ctx);
+    return wc_InitSha384((wc_Sha384*)ctx);
 }
 #endif /* WOLFSSL_SHA384 */
 
@@ -1457,6 +1467,11 @@ int wolfcrypt_sha1_copy(const void *src, void **dst_out) {
     *dst_out = dst;
     return 0;
 }
+
+int wolfcrypt_sha1_reset(void *ctx) {
+    wc_ShaFree((wc_Sha*)ctx);
+    return wc_InitSha((wc_Sha*)ctx);
+}
 #endif /* !NO_SHA */
 
 #ifdef WOLFSSL_SHA224
@@ -1498,6 +1513,11 @@ int wolfcrypt_sha224_copy(const void *src, void **dst_out) {
     }
     *dst_out = dst;
     return 0;
+}
+
+int wolfcrypt_sha224_reset(void *ctx) {
+    wc_Sha224Free((wc_Sha224*)ctx);
+    return wc_InitSha224((wc_Sha224*)ctx);
 }
 #endif /* WOLFSSL_SHA224 */
 
@@ -1541,6 +1561,11 @@ int wolfcrypt_sha512_copy(const void *src, void **dst_out) {
     return 0;
 }
 
+int wolfcrypt_sha512_reset(void *ctx) {
+    wc_Sha512Free((wc_Sha512*)ctx);
+    return wc_InitSha512((wc_Sha512*)ctx);
+}
+
 #if !defined(WOLFSSL_NOSHA512_256)
 void* wolfcrypt_sha512_256_ctx_new(void) {
     wc_Sha512 *ctx = (wc_Sha512*)XMALLOC(sizeof(wc_Sha512),
@@ -1577,6 +1602,11 @@ int wolfcrypt_sha512_256_copy(const void *src, void **dst_out) {
     }
     *dst_out = dst;
     return 0;
+}
+
+int wolfcrypt_sha512_256_reset(void *ctx) {
+    wc_Sha512_256Free((wc_Sha512*)ctx);
+    return wc_InitSha512_256((wc_Sha512*)ctx);
 }
 #endif /* !WOLFSSL_NOSHA512_256 */
 
@@ -1622,6 +1652,11 @@ int wolfcrypt_sha3_256_copy(const void *src, void **dst_out) {
     return 0;
 }
 
+int wolfcrypt_sha3_256_reset(void *ctx) {
+    wc_Sha3_256_Free((wc_Sha3*)ctx);
+    return wc_InitSha3_256((wc_Sha3*)ctx, NULL, INVALID_DEVID);
+}
+
 void* wolfcrypt_sha3_384_ctx_new(void) {
     wc_Sha3 *ctx = (wc_Sha3*)XMALLOC(sizeof(wc_Sha3),
                                       NULL, DYNAMIC_TYPE_TMP_BUFFER);
@@ -1659,6 +1694,11 @@ int wolfcrypt_sha3_384_copy(const void *src, void **dst_out) {
     return 0;
 }
 
+int wolfcrypt_sha3_384_reset(void *ctx) {
+    wc_Sha3_384_Free((wc_Sha3*)ctx);
+    return wc_InitSha3_384((wc_Sha3*)ctx, NULL, INVALID_DEVID);
+}
+
 void* wolfcrypt_sha3_512_ctx_new(void) {
     wc_Sha3 *ctx = (wc_Sha3*)XMALLOC(sizeof(wc_Sha3),
                                       NULL, DYNAMIC_TYPE_TMP_BUFFER);
@@ -1694,6 +1734,11 @@ int wolfcrypt_sha3_512_copy(const void *src, void **dst_out) {
     }
     *dst_out = dst;
     return 0;
+}
+
+int wolfcrypt_sha3_512_reset(void *ctx) {
+    wc_Sha3_512_Free((wc_Sha3*)ctx);
+    return wc_InitSha3_512((wc_Sha3*)ctx, NULL, INVALID_DEVID);
 }
 #endif /* WOLFSSL_SHA3 */
 
