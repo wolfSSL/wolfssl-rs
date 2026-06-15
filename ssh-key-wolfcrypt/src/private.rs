@@ -12,7 +12,7 @@
 //!
 #![cfg_attr(all(feature = "encryption", feature = "std"), doc = " ```")]
 #![cfg_attr(not(all(feature = "encryption", feature = "std")), doc = " ```ignore")]
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use ssh_key::PrivateKey;
 //!
 //! // WARNING: don't actually hardcode private keys in source code!!!
@@ -48,7 +48,7 @@
 //! `getrandom::SysRng` or any other `rand_core::CryptoRng`.
 //!
 //! ```ignore
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use ssh_key::{Algorithm, PrivateKey};
 //!
 //! // Provide any CryptoRng — e.g. getrandom::SysRng, ChaCha20Rng, etc.
@@ -75,7 +75,7 @@
 //! crate feature identified in backticks in the title of each example.
 //!
 //! ```ignore
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use ssh_key::{Algorithm, PrivateKey};
 //!
 //! // Provide any CryptoRng — e.g. getrandom::SysRng, ChaCha20Rng, etc.

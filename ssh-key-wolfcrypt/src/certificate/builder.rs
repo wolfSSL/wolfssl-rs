@@ -35,7 +35,7 @@ use crate::PrivateKey;
 /// ## Example
 ///
 /// ```ignore
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn core::error::Error>> {
 /// use ssh_key::{Algorithm, PrivateKey, certificate};
 /// use std::time::{SystemTime, UNIX_EPOCH};
 ///

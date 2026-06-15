@@ -40,7 +40,7 @@ async fn tls13_handshake_and_data_exchange() {
         let mut buf = [0u8; 12];
         tls.read_exact(&mut buf).await?;
         assert_eq!(&buf, b"tls13-client");
-            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
+            Ok::<_, Box<dyn core::error::Error + Send + Sync>>(())
         },
         async {
             let cfg = Arc::new(
@@ -59,7 +59,7 @@ async fn tls13_handshake_and_data_exchange() {
             tls.read_exact(&mut buf).await?;
             tls.write_all(&buf).await?;
             tls.flush().await?;
-            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
+            Ok::<_, Box<dyn core::error::Error + Send + Sync>>(())
         }
     );
 

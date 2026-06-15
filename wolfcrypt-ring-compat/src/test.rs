@@ -118,7 +118,7 @@ extern crate std;
 use crate::prelude::*;
 
 #[cfg(feature = "std")]
-use std::error::Error;
+use core::error::Error;
 
 use crate::{digest, error};
 
@@ -154,7 +154,7 @@ pub fn compile_time_assert_sync<T: Sync>() {}
 
 #[cfg(feature = "std")]
 /// `compile_time_assert_std_error_error::<T>();` fails to compile if `T`
-/// doesn't implement `std::error::Error`.
+/// doesn't implement `core::error::Error`.
 #[allow(clippy::extra_unused_type_parameters)]
 pub fn compile_time_assert_std_error_error<T: Error>() {}
 

@@ -60,8 +60,8 @@ impl fmt::Display for TlsError {
     }
 }
 
-impl std::error::Error for TlsError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for TlsError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             TlsError::Io(err) => Some(err),
             _ => None,
@@ -329,6 +329,6 @@ mod tests {
             other => panic!("expected Io variant, got: {other:?}"),
         }
         // source() returns the io::Error
-        assert!(std::error::Error::source(&tls_err).is_some());
+        assert!(core::error::Error::source(&tls_err).is_some());
     }
 }

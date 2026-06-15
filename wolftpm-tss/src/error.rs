@@ -87,7 +87,7 @@ impl fmt::Display for Error {
     }
 }
 
-impl std::error::Error for Error {}
+impl core::error::Error for Error {}
 
 // tpm2-rs-client requires Connection::Error: From<tpm2_rs_base::errors::TssError>.
 #[cfg(feature = "tss")]

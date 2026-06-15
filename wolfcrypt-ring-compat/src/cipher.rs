@@ -24,7 +24,7 @@
 //! ### AES-128 CBC
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! #
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use ring::cipher::{
@@ -57,7 +57,7 @@
 //! ### AES-128 CTR
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! #
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use ring::cipher::{DecryptingKey, EncryptingKey, UnboundCipherKey, AES_128};
@@ -86,7 +86,7 @@
 //! ### AES-128 CBC Streaming Cipher
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! #
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use ring::cipher::{
@@ -138,7 +138,7 @@
 //! ### AES-128 CFB 128-bit mode
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! #
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use ring::cipher::{DecryptingKey, EncryptingKey, UnboundCipherKey, AES_128};
@@ -167,7 +167,7 @@
 //! ## Constructing a `DecryptionContext` for decryption.
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use ring::cipher::{DecryptingKey, DecryptionContext, UnboundCipherKey, AES_128};
 //! use ring::iv::{FixedLength, IV_LEN_128_BIT};
@@ -205,7 +205,7 @@
 //! may fail for future enum variants that aren't representable as a single slice.
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! # use ring::cipher::DecryptionContext;
 //! # use ring::iv::FixedLength;

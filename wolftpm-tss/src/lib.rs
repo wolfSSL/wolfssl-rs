@@ -24,7 +24,7 @@
 //! use tpm2_rs_client::run_command;
 //! use tpm2_rs_base::commands::GetRandomCmd;
 //!
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! let mut transport = WolfTpmLinuxDev::open()?;
 //! let resp = run_command(&GetRandomCmd { bytes_requested: 32 }, &mut transport)?;
 //! println!("random bytes: {:?}", resp.random_bytes);

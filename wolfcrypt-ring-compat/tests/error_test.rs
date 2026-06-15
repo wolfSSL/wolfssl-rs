@@ -8,14 +8,14 @@ use ring::error;
 #[cfg(feature = "std")]
 #[test]
 fn unspecified_implements_std_error() {
-    fn require_std_error<T: std::error::Error>() {}
+    fn require_std_error<T: core::error::Error>() {}
     require_std_error::<error::Unspecified>();
 }
 
 #[cfg(feature = "std")]
 #[test]
 fn key_rejected_implements_std_error() {
-    fn require_std_error<T: std::error::Error>() {}
+    fn require_std_error<T: core::error::Error>() {}
     require_std_error::<error::KeyRejected>();
 }
 

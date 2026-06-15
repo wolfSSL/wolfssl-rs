@@ -6,7 +6,7 @@
 //! # Example
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! #
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use ring::tls_prf::{Secret, P_SHA256};

@@ -5,7 +5,7 @@
 //!
 //! # Examples
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use ring::key_wrap::{AesKek, KeyWrapPadded, AES_128};
 //!

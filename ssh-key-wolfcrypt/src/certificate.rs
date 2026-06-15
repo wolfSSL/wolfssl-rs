@@ -68,7 +68,7 @@ use {
 ///
 #[cfg_attr(all(feature = "p256", feature = "std"), doc = " ```")]
 #[cfg_attr(not(all(feature = "p256", feature = "std")), doc = " ```ignore")]
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn core::error::Error>> {
 /// use ssh_key::{Certificate, Fingerprint};
 /// use std::str::FromStr;
 ///

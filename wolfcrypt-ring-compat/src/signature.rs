@@ -432,7 +432,7 @@ impl ParsedPublicKey {
     /// ```
     /// use ring::signature::{self, ParsedPublicKey};
     ///
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn core::error::Error>> {
     ///     let parsed_key = ParsedPublicKey::new(&signature::ED25519, include_bytes!("../tests/data/ed25519_test_public_key.bin"))?;
     ///     let signature = [
     ///         0xED, 0xDB, 0x67, 0xE9, 0xF7, 0x8C, 0x9A, 0x0, 0xFD, 0xEE, 0x2D, 0x22, 0x21, 0xA3, 0x9A,

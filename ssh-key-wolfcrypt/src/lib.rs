@@ -52,7 +52,7 @@
 //!
 #![cfg_attr(feature = "std", doc = "```")]
 #![cfg_attr(not(feature = "std"), doc = "```ignore")]
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use ssh_key::PublicKey;
 //!
 //! let encoded_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILM+rvN+ot98qgEN796jTiQfZfG1KaT0PtFDJ/XFSqti user@example.com";
@@ -91,7 +91,7 @@
 //!
 #![cfg_attr(feature = "std", doc = " ```")]
 #![cfg_attr(not(feature = "std"), doc = " ```ignore")]
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use ssh_key::PrivateKey;
 //!
 //! // WARNING: don't actually hardcode private keys in source code!!!

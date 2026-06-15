@@ -57,7 +57,7 @@ async fn loopback_handshake_and_echo() {
             let mut buf = vec![0u8; 17];
             tls.read_exact(&mut buf).await?;
             assert_eq!(&buf, b"hello from client", "echo mismatch");
-            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
+            Ok::<_, Box<dyn core::error::Error + Send + Sync>>(())
         },
         async {
             let acceptor = TlsAcceptor::from(server_config());
@@ -68,7 +68,7 @@ async fn loopback_handshake_and_echo() {
             tls.read_exact(&mut buf).await?;
             tls.write_all(&buf).await?;
             tls.flush().await?;
-            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
+            Ok::<_, Box<dyn core::error::Error + Send + Sync>>(())
         }
     );
 
@@ -147,7 +147,7 @@ async fn mtls_both_sides_authenticated() {
             let mut buf = vec![0u8; 9];
             tls.read_exact(&mut buf).await?;
             assert_eq!(&buf, b"mtls-ping");
-            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
+            Ok::<_, Box<dyn core::error::Error + Send + Sync>>(())
         },
         async {
             let mut tls = TlsAcceptor::from(srv_cfg)
@@ -158,7 +158,7 @@ async fn mtls_both_sides_authenticated() {
             tls.read_exact(&mut buf).await?;
             tls.write_all(&buf).await?;
             tls.flush().await?;
-            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
+            Ok::<_, Box<dyn core::error::Error + Send + Sync>>(())
         }
     );
 

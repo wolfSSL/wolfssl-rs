@@ -12,7 +12,7 @@
 //! ##  Example: Usage with HMAC-SHA256 PRF
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! use ring::kdf::{
 //!         get_kbkdf_ctr_hmac_algorithm, kbkdf_ctr_hmac, KbkdfCtrHmacAlgorithm,
 //!         KbkdfCtrHmacAlgorithmId,
@@ -56,7 +56,7 @@
 //! ##  Example: Usage with HMAC-SHA256 PRF using NIST FixedInfo Construction
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! use ring::kdf::{
 //!         get_kbkdf_ctr_hmac_algorithm, kbkdf_ctr_hmac, KbkdfCtrHmacAlgorithm,
 //!         KbkdfCtrHmacAlgorithmId,
@@ -117,7 +117,7 @@
 //! ## SSKDF using digest
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! use ring::kdf::{
 //!         get_sskdf_digest_algorithm, sskdf_digest, SskdfDigestAlgorithm, SskdfDigestAlgorithmId,
 //!     };
@@ -159,7 +159,7 @@
 //! ## SSKDF using HMAC
 //!
 //! ```rust
-//! # use std::error::Error;
+//! # use core::error::Error;
 //! use ring::kdf::{
 //!         get_sskdf_hmac_algorithm, sskdf_hmac, SskdfHmacAlgorithm, SskdfHmacAlgorithmId,
 //!     };

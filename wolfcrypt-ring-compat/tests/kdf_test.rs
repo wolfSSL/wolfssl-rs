@@ -3,7 +3,7 @@
 
 #![cfg(all(feature = "unstable", not(feature = "fips")))]
 
-use std::error::Error;
+use core::error::Error;
 
 use ring::kdf::{
     get_kbkdf_ctr_hmac_algorithm, get_sskdf_digest_algorithm, get_sskdf_hmac_algorithm,

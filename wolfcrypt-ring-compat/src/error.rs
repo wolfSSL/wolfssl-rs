@@ -17,7 +17,7 @@ use core::num::TryFromIntError;
 ///
 /// `Result<T, ring::error::Unspecified>` is mostly equivalent to
 /// `Result<T, ()>`. However, `ring::error::Unspecified` implements
-/// [`std::error::Error`] and users can implement
+/// [`core::error::Error`] and users can implement
 /// `From<error::Unspecified>` to map this to their own error types, as
 /// described in [“Error Handling” in the Rust Book](https://doc.rust-lang.org/book/ch09-00-error-handling.html):
 ///
@@ -61,13 +61,13 @@ use core::num::TryFromIntError;
 /// cause of a failure. Users of *wolfcrypt-ring* are encouraged to report such cases so
 /// that they can be addressed individually.
 ///
-/// [`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html
+/// [`core::error::Error`]: https://doc.rust-lang.org/core/error/trait.Error.html
 /// [“Error Handling” in the Rust Book]:
 ///     https://doc.rust-lang.org/book/first-edition/error-handling.html#the-from-trait
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Unspecified;
 
-// This is required for the implementation of `std::error::Error`.
+// This is required for the implementation of `core::error::Error`.
 impl core::fmt::Display for Unspecified {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         f.write_str("Unspecified")
@@ -114,7 +114,7 @@ impl From<core::array::TryFromSliceError> for Unspecified {
 pub struct KeyRejected(&'static str);
 
 impl KeyRejected {
-    /// The value returned from `<Self as std::error::Error>::description()`
+    /// The value returned from `<Self as core::error::Error>::description()`
     #[must_use]
     pub fn description_(&self) -> &'static str {
         self.0
@@ -151,25 +151,25 @@ impl KeyRejected {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for KeyRejected {
+impl core::error::Error for KeyRejected {
     fn description(&self) -> &str {
         self.description_()
     }
 
-    fn cause(&self) -> Option<&dyn std::error::Error> {
+    fn cause(&self) -> Option<&dyn core::error::Error> {
         None
     }
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Unspecified {
+impl core::error::Error for Unspecified {
     #[allow(clippy::unnecessary_literal_bound)]
     fn description(&self) -> &str {
         "Unspecified"
     }
 
     #[inline]
-    fn cause(&self) -> Option<&dyn std::error::Error> {
+    fn cause(&self) -> Option<&dyn core::error::Error> {
         None
     }
 }
@@ -232,7 +232,7 @@ impl From<Unspecified> for KeyRejected {
 mod tests {
     use crate::error::KeyRejected;
     use crate::test;
-    use std::error::Error;
+    use core::error::Error;
     extern crate std;
 
     #[test]

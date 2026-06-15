@@ -12,7 +12,7 @@ const TEST_MESSAGE: &str = "test message";
 macro_rules! cmac_api {
     ($name:ident, $alg:expr, $key_len:expr, $expect:path) => {
         #[test]
-        fn $name() -> Result<(), Box<dyn std::error::Error>> {
+        fn $name() -> Result<(), Box<dyn core::error::Error>> {
             let rng = SystemRandom::new();
 
             let key_value: [u8; $key_len] = rand::generate(&rng).unwrap().expose();
