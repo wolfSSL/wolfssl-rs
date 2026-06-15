@@ -171,9 +171,6 @@
 // NOTE: no_std mode still requires the `alloc` crate (a global allocator).
 // This is `no_std + alloc`, not bare-metal no_std.
 #![cfg_attr(not(feature = "std"), no_std)]
-// TODO: promote to #![deny(unsafe_op_in_unsafe_fn)] once all `unsafe fn`
-// bodies wrap their FFI calls in explicit `unsafe {}` blocks (~355 sites).
-// The SAFETY comments are already in place; this is the mechanical follow-up.
 #![warn(missing_docs)]
 #![warn(clippy::exhaustive_enums)]
 #![cfg_attr(wolfcrypt_ring_compat_docsrs, feature(doc_cfg))]
@@ -232,10 +229,6 @@ mod ptr;
 pub mod rsa;
 pub mod tls_prf;
 pub mod unstable;
-
-// TODO: Ed448/X448 support — wolfSSL has the primitives (HAVE_ED448,
-// HAVE_CURVE448) but wiring them up requires extending evp_pkey.rs
-// with ~20 new FFI functions. See PLAN-morering.md Module 10.
 
 use core::ffi::CStr;
 pub(crate) use debug::derive_debug_via_id;
