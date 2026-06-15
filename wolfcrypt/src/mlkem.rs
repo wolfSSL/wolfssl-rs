@@ -40,9 +40,16 @@ use wolfcrypt_rs::{
 // Level trait and implementations
 // ---------------------------------------------------------------------------
 
+mod sealed {
+    pub trait Sealed {}
+}
+
 /// Trait that associates an ML-KEM security level with its type constant and
 /// sizes as defined in NIST FIPS 203.
-pub trait MlKemLevel: Send + 'static {
+///
+/// Sealed so that only [`MlKem512`], [`MlKem768`], and [`MlKem1024`]
+/// can implement it.
+pub trait MlKemLevel: sealed::Sealed + Send + 'static {
     /// wolfCrypt type constant (`WC_ML_KEM_512`, etc.).
     const TYPE: c_int;
     /// Public (encapsulation) key size in bytes.
@@ -63,6 +70,10 @@ pub struct MlKem768;
 
 /// ML-KEM-1024 (NIST security level 5).
 pub struct MlKem1024;
+
+impl sealed::Sealed for MlKem512 {}
+impl sealed::Sealed for MlKem768 {}
+impl sealed::Sealed for MlKem1024 {}
 
 impl MlKemLevel for MlKem512 {
     const TYPE: c_int = WC_ML_KEM_512;

@@ -98,10 +98,15 @@ impl<L: MlDsaLevel> From<MlDsaSignature<L>> for Box<[u8]> {
 // MlDsaLevel trait — compile-time security level selection
 // ---------------------------------------------------------------------------
 
+mod sealed {
+    pub trait Sealed {}
+}
+
 /// Trait binding an ML-DSA security level to its wolfCrypt constants.
 ///
-/// Implemented by [`MlDsa44`], [`MlDsa65`], and [`MlDsa87`].
-pub trait MlDsaLevel {
+/// Sealed so that only [`MlDsa44`], [`MlDsa65`], and [`MlDsa87`]
+/// can implement it.
+pub trait MlDsaLevel: sealed::Sealed {
     /// wolfCrypt level parameter (WC_ML_DSA_44 = 2, WC_ML_DSA_65 = 3, WC_ML_DSA_87 = 5).
     const LEVEL: u8;
     /// Signature size in bytes (FIPS 204, Table 2).
@@ -114,6 +119,10 @@ pub trait MlDsaLevel {
 
 /// ML-DSA-44 (NIST security level 2).
 pub struct MlDsa44;
+
+impl sealed::Sealed for MlDsa44 {}
+impl sealed::Sealed for MlDsa65 {}
+impl sealed::Sealed for MlDsa87 {}
 
 impl MlDsaLevel for MlDsa44 {
     const LEVEL: u8 = WC_ML_DSA_44;
