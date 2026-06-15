@@ -85,10 +85,12 @@ pub fn init_swtpm(
 }
 
 unsafe fn libc_setenv(name: *const u8, value: *const std::ffi::c_char) -> std::ffi::c_int {
-    libc::setenv(name as *const _, value, 1)
+    // SAFETY: caller must provide valid null-terminated C strings
+    unsafe { libc::setenv(name as *const _, value, 1) }
 }
 
 unsafe fn libc_unsetenv(name: *const u8) -> std::ffi::c_int {
-    // POSIX unsetenv returns 0 on success, -1 on error (EINVAL = invalid name).
-    libc::unsetenv(name as *const _)
+    // SAFETY: caller must provide a valid null-terminated name; POSIX unsetenv
+    // returns 0 on success, -1 on error (EINVAL = invalid name).
+    unsafe { libc::unsetenv(name as *const _) }
 }

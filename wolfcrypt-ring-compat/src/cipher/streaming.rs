@@ -694,16 +694,20 @@ impl StreamingDecryptingKey {
 /// wolfSSL incorrectly returns 0 for CFB128 cipher IV lengths.
 #[inline]
 unsafe fn evp_cipher_iv_length(cipher: *const EVP_CIPHER) -> core::ffi::c_int {
-    let len = EVP_CIPHER_iv_length_raw(cipher);
-    if len == 0
-        && !cipher.is_null()
-        && (cipher == EVP_aes_128_cfb128()
-            || cipher == EVP_aes_192_cfb128()
-            || cipher == EVP_aes_256_cfb128())
-    {
-        return 16;
+    // SAFETY: caller guarantees cipher is a valid EVP_CIPHER pointer; the EVP_aes_*
+    // functions return static pointers used only for identity comparison.
+    unsafe {
+        let len = EVP_CIPHER_iv_length_raw(cipher);
+        if len == 0
+            && !cipher.is_null()
+            && (cipher == EVP_aes_128_cfb128()
+                || cipher == EVP_aes_192_cfb128()
+                || cipher == EVP_aes_256_cfb128())
+        {
+            return 16;
+        }
+        len
     }
-    len
 }
 
 #[cfg(test)]

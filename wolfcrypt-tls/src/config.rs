@@ -200,32 +200,37 @@ impl TlsClientConfig {
             ));
         }
 
-        let ssl = wolfSSL_new(self.inner.ctx);
-        if ssl.is_null() {
-            return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
-        }
-        let guard = crate::SslGuard(ssl);
-
-        // Register the custom IO callbacks on this session.
-        wolfSSL_SSLSetIORecv(guard.as_ptr(), recv_cb);
-        wolfSSL_SSLSetIOSend(guard.as_ptr(), send_cb);
-        wolfSSL_SetIOReadCtx(guard.as_ptr(), io_ctx);
-        wolfSSL_SetIOWriteCtx(guard.as_ptr(), io_ctx);
-
-        // Set SNI if provided.
-        if !server_name.is_empty() {
-            let ret = wolfSSL_UseSNI(
-                guard.as_ptr(),
-                WOLFSSL_SNI_HOST_NAME as core::ffi::c_uchar,
-                server_name.as_ptr() as *const core::ffi::c_void,
-                server_name.len() as u16,
-            );
-            if ret != WOLFSSL_SUCCESS as core::ffi::c_int {
-                return Err(TlsError::Ffi { code: ret, func: "wolfSSL_UseSNI" });
+        // SAFETY: caller guarantees that `recv_cb`, `send_cb`, and `io_ctx`
+        // are valid for the lifetime of the returned WOLFSSL session, and that
+        // `self.inner.ctx` is a valid, initialized WOLFSSL_CTX.
+        unsafe {
+            let ssl = wolfSSL_new(self.inner.ctx);
+            if ssl.is_null() {
+                return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
             }
-        }
+            let guard = crate::SslGuard(ssl);
 
-        Ok(guard.into_raw())
+            // Register the custom IO callbacks on this session.
+            wolfSSL_SSLSetIORecv(guard.as_ptr(), recv_cb);
+            wolfSSL_SSLSetIOSend(guard.as_ptr(), send_cb);
+            wolfSSL_SetIOReadCtx(guard.as_ptr(), io_ctx);
+            wolfSSL_SetIOWriteCtx(guard.as_ptr(), io_ctx);
+
+            // Set SNI if provided.
+            if !server_name.is_empty() {
+                let ret = wolfSSL_UseSNI(
+                    guard.as_ptr(),
+                    WOLFSSL_SNI_HOST_NAME as core::ffi::c_uchar,
+                    server_name.as_ptr() as *const core::ffi::c_void,
+                    server_name.len() as u16,
+                );
+                if ret != WOLFSSL_SUCCESS as core::ffi::c_int {
+                    return Err(TlsError::Ffi { code: ret, func: "wolfSSL_UseSNI" });
+                }
+            }
+
+            Ok(guard.into_raw())
+        }
     }
 }
 

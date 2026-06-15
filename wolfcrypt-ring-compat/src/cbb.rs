@@ -36,10 +36,14 @@ impl LcCBB {
     /// # Safety
     /// Caller must write exactly `n` bytes to the returned pointer.
     pub(crate) unsafe fn reserve_uninit(&mut self, n: usize) -> *mut u8 {
-        self.buf.reserve(n);
-        let pos = self.buf.len();
-        self.buf.set_len(pos + n);
-        self.buf.as_mut_ptr().add(pos)
+        // SAFETY: reserve guarantees capacity; set_len is valid because the caller
+        // will initialize exactly n bytes. add(pos) stays within the allocation.
+        unsafe {
+            self.buf.reserve(n);
+            let pos = self.buf.len();
+            self.buf.set_len(pos + n);
+            self.buf.as_mut_ptr().add(pos)
+        }
     }
 
     /// Add an ASN.1 BOOLEAN value.

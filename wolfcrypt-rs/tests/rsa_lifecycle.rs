@@ -26,34 +26,40 @@ use wolfcrypt_rs::{
 
 /// Export a private key as PKCS#1 DER, panicking on any failure.
 unsafe fn export_private(ctx: *mut std::ffi::c_void) -> Vec<u8> {
-    // First call: query needed size.
-    let mut len = 0u32;
-    let rc = wolfcrypt_rsa_export_private_pkcs1(ctx, ptr::null_mut(), &mut len);
-    assert_eq!(rc, 0, "query private DER size failed: {rc}");
-    assert!(len > 0, "private DER size query returned 0");
+    // SAFETY: caller must provide a valid wolfcrypt_rsa_ctx pointer
+    unsafe {
+        // First call: query needed size.
+        let mut len = 0u32;
+        let rc = wolfcrypt_rsa_export_private_pkcs1(ctx, ptr::null_mut(), &mut len);
+        assert_eq!(rc, 0, "query private DER size failed: {rc}");
+        assert!(len > 0, "private DER size query returned 0");
 
-    // Second call: write bytes.
-    let mut buf = vec![0u8; len as usize];
-    let mut actual = len;
-    let rc = wolfcrypt_rsa_export_private_pkcs1(ctx, buf.as_mut_ptr(), &mut actual);
-    assert_eq!(rc, 0, "export private DER failed: {rc}");
-    buf.truncate(actual as usize);
-    buf
+        // Second call: write bytes.
+        let mut buf = vec![0u8; len as usize];
+        let mut actual = len;
+        let rc = wolfcrypt_rsa_export_private_pkcs1(ctx, buf.as_mut_ptr(), &mut actual);
+        assert_eq!(rc, 0, "export private DER failed: {rc}");
+        buf.truncate(actual as usize);
+        buf
+    }
 }
 
 /// Export a public key as SPKI DER, panicking on any failure.
 unsafe fn export_public_spki(ctx: *mut std::ffi::c_void) -> Vec<u8> {
-    let mut len = 0u32;
-    let rc = wolfcrypt_rsa_export_public_spki(ctx, ptr::null_mut(), &mut len);
-    assert_eq!(rc, 0, "query public SPKI size failed: {rc}");
-    assert!(len > 0, "public SPKI size query returned 0");
+    // SAFETY: caller must provide a valid wolfcrypt_rsa_ctx pointer
+    unsafe {
+        let mut len = 0u32;
+        let rc = wolfcrypt_rsa_export_public_spki(ctx, ptr::null_mut(), &mut len);
+        assert_eq!(rc, 0, "query public SPKI size failed: {rc}");
+        assert!(len > 0, "public SPKI size query returned 0");
 
-    let mut buf = vec![0u8; len as usize];
-    let mut actual = len;
-    let rc = wolfcrypt_rsa_export_public_spki(ctx, buf.as_mut_ptr(), &mut actual);
-    assert_eq!(rc, 0, "export public SPKI failed: {rc}");
-    buf.truncate(actual as usize);
-    buf
+        let mut buf = vec![0u8; len as usize];
+        let mut actual = len;
+        let rc = wolfcrypt_rsa_export_public_spki(ctx, buf.as_mut_ptr(), &mut actual);
+        assert_eq!(rc, 0, "export public SPKI failed: {rc}");
+        buf.truncate(actual as usize);
+        buf
+    }
 }
 
 // ---------------------------------------------------------------------------

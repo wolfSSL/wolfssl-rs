@@ -116,16 +116,21 @@ impl TlsServerConfig {
         send_cb: wolfcrypt_sys::CallbackIOSend,
         io_ctx: *mut core::ffi::c_void,
     ) -> crate::error::Result<*mut wolfcrypt_sys::WOLFSSL> {
-        let ssl = wolfSSL_new(self.inner.ctx);
-        if ssl.is_null() {
-            return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
+        // SAFETY: caller guarantees that `recv_cb`, `send_cb`, and `io_ctx`
+        // are valid for the lifetime of the returned WOLFSSL session, and that
+        // `self.inner.ctx` is a valid, initialized WOLFSSL_CTX.
+        unsafe {
+            let ssl = wolfSSL_new(self.inner.ctx);
+            if ssl.is_null() {
+                return Err(TlsError::AllocFailed { func: "wolfSSL_new" });
+            }
+            let guard = crate::SslGuard(ssl);
+            wolfSSL_SSLSetIORecv(guard.as_ptr(), recv_cb);
+            wolfSSL_SSLSetIOSend(guard.as_ptr(), send_cb);
+            wolfSSL_SetIOReadCtx(guard.as_ptr(), io_ctx);
+            wolfSSL_SetIOWriteCtx(guard.as_ptr(), io_ctx);
+            Ok(guard.into_raw())
         }
-        let guard = crate::SslGuard(ssl);
-        wolfSSL_SSLSetIORecv(guard.as_ptr(), recv_cb);
-        wolfSSL_SSLSetIOSend(guard.as_ptr(), send_cb);
-        wolfSSL_SetIOReadCtx(guard.as_ptr(), io_ctx);
-        wolfSSL_SetIOWriteCtx(guard.as_ptr(), io_ctx);
-        Ok(guard.into_raw())
     }
 }
 

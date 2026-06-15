@@ -563,19 +563,27 @@ pub(super) fn is_rsa_key(key: &LcPtr<EVP_PKEY>) -> bool {
 /// Helper: get n (modulus) from RSA key via RSA_get0_key.
 #[cfg(feature = "ring-io")]
 unsafe fn rsa_get0_n(rsa: &ConstPointer<'_, RSA>) -> *const BIGNUM {
-    let mut n: *const BIGNUM = core::ptr::null();
-    let mut e: *const BIGNUM = core::ptr::null();
-    let mut d: *const BIGNUM = core::ptr::null();
-    RSA_get0_key(rsa.as_const_ptr(), &mut n, &mut e, &mut d);
-    n
+    // SAFETY: caller guarantees rsa is a valid RSA key; RSA_get0_key writes
+    // non-owning pointers into the output params.
+    unsafe {
+        let mut n: *const BIGNUM = core::ptr::null();
+        let mut e: *const BIGNUM = core::ptr::null();
+        let mut d: *const BIGNUM = core::ptr::null();
+        RSA_get0_key(rsa.as_const_ptr(), &mut n, &mut e, &mut d);
+        n
+    }
 }
 
 /// Helper: get e (public exponent) from RSA key via RSA_get0_key.
 #[cfg(feature = "ring-io")]
 unsafe fn rsa_get0_e(rsa: &ConstPointer<'_, RSA>) -> *const BIGNUM {
-    let mut n: *const BIGNUM = core::ptr::null();
-    let mut e: *const BIGNUM = core::ptr::null();
-    let mut d: *const BIGNUM = core::ptr::null();
-    RSA_get0_key(rsa.as_const_ptr(), &mut n, &mut e, &mut d);
-    e
+    // SAFETY: caller guarantees rsa is a valid RSA key; RSA_get0_key writes
+    // non-owning pointers into the output params.
+    unsafe {
+        let mut n: *const BIGNUM = core::ptr::null();
+        let mut e: *const BIGNUM = core::ptr::null();
+        let mut d: *const BIGNUM = core::ptr::null();
+        RSA_get0_key(rsa.as_const_ptr(), &mut n, &mut e, &mut d);
+        e
+    }
 }

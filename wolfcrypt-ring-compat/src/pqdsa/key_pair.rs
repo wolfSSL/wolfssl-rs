@@ -76,16 +76,20 @@ unsafe fn init_dilithium_key(
     key: &mut wc_dilithium_key,
     id: &AlgorithmID,
 ) -> Result<(), Unspecified> {
-    let rc = wc_dilithium_init(key);
-    if rc != 0 {
-        return Err(Unspecified);
+    // SAFETY: caller guarantees key points to a zeroed wc_dilithium_key;
+    // on failure the key is freed before returning.
+    unsafe {
+        let rc = wc_dilithium_init(key);
+        if rc != 0 {
+            return Err(Unspecified);
+        }
+        let rc = wc_dilithium_set_level(key, id.level());
+        if rc != 0 {
+            wc_dilithium_free(key);
+            return Err(Unspecified);
+        }
+        Ok(())
     }
-    let rc = wc_dilithium_set_level(key, id.level());
-    if rc != 0 {
-        wc_dilithium_free(key);
-        return Err(Unspecified);
-    }
-    Ok(())
 }
 
 /// Helper: export public key bytes from an initialized dilithium_key.
@@ -93,14 +97,17 @@ unsafe fn export_public_key(
     key: &mut wc_dilithium_key,
     id: &AlgorithmID,
 ) -> Result<Box<[u8]>, Unspecified> {
-    let pub_size = id.pub_key_size_bytes();
-    let mut pub_buf = vec![0u8; pub_size];
-    let mut pub_len = pub_size as u32;
-    let rc = wc_dilithium_export_public(key, pub_buf.as_mut_ptr(), &mut pub_len);
-    if rc != 0 || pub_len as usize != pub_size {
-        return Err(Unspecified);
+    // SAFETY: caller guarantees key is an initialized dilithium_key with a generated key pair.
+    unsafe {
+        let pub_size = id.pub_key_size_bytes();
+        let mut pub_buf = vec![0u8; pub_size];
+        let mut pub_len = pub_size as u32;
+        let rc = wc_dilithium_export_public(key, pub_buf.as_mut_ptr(), &mut pub_len);
+        if rc != 0 || pub_len as usize != pub_size {
+            return Err(Unspecified);
+        }
+        Ok(pub_buf.into_boxed_slice())
     }
-    Ok(pub_buf.into_boxed_slice())
 }
 
 /// Helper: export private key bytes from an initialized dilithium_key.
@@ -108,14 +115,17 @@ unsafe fn export_private_key(
     key: &mut wc_dilithium_key,
     id: &AlgorithmID,
 ) -> Result<Box<[u8]>, Unspecified> {
-    let priv_size = id.priv_key_size_bytes();
-    let mut priv_buf = vec![0u8; priv_size];
-    let mut priv_len = priv_size as u32;
-    let rc = wc_dilithium_export_private(key, priv_buf.as_mut_ptr(), &mut priv_len);
-    if rc != 0 || priv_len as usize != priv_size {
-        return Err(Unspecified);
+    // SAFETY: caller guarantees key is an initialized dilithium_key with a generated key pair.
+    unsafe {
+        let priv_size = id.priv_key_size_bytes();
+        let mut priv_buf = vec![0u8; priv_size];
+        let mut priv_len = priv_size as u32;
+        let rc = wc_dilithium_export_private(key, priv_buf.as_mut_ptr(), &mut priv_len);
+        if rc != 0 || priv_len as usize != priv_size {
+            return Err(Unspecified);
+        }
+        Ok(priv_buf.into_boxed_slice())
     }
-    Ok(priv_buf.into_boxed_slice())
 }
 
 /// Helper: import both private + public key into a dilithium_key for signing.
@@ -124,17 +134,21 @@ unsafe fn import_key_pair(
     priv_bytes: &[u8],
     pub_bytes: &[u8],
 ) -> Result<(), Unspecified> {
-    let rc = wc_dilithium_import_key(
-        priv_bytes.as_ptr(),
-        priv_bytes.len() as u32,
-        pub_bytes.as_ptr(),
-        pub_bytes.len() as u32,
-        key,
-    );
-    if rc != 0 {
-        return Err(Unspecified);
+    // SAFETY: caller guarantees key is an initialized dilithium_key;
+    // pointer/length pairs derived from valid Rust slices.
+    unsafe {
+        let rc = wc_dilithium_import_key(
+            priv_bytes.as_ptr(),
+            priv_bytes.len() as u32,
+            pub_bytes.as_ptr(),
+            pub_bytes.len() as u32,
+            key,
+        );
+        if rc != 0 {
+            return Err(Unspecified);
+        }
+        Ok(())
     }
-    Ok(())
 }
 
 impl PqdsaKeyPair {

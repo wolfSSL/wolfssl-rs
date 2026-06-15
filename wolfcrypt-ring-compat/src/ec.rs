@@ -201,18 +201,26 @@ pub(crate) const fn uncompressed_public_key_size_bytes(curve_field_bits: usize) 
 
 /// Helper: get r component from ECDSA_SIG via ECDSA_SIG_get0.
 unsafe fn ecdsa_sig_get0_r(sig: &LcPtr<ECDSA_SIG>) -> *const BIGNUM {
-    let mut r: *const BIGNUM = core::ptr::null();
-    let mut s: *const BIGNUM = core::ptr::null();
-    ECDSA_SIG_get0(sig.as_const_ptr(), &mut r, &mut s);
-    r
+    // SAFETY: caller guarantees sig is a valid ECDSA_SIG; ECDSA_SIG_get0 writes
+    // non-owning pointers into the output params.
+    unsafe {
+        let mut r: *const BIGNUM = core::ptr::null();
+        let mut s: *const BIGNUM = core::ptr::null();
+        ECDSA_SIG_get0(sig.as_const_ptr(), &mut r, &mut s);
+        r
+    }
 }
 
 /// Helper: get s component from ECDSA_SIG via ECDSA_SIG_get0.
 unsafe fn ecdsa_sig_get0_s(sig: &LcPtr<ECDSA_SIG>) -> *const BIGNUM {
-    let mut r: *const BIGNUM = core::ptr::null();
-    let mut s: *const BIGNUM = core::ptr::null();
-    ECDSA_SIG_get0(sig.as_const_ptr(), &mut r, &mut s);
-    s
+    // SAFETY: caller guarantees sig is a valid ECDSA_SIG; ECDSA_SIG_get0 writes
+    // non-owning pointers into the output params.
+    unsafe {
+        let mut r: *const BIGNUM = core::ptr::null();
+        let mut s: *const BIGNUM = core::ptr::null();
+        ECDSA_SIG_get0(sig.as_const_ptr(), &mut r, &mut s);
+        s
+    }
 }
 
 #[cfg(test)]

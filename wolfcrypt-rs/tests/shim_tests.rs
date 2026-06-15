@@ -9,7 +9,8 @@ mod evp_pkey_tests {
     /// Helper: create a fresh EVP_PKEY via the wolfSSL allocator.
     /// Panics if allocation fails.
     unsafe fn new_pkey() -> *mut EVP_PKEY {
-        let pkey = EVP_PKEY_new();
+        // SAFETY: EVP_PKEY_new has no preconditions; caller frees via EVP_PKEY_free
+        let pkey = unsafe { EVP_PKEY_new() };
         assert!(!pkey.is_null(), "EVP_PKEY_new returned NULL");
         pkey
     }
@@ -435,11 +436,14 @@ mod error_string_stub_tests {
     /// Helper: call ERR_error_string with a caller-provided buffer and
     /// return the result as a &str.
     unsafe fn error_string_for(code: c_ulong) -> alloc::string::String {
-        let mut buf = [0u8; 120]; // WOLFSSL_MAX_ERROR_SZ is 80, but be safe
-        let ptr = ERR_error_string(code, buf.as_mut_ptr() as *mut c_char);
-        assert!(!ptr.is_null());
-        let cstr = core::ffi::CStr::from_ptr(ptr);
-        cstr.to_string_lossy().into_owned()
+        // SAFETY: buf is large enough for WOLFSSL_MAX_ERROR_SZ; ptr is valid for the duration
+        unsafe {
+            let mut buf = [0u8; 120]; // WOLFSSL_MAX_ERROR_SZ is 80, but be safe
+            let ptr = ERR_error_string(code, buf.as_mut_ptr() as *mut c_char);
+            assert!(!ptr.is_null());
+            let cstr = core::ffi::CStr::from_ptr(ptr);
+            cstr.to_string_lossy().into_owned()
+        }
     }
 
     extern crate alloc;

@@ -214,19 +214,23 @@ pub(crate) mod sec1 {
         point: *const EC_POINT,
         form: point_conversion_form_t,
     ) -> Result<(), Unspecified> {
-        if group.is_null() || point.is_null() {
-            return Err(Unspecified);
+        // SAFETY: caller guarantees group and point are valid EC_GROUP/EC_POINT pointers.
+        unsafe {
+            if group.is_null() || point.is_null() {
+                return Err(Unspecified);
+            }
+            let len =
+                EC_POINT_point2oct(group, point, form, core::ptr::null_mut(), 0, null_mut());
+            if len == 0 {
+                return Err(Unspecified);
+            }
+            let buf = cbb.reserve_uninit(len);
+            let written = EC_POINT_point2oct(group, point, form, buf, len, null_mut());
+            if written == 0 {
+                return Err(Unspecified);
+            }
+            Ok(())
         }
-        let len = EC_POINT_point2oct(group, point, form, core::ptr::null_mut(), 0, null_mut());
-        if len == 0 {
-            return Err(Unspecified);
-        }
-        let buf = cbb.reserve_uninit(len);
-        let written = EC_POINT_point2oct(group, point, form, buf, len, null_mut());
-        if written == 0 {
-            return Err(Unspecified);
-        }
-        Ok(())
     }
 
     pub(crate) fn marshal_sec1_private_key(
@@ -287,39 +291,43 @@ pub(crate) mod rfc5915 {
 
     /// ec_key_parse_private_key: parse an EC private key from a byte slice.
     unsafe fn ec_key_parse_private_key(data: &[u8], group: *const EC_GROUP) -> *mut EC_KEY {
-        if data.is_empty() {
-            return core::ptr::null_mut();
-        }
-        let mut p = data.as_ptr();
-        let key = d2i_ECPrivateKey(core::ptr::null_mut(), &mut p, data.len() as c_long);
-        if key.is_null() {
-            return core::ptr::null_mut();
-        }
-
-        if !group.is_null() {
-            let expected_nid = EC_GROUP_get_curve_name(group);
-            let key_group = EC_KEY_get0_group(key);
-            if !key_group.is_null() {
-                let key_nid = EC_GROUP_get_curve_name(key_group);
-                if key_nid != expected_nid {
-                    if key_nid == 0 {
-                        EC_KEY_set_group(key, group);
-                    } else {
-                        EC_KEY_free(key);
-                        return core::ptr::null_mut();
-                    }
-                }
-            } else {
-                EC_KEY_set_group(key, group);
+        // SAFETY: caller guarantees group is a valid EC_GROUP pointer (or null).
+        // All FFI calls operate on pointers validated by null checks within.
+        unsafe {
+            if data.is_empty() {
+                return core::ptr::null_mut();
             }
-        }
+            let mut p = data.as_ptr();
+            let key = d2i_ECPrivateKey(core::ptr::null_mut(), &mut p, data.len() as c_long);
+            if key.is_null() {
+                return core::ptr::null_mut();
+            }
 
-        if wolfcrypt_fix_ec_privatekey_only(key) != 1 {
-            EC_KEY_free(key);
-            return core::ptr::null_mut();
-        }
+            if !group.is_null() {
+                let expected_nid = EC_GROUP_get_curve_name(group);
+                let key_group = EC_KEY_get0_group(key);
+                if !key_group.is_null() {
+                    let key_nid = EC_GROUP_get_curve_name(key_group);
+                    if key_nid != expected_nid {
+                        if key_nid == 0 {
+                            EC_KEY_set_group(key, group);
+                        } else {
+                            EC_KEY_free(key);
+                            return core::ptr::null_mut();
+                        }
+                    }
+                } else {
+                    EC_KEY_set_group(key, group);
+                }
+            }
 
-        key
+            if wolfcrypt_fix_ec_privatekey_only(key) != 1 {
+                EC_KEY_free(key);
+                return core::ptr::null_mut();
+            }
+
+            key
+        }
     }
 
     /// ec_key_marshal_private_key: serialize an EC private key to DER.
@@ -327,27 +335,30 @@ pub(crate) mod rfc5915 {
         buf: &mut Vec<u8>,
         key: *const EC_KEY,
     ) -> Result<(), Unspecified> {
-        if key.is_null() {
-            return Err(Unspecified);
-        }
-        let der_len = i2d_ECPrivateKey(key, core::ptr::null_mut());
-        if der_len <= 0 {
-            return Err(Unspecified);
-        }
-        let tmp = OPENSSL_malloc(der_len as usize) as *mut u8;
-        if tmp.is_null() {
-            return Err(Unspecified);
-        }
-        let mut p = tmp;
-        let actual_len = i2d_ECPrivateKey(key, &mut p);
-        if actual_len <= 0 {
+        // SAFETY: caller guarantees key is a valid EC_KEY pointer; tmp is freed on all paths.
+        unsafe {
+            if key.is_null() {
+                return Err(Unspecified);
+            }
+            let der_len = i2d_ECPrivateKey(key, core::ptr::null_mut());
+            if der_len <= 0 {
+                return Err(Unspecified);
+            }
+            let tmp = OPENSSL_malloc(der_len as usize) as *mut u8;
+            if tmp.is_null() {
+                return Err(Unspecified);
+            }
+            let mut p = tmp;
+            let actual_len = i2d_ECPrivateKey(key, &mut p);
+            if actual_len <= 0 {
+                OPENSSL_free(tmp as *mut c_void);
+                return Err(Unspecified);
+            }
+            let slice = core::slice::from_raw_parts(tmp, actual_len as usize);
+            buf.extend_from_slice(slice);
             OPENSSL_free(tmp as *mut c_void);
-            return Err(Unspecified);
+            Ok(())
         }
-        let slice = core::slice::from_raw_parts(tmp, actual_len as usize);
-        buf.extend_from_slice(slice);
-        OPENSSL_free(tmp as *mut c_void);
-        Ok(())
     }
 
     pub(crate) fn parse_rfc5915_private_key(

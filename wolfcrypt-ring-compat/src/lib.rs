@@ -273,17 +273,21 @@ pub fn try_fips_mode() -> Result<(), &'static str> {
 
 #[allow(dead_code)]
 unsafe fn dump_error() {
-    // SAFETY: ERR_get_error/wc_GetErrorString are read-only diagnostic functions.
-    let err = ERR_get_error();
-    let lib = ERR_GET_LIB(err);
-    let reason = ERR_GET_REASON(err);
-    let func = 0i32;
-    let error_msg = CStr::from_ptr(wc_GetErrorString(err as core::ffi::c_int));
-    #[cfg(feature = "std")]
-    std::eprintln!(
-        "Raw Error -- {error_msg:?}\nErr: {err}, Lib: {lib}, Reason: {reason}, Func: {func}"
-    );
-    let _ = (error_msg, lib, reason, func);
+    // SAFETY: ERR_get_error/wc_GetErrorString are read-only diagnostic functions;
+    // CStr::from_ptr requires the returned pointer to be a valid null-terminated C string,
+    // which wc_GetErrorString guarantees.
+    unsafe {
+        let err = ERR_get_error();
+        let lib = ERR_GET_LIB(err);
+        let reason = ERR_GET_REASON(err);
+        let func = 0i32;
+        let error_msg = CStr::from_ptr(wc_GetErrorString(err as core::ffi::c_int));
+        #[cfg(feature = "std")]
+        std::eprintln!(
+            "Raw Error -- {error_msg:?}\nErr: {err}, Lib: {lib}, Reason: {reason}, Func: {func}"
+        );
+        let _ = (error_msg, lib, reason, func);
+    }
 }
 
 mod sealed {

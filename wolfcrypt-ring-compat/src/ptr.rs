@@ -26,7 +26,7 @@ impl<P: Pointer> ManagedPointer<P> {
 
     pub unsafe fn as_slice(&self, len: usize) -> &[P::T] {
         // SAFETY: caller guarantees `len` elements are valid; pointer is non-null (checked in new).
-        core::slice::from_raw_parts(self.pointer.as_const_ptr(), len)
+        unsafe { core::slice::from_raw_parts(self.pointer.as_const_ptr(), len) }
     }
 }
 
@@ -143,6 +143,8 @@ impl<T> ConstPointer<'static, T> {
     /// # Safety
     /// `ptr` must point to a valid object with `'static` lifetime.
     pub unsafe fn new_static(ptr: *const T) -> Result<Self, ()> {
+        // SAFETY: caller guarantees ptr points to a valid object with 'static lifetime.
+        // Null check below rejects invalid pointers.
         if ptr.is_null() {
             return Err(());
         }
