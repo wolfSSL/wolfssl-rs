@@ -29,17 +29,14 @@
 //!
 //! # Key lifetime
 //!
-//! [`HpkeKeyPair`] holds an internal pointer to the heap-allocated [`Hpke`]
-//! context that created it (the `WcHpke` is `Box`-ed so the pointer remains
-//! stable even if the `Hpke` struct itself is moved).  Key pairs **must not**
-//! outlive their parent `Hpke`.  The borrow checker cannot enforce this (the
-//! pointer is raw), so callers must ensure correct ordering of drops.  In
-//! typical usage — where the `Hpke` and its key pairs live in the same scope
-//! or struct — this is automatic.
+//! [`HpkeKeyPair`] is self-contained: it shares ownership of the underlying
+//! `WcHpke` context via `Arc`, so key pairs can safely outlive the [`Hpke`]
+//! that created them.
 
-use alloc::boxed::Box;
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::ptr;
 
@@ -149,14 +146,16 @@ impl HpkeSuite {
 
 /// An opaque HPKE key pair (public + private) allocated by wolfCrypt.
 ///
-/// Created via [`Hpke::generate_keypair`].  Holds a raw pointer back to the
-/// parent [`Hpke`] context required for freeing — see the module-level
-/// documentation on key lifetime.
+/// Created via [`Hpke::generate_keypair`] or [`Hpke::deserialize_public_key`].
+/// Self-contained: shares ownership of the parent `WcHpke` context via `Arc`,
+/// so it can safely outlive the [`Hpke`] that created it.
 pub struct HpkeKeyPair {
     key: *mut c_void,
     kem: i32,
-    /// Raw pointer to the parent `WcHpke` — needed by `wc_HpkeFreeKey`.
-    hpke: *mut WcHpke,
+    suite: HpkeSuite,
+    /// Shared ownership of the `WcHpke` context — guarantees the context
+    /// is alive for `wc_HpkeFreeKey` and `wc_HpkeSerializePublicKey`.
+    hpke: Arc<UnsafeCell<WcHpke>>,
 }
 
 impl HpkeKeyPair {
@@ -164,18 +163,23 @@ impl HpkeKeyPair {
     ///
     /// The output length matches [`HpkeSuite::enc_len`] for the KEM that
     /// generated this key pair.
-    pub fn serialize_public_key(&mut self, hpke: &mut Hpke) -> Result<Vec<u8>, WolfCryptError> {
-        let enc_len = hpke.suite.enc_len();
+    pub fn serialize_public_key(&mut self) -> Result<Vec<u8>, WolfCryptError> {
+        let enc_len = self.suite.enc_len();
         if enc_len == 0 {
             return Err(WolfCryptError::InvalidInput);
         }
         let mut buf = vec![0u8; enc_len];
         let mut out_sz: u16 = enc_len as u16;
 
-        // SAFETY: `hpke.hpke` is initialised, `self.key` is a valid keypair
-        // from `wc_HpkeGenerateKeyPair`, and `buf` is large enough.
+        // SAFETY: `self.hpke` is initialised (Arc guarantees it's alive),
+        // `self.key` is a valid keypair, and `buf` is large enough.
         let rc = unsafe {
-            wc_HpkeSerializePublicKey(&mut *hpke.hpke, self.key, buf.as_mut_ptr(), &mut out_sz)
+            wc_HpkeSerializePublicKey(
+                &mut *self.hpke.get(),
+                self.key,
+                buf.as_mut_ptr(),
+                &mut out_sz,
+            )
         };
         check(rc, "wc_HpkeSerializePublicKey")?;
         buf.truncate(out_sz as usize);
@@ -187,11 +191,10 @@ impl Drop for HpkeKeyPair {
     fn drop(&mut self) {
         if !self.key.is_null() {
             // SAFETY: `self.key` was allocated by `wc_HpkeGenerateKeyPair` or
-            // `wc_HpkeDeserializePublicKey` using the context at `self.hpke`.
-            // We free it exactly once.  The caller must ensure the parent
-            // `Hpke` is still alive (see module docs).
+            // `wc_HpkeDeserializePublicKey`. The Arc guarantees the WcHpke
+            // context is still alive. Freed exactly once.
             unsafe {
-                wc_HpkeFreeKey(self.hpke, self.kem as u16, self.key, ptr::null_mut());
+                wc_HpkeFreeKey(self.hpke.get(), self.kem as u16, self.key, ptr::null_mut());
             }
         }
     }
@@ -207,26 +210,25 @@ unsafe impl Send for HpkeKeyPair {}
 
 /// HPKE context managing a wolfCrypt `WcHpke` instance.
 ///
-/// The `WcHpke` is heap-allocated (`Box`) so that its address remains stable
-/// when the `Hpke` struct is moved.  This is necessary because
-/// [`HpkeKeyPair`] stores a raw pointer back to the `WcHpke` for use in
-/// `wc_HpkeFreeKey`.
+/// The `WcHpke` is reference-counted (`Arc`) so that [`HpkeKeyPair`]s
+/// created from this context are self-contained and can safely outlive
+/// the `Hpke` that created them.
 ///
 /// Provides one-shot Base-mode seal (encrypt) and open (decrypt) operations.
 pub struct Hpke {
-    hpke: Box<WcHpke>,
+    hpke: Arc<UnsafeCell<WcHpke>>,
     suite: HpkeSuite,
 }
 
 impl Hpke {
     /// Create a new HPKE context for the given cipher suite.
     pub fn new(suite: HpkeSuite) -> Result<Self, WolfCryptError> {
-        let mut hpke = Box::new(WcHpke::zeroed());
+        let hpke = Arc::new(UnsafeCell::new(WcHpke::zeroed()));
         // SAFETY: `hpke` is zero-initialised and `wc_HpkeInit` will fully
         // initialise it.  We pass NULL for the heap (use default allocator).
         let rc = unsafe {
             wc_HpkeInit(
-                &mut *hpke,
+                &mut *hpke.get(),
                 suite.kem,
                 suite.kdf,
                 suite.aead,
@@ -243,13 +245,12 @@ impl Hpke {
     }
 
     /// Generate a KEM key pair using the provided RNG.
-    ///
-    /// The returned [`HpkeKeyPair`] must not outlive this `Hpke` context.
     pub fn generate_keypair(&mut self, rng: &mut WolfRng) -> Result<HpkeKeyPair, WolfCryptError> {
         let mut key: *mut c_void = ptr::null_mut();
         // SAFETY: `self.hpke` is initialised, `rng.rng` is initialised,
         // and `key` is a valid out-pointer.
-        let rc = unsafe { wc_HpkeGenerateKeyPair(&mut *self.hpke, &mut key, &mut rng.rng) };
+        let rc =
+            unsafe { wc_HpkeGenerateKeyPair(&mut *self.hpke.get(), &mut key, &mut rng.rng) };
         check(rc, "wc_HpkeGenerateKeyPair")?;
         if key.is_null() {
             return Err(WolfCryptError::AllocFailed);
@@ -257,7 +258,8 @@ impl Hpke {
         Ok(HpkeKeyPair {
             key,
             kem: self.suite.kem,
-            hpke: &mut *self.hpke as *mut WcHpke,
+            suite: self.suite,
+            hpke: Arc::clone(&self.hpke),
         })
     }
 
@@ -265,12 +267,16 @@ impl Hpke {
     /// suitable for use as a receiver public key in [`seal_base`](Self::seal_base).
     ///
     /// The deserialized key pair contains only the public component.
-    /// The returned [`HpkeKeyPair`] must not outlive this `Hpke` context.
     pub fn deserialize_public_key(&mut self, enc: &[u8]) -> Result<HpkeKeyPair, WolfCryptError> {
         let mut key: *mut c_void = ptr::null_mut();
         // SAFETY: `self.hpke` is initialised, `enc` is a valid byte slice.
         let rc = unsafe {
-            wc_HpkeDeserializePublicKey(&mut *self.hpke, &mut key, enc.as_ptr(), enc.len() as u16)
+            wc_HpkeDeserializePublicKey(
+                &mut *self.hpke.get(),
+                &mut key,
+                enc.as_ptr(),
+                enc.len() as u16,
+            )
         };
         check(rc, "wc_HpkeDeserializePublicKey")?;
         if key.is_null() {
@@ -279,7 +285,8 @@ impl Hpke {
         Ok(HpkeKeyPair {
             key,
             kem: self.suite.kem,
-            hpke: &mut *self.hpke as *mut WcHpke,
+            suite: self.suite,
+            hpke: Arc::clone(&self.hpke),
         })
     }
 
@@ -299,7 +306,7 @@ impl Hpke {
         plaintext: &[u8],
     ) -> Result<(Vec<u8>, Vec<u8>), WolfCryptError> {
         // 1. Serialize the ephemeral public key to produce `enc`.
-        let enc = ephemeral.serialize_public_key(self)?;
+        let enc = ephemeral.serialize_public_key()?;
 
         // 2. Allocate ciphertext buffer: plaintext + AEAD tag.
         let ct_len = plaintext.len() + self.suite.tag_len();
@@ -315,7 +322,7 @@ impl Hpke {
         // the hpke context is initialised.
         let rc = unsafe {
             wc_HpkeSealBase(
-                &mut *self.hpke,
+                &mut *self.hpke.get(),
                 ephemeral.key,
                 receiver_pub.key,
                 info_buf.as_mut_ptr(),
@@ -365,7 +372,7 @@ impl Hpke {
         // the hpke context is initialised.
         let rc = unsafe {
             wc_HpkeOpenBase(
-                &mut *self.hpke,
+                &mut *self.hpke.get(),
                 receiver.key,
                 enc.as_ptr(),
                 enc.len() as u16,
