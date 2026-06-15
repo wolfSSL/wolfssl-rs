@@ -27,11 +27,8 @@ publish = false
 [lib]
 name = "ssh_key"
 
-# ssh-cipher: pre-release, pinned to rc.10 git tag (not yet stable on crates.io).
-# ssh-encoding: stable 0.3.0 published on crates.io.
 [dependencies.cipher]
-git = "https://github.com/RustCrypto/SSH"
-tag = "ssh-cipher/v0.3.0-rc.10"
+version = "0.3.0-rc.10"
 package = "ssh-cipher"
 features = ["zeroize"]
 
