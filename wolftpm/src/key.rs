@@ -75,11 +75,10 @@ impl<'dev> EccKey<'dev> {
         };
         // SAFETY: srk was successfully created above; flush it before
         // propagating any error so no transient slot is leaked.
-        Error::check(rc).map_err(|e| {
+        Error::check(rc).inspect_err(|_e| {
             unsafe {
                 wolftpm_sys::wolfTPM2_UnloadHandle(dev_ptr, &mut srk.handle as *mut _);
             }
-            e
         })?;
 
         // ── Step 3: Create and load the signing key under the SRK ────────────
@@ -99,11 +98,10 @@ impl<'dev> EccKey<'dev> {
             )
         };
         // SAFETY: srk was successfully created; flush it before returning.
-        Error::check(rc).map_err(|e| {
+        Error::check(rc).inspect_err(|_e| {
             unsafe {
                 wolftpm_sys::wolfTPM2_UnloadHandle(dev_ptr, &mut srk.handle as *mut _);
             }
-            e
         })?;
 
         Ok(Self { key, srk, dev: device })
@@ -225,7 +223,7 @@ impl<'dev> EccKey<'dev> {
             0 => Ok(()),
             // TPM_RC_SIGNATURE (0x9B = 155): the signature is structurally
             // well-formed but does not verify against this key and hash.
-            r if r == wolftpm_sys::TPM_RC_T_TPM_RC_SIGNATURE as i32 => {
+            r if r == wolftpm_sys::TPM_RC_T_TPM_RC_SIGNATURE => {
                 Err(Error::SignatureInvalid)
             }
             _ => Err(Error::Tpm {

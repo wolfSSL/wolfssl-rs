@@ -202,14 +202,14 @@ fn generate_wolftpm_options(path: &std::path::Path) {
 
 fn locate_wolftpm_src() -> PathBuf {
     // Priority 1: WOLFTPM_SRC env var.
-    if let Ok(val) = env::var("WOLFTPM_SRC") {
-        if !val.is_empty() {
-            let path = PathBuf::from(&val);
-            if path.exists() {
-                return path;
-            }
-            panic!("WOLFTPM_SRC={val} does not exist");
+    if let Ok(val) = env::var("WOLFTPM_SRC")
+        && !val.is_empty()
+    {
+        let path = PathBuf::from(&val);
+        if path.exists() {
+            return path;
         }
+        panic!("WOLFTPM_SRC={val} does not exist");
     }
 
     // Priority 2: bundled submodule (wolftpm-src/wolftpm/ inside this crate).
@@ -238,39 +238,39 @@ fn locate_wolftpm_src() -> PathBuf {
 /// supplied via `WOLFSSL_SETTINGS_INCLUDE`).
 fn locate_wolfssl_headers() -> (PathBuf, Option<PathBuf>) {
     // Priority 1: WOLFSSL_INCLUDE_DIR — explicit include path to pre-built headers.
-    if let Ok(val) = env::var("WOLFSSL_INCLUDE_DIR") {
-        if !val.is_empty() {
-            let path = PathBuf::from(&val);
-            if path.exists() {
-                return (path, None);
-            }
-            panic!("WOLFSSL_INCLUDE_DIR={val} does not exist");
+    if let Ok(val) = env::var("WOLFSSL_INCLUDE_DIR")
+        && !val.is_empty()
+    {
+        let path = PathBuf::from(&val);
+        if path.exists() {
+            return (path, None);
         }
+        panic!("WOLFSSL_INCLUDE_DIR={val} does not exist");
     }
 
     // Priority 2: WOLFSSL_DIR — install prefix; headers at $WOLFSSL_DIR/include.
-    if let Ok(val) = env::var("WOLFSSL_DIR") {
-        if !val.is_empty() {
-            let include = PathBuf::from(&val).join("include");
-            if include.exists() {
-                return (include, None);
-            }
-            panic!("WOLFSSL_DIR={val} exists but {}/include does not", val);
+    if let Ok(val) = env::var("WOLFSSL_DIR")
+        && !val.is_empty()
+    {
+        let include = PathBuf::from(&val).join("include");
+        if include.exists() {
+            return (include, None);
         }
+        panic!("WOLFSSL_DIR={val} exists but {}/include does not", val);
     }
 
     // Priority 3: WOLFSSL_SRC — vendored source tree.
-    if let Ok(val) = env::var("WOLFSSL_SRC") {
-        if !val.is_empty() {
-            let path = PathBuf::from(&val);
-            if !path.exists() {
-                panic!("WOLFSSL_SRC={val} does not exist");
-            }
-            let settings_include = env::var("WOLFSSL_SETTINGS_INCLUDE")
-                .map(PathBuf::from)
-                .ok();
-            return (path, settings_include);
+    if let Ok(val) = env::var("WOLFSSL_SRC")
+        && !val.is_empty()
+    {
+        let path = PathBuf::from(&val);
+        if !path.exists() {
+            panic!("WOLFSSL_SRC={val} does not exist");
         }
+        let settings_include = env::var("WOLFSSL_SETTINGS_INCLUDE")
+            .map(PathBuf::from)
+            .ok();
+        return (path, settings_include);
     }
 
     panic!(

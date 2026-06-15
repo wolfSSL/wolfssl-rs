@@ -213,10 +213,9 @@ fn generate_bindings(
             feature = "riscv-bare-metal",
             feature = "cryptocb-only",
             feature = "cryptocb-pure",
-        )) {
-            if let Ok(stubs) = env::var("WOLFSSL_BARE_METAL_STUBS") {
-                builder = builder.clang_arg(format!("-I{}", stubs));
-            }
+        )) && let Ok(stubs) = env::var("WOLFSSL_BARE_METAL_STUBS")
+        {
+            builder = builder.clang_arg(format!("-I{}", stubs));
         }
     } else {
         // For system/pkg-config builds, tell settings.h to pull in options.h

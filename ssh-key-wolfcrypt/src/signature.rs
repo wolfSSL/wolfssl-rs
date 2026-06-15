@@ -537,7 +537,10 @@ fn ecdsa_curve_to_ecc_id(curve: EcdsaCurve) -> wolfcrypt::ecc::EccCurveId {
 
 /// Per-thread cached wolfCrypt RNG to avoid reinitializing the DRBG (and
 /// reseeding from the OS entropy source) on every ECDSA/RSA signature.
-#[cfg(feature = "std")]
+#[cfg(all(
+    feature = "std",
+    any(feature = "p256", feature = "p384", feature = "p521", feature = "rsa")
+))]
 fn with_cached_rng<F, T>(f: F) -> Result<T>
 where
     F: FnOnce(&mut wolfcrypt::rand::WolfRng) -> Result<T>,
@@ -553,7 +556,7 @@ where
             Some(rng) => rng,
             None => {
                 *borrow = Some(wolfcrypt::rand::WolfRng::new().map_err(Error::from)?);
-                borrow.as_mut().unwrap()
+                borrow.as_mut().expect("RNG was just inserted into the Option")
             }
         };
         f(rng)
@@ -561,7 +564,10 @@ where
 }
 
 /// Fallback for no_std: create a fresh RNG each time.
-#[cfg(not(feature = "std"))]
+#[cfg(all(
+    not(feature = "std"),
+    any(feature = "p256", feature = "p384", feature = "p521", feature = "rsa")
+))]
 fn with_cached_rng<F, T>(f: F) -> Result<T>
 where
     F: FnOnce(&mut wolfcrypt::rand::WolfRng) -> Result<T>,

@@ -258,13 +258,10 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncRead for TlsStream<IO> {
                     }
                     break;
                 } else {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        format!(
-                            "wolfSSL_read error {err}: {}",
-                            wolfssl_error_string(err)
-                        ),
-                    )));
+                    return Poll::Ready(Err(io::Error::other(format!(
+                        "wolfSSL_read error {err}: {}",
+                        wolfssl_error_string(err)
+                    ))));
                 }
             }
 
@@ -347,10 +344,10 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
                 }
                 continue;
             }
-            return Poll::Ready(Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!("wolfSSL_write error {err}: {}", wolfssl_error_string(err)),
-            )));
+            return Poll::Ready(Err(io::Error::other(format!(
+                "wolfSSL_write error {err}: {}",
+                wolfssl_error_string(err)
+            ))));
         }
     }
 
@@ -374,10 +371,10 @@ impl<IO: AsyncRead + AsyncWrite + Unpin> AsyncWrite for TlsStream<IO> {
                 let want_read = wolfcrypt_sys::WOLFSSL_ERROR_WANT_READ as i32;
                 let want_write = wolfcrypt_sys::WOLFSSL_ERROR_WANT_WRITE as i32;
                 if err != want_read && err != want_write {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        format!("wolfSSL_shutdown error {err}: {}", wolfssl_error_string(err)),
-                    )));
+                    return Poll::Ready(Err(io::Error::other(format!(
+                        "wolfSSL_shutdown error {err}: {}",
+                        wolfssl_error_string(err)
+                    ))));
                 }
                 // WANT_READ or WANT_WRITE: close_notify is pending on a
                 // non-blocking transport; fall through to flush_net_out.

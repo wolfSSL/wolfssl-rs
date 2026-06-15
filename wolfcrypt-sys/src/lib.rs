@@ -4,14 +4,14 @@
 //! for safe, idiomatic Rust abstractions.
 
 #![no_std]
-#![allow(clippy::missing_safety_doc)]
-#![allow(clippy::too_many_arguments)]
-#![allow(clippy::upper_case_acronyms)]
-#![allow(dead_code)]
-#![allow(improper_ctypes)]
-#![allow(non_camel_case_types)]
-#![allow(non_snake_case)]
-#![allow(non_upper_case_globals)]
-#![allow(unsafe_op_in_unsafe_fn)]
+#![allow(
+    non_upper_case_globals,
+    non_camel_case_types,
+    non_snake_case,
+    dead_code,
+    improper_ctypes,
+    unsafe_op_in_unsafe_fn,
+    clippy::all
+)]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));

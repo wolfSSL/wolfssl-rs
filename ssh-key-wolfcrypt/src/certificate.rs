@@ -13,7 +13,7 @@ use crate::{
     Algorithm, Comment, Error, Fingerprint, HashAlg, Result, Signature,
 };
 use alloc::{
-    string::{String, ToString},
+    string::String,
     vec::Vec,
 };
 use core::str::FromStr;

@@ -142,7 +142,6 @@ impl TlsServerConfigBuilder {
     /// - `[ProtocolVersion::Tls12, ProtocolVersion::Tls13]`
     /// - `vec![ProtocolVersion::Tls12]`
     /// - any `Iterator<Item = ProtocolVersion>`
-    #[must_use]
     pub fn with_protocol_versions(
         mut self,
         versions: impl IntoIterator<Item = ProtocolVersion>,
@@ -152,7 +151,6 @@ impl TlsServerConfigBuilder {
     }
 
     /// Set the server certificate chain and private key.
-    #[must_use]
     pub fn with_certificate_chain(mut self, cert: Certificate, key: PrivateKey) -> Self {
         self.cert = Some(cert);
         self.key = Some(key);
@@ -160,13 +158,11 @@ impl TlsServerConfigBuilder {
     }
 
     /// No client certificate authentication required (default, no-op).
-    #[must_use]
     pub fn with_no_client_auth(self) -> Self {
         self
     }
 
     /// Require client certificate authentication (mTLS).
-    #[must_use]
     pub fn with_client_auth(mut self, client_ca_store: RootCertStore) -> Self {
         self.client_ca_store = Some(client_ca_store);
         self
@@ -374,13 +370,10 @@ impl<IOCB: IOCallbacks> Read for TlsServer<IOCB> {
                 WANT_READ | WANT_WRITE => {
                     Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
                 }
-                _ => Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!(
-                        "wolfSSL_read: {} (error {err})",
-                        crate::error::error_string(err)
-                    ),
-                )),
+                _ => Err(std::io::Error::other(format!(
+                    "wolfSSL_read: {} (error {err})",
+                    crate::error::error_string(err)
+                ))),
             }
         }
     }
@@ -407,13 +400,10 @@ impl<IOCB: IOCallbacks> Write for TlsServer<IOCB> {
                 WANT_READ | WANT_WRITE => {
                     Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
                 }
-                _ => Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!(
-                        "wolfSSL_write: {} (error {err})",
-                        crate::error::error_string(err)
-                    ),
-                )),
+                _ => Err(std::io::Error::other(format!(
+                    "wolfSSL_write: {} (error {err})",
+                    crate::error::error_string(err)
+                ))),
             }
         }
     }

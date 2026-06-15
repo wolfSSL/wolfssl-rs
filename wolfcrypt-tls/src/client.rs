@@ -166,13 +166,10 @@ impl<IOCB: IOCallbacks> Read for TlsClient<IOCB> {
                 WANT_READ | WANT_WRITE => {
                     Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
                 }
-                _ => Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!(
-                        "wolfSSL_read: {} (error {err})",
-                        crate::error::error_string(err)
-                    ),
-                )),
+                _ => Err(std::io::Error::other(format!(
+                    "wolfSSL_read: {} (error {err})",
+                    crate::error::error_string(err)
+                ))),
             }
         }
     }
@@ -201,13 +198,10 @@ impl<IOCB: IOCallbacks> Write for TlsClient<IOCB> {
                 WANT_READ | WANT_WRITE => {
                     Err(std::io::Error::from(std::io::ErrorKind::WouldBlock))
                 }
-                _ => Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!(
-                        "wolfSSL_write: {} (error {err})",
-                        crate::error::error_string(err)
-                    ),
-                )),
+                _ => Err(std::io::Error::other(format!(
+                    "wolfSSL_write: {} (error {err})",
+                    crate::error::error_string(err)
+                ))),
             }
         }
     }

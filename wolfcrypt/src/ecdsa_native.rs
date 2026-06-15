@@ -353,10 +353,9 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
 
-        let mut rng = Self::init_rng().map_err(|e| {
+        let mut rng = Self::init_rng().inspect_err(|_e| {
             // SAFETY: key is non-null and was allocated above; freed on error path.
             unsafe { wc_ecc_key_free(key) };
-            e
         })?;
 
         // SAFETY: key and rng are both initialised; FIELD_SIZE matches CURVE_ID.
@@ -411,10 +410,9 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
                 func: "wc_ecc_import_private_key_ex",
             });
         }
-        let rng = Self::init_rng().map_err(|e| {
+        let rng = Self::init_rng().inspect_err(|_e| {
             // SAFETY: key is non-null; freed on error path.
             unsafe { wc_ecc_key_free(key) };
-            e
         })?;
         Ok(Self {
             key: UnsafeCell::new(key),
@@ -466,10 +464,9 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
                 func: "wc_ecc_make_pub",
             });
         }
-        let rng = Self::init_rng().map_err(|e| {
+        let rng = Self::init_rng().inspect_err(|_e| {
             // SAFETY: key is non-null; freed on error path.
             unsafe { wc_ecc_key_free(key) };
-            e
         })?;
         Ok(Self {
             key: UnsafeCell::new(key),

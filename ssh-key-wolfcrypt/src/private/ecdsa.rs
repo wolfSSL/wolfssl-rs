@@ -7,7 +7,10 @@ use sec1::consts::{U32, U48, U66};
 use subtle::{Choice, ConstantTimeEq};
 use zeroize::Zeroize;
 
-#[cfg(feature = "rand_core")]
+#[cfg(all(
+    feature = "rand_core",
+    any(feature = "p256", feature = "p384", feature = "p521")
+))]
 use rand_core::CryptoRng;
 
 #[cfg(all(
@@ -198,8 +201,8 @@ pub enum EcdsaKeypair {
     },
 }
 
-impl core::fmt::Debug for EcdsaKeypair {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Debug for EcdsaKeypair {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("EcdsaKeypair").finish_non_exhaustive()
     }
 }

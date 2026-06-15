@@ -125,23 +125,21 @@ pub fn error_string(code: core::ffi::c_int) -> &'static str {
     let ptr = unsafe {
         wolfSSL_ERR_reason_error_string((code as core::ffi::c_uint) as core::ffi::c_ulong)
     };
-    if !ptr.is_null() {
-        if let Ok(s) = unsafe { CStr::from_ptr(ptr) }.to_str() {
-            if !s.is_empty() {
-                return s;
-            }
-        }
+    if !ptr.is_null()
+        && let Ok(s) = unsafe { CStr::from_ptr(ptr) }.to_str()
+        && !s.is_empty()
+    {
+        return s;
     }
 
     // Fall back to the wolfCrypt-level lookup for low-level crypto errors.
     // SAFETY: wc_GetErrorString returns a static string pointer.
     let ptr = unsafe { wc_GetErrorString(code) };
-    if !ptr.is_null() {
-        if let Ok(s) = unsafe { CStr::from_ptr(ptr) }.to_str() {
-            if !s.is_empty() {
-                return s;
-            }
-        }
+    if !ptr.is_null()
+        && let Ok(s) = unsafe { CStr::from_ptr(ptr) }.to_str()
+        && !s.is_empty()
+    {
+        return s;
     }
 
     "unknown error"
@@ -154,12 +152,11 @@ pub fn error_string(code: core::ffi::c_int) -> &'static str {
 pub(crate) fn verify_error_string(code: core::ffi::c_long) -> &'static str {
     // SAFETY: wolfSSL_X509_verify_cert_error_string returns a static string pointer.
     let ptr = unsafe { wolfSSL_X509_verify_cert_error_string(code) };
-    if !ptr.is_null() {
-        if let Ok(s) = unsafe { CStr::from_ptr(ptr) }.to_str() {
-            if !s.is_empty() {
-                return s;
-            }
-        }
+    if !ptr.is_null()
+        && let Ok(s) = unsafe { CStr::from_ptr(ptr) }.to_str()
+        && !s.is_empty()
+    {
+        return s;
     }
     "unknown verification error"
 }

@@ -401,11 +401,11 @@ pub fn tls13_hkdf_extract_ex(
     let mut ikm_buf = [0u8; sys::WC_MAX_DIGEST_SIZE as usize];
     let mut ikm_ptr = ikm_buf.as_mut_ptr();
     let mut ikm_size = 0u32;
-    if let Some(key) = key {
-        if !key.is_empty() {
-            ikm_ptr = key.as_mut_ptr();
-            ikm_size = key.len() as u32;
-        }
+    if let Some(key) = key
+        && !key.is_empty()
+    {
+        ikm_ptr = key.as_mut_ptr();
+        ikm_size = key.len() as u32;
     }
     if out.len() != HMAC::get_hmac_size_by_type(typ)? {
         return Err(sys::wolfCrypt_ErrorCodes_BUFFER_E);

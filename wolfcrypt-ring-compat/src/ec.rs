@@ -26,7 +26,7 @@ pub(crate) mod key_pair;
 pub(crate) mod signature;
 
 const ELEM_MAX_BITS: usize = 521;
-pub(crate) const ELEM_MAX_BYTES: usize = (ELEM_MAX_BITS + 7) / 8;
+pub(crate) const ELEM_MAX_BYTES: usize = ELEM_MAX_BITS.div_ceil(8);
 
 /// The maximum length, in bytes, of an encoded public key.
 pub(crate) const PUBLIC_KEY_MAX_LEN: usize = 1 + (2 * ELEM_MAX_BYTES);
@@ -191,12 +191,12 @@ fn ecdsa_asn1_to_fixed(alg_id: &'static AlgorithmID, sig: &[u8]) -> Result<Signa
 
 #[inline]
 pub(crate) const fn compressed_public_key_size_bytes(curve_field_bits: usize) -> usize {
-    1 + (curve_field_bits + 7) / 8
+    1 + curve_field_bits.div_ceil(8)
 }
 
 #[inline]
 pub(crate) const fn uncompressed_public_key_size_bytes(curve_field_bits: usize) -> usize {
-    1 + 2 * ((curve_field_bits + 7) / 8)
+    1 + 2 * curve_field_bits.div_ceil(8)
 }
 
 /// Helper: get r component from ECDSA_SIG via ECDSA_SIG_get0.

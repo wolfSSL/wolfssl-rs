@@ -77,6 +77,7 @@ pub(crate) fn len_as_u32(n: usize) -> u32 {
 ///
 /// Panics if the value exceeds `c_int::MAX` (~2 GB).
 /// See the "Buffer size limit" section in the crate-level docs.
+#[cfg(any(feature = "lms", feature = "kdf", feature = "pbkdf2"))]
 #[inline(always)]
 pub(crate) fn len_as_c_int(n: usize) -> core::ffi::c_int {
     assert!(

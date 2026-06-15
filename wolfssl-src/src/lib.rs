@@ -236,14 +236,14 @@ impl Build {
         }
 
         // 2. WOLFSSL_SRC env var
-        if let Ok(dir) = env::var("WOLFSSL_SRC") {
-            if !dir.is_empty() {
-                let path = PathBuf::from(&dir);
-                if !path.exists() {
-                    panic!("WOLFSSL_SRC={dir} does not exist");
-                }
-                return path;
+        if let Ok(dir) = env::var("WOLFSSL_SRC")
+            && !dir.is_empty()
+        {
+            let path = PathBuf::from(&dir);
+            if !path.exists() {
+                panic!("WOLFSSL_SRC={dir} does not exist");
             }
+            return path;
         }
 
         // 3. Bundled submodule (wolfssl-src/wolfssl/ inside this crate)
@@ -287,10 +287,10 @@ impl Build {
         if let Some(incdir) = pkg_config_var("includedir") {
             let path = PathBuf::from(&incdir);
             // Try <includedir>/../ (e.g. /usr/local/include → /usr/local)
-            if let Some(parent) = path.parent() {
-                if parent.join("wolfcrypt").join("src").exists() {
-                    return Some(parent.to_path_buf());
-                }
+            if let Some(parent) = path.parent()
+                && parent.join("wolfcrypt").join("src").exists()
+            {
+                return Some(parent.to_path_buf());
             }
         }
 

@@ -29,9 +29,11 @@ macro_rules! generated_encodings {
             }
 
             impl $name<'static> {
+                #[allow(dead_code)]
                 pub(crate) fn new(owned: Vec<u8>) -> Self {
                     Self(Buffer::new(owned))
                 }
+                #[allow(dead_code)]
                 pub(crate) fn take_from_slice(owned: &mut [u8]) -> Self {
                     Self(Buffer::take_from_slice(owned))
                 }
