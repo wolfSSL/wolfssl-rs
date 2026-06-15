@@ -59,14 +59,14 @@ use wolfcrypt_rs::{
 // ---------------------------------------------------------------------------
 
 /// HPKE cipher suite specifying KEM, KDF, and AEAD algorithms.
+///
+/// Construct via named constants (e.g. [`HpkeSuite::X25519_SHA256_AES128`])
+/// to ensure only valid RFC 9180 algorithm combinations are used.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HpkeSuite {
-    /// KEM algorithm identifier (RFC 9180 section 7.1).
-    pub kem: i32,
-    /// KDF algorithm identifier (RFC 9180 section 7.2).
-    pub kdf: i32,
-    /// AEAD algorithm identifier (RFC 9180 section 7.3).
-    pub aead: i32,
+    kem: i32,
+    kdf: i32,
+    aead: i32,
 }
 
 impl HpkeSuite {

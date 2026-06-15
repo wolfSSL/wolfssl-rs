@@ -775,6 +775,8 @@ pub(crate) mod nist_ecdh_native {
     pub struct NistEcdhSecret<C: NistCurve> {
         /// Heap-allocated wc_ecc_key (via wc_ecc_key_new). Non-null while alive.
         key: UnsafeCell<*mut wc_ecc_key>,
+        /// Whether the public key component is available (false for scalar-only imports).
+        has_public: bool,
         _curve: PhantomData<C>,
     }
 
@@ -837,6 +839,7 @@ pub(crate) mod nist_ecdh_native {
 
             Ok(Self {
                 key: UnsafeCell::new(key),
+                has_public: true,
                 _curve: PhantomData,
             })
         }
@@ -880,15 +883,22 @@ pub(crate) mod nist_ecdh_native {
             }
             Ok(Self {
                 key: UnsafeCell::new(key),
+                has_public: false,
                 _curve: PhantomData,
             })
         }
 
         /// Export the public key as an uncompressed point (`0x04 || x || y`).
         ///
-        /// Returns an error if the key was created with `from_private_scalar`
-        /// (public component not available without a separate derivation step).
+        /// # Errors
+        ///
+        /// Returns [`WolfCryptError::INVALID_INPUT`] if the key was created with
+        /// [`from_private_scalar`](Self::from_private_scalar), which does not
+        /// derive the public component.
         pub fn public_key(&self) -> Result<NistEcdhPublicKey<C>, WolfCryptError> {
+            if !self.has_public {
+                return Err(WolfCryptError::INVALID_INPUT);
+            }
             // SAFETY: self.key is non-null and initialised; dereferencing the UnsafeCell pointer.
             let key = unsafe { *self.key.get() };
             let mut buf = vec![0u8; C::POINT_SIZE];
