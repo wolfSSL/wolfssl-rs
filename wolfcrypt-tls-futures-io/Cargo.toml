@@ -2,6 +2,7 @@
 name = "wolfcrypt-tls-futures-io"
 version = "0.1.1"
 edition = "2024"
+rust-version = "1.85"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 description = "Async TLS backed by wolfSSL — futures::io AsyncRead/AsyncWrite (smol, async-std)"
 homepage = "http://wolfssl.com"

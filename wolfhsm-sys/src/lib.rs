@@ -2,11 +2,13 @@
 //!
 //! Use the `wolfhsm` crate for safe, idiomatic Rust abstractions.
 
+#![no_std]
 #![allow(
     non_upper_case_globals,
     non_camel_case_types,
     non_snake_case,
     dead_code,
+    improper_ctypes,
     unsafe_op_in_unsafe_fn,
     clippy::all
 )]

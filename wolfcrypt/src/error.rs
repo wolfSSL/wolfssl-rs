@@ -44,6 +44,8 @@ impl fmt::Display for WolfCryptError {
     }
 }
 
+impl core::error::Error for WolfCryptError {}
+
 /// Check a wolfCrypt return code; 0 = success, negative = error.
 ///
 /// `func` is the C function name, included in the error for diagnostics.

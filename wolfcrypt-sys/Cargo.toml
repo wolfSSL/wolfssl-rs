@@ -3,6 +3,7 @@ name = "wolfcrypt-sys"
 authors = ["WolfSSL Inc"]
 version = "0.1.4"
 edition = "2024"
+rust-version = "1.85"
 description = "Auto-generated Rust FFI bindings to wolfSSL via bindgen"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 homepage = "http://wolfssl.com"

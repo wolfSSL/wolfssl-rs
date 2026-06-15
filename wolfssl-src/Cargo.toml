@@ -3,6 +3,7 @@ name = "wolfssl-src"
 authors = ["WolfSSL Inc"]
 version = "0.1.4"
 edition = "2024"
+rust-version = "1.85"
 description = "Compile wolfSSL from source for use by wolfcrypt-sys"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 homepage = "http://wolfssl.com"

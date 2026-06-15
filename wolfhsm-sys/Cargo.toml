@@ -2,6 +2,7 @@
 name = "wolfhsm-sys"
 version = "0.1.3"
 edition = "2024"
+rust-version = "1.85"
 description = "Auto-generated Rust FFI bindings to wolfHSM"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 repository = "https://github.com/wolfSSL/wolfssl-rs"

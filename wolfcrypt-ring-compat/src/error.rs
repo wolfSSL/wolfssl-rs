@@ -150,7 +150,6 @@ impl KeyRejected {
     }
 }
 
-#[cfg(feature = "std")]
 impl core::error::Error for KeyRejected {
     fn description(&self) -> &str {
         self.description_()
@@ -161,7 +160,6 @@ impl core::error::Error for KeyRejected {
     }
 }
 
-#[cfg(feature = "std")]
 impl core::error::Error for Unspecified {
     #[allow(clippy::unnecessary_literal_bound)]
     fn description(&self) -> &str {
