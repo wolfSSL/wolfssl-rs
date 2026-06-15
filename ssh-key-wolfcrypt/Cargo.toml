@@ -27,24 +27,23 @@ publish = false
 [lib]
 name = "ssh_key"
 
-# ssh-cipher and ssh-encoding: pre-release crates from upstream RustCrypto/SSH,
-# pinned to the rc.8 release commit. Not yet on crates.io.
+# ssh-cipher: pre-release, pinned to rc.10 git tag (not yet stable on crates.io).
+# ssh-encoding: stable 0.3.0 published on crates.io.
 [dependencies.cipher]
 git = "https://github.com/RustCrypto/SSH"
-tag = "ssh-cipher/v0.3.0-rc.8"
+tag = "ssh-cipher/v0.3.0-rc.10"
 package = "ssh-cipher"
 features = ["zeroize"]
 
 [dependencies.encoding]
-git = "https://github.com/RustCrypto/SSH"
-tag = "ssh-encoding/v0.3.0-rc.8"
+version = "0.3.0"
 package = "ssh-encoding"
-features = ["base64", "digest", "pem", "subtle", "zeroize"]
+features = ["base64", "digest", "pem", "ctutils", "zeroize"]
 
 [dependencies]
 sha2 = { version = "0.11.0-rc.5", default-features = false }
 signature = { version = "3.0.0-rc.10", default-features = false }
-subtle = { version = "2", default-features = false }
+ctutils = { version = "0.4", default-features = false }
 zeroize = { version = "1", default-features = false }
 
 # wolfcrypt — provides all cryptographic operations.
@@ -95,9 +94,7 @@ ed25519 = ["rand_core"]
 encryption = [
     "dep:bcrypt-pbkdf",
     "alloc",
-    "cipher/aes-cbc",
-    "cipher/aes-ctr",
-    "cipher/aes-gcm",
+    "cipher/aes",
     "cipher/chacha20poly1305",
     "rand_core"
 ]
@@ -107,7 +104,7 @@ p521 = ["ecdsa"]
 rsa = ["alloc", "encoding/bigint", "rand_core"]
 sha1 = ["dep:sha1"]
 tdes = ["cipher/tdes", "encryption"]
-ppk = ["dep:hex", "alloc", "cipher/aes-cbc", "dep:hmac", "dep:argon2", "dep:sha1"]
+ppk = ["dep:hex", "alloc", "cipher/aes", "dep:hmac", "dep:argon2", "dep:sha1"]
 
 [package.metadata.docs.rs]
 # Explicit feature list instead of all-features = true, because the `dsa`

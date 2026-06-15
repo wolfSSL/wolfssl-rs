@@ -129,7 +129,7 @@ use encoding::{
     pem::{LineEnding, PemLabel},
     CheckedSum, Decode, DecodePem, Encode, EncodePem, Reader, Writer,
 };
-use subtle::{Choice, ConstantTimeEq};
+use ctutils::{Choice, CtEq};
 
 #[cfg(feature = "alloc")]
 use {
@@ -723,7 +723,7 @@ impl PrivateKey {
     }
 }
 
-impl ConstantTimeEq for PrivateKey {
+impl CtEq for PrivateKey {
     fn ct_eq(&self, other: &Self) -> Choice {
         // Constant-time with respect to private key data
         self.key_data.ct_eq(&other.key_data)

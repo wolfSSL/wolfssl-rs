@@ -4,7 +4,7 @@ use crate::{public::EcdsaPublicKey, Algorithm, EcdsaCurve, Error, Result};
 use core::fmt;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
 use sec1::consts::{U32, U48, U66};
-use subtle::{Choice, ConstantTimeEq};
+use ctutils::{Choice, CtEq};
 use zeroize::Zeroize;
 
 #[cfg(all(
@@ -109,7 +109,7 @@ impl<const SIZE: usize> AsRef<[u8; SIZE]> for EcdsaPrivateKey<SIZE> {
     }
 }
 
-impl<const SIZE: usize> ConstantTimeEq for EcdsaPrivateKey<SIZE> {
+impl<const SIZE: usize> CtEq for EcdsaPrivateKey<SIZE> {
     fn ct_eq(&self, other: &Self) -> Choice {
         self.as_ref().ct_eq(other.as_ref())
     }
@@ -306,7 +306,7 @@ impl EcdsaKeypair {
     }
 }
 
-impl ConstantTimeEq for EcdsaKeypair {
+impl CtEq for EcdsaKeypair {
     fn ct_eq(&self, other: &Self) -> Choice {
         let public_eq =
             Choice::from((EcdsaPublicKey::from(self) == EcdsaPublicKey::from(other)) as u8);

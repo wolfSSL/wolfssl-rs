@@ -3,7 +3,7 @@
 use crate::{public::RsaPublicKey, Error, Mpint, Result};
 use core::fmt;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
-use subtle::{Choice, ConstantTimeEq};
+use ctutils::{Choice, CtEq};
 use zeroize::Zeroize;
 
 #[cfg(feature = "rsa")]
@@ -61,7 +61,7 @@ impl RsaPrivateKey {
     }
 }
 
-impl ConstantTimeEq for RsaPrivateKey {
+impl CtEq for RsaPrivateKey {
     fn ct_eq(&self, other: &Self) -> Choice {
         self.d.ct_eq(&other.d)
             & self.iqmp.ct_eq(&other.iqmp)
@@ -196,7 +196,7 @@ pub(crate) fn import_rsa_public_key(n: &[u8], e: &[u8]) -> Result<wolfcrypt::rsa
     wolfcrypt::rsa::NativeRsaKey::from_raw_public(n, e).map_err(Error::from)
 }
 
-impl ConstantTimeEq for RsaKeypair {
+impl CtEq for RsaKeypair {
     fn ct_eq(&self, other: &Self) -> Choice {
         Choice::from((self.public == other.public) as u8) & self.private.ct_eq(&other.private)
     }

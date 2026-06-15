@@ -872,7 +872,7 @@ impl Verifier<Signature> for RsaPublicKey {
                     .map_err(|e| signature::Error::from_source(Error::from(e)))?;
 
                 // Constant-time comparison
-                use subtle::ConstantTimeEq;
+                use ctutils::CtEq;
                 if recovered.ct_eq(&expected).into() {
                     Ok(())
                 } else {

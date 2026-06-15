@@ -19,7 +19,7 @@ use crate::public::KeyData;
 use crate::{Algorithm, Error, PublicKey};
 use encoding::base64::{self, Base64, Encoding};
 use encoding::{Decode, Encode, LabelError, Reader};
-use subtle::ConstantTimeEq;
+use ctutils::CtEq;
 
 #[derive(Debug)]
 pub enum Kdf {

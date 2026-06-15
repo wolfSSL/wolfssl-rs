@@ -3,7 +3,7 @@
 use crate::{public::DsaPublicKey, Error, Mpint, Result};
 use core::fmt;
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
-use subtle::{Choice, ConstantTimeEq};
+use ctutils::{Choice, CtEq};
 use zeroize::Zeroize;
 
 /// Digital Signature Algorithm (DSA) private key.
@@ -45,7 +45,7 @@ impl AsRef<[u8]> for DsaPrivateKey {
     }
 }
 
-impl ConstantTimeEq for DsaPrivateKey {
+impl CtEq for DsaPrivateKey {
     fn ct_eq(&self, other: &Self) -> Choice {
         self.inner.ct_eq(&other.inner)
     }
@@ -125,7 +125,7 @@ impl DsaKeypair {
     }
 }
 
-impl ConstantTimeEq for DsaKeypair {
+impl CtEq for DsaKeypair {
     fn ct_eq(&self, other: &Self) -> Choice {
         Choice::from((self.public == other.public) as u8) & self.private.ct_eq(&other.private)
     }

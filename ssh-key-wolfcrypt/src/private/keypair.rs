@@ -3,7 +3,7 @@
 use super::ed25519::Ed25519Keypair;
 use crate::{public, Algorithm, Error, Result};
 use encoding::{CheckedSum, Decode, Encode, Reader, Writer};
-use subtle::{Choice, ConstantTimeEq};
+use ctutils::{Choice, CtEq};
 
 #[cfg(feature = "alloc")]
 use {
@@ -268,7 +268,7 @@ impl KeypairData {
     }
 }
 
-impl ConstantTimeEq for KeypairData {
+impl CtEq for KeypairData {
     fn ct_eq(&self, other: &Self) -> Choice {
         // Note: constant-time with respect to key *data* comparisons, not algorithms
         match (self, other) {
