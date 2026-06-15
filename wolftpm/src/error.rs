@@ -67,7 +67,7 @@ pub enum Error {
     /// programmer errors whose values are not meaningful to inspect at runtime
     /// (e.g. a null byte in a host string).  For errors where the caller
     /// needs the actual value, use the structured variants below.
-    InvalidArg(&'static str),
+    InvalidInput(&'static str),
     /// A PCR index was outside the valid range (0–23).
     InvalidPcrIndex(u8),
     /// A hash buffer was not exactly 32 bytes (required for SHA-256 operations).
@@ -120,7 +120,7 @@ impl fmt::Display for Error {
                     write!(f, "TPM error {rc}")
                 }
             }
-            Error::InvalidArg(msg) => write!(f, "invalid argument: {msg}"),
+            Error::InvalidInput(msg) => write!(f, "invalid argument: {msg}"),
             Error::InvalidPcrIndex(n) => {
                 write!(f, "PCR index {n} is out of range (valid range: 0–23)")
             }

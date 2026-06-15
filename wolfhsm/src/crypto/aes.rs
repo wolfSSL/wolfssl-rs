@@ -23,7 +23,7 @@ impl AesKey {
     /// Cache raw key bytes in the HSM. `key_bytes` must be 16, 24, or 32 bytes.
     pub(crate) fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, Error> {
         if !matches!(key_bytes.len(), 16 | 24 | 32) {
-            return Err(Error::BadArgs {
+            return Err(Error::InvalidInput {
                 msg: "key must be 16, 24, or 32 bytes",
             });
         }
@@ -41,14 +41,14 @@ impl AesKey {
         plaintext: &[u8],
     ) -> Result<(Vec<u8>, [u8; AES_GCM_TAG_LEN]), Error> {
         if iv.len() != AES_GCM_IV_LEN {
-            return Err(Error::BadArgs {
+            return Err(Error::InvalidInput {
                 msg: "iv must be exactly 12 bytes",
             });
         }
-        let aad_len = u32::try_from(aad.len()).map_err(|_| Error::BadArgs {
+        let aad_len = u32::try_from(aad.len()).map_err(|_| Error::InvalidInput {
             msg: "aad exceeds u32::MAX bytes",
         })?;
-        let in_len = u32::try_from(plaintext.len()).map_err(|_| Error::BadArgs {
+        let in_len = u32::try_from(plaintext.len()).map_err(|_| Error::InvalidInput {
             msg: "plaintext exceeds u32::MAX bytes",
         })?;
         let mut out = vec![0u8; plaintext.len()];
@@ -84,14 +84,14 @@ impl AesKey {
         tag: &[u8; AES_GCM_TAG_LEN],
     ) -> Result<Vec<u8>, Error> {
         if iv.len() != AES_GCM_IV_LEN {
-            return Err(Error::BadArgs {
+            return Err(Error::InvalidInput {
                 msg: "iv must be exactly 12 bytes",
             });
         }
-        let aad_len = u32::try_from(aad.len()).map_err(|_| Error::BadArgs {
+        let aad_len = u32::try_from(aad.len()).map_err(|_| Error::InvalidInput {
             msg: "aad exceeds u32::MAX bytes",
         })?;
-        let in_len = u32::try_from(ciphertext.len()).map_err(|_| Error::BadArgs {
+        let in_len = u32::try_from(ciphertext.len()).map_err(|_| Error::InvalidInput {
             msg: "ciphertext exceeds u32::MAX bytes",
         })?;
         let mut out = vec![0u8; ciphertext.len()];

@@ -185,11 +185,11 @@ impl<'dev> EccKey<'dev> {
             return Err(Error::InvalidHashLen { got: hash.len() });
         }
         if sig.is_empty() {
-            return Err(Error::InvalidArg("sig is empty"));
+            return Err(Error::InvalidInput("sig is empty"));
         }
 
         let sig_sz =
-            i32::try_from(sig.len()).map_err(|_| Error::InvalidArg("sig too large"))?;
+            i32::try_from(sig.len()).map_err(|_| Error::InvalidInput("sig too large"))?;
         // hash.len() == 32 is validated above; 32 fits in c_int on all platforms.
         let hash_sz: std::ffi::c_int = 32;
 
@@ -310,7 +310,7 @@ mod tests {
         .expect("with_ecc_key");
     }
 
-    /// Smoke-test for `Error::InvalidArg` display formatting.
+    /// Smoke-test for `Error::InvalidInput` display formatting.
     ///
     /// `EccKey::sign` and `verify` can only be called with a live TPM
     /// (see `sign_verify_roundtrip` above), so their input-validation
@@ -318,10 +318,10 @@ mod tests {
     /// verifies only that the error type formats correctly without a TPM.
     #[test]
     fn invalid_arg_error_display() {
-        let e = crate::error::Error::InvalidArg("hash must be 32 bytes");
+        let e = crate::error::Error::InvalidInput("hash must be 32 bytes");
         assert!(
             format!("{e}").contains("hash must be 32 bytes"),
-            "Display for InvalidArg was: {e}"
+            "Display for InvalidInput was: {e}"
         );
     }
 }

@@ -6,7 +6,7 @@ use crate::error::Error;
 impl Client {
     /// Generate `size` random bytes using the wolfHSM server's RNG.
     pub fn rng_generate(&mut self, size: usize) -> Result<Vec<u8>, Error> {
-        let size_u32 = u32::try_from(size).map_err(|_| Error::BadArgs {
+        let size_u32 = u32::try_from(size).map_err(|_| Error::InvalidInput {
             msg: "size exceeds u32::MAX",
         })?;
         let mut buf = vec![0u8; size];

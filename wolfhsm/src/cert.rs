@@ -41,7 +41,7 @@ impl Client {
         cert: &[u8],
     ) -> Result<(), Error> {
         let label = label.as_ref();
-        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
+        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::InvalidInput {
             msg: "cert_add_trusted: cert exceeds u32::MAX bytes",
         })?;
         let (mut label_buf, label_len) = truncate_label(label);
@@ -113,7 +113,7 @@ impl Client {
     ///
     /// Returns `Ok(())` if the certificate is valid.
     pub fn cert_verify(&mut self, cert: &[u8], trusted_root_id: NvmId) -> Result<(), Error> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
+        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::InvalidInput {
             msg: "cert_verify: cert exceeds u32::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
@@ -153,7 +153,7 @@ impl Client {
         cached_key_flags: u16,
         key_id: Option<KeyId>,
     ) -> Result<KeyId, Error> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
+        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::InvalidInput {
             msg: "cert_verify_and_cache_leaf_pubkey: cert exceeds u32::MAX bytes",
         })?;
         let mut inout_key_id: u16 = key_id.unwrap_or(KeyId::ERASED).0;
@@ -232,7 +232,7 @@ impl Client {
         cert: &[u8],
         trusted_root_id: NvmId,
     ) -> Result<(), Error> {
-        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::BadArgs {
+        let cert_len = u32::try_from(cert.len()).map_err(|_| Error::InvalidInput {
             msg: "cert_verify_acert: cert exceeds u32::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;

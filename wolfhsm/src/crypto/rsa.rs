@@ -84,7 +84,7 @@ impl RsaKey {
         op: RsaRawOp,
         in_buf: &[u8],
     ) -> Result<Vec<u8>, Error> {
-        let in_len = u32::try_from(in_buf.len()).map_err(|_| Error::BadArgs {
+        let in_len = u32::try_from(in_buf.len()).map_err(|_| Error::InvalidInput {
             msg: "input exceeds u32::MAX bytes",
         })?;
         let out_size = self.key_size_bytes as usize;

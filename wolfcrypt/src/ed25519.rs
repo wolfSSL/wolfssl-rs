@@ -419,6 +419,6 @@ pub fn ed25519_verify_raw(
     if result == 1 {
         Ok(())
     } else {
-        Err(WolfCryptError::SigInvalid)
+        Err(WolfCryptError::SignatureInvalid)
     }
 }

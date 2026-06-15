@@ -44,7 +44,7 @@ impl Ed25519Key {
 
     /// Sign a message. Returns a 64-byte Ed25519 signature.
     pub fn sign(&self, client: &mut Client, msg: &[u8]) -> Result<[u8; 64], Error> {
-        let msg_len = u32::try_from(msg.len()).map_err(|_| Error::BadArgs {
+        let msg_len = u32::try_from(msg.len()).map_err(|_| Error::InvalidInput {
             msg: "message exceeds u32::MAX bytes",
         })?;
         let mut buf = [0u8; 64];
@@ -76,7 +76,7 @@ impl Ed25519Key {
         msg: &[u8],
         sig: &[u8; 64],
     ) -> Result<(), Error> {
-        let msg_len = u32::try_from(msg.len()).map_err(|_| Error::BadArgs {
+        let msg_len = u32::try_from(msg.len()).map_err(|_| Error::InvalidInput {
             msg: "message exceeds u32::MAX bytes",
         })?;
         let mut result: core::ffi::c_int = 0;
@@ -94,7 +94,7 @@ impl Ed25519Key {
         };
         Error::check(rc, "wolfhsm_ed25519_verify")?;
         if result != 1 {
-            return Err(Error::InvalidSignature);
+            return Err(Error::SignatureInvalid);
         }
         Ok(())
     }

@@ -43,7 +43,7 @@ impl EccP256Key {
     /// Sign a pre-hashed digest (≤ 32 bytes for P-256 SHA-256).
     /// Returns DER-encoded ECDSA signature (up to 72 bytes for P-256).
     pub fn sign_digest(&self, client: &mut Client, digest: &[u8]) -> Result<Vec<u8>, Error> {
-        let hash_len = u16::try_from(digest.len()).map_err(|_| Error::BadArgs {
+        let hash_len = u16::try_from(digest.len()).map_err(|_| Error::InvalidInput {
             msg: "digest exceeds u16::MAX bytes",
         })?;
         let mut buf = vec![0u8; 128];
@@ -76,10 +76,10 @@ impl EccP256Key {
         digest: &[u8],
         sig: &[u8],
     ) -> Result<(), Error> {
-        let hash_len = u16::try_from(digest.len()).map_err(|_| Error::BadArgs {
+        let hash_len = u16::try_from(digest.len()).map_err(|_| Error::InvalidInput {
             msg: "digest exceeds u16::MAX bytes",
         })?;
-        let sig_len = u16::try_from(sig.len()).map_err(|_| Error::BadArgs {
+        let sig_len = u16::try_from(sig.len()).map_err(|_| Error::InvalidInput {
             msg: "signature exceeds u16::MAX bytes",
         })?;
         let mut result: core::ffi::c_int = 0;
@@ -97,7 +97,7 @@ impl EccP256Key {
         };
         Error::check(rc, "wolfhsm_ecc_verify")?;
         if result != 1 {
-            return Err(Error::InvalidSignature);
+            return Err(Error::SignatureInvalid);
         }
         Ok(())
     }
@@ -137,7 +137,7 @@ impl EccP256Key {
         peer_public_der: &[u8],
     ) -> Result<Vec<u8>, Error> {
         let peer_der_len =
-            u32::try_from(peer_public_der.len()).map_err(|_| Error::BadArgs {
+            u32::try_from(peer_public_der.len()).map_err(|_| Error::InvalidInput {
                 msg: "peer public key exceeds u32::MAX bytes",
             })?;
         let mut buf = vec![0u8; 32];

@@ -654,7 +654,7 @@ impl<C: EcdsaCurve> EcdsaVerifyingKey<C> {
             });
         }
         if res != 1 {
-            return Err(WolfCryptError::SigInvalid);
+            return Err(WolfCryptError::SignatureInvalid);
         }
         Ok(())
     }

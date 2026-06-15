@@ -44,7 +44,7 @@ pub enum Error {
     ///
     /// `msg` is a `'static` description of what the caller passed and what is
     /// required (e.g. `"key must be 16, 24, or 32 bytes"`).
-    BadArgs {
+    InvalidInput {
         /// Human-readable description of the invalid argument.
         msg: &'static str,
     },
@@ -74,7 +74,7 @@ pub enum Error {
     /// [`ProtocolError`][Error::ProtocolError] (impossible response).
     /// Here the HSM ran the check to completion and determined the material
     /// does not match.
-    InvalidSignature,
+    SignatureInvalid,
 }
 
 impl Error {
@@ -162,7 +162,7 @@ impl fmt::Display for Error {
                     "wolfHSM CryptoCb already registered; drop the existing guard first"
                 )
             }
-            Error::BadArgs { msg } => write!(f, "invalid argument: {msg}"),
+            Error::InvalidInput { msg } => write!(f, "invalid argument: {msg}"),
             Error::DataLost { id } => {
                 write!(
                     f,
@@ -172,7 +172,7 @@ impl fmt::Display for Error {
             Error::ProtocolError { msg } => {
                 write!(f, "wolfHSM protocol error: {msg}")
             }
-            Error::InvalidSignature => {
+            Error::SignatureInvalid => {
                 write!(f, "wolfHSM: signature or MAC verification failed")
             }
         }

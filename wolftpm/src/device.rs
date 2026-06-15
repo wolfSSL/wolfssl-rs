@@ -68,9 +68,9 @@ impl Device {
         use std::ffi::CString;
 
         let host_c =
-            CString::new(host).map_err(|_| Error::InvalidArg("host contains null byte"))?;
+            CString::new(host).map_err(|_| Error::InvalidInput("host contains null byte"))?;
         let port_c = CString::new(port.to_string())
-            .map_err(|_| Error::InvalidArg("port string invalid"))?;
+            .map_err(|_| Error::InvalidInput("port string invalid"))?;
 
         // Delegate to the shared init helper in wolftpm-sys (also used by
         // wolftpm-tss::WolfTpmSwtpm::connect) so the two callers share a
@@ -78,7 +78,7 @@ impl Device {
         let dev = wolftpm_sys::swtpm::init_swtpm(&host_c, &port_c)
             .map_err(|e| match e {
                 wolftpm_sys::swtpm::InitError::Env => {
-                    Error::InvalidArg("setenv failed (ENOMEM?); cannot set swtpm connection vars")
+                    Error::InvalidInput("setenv failed (ENOMEM?); cannot set swtpm connection vars")
                 }
                 wolftpm_sys::swtpm::InitError::WolfTpm(rc) => {
                     Error::Tpm { rc: crate::error::TpmRc::from_raw(rc as u32) }
@@ -118,10 +118,10 @@ impl Device {
 
     /// Request `n` bytes of TPM-sourced random data.
     ///
-    /// `n` must fit in a `u32`; if it does not, `Error::InvalidArg` is returned.
+    /// `n` must fit in a `u32`; if it does not, `Error::InvalidInput` is returned.
     pub fn get_random(&mut self, n: usize) -> Result<Vec<u8>, Error> {
         let len =
-            u32::try_from(n).map_err(|_| Error::InvalidArg("requested length exceeds u32"))?;
+            u32::try_from(n).map_err(|_| Error::InvalidInput("requested length exceeds u32"))?;
         let mut buf = vec![0u8; n];
         let rc =
             unsafe { wolftpm_sys::wolfTPM2_GetRandom(self.dev_ptr_mut(), buf.as_mut_ptr(), len) };

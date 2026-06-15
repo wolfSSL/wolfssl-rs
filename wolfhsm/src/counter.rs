@@ -15,7 +15,7 @@ impl Client {
     /// wrap.
     pub fn counter_init(&mut self, id: NvmId, value: u32) -> Result<u32, Error> {
         if id == NvmId::INVALID {
-            return Err(Error::BadArgs {
+            return Err(Error::InvalidInput {
                 msg: "id must not be NvmId::INVALID (0)",
             });
         }

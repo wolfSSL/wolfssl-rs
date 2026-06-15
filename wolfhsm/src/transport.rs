@@ -23,7 +23,7 @@ pub enum Transport {
         /// Server TCP port number (1–32767).
         ///
         /// The underlying POSIX transport stores the port as a C `i16`; ports above
-        /// 32767 are rejected at connection time with [`crate::Error::BadArgs`].
+        /// 32767 are rejected at connection time with [`crate::Error::InvalidInput`].
         port: u16,
     },
 

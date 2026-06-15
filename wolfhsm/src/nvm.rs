@@ -351,11 +351,11 @@ impl Client {
     ) -> Result<(), Error> {
         let label = label.as_ref();
         if id == NvmId::INVALID {
-            return Err(Error::BadArgs {
+            return Err(Error::InvalidInput {
                 msg: "id must not be NvmId::INVALID (0)",
             });
         }
-        let data_len = u16::try_from(data.len()).map_err(|_| Error::BadArgs {
+        let data_len = u16::try_from(data.len()).map_err(|_| Error::InvalidInput {
             msg: "nvm_add data exceeds u16::MAX bytes",
         })?;
         let (mut label_buf, label_len) = truncate_label(label);
@@ -409,11 +409,11 @@ impl Client {
     ) -> Result<(), Error> {
         let label = label.as_ref();
         if id == NvmId::INVALID {
-            return Err(Error::BadArgs {
+            return Err(Error::InvalidInput {
                 msg: "id must not be NvmId::INVALID (0); wolfHSM auto-assign does not return the assigned ID",
             });
         }
-        let data_len = u16::try_from(data.len()).map_err(|_| Error::BadArgs {
+        let data_len = u16::try_from(data.len()).map_err(|_| Error::InvalidInput {
             msg: "nvm_overwrite data exceeds u16::MAX bytes",
         })?;
 

@@ -45,7 +45,7 @@ impl Client {
     pub fn key_cache(&mut self, data: &[u8], label: impl AsRef<[u8]>) -> Result<KeyId, Error> {
         let label = label.as_ref();
         if data.len() > u16::MAX as usize {
-            return Err(Error::BadArgs {
+            return Err(Error::InvalidInput {
                 msg: "key data exceeds u16::MAX bytes",
             });
         }

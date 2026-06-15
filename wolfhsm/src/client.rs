@@ -218,7 +218,7 @@ impl Client {
         // Build the transport-specific inner state.
         let transport_inner = match transport {
             Transport::Tcp { ip, port } => {
-                let ip_cstr = CString::new(ip).map_err(|_| Error::BadArgs {
+                let ip_cstr = CString::new(ip).map_err(|_| Error::InvalidInput {
                     msg: "ip contains an interior NUL byte",
                 })?;
 
@@ -232,7 +232,7 @@ impl Client {
                 // The C struct uses i16 for the port field.  Ports > 32767
                 // cannot be represented; reject them with a clear error rather
                 // than silently truncating to a negative or zero value.
-                let port_i16 = i16::try_from(port).map_err(|_| Error::BadArgs {
+                let port_i16 = i16::try_from(port).map_err(|_| Error::InvalidInput {
                     msg: "TCP port must be \u{2264} 32767 (C transport uses i16)",
                 })?;
 
@@ -252,7 +252,7 @@ impl Client {
             }
 
             Transport::Uds { path } => {
-                let path_cstr = CString::new(path).map_err(|_| Error::BadArgs {
+                let path_cstr = CString::new(path).map_err(|_| Error::InvalidInput {
                     msg: "path contains an interior NUL byte",
                 })?;
 
@@ -281,7 +281,7 @@ impl Client {
                 req_size,
                 resp_size,
             } => {
-                let name_cstr = CString::new(name).map_err(|_| Error::BadArgs {
+                let name_cstr = CString::new(name).map_err(|_| Error::InvalidInput {
                     msg: "name contains an interior NUL byte",
                 })?;
 
@@ -349,10 +349,10 @@ impl Client {
     /// The server reflects `data` back.  `buf` must be at least as large as
     /// `data`.  Returns the number of bytes written into `buf`.
     pub fn echo(&mut self, data: &[u8], buf: &mut [u8]) -> Result<usize, Error> {
-        let snd_len = u16::try_from(data.len()).map_err(|_| Error::BadArgs {
+        let snd_len = u16::try_from(data.len()).map_err(|_| Error::InvalidInput {
             msg: "echo data exceeds u16::MAX bytes",
         })?;
-        let mut rcv_len: u16 = u16::try_from(buf.len()).map_err(|_| Error::BadArgs {
+        let mut rcv_len: u16 = u16::try_from(buf.len()).map_err(|_| Error::InvalidInput {
             msg: "echo: buf exceeds u16::MAX bytes",
         })?;
 

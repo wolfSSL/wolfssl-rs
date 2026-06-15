@@ -17,7 +17,7 @@ impl CmacKey {
     /// Cache raw AES key bytes for CMAC. Key must be 16, 24, or 32 bytes.
     pub(crate) fn cache(client: &mut Client, key_bytes: &[u8]) -> Result<Self, Error> {
         if !matches!(key_bytes.len(), 16 | 24 | 32) {
-            return Err(Error::BadArgs {
+            return Err(Error::InvalidInput {
                 msg: "key must be 16, 24, or 32 bytes",
             });
         }
@@ -27,7 +27,7 @@ impl CmacKey {
 
     /// Compute a 16-byte CMAC tag over data.
     pub fn compute(&self, client: &mut Client, data: &[u8]) -> Result<[u8; 16], Error> {
-        let in_len = u32::try_from(data.len()).map_err(|_| Error::BadArgs {
+        let in_len = u32::try_from(data.len()).map_err(|_| Error::InvalidInput {
             msg: "data exceeds u32::MAX bytes",
         })?;
         let mut out = [0u8; 16];

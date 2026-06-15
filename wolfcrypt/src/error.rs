@@ -23,7 +23,7 @@ pub enum WolfCryptError {
     InvalidInput,
     /// Signature verification completed without error but the signature did
     /// not verify (bad signature, wrong key, or tampered data).
-    SigInvalid,
+    SignatureInvalid,
 }
 
 impl WolfCryptError {
@@ -38,7 +38,7 @@ impl fmt::Display for WolfCryptError {
         match *self {
             Self::AllocFailed => write!(f, "wolfCrypt allocation failed"),
             Self::InvalidInput => write!(f, "invalid input length or format"),
-            Self::SigInvalid => write!(f, "signature verification failed"),
+            Self::SignatureInvalid => write!(f, "signature verification failed"),
             Self::Ffi { code, func } => write!(f, "{func} failed: wolfCrypt error {code}"),
         }
     }

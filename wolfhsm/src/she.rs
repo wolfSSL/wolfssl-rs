@@ -123,7 +123,7 @@ impl Client {
     /// Perform SHE secure boot: compute a CMAC over `bootloader` using the
     /// BOOT_MAC_KEY slot and verify against the stored boot MAC.
     pub fn she_secure_boot(&mut self, bootloader: &[u8]) -> Result<(), Error> {
-        let len = u32::try_from(bootloader.len()).map_err(|_| Error::BadArgs {
+        let len = u32::try_from(bootloader.len()).map_err(|_| Error::InvalidInput {
             msg: "she_secure_boot: bootloader exceeds u32::MAX bytes",
         })?;
         // SAFETY: wh_Client_SheSecureBoot reads `bootloader` but does not write
@@ -279,7 +279,7 @@ impl Client {
 
     /// Mix `entropy` into the SHE PRNG state (extend the seed).
     pub fn she_extend_seed(&mut self, entropy: &[u8]) -> Result<(), Error> {
-        let len = u32::try_from(entropy.len()).map_err(|_| Error::BadArgs {
+        let len = u32::try_from(entropy.len()).map_err(|_| Error::InvalidInput {
             msg: "she_extend_seed: entropy exceeds u32::MAX bytes",
         })?;
         // SAFETY: wh_Client_SheExtendSeed reads `entropy` but does not write
@@ -404,7 +404,7 @@ impl Client {
         key_id: SheKeyId,
         data: &[u8],
     ) -> Result<[u8; SHE_KEY_SZ], Error> {
-        let in_sz = u32::try_from(data.len()).map_err(|_| Error::BadArgs {
+        let in_sz = u32::try_from(data.len()).map_err(|_| Error::InvalidInput {
             msg: "she_generate_mac: data exceeds u32::MAX bytes",
         })?;
         let mut mac = [0u8; SHE_KEY_SZ];
@@ -437,7 +437,7 @@ impl Client {
         message: &[u8],
         mac: &[u8; SHE_KEY_SZ],
     ) -> Result<(), Error> {
-        let msg_len = u32::try_from(message.len()).map_err(|_| Error::BadArgs {
+        let msg_len = u32::try_from(message.len()).map_err(|_| Error::InvalidInput {
             msg: "she_verify_mac: message exceeds u32::MAX bytes",
         })?;
         let mut mac_buf = *mac;
@@ -458,7 +458,7 @@ impl Client {
         };
         Error::check(rc, "wh_Client_SheVerifyMac")?;
         if status != 0 {
-            return Err(Error::InvalidSignature);
+            return Err(Error::SignatureInvalid);
         }
         Ok(())
     }
@@ -467,11 +467,11 @@ impl Client {
 /// Validate that `len` is a non-zero multiple of the AES block size (16).
 fn validate_she_block_size(len: usize) -> Result<u32, Error> {
     if len == 0 || len % AES_BLOCK_SZ != 0 {
-        return Err(Error::BadArgs {
+        return Err(Error::InvalidInput {
             msg: "length must be a non-zero multiple of 16 bytes (AES block size)",
         });
     }
-    u32::try_from(len).map_err(|_| Error::BadArgs {
+    u32::try_from(len).map_err(|_| Error::InvalidInput {
         msg: "she: data length exceeds u32::MAX bytes",
     })
 }

@@ -8,7 +8,7 @@ use crate::error::Error;
 impl Client {
     /// One-shot SHA-256 hash via the HSM server.
     pub fn sha256(&mut self, data: &[u8]) -> Result<[u8; 32], Error> {
-        let in_len = u32::try_from(data.len()).map_err(|_| Error::BadArgs {
+        let in_len = u32::try_from(data.len()).map_err(|_| Error::InvalidInput {
             msg: "input exceeds u32::MAX bytes",
         })?;
         let mut out = [0u8; 32];
@@ -20,7 +20,7 @@ impl Client {
 
     /// One-shot SHA-384 hash via the HSM server.
     pub fn sha384(&mut self, data: &[u8]) -> Result<[u8; 48], Error> {
-        let in_len = u32::try_from(data.len()).map_err(|_| Error::BadArgs {
+        let in_len = u32::try_from(data.len()).map_err(|_| Error::InvalidInput {
             msg: "input exceeds u32::MAX bytes",
         })?;
         let mut out = [0u8; 48];
@@ -32,7 +32,7 @@ impl Client {
 
     /// One-shot SHA-512 hash via the HSM server.
     pub fn sha512(&mut self, data: &[u8]) -> Result<[u8; 64], Error> {
-        let in_len = u32::try_from(data.len()).map_err(|_| Error::BadArgs {
+        let in_len = u32::try_from(data.len()).map_err(|_| Error::InvalidInput {
             msg: "input exceeds u32::MAX bytes",
         })?;
         let mut out = [0u8; 64];

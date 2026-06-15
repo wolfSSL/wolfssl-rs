@@ -105,10 +105,10 @@ impl Client {
         username: &str,
         auth_data: &[u8],
     ) -> Result<UserId, Error> {
-        let cname = CString::new(username).map_err(|_| Error::BadArgs {
+        let cname = CString::new(username).map_err(|_| Error::InvalidInput {
             msg: "username contains an interior NUL byte",
         })?;
-        let auth_len = u16::try_from(auth_data.len()).map_err(|_| Error::BadArgs {
+        let auth_len = u16::try_from(auth_data.len()).map_err(|_| Error::InvalidInput {
             msg: "auth_data exceeds u16::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
@@ -152,10 +152,10 @@ impl Client {
         method: AuthMethod,
         credentials: &[u8],
     ) -> Result<UserId, Error> {
-        let cname = CString::new(username).map_err(|_| Error::BadArgs {
+        let cname = CString::new(username).map_err(|_| Error::InvalidInput {
             msg: "username contains an interior NUL byte",
         })?;
-        let cred_len = u16::try_from(credentials.len()).map_err(|_| Error::BadArgs {
+        let cred_len = u16::try_from(credentials.len()).map_err(|_| Error::InvalidInput {
             msg: "credentials exceed u16::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;
@@ -183,7 +183,7 @@ impl Client {
         &mut self,
         username: &str,
     ) -> Result<(UserId, AuthPermissions), Error> {
-        let cname = CString::new(username).map_err(|_| Error::BadArgs {
+        let cname = CString::new(username).map_err(|_| Error::InvalidInput {
             msg: "username contains an interior NUL byte",
         })?;
         let mut out_rc: i32 = 0;
@@ -247,10 +247,10 @@ impl Client {
         new_credentials: &[u8],
     ) -> Result<(), Error> {
         let cur_len =
-            u16::try_from(current_credentials.len()).map_err(|_| Error::BadArgs {
+            u16::try_from(current_credentials.len()).map_err(|_| Error::InvalidInput {
                 msg: "current_credentials exceed u16::MAX bytes",
             })?;
-        let new_len = u16::try_from(new_credentials.len()).map_err(|_| Error::BadArgs {
+        let new_len = u16::try_from(new_credentials.len()).map_err(|_| Error::InvalidInput {
             msg: "new_credentials exceed u16::MAX bytes",
         })?;
         let mut out_rc: i32 = 0;

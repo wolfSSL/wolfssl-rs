@@ -34,7 +34,7 @@ impl MlDsaKey {
     /// Generate an ML-DSA key at the given level (44, 65, or 87).
     pub(crate) fn generate(client: &mut Client, level: u8) -> Result<Self, Error> {
         if !matches!(level, 44 | 65 | 87) {
-            return Err(Error::BadArgs {
+            return Err(Error::InvalidInput {
                 msg: "MlDsaKey::generate: level must be 44, 65, or 87",
             });
         }
@@ -57,7 +57,7 @@ impl MlDsaKey {
     /// Sign a message. Signature size depends on level:
     /// level 44 → 2420 bytes, level 65 → 3309 bytes, level 87 → 4627 bytes.
     pub fn sign(&self, client: &mut Client, msg: &[u8]) -> Result<Vec<u8>, Error> {
-        let msg_len = u32::try_from(msg.len()).map_err(|_| Error::BadArgs {
+        let msg_len = u32::try_from(msg.len()).map_err(|_| Error::InvalidInput {
             msg: "mldsa sign: message exceeds u32::MAX bytes",
         })?;
         let cap = mldsa_sig_len(self.level);
@@ -87,10 +87,10 @@ impl MlDsaKey {
 
     /// Verify a signature. Returns `Ok(())` if valid.
     pub fn verify(&self, client: &mut Client, msg: &[u8], sig: &[u8]) -> Result<(), Error> {
-        let sig_len = u32::try_from(sig.len()).map_err(|_| Error::BadArgs {
+        let sig_len = u32::try_from(sig.len()).map_err(|_| Error::InvalidInput {
             msg: "mldsa verify: signature exceeds u32::MAX bytes",
         })?;
-        let msg_len = u32::try_from(msg.len()).map_err(|_| Error::BadArgs {
+        let msg_len = u32::try_from(msg.len()).map_err(|_| Error::InvalidInput {
             msg: "mldsa verify: message exceeds u32::MAX bytes",
         })?;
         let mut result: c_int = 0;
@@ -109,7 +109,7 @@ impl MlDsaKey {
         };
         Error::check(rc, "wolfhsm_mldsa_verify")?;
         if result != 1 {
-            return Err(Error::InvalidSignature);
+            return Err(Error::SignatureInvalid);
         }
         Ok(())
     }
