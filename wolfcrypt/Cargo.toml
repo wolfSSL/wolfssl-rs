@@ -6,8 +6,8 @@
 name = "wolfcrypt"
 authors = ["WolfSSL Inc"]
 version = "0.1.4"
-edition = "2021"
-rust-version = "1.71.0"
+edition = "2024"
+rust-version = "1.85"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 description = "RustCrypto trait implementations backed by wolfCrypt"
 homepage = "http://wolfssl.com"

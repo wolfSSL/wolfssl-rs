@@ -49,8 +49,7 @@ exclude = [
 ]
 resolver = "2"
 
-# Edition policy: edition 2021 is the workspace floor.
-# Exception: wolfcrypt-wrapper uses let-chains (edition 2024 feature).
+# Edition policy: edition 2024 across all workspace members (MSRV 1.85).
 
 [workspace.dependencies]
 bindgen = "0.72.0"

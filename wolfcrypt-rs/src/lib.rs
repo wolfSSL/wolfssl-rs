@@ -626,7 +626,7 @@ pub enum point_conversion_form_t {
 // Unconditional: RNG, AES init/free
 // ============================================================
 
-extern "C" {
+unsafe extern "C" {
     // wolfCrypt RNG
     pub fn wc_InitRng(rng: *mut WC_RNG) -> c_int;
     pub fn wc_InitRng_ex(rng: *mut WC_RNG, heap: *mut c_void, devId: c_int) -> c_int;
@@ -668,7 +668,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_openssl_extra)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_SHA1"]
     pub fn SHA1(data: *const u8, len: usize, md: *mut u8) -> *mut u8;
 
@@ -677,19 +677,19 @@ extern "C" {
 }
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_sha224))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_SHA224"]
     pub fn SHA224(data: *const u8, len: usize, md: *mut u8) -> *mut u8;
 }
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_sha384))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_SHA384"]
     pub fn SHA384(data: *const u8, len: usize, md: *mut u8) -> *mut u8;
 }
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_sha512))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_SHA512"]
     pub fn SHA512(data: *const u8, len: usize, md: *mut u8) -> *mut u8;
 }
@@ -705,7 +705,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_sha256)]
-extern "C" {
+unsafe extern "C" {
     /// Hash `len` bytes of `data` into the 32-byte buffer `hash`.
     #[link_name = "wc_Sha256Hash"]
     pub fn wc_Sha256Hash(data: *const u8, len: u32, hash: *mut u8) -> c_int;
@@ -720,7 +720,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_sha384)]
-extern "C" {
+unsafe extern "C" {
     /// Hash `len` bytes of `data` into the 48-byte buffer `hash`.
     #[link_name = "wc_Sha384Hash"]
     pub fn wc_Sha384Hash(data: *const u8, len: u32, hash: *mut u8) -> c_int;
@@ -735,7 +735,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_des3)]
-extern "C" {
+unsafe extern "C" {
     pub fn wolfcrypt_des3_enc_new(key: *const u8, iv: *const u8) -> *mut c_void;
     pub fn wolfcrypt_des3_dec_new(key: *const u8, iv: *const u8) -> *mut c_void;
     pub fn wolfcrypt_des3_cbc_encrypt(
@@ -754,7 +754,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_dh)]
-extern "C" {
+unsafe extern "C" {
     pub fn wolfcrypt_dh_new(name: c_int, group_sz: u32) -> *mut c_void;
     pub fn wolfcrypt_dh_generate_keypair(handle: *mut c_void) -> c_int;
     pub fn wolfcrypt_dh_public_key(handle: *mut c_void, out: *mut u8, out_len: *mut u32) -> c_int;
@@ -769,7 +769,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_rsa)]
-extern "C" {
+unsafe extern "C" {
     /// Allocate and initialise a wolfcrypt_rsa_ctx (RsaKey + WC_RNG).
     /// Returns NULL on allocation or initialisation failure.
     pub fn wolfcrypt_rsa_new() -> *mut c_void;
@@ -907,7 +907,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_cmac)]
-extern "C" {
+unsafe extern "C" {
     pub fn wolfcrypt_cmac_aes128_new(key: *const u8) -> *mut c_void;
     pub fn wolfcrypt_cmac_aes256_new(key: *const u8) -> *mut c_void;
     pub fn wolfcrypt_cmac_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
@@ -916,7 +916,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_hmac)]
-extern "C" {
+unsafe extern "C" {
     pub fn wolfcrypt_hmac_sha1_new(key: *const u8, keylen: u32) -> *mut c_void;
     pub fn wolfcrypt_hmac_sha256_new(key: *const u8, keylen: u32) -> *mut c_void;
     pub fn wolfcrypt_hmac_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
@@ -925,17 +925,17 @@ extern "C" {
 }
 
 #[cfg(all(wolfssl_hmac, wolfssl_sha384))]
-extern "C" {
+unsafe extern "C" {
     pub fn wolfcrypt_hmac_sha384_new(key: *const u8, keylen: u32) -> *mut c_void;
 }
 
 #[cfg(all(wolfssl_hmac, wolfssl_sha512))]
-extern "C" {
+unsafe extern "C" {
     pub fn wolfcrypt_hmac_sha512_new(key: *const u8, keylen: u32) -> *mut c_void;
 }
 
 #[cfg(wolfssl_sha1)]
-extern "C" {
+unsafe extern "C" {
     pub fn wolfcrypt_sha1_ctx_new() -> *mut c_void;
     pub fn wolfcrypt_sha1_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
     pub fn wolfcrypt_sha1_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
@@ -945,7 +945,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_sha224)]
-extern "C" {
+unsafe extern "C" {
     pub fn wolfcrypt_sha224_ctx_new() -> *mut c_void;
     pub fn wolfcrypt_sha224_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
     pub fn wolfcrypt_sha224_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
@@ -955,7 +955,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_sha512)]
-extern "C" {
+unsafe extern "C" {
     /// Hash `len` bytes of `data` into the 64-byte buffer `hash`.
     #[link_name = "wc_Sha512Hash"]
     pub fn wc_Sha512Hash(data: *const u8, len: u32, hash: *mut u8) -> c_int;
@@ -976,7 +976,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_sha3)]
-extern "C" {
+unsafe extern "C" {
     pub fn wolfcrypt_sha3_256_ctx_new() -> *mut c_void;
     pub fn wolfcrypt_sha3_256_update(ctx: *mut c_void, data: *const u8, len: u32) -> c_int;
     pub fn wolfcrypt_sha3_256_final(ctx: *mut c_void, hash: *mut u8) -> c_int;
@@ -1004,7 +1004,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_openssl_extra)]
-extern "C" {
+unsafe extern "C" {
     // ---- RAND ----
 
     #[link_name = "wolfSSL_RAND_bytes"]
@@ -1357,7 +1357,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_aes_ctr))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_aes_128_ctr"]
     pub fn EVP_aes_128_ctr() -> *const EVP_CIPHER;
     #[link_name = "wolfSSL_EVP_aes_192_ctr"]
@@ -1371,7 +1371,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_aes_ecb))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_aes_128_ecb"]
     pub fn EVP_aes_128_ecb() -> *const EVP_CIPHER;
     #[link_name = "wolfSSL_EVP_aes_192_ecb"]
@@ -1388,7 +1388,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_aes_cfb))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_aes_128_cfb128"]
     pub fn EVP_aes_128_cfb128() -> *const EVP_CIPHER;
     #[link_name = "wolfSSL_EVP_aes_192_cfb128"]
@@ -1413,7 +1413,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_des3))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_des_ede3_cbc"]
     pub fn EVP_des_ede3_cbc() -> *const EVP_CIPHER;
 }
@@ -1423,7 +1423,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_sha224))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_sha224"]
     pub fn EVP_sha224() -> *const EVP_MD;
 }
@@ -1433,7 +1433,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_sha384))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_sha384"]
     pub fn EVP_sha384() -> *const EVP_MD;
 }
@@ -1443,7 +1443,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_sha512))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_sha512"]
     pub fn EVP_sha512() -> *const EVP_MD;
 
@@ -1456,7 +1456,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_sha3))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_sha3_256"]
     pub fn EVP_sha3_256() -> *const EVP_MD;
 
@@ -1472,7 +1472,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_aes_gcm))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_aes_128_gcm"]
     pub fn EVP_aes_128_gcm() -> *const EVP_CIPHER;
     #[link_name = "wolfSSL_EVP_aes_192_gcm"]
@@ -1486,7 +1486,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_chacha20_poly1305))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_chacha20_poly1305"]
     pub fn EVP_chacha20_poly1305() -> *const EVP_CIPHER;
 }
@@ -1496,7 +1496,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_chacha))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EVP_chacha20"]
     pub fn EVP_chacha20() -> *const EVP_CIPHER;
 }
@@ -1506,7 +1506,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_aes_keywrap))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_AES_wrap_key"]
     pub fn AES_wrap_key(
         key: *const AES_KEY,
@@ -1533,7 +1533,7 @@ extern "C" {
 // iv = NULL → default IV (0xA6A6A6A6 A6A6A6A6).
 
 #[cfg(wolfssl_aes_keywrap)]
-extern "C" {
+unsafe extern "C" {
     /// Wrap `inSz` bytes of key data under the `keySz`-byte KEK.
     /// `iv` may be NULL to use the RFC 3394 default IV.
     /// Returns the number of bytes written (`inSz + 8`) on success,
@@ -1569,7 +1569,7 @@ extern "C" {
 // wolfSSL does not provide the padded variants natively.
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_aes_keywrap, wolfssl_aes_ecb))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfcrypt_AES_wrap_key_padded"]
     pub fn AES_wrap_key_padded(
         key: *const AES_KEY,
@@ -1596,7 +1596,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_hmac))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_HMAC_CTX_new"]
     pub fn HMAC_CTX_new() -> *mut HMAC_CTX;
 
@@ -1640,7 +1640,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_cmac))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_CMAC_CTX_new"]
     pub fn CMAC_CTX_new() -> *mut CMAC_CTX;
 
@@ -1668,7 +1668,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_ecc))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_EC_KEY_new"]
     pub fn EC_KEY_new() -> *mut EC_KEY;
     #[link_name = "wolfSSL_EC_KEY_free"]
@@ -1801,7 +1801,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_rsa))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_RSA_new"]
     pub fn RSA_new() -> *mut RSA;
     #[link_name = "wolfSSL_RSA_free"]
@@ -1852,7 +1852,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_dh))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_DH_new"]
     pub fn DH_new() -> *mut DH;
     #[link_name = "wolfSSL_DH_free"]
@@ -1898,7 +1898,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_ed25519)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_ed25519_init(key: *mut wc_ed25519_key) -> c_int;
     pub fn wc_ed25519_free(key: *mut wc_ed25519_key);
     pub fn wc_ed25519_import_private_key(
@@ -1969,7 +1969,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_ed448)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_ed448_init(key: *mut wc_ed448_key) -> c_int;
     pub fn wc_ed448_free(key: *mut wc_ed448_key);
     pub fn wc_ed448_import_private_key(
@@ -2036,7 +2036,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_curve25519)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_curve25519_init(key: *mut wc_curve25519_key) -> c_int;
     pub fn wc_curve25519_free(key: *mut wc_curve25519_key);
     // NOTE: wolfSSL signature has output params before input params
@@ -2094,7 +2094,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_curve448)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_curve448_init(key: *mut wc_curve448_key) -> c_int;
     pub fn wc_curve448_free(key: *mut wc_curve448_key);
     pub fn wc_curve448_make_key(
@@ -2150,7 +2150,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_hkdf)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_HKDF(
         hash_type: c_int,
         inKey: *const u8,
@@ -2188,7 +2188,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_pbkdf2))]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wolfSSL_PKCS5_PBKDF2_HMAC"]
     pub fn PKCS5_PBKDF2_HMAC(
         pass: *const c_char,
@@ -2207,7 +2207,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_pbkdf2)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_PBKDF2(
         output: *mut u8,
         passwd: *const u8,
@@ -2225,7 +2225,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_hmac))]
-extern "C" {
+unsafe extern "C" {
     /// TLS 1.2 PRF per RFC 5246 §5, implemented in compat_shim.c.
     /// No `#[link_name]` needed — the symbol is defined in our own shim.
     pub fn CRYPTO_tls1_prf(
@@ -2248,7 +2248,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(all(wolfssl_openssl_extra, wolfssl_hmac))]
-extern "C" {
+unsafe extern "C" {
     /// KBKDF Counter Mode with HMAC per NIST SP 800-108r1 §4.1.
     /// Implemented in compat_shim.c — no `#[link_name]` needed.
     pub fn KBKDF_ctr_hmac(
@@ -2293,7 +2293,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_poly1305)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_Poly1305SetKey(ctx: *mut poly1305_state, key: *const u8, keySz: u32) -> c_int;
 
     pub fn wc_Poly1305Update(ctx: *mut poly1305_state, input: *const u8, sz: u32) -> c_int;
@@ -2306,7 +2306,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_chacha)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_Chacha_SetKey(ctx: *mut ChaCha, key: *const u8, keySz: u32) -> c_int;
 
     pub fn wc_Chacha_SetIV(ctx: *mut ChaCha, iv: *const u8, counter: u32) -> c_int;
@@ -2324,7 +2324,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_aes_ctr)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_AesCtrEncrypt(aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32) -> c_int;
 }
 
@@ -2333,7 +2333,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_aes_gcm)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_AesGcmSetKey(aes: *mut WcAes, key: *const u8, len: u32) -> c_int;
     pub fn wc_AesGcmEncrypt(
         aes: *mut WcAes,
@@ -2373,7 +2373,7 @@ pub const CCM_NONCE_MIN_SZ: usize = 7;
 pub const CCM_NONCE_MAX_SZ: usize = 13;
 
 #[cfg(wolfssl_aes_ccm)]
-extern "C" {
+unsafe extern "C" {
     /// Set the encryption key for AES-CCM.
     #[link_name = "wc_AesCcmSetKey"]
     pub fn wc_AesCcmSetKey(aes: *mut WcAes, key: *const u8, keySz: u32) -> c_int;
@@ -2414,7 +2414,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_aes_gcm_stream)]
-extern "C" {
+unsafe extern "C" {
     /// Initialize AES-GCM streaming context with key and IV.
     #[link_name = "wc_AesGcmInit"]
     pub fn wc_AesGcmInit(
@@ -2483,7 +2483,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_tls13_hkdf)]
-extern "C" {
+unsafe extern "C" {
     /// TLS 1.3 HKDF-Extract: derive a PRK from salt + IKM.
     /// `digest` is a `WC_HASH_TYPE_*` constant (e.g. SHA256=4).
     #[link_name = "wc_Tls13_HKDF_Extract"]
@@ -2550,7 +2550,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_chacha20_poly1305)]
-extern "C" {
+unsafe extern "C" {
     pub fn wc_ChaCha20Poly1305_Encrypt(
         inKey: *const u8,
         inIV: *const u8,
@@ -2599,7 +2599,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_dilithium)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_dilithium_init"]
     pub fn wc_dilithium_init(key: *mut wc_dilithium_key) -> c_int;
 
@@ -2768,7 +2768,7 @@ pub const WC_ML_KEM_1024_PRIVATE_KEY_SIZE: usize = 3168;
 pub const WC_ML_KEM_1024_CIPHER_TEXT_SIZE: usize = 1568;
 
 #[cfg(wolfssl_mlkem)]
-extern "C" {
+unsafe extern "C" {
     /// Allocate a new ML-KEM key on the heap.
     /// `type_` is one of `WC_ML_KEM_512`, `WC_ML_KEM_768`, `WC_ML_KEM_1024`.
     /// `heap` and `devId` are typically null/`INVALID_DEVID`.
@@ -2865,7 +2865,7 @@ impl WcBlake2b {
 }
 
 #[cfg(wolfssl_blake2b)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_InitBlake2b"]
     pub fn wc_InitBlake2b(b2b: *mut WcBlake2b, digestSz: u32) -> c_int;
     #[link_name = "wc_InitBlake2b_WithKey"]
@@ -2910,7 +2910,7 @@ impl WcBlake2s {
 }
 
 #[cfg(wolfssl_blake2s)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_InitBlake2s"]
     pub fn wc_InitBlake2s(b2s: *mut WcBlake2s, digestSz: u32) -> c_int;
     #[link_name = "wc_InitBlake2s_WithKey"]
@@ -2955,7 +2955,7 @@ impl WcShake {
 }
 
 #[cfg(wolfssl_shake128)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_InitShake128"]
     pub fn wc_InitShake128(shake: *mut WcShake, heap: *mut c_void, devId: c_int) -> c_int;
     #[link_name = "wc_Shake128_Update"]
@@ -2971,7 +2971,7 @@ extern "C" {
 }
 
 #[cfg(wolfssl_shake256)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_InitShake256"]
     pub fn wc_InitShake256(shake: *mut WcShake, heap: *mut c_void, devId: c_int) -> c_int;
     #[link_name = "wc_Shake256_Update"]
@@ -3015,7 +3015,7 @@ impl XtsAes {
 }
 
 #[cfg(wolfssl_aes_xts)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_AesXtsInit"]
     pub fn wc_AesXtsInit(xts: *mut XtsAes, heap: *mut c_void, devId: c_int) -> c_int;
     #[link_name = "wc_AesXtsSetKeyNoInit"]
@@ -3047,7 +3047,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_aes_ofb)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_AesOfbEncrypt"]
     pub fn wc_AesOfbEncrypt(aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32) -> c_int;
     #[link_name = "wc_AesOfbDecrypt"]
@@ -3062,7 +3062,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_aes_cfb)]
-extern "C" {
+unsafe extern "C" {
     /// Encrypt `sz` bytes of `in_` into `out` using AES-CFB-128.
     /// `aes` must be initialised with `wc_AesInit` + `wc_AesSetKey`
     /// (direction = `AES_ENCRYPTION`; CFB always uses the encrypt schedule).
@@ -3082,7 +3082,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_aes_cts)]
-extern "C" {
+unsafe extern "C" {
     // One-shot API
     #[link_name = "wc_AesCtsEncrypt"]
     pub fn wc_AesCtsEncrypt(
@@ -3131,7 +3131,7 @@ extern "C" {
 // ============================================================
 
 #[cfg(wolfssl_aes_eax)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_AesEaxEncryptAuth"]
     pub fn wc_AesEaxEncryptAuth(
         key: *const u8,
@@ -3182,7 +3182,7 @@ pub const ECC_SECP521R1: c_int = 16;
 pub const ECC_SECP256K1: c_int = 20;
 
 #[cfg(wolfssl_ecc)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_ecc_key_new"]
     pub fn wc_ecc_key_new(heap: *mut c_void) -> *mut wc_ecc_key;
     #[link_name = "wc_ecc_key_free"]
@@ -3319,7 +3319,7 @@ impl WcLmsKey {
 }
 
 #[cfg(wolfssl_lms)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_LmsKey_Init"]
     pub fn wc_LmsKey_Init(key: *mut WcLmsKey, heap: *mut c_void, devId: c_int) -> c_int;
     #[link_name = "wc_LmsKey_SetParameters"]
@@ -3404,7 +3404,7 @@ extern "C" {
 // KDF functions (wolfCrypt native, no structs)
 // ============================================================
 
-extern "C" {
+unsafe extern "C" {
     /// TLS PRF per wolfSSL's implementation.
     /// `hash` is a `wc_HashType` constant (e.g., `WC_HASH_TYPE_SHA256`).
     #[link_name = "wc_PRF"]
@@ -3531,7 +3531,7 @@ pub struct RsaKey {
 }
 
 #[cfg(wolfssl_rsa)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "wc_NewRsaKey"]
     pub fn wc_NewRsaKey(heap: *mut c_void, devId: c_int, result_code: *mut c_int) -> *mut RsaKey;
     #[link_name = "wc_DeleteRsaKey"]
@@ -3738,7 +3738,7 @@ pub const WC_PK_TYPE_ED25519_SIGN: c_int = 12;
 pub const WC_PK_TYPE_ED25519_VERIFY: c_int = 13;
 
 #[cfg(wolfssl_cryptocb)]
-extern "C" {
+unsafe extern "C" {
     /// Register a crypto callback for a given device ID.
     ///
     /// `devId` must not be `INVALID_DEVID`. `cb` is the C callback function.
@@ -3989,7 +3989,7 @@ pub const HPKE_Npk_MAX: usize = 133;
 pub const HPKE_Nt_MAX: usize = 16;
 
 #[cfg(wolfssl_hpke)]
-extern "C" {
+unsafe extern "C" {
     /// Initialize an HPKE context with the given suite.
     #[link_name = "wc_HpkeInit"]
     pub fn wc_HpkeInit(

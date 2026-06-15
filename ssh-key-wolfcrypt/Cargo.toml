@@ -14,7 +14,7 @@ categories = ["cryptography"]
 homepage = "http://wolfssl.com"
 repository = "https://github.com/wolfSSL/wolfssl-rs"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
-edition = "2021"
+edition = "2024"
 rust-version = "1.85"
 publish = false
 

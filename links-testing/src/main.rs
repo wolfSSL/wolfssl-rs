@@ -1,6 +1,6 @@
 use std::ffi::{c_char, c_int, CStr};
 
-extern "C" {
+unsafe extern "C" {
     fn testing_get_error_string(error: c_int) -> *const c_char;
 }
 

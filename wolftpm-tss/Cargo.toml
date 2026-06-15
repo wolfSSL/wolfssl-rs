@@ -1,8 +1,8 @@
 [package]
 name = "wolftpm-tss"
 version = "0.2.0"
-edition = "2021"
-rust-version = "1.71"
+edition = "2024"
+rust-version = "1.85"
 description = "wolfTPM backend for the tpm-rs / TSS Rust ecosystem"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 repository = "https://github.com/wolfSSL/wolfssl-rs"

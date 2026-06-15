@@ -2,7 +2,7 @@
 name = "wolfcrypt-dpe"
 authors = ["WolfSSL Inc"]
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 description = "Caliptra DPE Crypto trait implementation backed by wolfCrypt"
 homepage = "http://wolfssl.com"
