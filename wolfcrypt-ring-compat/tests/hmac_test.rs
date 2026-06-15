@@ -104,10 +104,10 @@ fn hmac_traits() {
 #[test]
 fn hmac_thread_safeness() {
     use std::thread;
-    lazy_static::lazy_static! {
-        static ref SECRET_KEY: hmac::Key = hmac::Key::new(hmac::HMAC_SHA256, b"this is a test!");
-        static ref MSG: Vec<u8> = vec![1u8; 256];
-    }
+    use std::sync::LazyLock;
+    static SECRET_KEY: LazyLock<hmac::Key> =
+        LazyLock::new(|| hmac::Key::new(hmac::HMAC_SHA256, b"this is a test!"));
+    static MSG: LazyLock<Vec<u8>> = LazyLock::new(|| vec![1u8; 256]);
 
     let signature = sign(&SECRET_KEY, &MSG);
 

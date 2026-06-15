@@ -557,12 +557,13 @@ fn test_aead_traits() {
 
 #[test]
 fn test_aead_thread_safeness() {
-    lazy_static::lazy_static! {
-        /// Compute the Initial salt once, as the seed is constant
-        static ref SECRET_KEY: aead::LessSafeKey = aead::LessSafeKey::new(
+    use std::sync::LazyLock;
+    /// Compute the Initial salt once, as the seed is constant
+    static SECRET_KEY: LazyLock<aead::LessSafeKey> = LazyLock::new(|| {
+        aead::LessSafeKey::new(
             aead::UnboundKey::new(&aead::AES_128_GCM, b"this is a test! ").unwrap(),
-        );
-    }
+        )
+    });
     use std::thread;
 
     let tag = SECRET_KEY

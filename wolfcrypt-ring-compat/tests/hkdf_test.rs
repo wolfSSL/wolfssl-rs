@@ -179,10 +179,10 @@ fn hkdf_clone_tests() {
 fn hkdf_thread_safeness() {
     use std::thread;
 
-    lazy_static::lazy_static! {
-        /// Compute the Initial salt once, as the seed is constant
-        static ref SECRET_KEY: hkdf::Salt = hkdf::Salt::new(hkdf::HKDF_SHA256, b"this is a test!");
-    }
+    use std::sync::LazyLock;
+    /// Compute the Initial salt once, as the seed is constant
+    static SECRET_KEY: LazyLock<hkdf::Salt> =
+        LazyLock::new(|| hkdf::Salt::new(hkdf::HKDF_SHA256, b"this is a test!"));
 
     // Compute the OKM, so we have something to compare to.
     let okm: My<Vec<u8>> = SECRET_KEY

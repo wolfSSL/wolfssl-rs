@@ -61,7 +61,6 @@ zeroize.workspace = true
 
 [dev-dependencies]
 paste.workspace = true
-lazy_static.workspace = true
 clap = { workspace = true, features = ["derive"] }
 hex.workspace = true
 regex.workspace = true
