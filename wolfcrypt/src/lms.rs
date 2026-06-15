@@ -380,7 +380,18 @@ impl LmsSigningKey {
 
     /// Sign a message, consuming one one-time leaf.
     ///
-    /// Returns the DER-encoded LMS/HSS signature.
+    /// # State mutation
+    ///
+    /// LMS is **stateful**: this call advances the internal one-time signature
+    /// index. The caller **must** persist the updated private key state (via
+    /// the write callback) before calling `sign` again. Failure to persist
+    /// means a one-time leaf may be reused, breaking the security guarantee.
+    ///
+    /// Use [`remaining_signatures`](Self::remaining_signatures) to check how
+    /// many signatures remain. When the key is exhausted, this method returns
+    /// [`WolfCryptError::Ffi`] with the wolfCrypt `KEY_EXHAUSTED_E` code.
+    ///
+    /// Returns the LMS/HSS signature bytes.
     pub fn sign(&mut self, msg: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
         let mut sig_len: u32 = 0;
         // SAFETY: self.key is fully initialised with parameters set.

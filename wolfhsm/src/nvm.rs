@@ -24,6 +24,76 @@ pub(crate) fn truncate_label(label: &[u8]) -> ([u8; NVM_LABEL_LEN], usize) {
     (buf, len)
 }
 
+/// NVM access control flags (corresponds to `WH_NVM_ACCESS_*` in `wh_common.h`).
+///
+/// Bitfield — combine with `|`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NvmAccess(pub u16);
+
+impl NvmAccess {
+    /// No access restrictions.
+    pub const NONE: Self = Self(0);
+    /// Allow all access (owner + other + user).
+    pub const ANY: Self = Self(0xFFFF);
+    /// Owner-read permission.
+    pub const READ: Self = Self(1 << 0);
+    /// Owner-write permission.
+    pub const WRITE: Self = Self(1 << 1);
+    /// Owner-execute permission.
+    pub const EXEC: Self = Self(1 << 2);
+}
+
+impl core::ops::BitOr for NvmAccess {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self {
+        Self(self.0 | rhs.0)
+    }
+}
+
+/// NVM object attribute flags (corresponds to `WH_NVM_FLAGS_*` in `wh_common.h`).
+///
+/// Bitfield — combine with `|`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NvmFlags(pub u16);
+
+impl NvmFlags {
+    /// No special attributes (default).
+    pub const NONE: Self = Self(0);
+    /// Object cannot be modified after creation.
+    pub const NON_MODIFIABLE: Self = Self(1 << 0);
+    /// Object contains sensitive material (key, secret).
+    pub const SENSITIVE: Self = Self(1 << 1);
+    /// Object cannot be exported from the HSM.
+    pub const NON_EXPORTABLE: Self = Self(1 << 2);
+    /// Object was generated locally (not imported).
+    pub const LOCAL: Self = Self(1 << 3);
+    /// Object is ephemeral (not persisted across reboots).
+    pub const EPHEMERAL: Self = Self(1 << 4);
+    /// Permit encrypt operations.
+    pub const USAGE_ENCRYPT: Self = Self(1 << 5);
+    /// Permit decrypt operations.
+    pub const USAGE_DECRYPT: Self = Self(1 << 6);
+    /// Permit sign operations.
+    pub const USAGE_SIGN: Self = Self(1 << 7);
+    /// Permit verify operations.
+    pub const USAGE_VERIFY: Self = Self(1 << 8);
+    /// Permit wrap operations.
+    pub const USAGE_WRAP: Self = Self(1 << 9);
+    /// Permit derive operations.
+    pub const USAGE_DERIVE: Self = Self(1 << 10);
+    /// Object cannot be destroyed.
+    pub const NON_DESTROYABLE: Self = Self(1 << 11);
+    /// Allow all flags.
+    pub const ANY: Self = Self(0xFFFF);
+}
+
+impl core::ops::BitOr for NvmFlags {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self {
+        Self(self.0 | rhs.0)
+    }
+}
+
 /// Available and reclaimable NVM space reported by the wolfHSM server.
 #[derive(Debug, Clone, Copy)]
 pub struct NvmAvailability {
@@ -72,12 +142,10 @@ impl From<NvmId> for u16 {
 pub struct NvmMetadata {
     /// Unique NVM object identifier.
     pub id: NvmId,
-    /// Access control flags. Corresponds to `WH_NVM_ACCESS_*` constants in
-    /// `wolfhsm/wh_nvm.h`. Pass `0` for unrestricted access.
-    pub access: u16,
-    /// Object attribute flags. Corresponds to `WH_NVM_FLAGS_*` constants in
-    /// `wolfhsm/wh_nvm.h`. Pass `0` for default attributes.
-    pub flags: u16,
+    /// Access control flags.
+    pub access: NvmAccess,
+    /// Object attribute flags.
+    pub flags: NvmFlags,
     /// Data length in bytes as reported by the wolfHSM server.
     pub len: u16,
     /// Raw label bytes (NUL-padded to 24 bytes). Use [`label_str`][NvmMetadata::label_str] for a `&str` view.
@@ -236,8 +304,8 @@ impl Client {
 
         Ok(NvmMetadata {
             id: NvmId(out_id),
-            access: out_access,
-            flags: out_flags,
+            access: NvmAccess(out_access),
+            flags: NvmFlags(out_flags),
             len: out_len,
             label,
         })
@@ -344,8 +412,8 @@ impl Client {
     pub fn nvm_add(
         &mut self,
         id: NvmId,
-        access: u16,
-        flags: u16,
+        access: NvmAccess,
+        flags: NvmFlags,
         label: impl AsRef<[u8]>,
         data: &[u8],
     ) -> Result<(), Error> {
@@ -365,8 +433,8 @@ impl Client {
             wh_Client_NvmAddObject(
                 self.ctx_ptr(),
                 id.0,
-                access,
-                flags,
+                access.0,
+                flags.0,
                 label_len as u16,
                 label_buf.as_mut_ptr(),
                 data_len,
@@ -402,8 +470,8 @@ impl Client {
     pub fn nvm_overwrite(
         &mut self,
         id: NvmId,
-        access: u16,
-        flags: u16,
+        access: NvmAccess,
+        flags: NvmFlags,
         label: impl AsRef<[u8]>,
         data: &[u8],
     ) -> Result<(), Error> {
@@ -433,8 +501,8 @@ impl Client {
             wh_Client_NvmAddObject(
                 self.ctx_ptr(),
                 id.0,
-                access,
-                flags,
+                access.0,
+                flags.0,
                 label_len as u16,
                 label_buf.as_mut_ptr(),
                 data_len,

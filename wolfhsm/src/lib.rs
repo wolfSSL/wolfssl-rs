@@ -90,7 +90,7 @@ pub mod key;
 pub use key::KeyId;
 
 pub mod nvm;
-pub use nvm::{NvmAvailability, NvmId, NvmMetadata};
+pub use nvm::{NvmAccess, NvmAvailability, NvmFlags, NvmId, NvmMetadata};
 
 pub mod counter;
 
