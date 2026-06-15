@@ -70,6 +70,7 @@ impl From<NvmId> for u16 {
 /// Metadata about an NVM object.
 #[derive(Debug, Clone)]
 pub struct NvmMetadata {
+    /// Unique NVM object identifier.
     pub id: NvmId,
     /// Access control flags. Corresponds to `WH_NVM_ACCESS_*` constants in
     /// `wolfhsm/wh_nvm.h`. Pass `0` for unrestricted access.
