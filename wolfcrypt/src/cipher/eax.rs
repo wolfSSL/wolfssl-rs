@@ -28,6 +28,7 @@ pub fn aes_eax_encrypt(
         return Err(WolfCryptError::InvalidInput);
     }
 
+    // SAFETY: All pointers/lengths derive from valid slices; one-shot stateless call.
     let rc = unsafe {
         wolfcrypt_rs::wc_AesEaxEncryptAuth(
             key.as_ptr(),
@@ -72,6 +73,7 @@ pub fn aes_eax_decrypt(
         return Err(WolfCryptError::InvalidInput);
     }
 
+    // SAFETY: All pointers/lengths derive from valid slices; one-shot stateless call.
     let rc = unsafe {
         wolfcrypt_rs::wc_AesEaxDecryptAuth(
             key.as_ptr(),

@@ -85,6 +85,7 @@ impl DhSecret {
         // SAFETY: ctx is a valid, fully-parametrised DhKey context.
         let rc = unsafe { wolfcrypt_rs::wolfcrypt_dh_generate_keypair(ctx) };
         if rc != 0 {
+            // SAFETY: ctx was allocated by wolfcrypt_dh_new; must free on error.
             unsafe { wolfcrypt_rs::wolfcrypt_dh_free(ctx) };
             return Err(WolfCryptError::Ffi {
                 code: rc,

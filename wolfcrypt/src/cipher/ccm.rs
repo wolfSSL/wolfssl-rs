@@ -237,6 +237,7 @@ pub fn aes_ccm_encrypt(
 
     let mut aes = wolfcrypt_rs::WcAes::zeroed();
 
+    // SAFETY: `aes` is freshly zeroed; null heap + INVALID_DEVID is the standard init.
     let rc = unsafe {
         wolfcrypt_rs::wc_AesInit(
             &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -246,6 +247,7 @@ pub fn aes_ccm_encrypt(
     };
     check(rc, "wc_AesInit")?;
 
+    // SAFETY: `aes` was initialised by wc_AesInit; key slice is valid.
     let rc = unsafe {
         wolfcrypt_rs::wc_AesCcmSetKey(
             &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -254,6 +256,7 @@ pub fn aes_ccm_encrypt(
         )
     };
     if rc != 0 {
+        // SAFETY: `aes` was initialised by wc_AesInit; we must free before returning.
         unsafe {
             wolfcrypt_rs::wc_AesFree(&mut aes);
         }
@@ -269,6 +272,7 @@ pub fn aes_ccm_encrypt(
         aad.as_ptr()
     };
 
+    // SAFETY: `aes` is keyed; all pointers/lengths derive from valid slices.
     let rc = unsafe {
         wolfcrypt_rs::wc_AesCcmEncrypt(
             &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -284,6 +288,7 @@ pub fn aes_ccm_encrypt(
         )
     };
 
+    // SAFETY: `aes` was initialised by wc_AesInit; freeing after use.
     unsafe {
         wolfcrypt_rs::wc_AesFree(&mut aes);
     }
@@ -324,6 +329,7 @@ pub fn aes_ccm_decrypt(
 
     let mut aes = wolfcrypt_rs::WcAes::zeroed();
 
+    // SAFETY: `aes` is freshly zeroed; null heap + INVALID_DEVID is the standard init.
     let rc = unsafe {
         wolfcrypt_rs::wc_AesInit(
             &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -333,6 +339,7 @@ pub fn aes_ccm_decrypt(
     };
     check(rc, "wc_AesInit")?;
 
+    // SAFETY: `aes` was initialised by wc_AesInit; key slice is valid.
     let rc = unsafe {
         wolfcrypt_rs::wc_AesCcmSetKey(
             &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -341,6 +348,7 @@ pub fn aes_ccm_decrypt(
         )
     };
     if rc != 0 {
+        // SAFETY: `aes` was initialised by wc_AesInit; we must free before returning.
         unsafe {
             wolfcrypt_rs::wc_AesFree(&mut aes);
         }
@@ -356,6 +364,7 @@ pub fn aes_ccm_decrypt(
         aad.as_ptr()
     };
 
+    // SAFETY: `aes` is keyed; all pointers/lengths derive from valid slices.
     let rc = unsafe {
         wolfcrypt_rs::wc_AesCcmDecrypt(
             &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -371,6 +380,7 @@ pub fn aes_ccm_decrypt(
         )
     };
 
+    // SAFETY: `aes` was initialised by wc_AesInit; freeing after use.
     unsafe {
         wolfcrypt_rs::wc_AesFree(&mut aes);
     }

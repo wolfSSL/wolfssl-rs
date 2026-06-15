@@ -335,36 +335,42 @@ unsafe extern "C" fn trampoline(
         return wolfcrypt_rs::CRYPTOCB_UNAVAILABLE;
     }
 
+    // SAFETY: ctx was checked non-null above and points to a live DeviceState allocated in register_device
     let state = unsafe { &*(ctx as *const DeviceState) };
     let info_c = info as *const wolfcrypt_rs::wc_CryptoInfo;
     let info_m = info;
 
+    // SAFETY: info_c was checked non-null and is a valid wc_CryptoInfo pointer from wolfCrypt
     let algo_type = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_get_algo_type(info_c) };
 
     let result = match algo_type {
         wolfcrypt_rs::WC_ALGO_TYPE_RNG => {
+            // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessor returns the RNG output pointer and size
             let out_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_rng_out(info_c) };
             let sz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_rng_sz(info_c) } as usize;
             if out_ptr.is_null() || sz == 0 {
                 return wolfcrypt_rs::CRYPTOCB_UNAVAILABLE;
             }
+            // SAFETY: out_ptr is non-null (checked above) and sz bytes are allocated by wolfCrypt
             let out = unsafe { core::slice::from_raw_parts_mut(out_ptr, sz) };
             state.callbacks.rng(RngRequest { out })
         }
 
         wolfcrypt_rs::WC_ALGO_TYPE_HASH => {
+            // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessors extract hash fields
             let hash_type = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hash_type(info_c) };
             let in_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hash_in(info_c) };
             let in_sz =
                 unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hash_in_sz(info_c) } as usize;
             let digest_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hash_digest(info_c) };
 
+            // SAFETY: in_ptr/digest_ptr are checked non-null; sizes come from wolfCrypt's wc_CryptoInfo
             let input = if !in_ptr.is_null() && in_sz > 0 {
                 unsafe { core::slice::from_raw_parts(in_ptr, in_sz) }
             } else {
                 &[]
             };
-            // Conservative upper bound: 64 bytes covers SHA-512.
+            // SAFETY: digest_ptr is non-null (checked below); 64 bytes covers SHA-512 (conservative upper bound)
             let digest = if digest_ptr.is_null() {
                 None
             } else {
@@ -378,17 +384,20 @@ unsafe extern "C" fn trampoline(
         }
 
         wolfcrypt_rs::WC_ALGO_TYPE_HMAC => {
+            // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessors extract HMAC fields
             let mac_type = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hmac_mac_type(info_c) };
             let in_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hmac_in(info_c) };
             let in_sz =
                 unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hmac_in_sz(info_c) } as usize;
             let digest_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_hmac_digest(info_c) };
 
+            // SAFETY: in_ptr/digest_ptr are checked non-null; sizes come from wolfCrypt's wc_CryptoInfo
             let input = if !in_ptr.is_null() && in_sz > 0 {
                 unsafe { core::slice::from_raw_parts(in_ptr, in_sz) }
             } else {
                 &[]
             };
+            // SAFETY: digest_ptr is non-null (checked below); 64 bytes covers SHA-512 (conservative upper bound)
             let digest = if digest_ptr.is_null() {
                 None
             } else {
@@ -402,6 +411,7 @@ unsafe extern "C" fn trampoline(
         }
 
         wolfcrypt_rs::WC_ALGO_TYPE_CIPHER => {
+            // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessors extract cipher fields
             let cipher_type = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_type(info_c) };
             let enc = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_enc(info_c) };
 
@@ -419,6 +429,7 @@ unsafe extern "C" fn trampoline(
         }
 
         wolfcrypt_rs::WC_ALGO_TYPE_PK => {
+            // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessor extracts PK type field
             let pk_type = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_type(info_c) };
 
             #[cfg(wolfssl_ecc)]
@@ -457,45 +468,54 @@ unsafe fn build_cipher_aesgcm(
     encrypting: bool,
 ) -> c_int {
     if encrypting {
+        // SAFETY: info_c/info_m are valid wc_CryptoInfo pointers; accessors extract AES-GCM encrypt fields
         let aes = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_aes(info_c) };
         let out = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_out(info_m) };
         let inp = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_in(info_c) };
         let sz =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_sz(info_c) } as usize;
+        // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessors extract IV, tag, and AAD fields
         let iv = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_iv(info_c) };
         let ivsz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_iv_sz(info_c) }
             as usize;
+        // SAFETY: info_c/info_m are valid wc_CryptoInfo pointers; accessors extract tag and AAD fields
         let tag =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag(info_m) };
         let tagsz =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_tag_sz(info_c) }
                 as usize;
+        // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessors extract AAD pointer and size
         let ain =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in(info_c) };
         let ainsz =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_enc_auth_in_sz(info_c) }
                 as usize;
 
+        // SAFETY: each pointer is checked non-null and size comes from the corresponding wc_CryptoInfo field
         let input = if !inp.is_null() && sz > 0 {
             unsafe { core::slice::from_raw_parts(inp, sz) }
         } else {
             &[]
         };
+        // SAFETY: out is non-null (checked); sz bytes are allocated by wolfCrypt for ciphertext output
         let out_sl = if !out.is_null() && sz > 0 {
             unsafe { core::slice::from_raw_parts_mut(out, sz) }
         } else {
             &mut []
         };
+        // SAFETY: iv is non-null (checked); ivsz bytes are the IV/nonce from wc_CryptoInfo
         let iv_sl = if !iv.is_null() && ivsz > 0 {
             unsafe { core::slice::from_raw_parts(iv, ivsz) }
         } else {
             &[]
         };
+        // SAFETY: tag/ain are non-null (checked); tagsz/ainsz from wc_CryptoInfo fields
         let tag_sl = if !tag.is_null() && tagsz > 0 {
             unsafe { core::slice::from_raw_parts_mut(tag, tagsz) }
         } else {
             &mut []
         };
+        // SAFETY: ain is non-null (checked); ainsz bytes from wc_CryptoInfo AAD field
         let auth_in = if !ain.is_null() && ainsz > 0 {
             unsafe { core::slice::from_raw_parts(ain, ainsz) }
         } else {
@@ -514,45 +534,54 @@ unsafe fn build_cipher_aesgcm(
             }))
             .to_c()
     } else {
+        // SAFETY: info_c/info_m are valid wc_CryptoInfo pointers; accessors extract AES-GCM decrypt fields
         let aes = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_aes(info_c) };
         let out = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_out(info_m) };
         let inp = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_in(info_c) };
         let sz =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_sz(info_c) } as usize;
+        // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessors extract IV, tag, and AAD fields
         let iv = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_iv(info_c) };
         let ivsz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_iv_sz(info_c) }
             as usize;
+        // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessors extract tag and AAD fields
         let tag =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag(info_c) };
         let tagsz =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_tag_sz(info_c) }
                 as usize;
+        // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessors extract AAD pointer and size
         let ain =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in(info_c) };
         let ainsz =
             unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aesgcm_dec_auth_in_sz(info_c) }
                 as usize;
 
+        // SAFETY: each pointer is checked non-null and size comes from the corresponding wc_CryptoInfo field
         let input = if !inp.is_null() && sz > 0 {
             unsafe { core::slice::from_raw_parts(inp, sz) }
         } else {
             &[]
         };
+        // SAFETY: out is non-null (checked); sz bytes are allocated by wolfCrypt for plaintext output
         let out_sl = if !out.is_null() && sz > 0 {
             unsafe { core::slice::from_raw_parts_mut(out, sz) }
         } else {
             &mut []
         };
+        // SAFETY: iv is non-null (checked); ivsz bytes are the IV/nonce from wc_CryptoInfo
         let iv_sl = if !iv.is_null() && ivsz > 0 {
             unsafe { core::slice::from_raw_parts(iv, ivsz) }
         } else {
             &[]
         };
+        // SAFETY: tag/ain are non-null (checked); tagsz/ainsz from wc_CryptoInfo fields
         let tag_sl = if !tag.is_null() && tagsz > 0 {
             unsafe { core::slice::from_raw_parts(tag, tagsz) }
         } else {
             &[]
         };
+        // SAFETY: ain is non-null (checked); ainsz bytes from wc_CryptoInfo AAD field
         let auth_in = if !ain.is_null() && ainsz > 0 {
             unsafe { core::slice::from_raw_parts(ain, ainsz) }
         } else {
@@ -579,16 +608,19 @@ unsafe fn build_cipher_aescbc(
     info_m: *mut wolfcrypt_rs::wc_CryptoInfo,
     encrypting: bool,
 ) -> c_int {
+    // SAFETY: info_c/info_m are valid wc_CryptoInfo pointers; accessors extract AES-CBC fields
     let aes = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aescbc_aes(info_c) };
     let out = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aescbc_out(info_m) };
     let inp = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aescbc_in(info_c) };
     let sz = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_cipher_aescbc_sz(info_c) } as usize;
 
+    // SAFETY: each pointer is checked non-null and sz comes from the wc_CryptoInfo field
     let input = if !inp.is_null() && sz > 0 {
         unsafe { core::slice::from_raw_parts(inp, sz) }
     } else {
         &[]
     };
+    // SAFETY: out is non-null (checked) and sz bytes are allocated by wolfCrypt
     let out_sl = if !out.is_null() && sz > 0 {
         unsafe { core::slice::from_raw_parts_mut(out, sz) }
     } else {
@@ -612,13 +644,16 @@ unsafe fn build_pk_ecdsasign(
     info_c: *const wolfcrypt_rs::wc_CryptoInfo,
     info_m: *mut wolfcrypt_rs::wc_CryptoInfo,
 ) -> c_int {
+    // SAFETY: info_c/info_m are valid wc_CryptoInfo pointers; accessors extract ECDSA sign fields
     let key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_key(info_c) };
     let in_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_in(info_c) };
     let inlen = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_inlen(info_c) } as usize;
     let out_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_out(info_m) };
     let out_len = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_outlen(info_m) };
+    // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessor extracts the RNG field
     let rng = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccsign_rng(info_c) };
 
+    // SAFETY: pointers are checked non-null; sizes come from wolfCrypt's wc_CryptoInfo fields
     let hash = if !in_ptr.is_null() && inlen > 0 {
         unsafe { core::slice::from_raw_parts(in_ptr, inlen) }
     } else {
@@ -627,6 +662,7 @@ unsafe fn build_pk_ecdsasign(
     let cap = if out_len.is_null() {
         0
     } else {
+        // SAFETY: out_len is non-null (checked above) and points to a valid u32 in wc_CryptoInfo
         (unsafe { *out_len }) as usize
     };
     let out = if !out_ptr.is_null() && cap > 0 {
@@ -653,20 +689,24 @@ unsafe fn build_pk_ecdsaverify(
     info_c: *const wolfcrypt_rs::wc_CryptoInfo,
     info_m: *mut wolfcrypt_rs::wc_CryptoInfo,
 ) -> c_int {
+    // SAFETY: info_c/info_m are valid wc_CryptoInfo pointers; accessors extract ECDSA verify fields
     let key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_key(info_c) };
     let sig_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_sig(info_c) };
     let siglen =
         unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_siglen(info_c) } as usize;
+    // SAFETY: info_c/info_m are valid wc_CryptoInfo pointers; accessors extract hash, hashlen, and result
     let hash_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_hash(info_c) };
     let hashlen =
         unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_hashlen(info_c) } as usize;
     let result = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eccverify_res(info_m) };
 
+    // SAFETY: pointers are checked non-null; sizes come from wolfCrypt's wc_CryptoInfo fields
     let sig = if !sig_ptr.is_null() && siglen > 0 {
         unsafe { core::slice::from_raw_parts(sig_ptr, siglen) }
     } else {
         &[]
     };
+    // SAFETY: hash_ptr is non-null (checked); hashlen bytes from wc_CryptoInfo
     let hash = if !hash_ptr.is_null() && hashlen > 0 {
         unsafe { core::slice::from_raw_parts(hash_ptr, hashlen) }
     } else {
@@ -690,14 +730,17 @@ unsafe fn build_pk_ecdh(
     info_c: *const wolfcrypt_rs::wc_CryptoInfo,
     info_m: *mut wolfcrypt_rs::wc_CryptoInfo,
 ) -> c_int {
+    // SAFETY: info_c/info_m are valid wc_CryptoInfo pointers; accessors extract ECDH fields
     let private_key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_private_key(info_c) };
     let public_key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_public_key(info_c) };
     let out_ptr = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_out(info_m) };
     let out_len = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_ecdh_outlen(info_m) };
 
+    // SAFETY: pointers are checked non-null; cap read from valid u32 in wc_CryptoInfo
     let cap = if out_len.is_null() {
         0
     } else {
+        // SAFETY: out_len is non-null (checked above) and points to a valid u32 in wc_CryptoInfo
         (unsafe { *out_len }) as usize
     };
     let out = if !out_ptr.is_null() && cap > 0 {
@@ -719,6 +762,7 @@ unsafe fn build_pk_ecdh(
 
 #[cfg(wolfssl_ecc)]
 unsafe fn build_pk_eckg(state: &DeviceState, info_c: *const wolfcrypt_rs::wc_CryptoInfo) -> c_int {
+    // SAFETY: info_c is a valid wc_CryptoInfo pointer; accessors extract EC key generation fields
     let key = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_key(info_c) };
     let size = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_size(info_c) };
     let curve_id = unsafe { wolfcrypt_rs::wolfcrypt_cryptocb_info_pk_eckg_curve_id(info_c) };
@@ -767,9 +811,11 @@ pub fn register_device(
     });
     let ctx = Box::into_raw(state) as *mut c_void;
 
+    // SAFETY: ctx is a valid heap pointer from Box::into_raw; trampoline matches the expected C signature
     let rc = unsafe { wolfcrypt_rs::wc_CryptoCb_RegisterDevice(dev_id, Some(trampoline), ctx) };
 
     if rc != 0 {
+        // SAFETY: ctx was created by Box::into_raw above and has not been consumed
         unsafe {
             drop(Box::from_raw(ctx as *mut DeviceState));
         }
@@ -793,6 +839,7 @@ pub fn unregister_device(dev_id: i32) {
     // reclaim the DeviceState Box here.  This leaks the allocation — acceptable
     // for long-lived HSM registrations but should be fixed with a side-table
     // mapping dev_id -> *mut DeviceState for production use.
+    // SAFETY: dev_id was previously registered; caller ensures no concurrent operations use this device
     unsafe {
         wolfcrypt_rs::wc_CryptoCb_UnRegisterDevice(dev_id);
     }

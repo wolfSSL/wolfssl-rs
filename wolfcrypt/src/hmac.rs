@@ -104,6 +104,7 @@ macro_rules! impl_hmac {
                 // Prevent Drop from double-freeing.
                 let ctx = self.ctx;
                 self.ctx = core::ptr::null_mut();
+                // SAFETY: ctx was allocated by wolfcrypt_hmac_*_new and is non-null.
                 unsafe { wolfcrypt_rs::wolfcrypt_hmac_free(ctx) };
             }
         }

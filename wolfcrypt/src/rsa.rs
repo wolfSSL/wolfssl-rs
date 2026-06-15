@@ -167,6 +167,7 @@ unsafe fn native_oaep_encrypt_sha256(
     ctx: *mut c_void,
     plaintext: &[u8],
 ) -> Result<Vec<u8>, WolfCryptError> {
+    // SAFETY: ctx is a valid wolfcrypt_rsa_ctx pointer; plaintext slice provides valid pointer and length
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
@@ -201,6 +202,7 @@ unsafe fn native_oaep_decrypt_sha256(
     ctx: *mut c_void,
     ciphertext: &[u8],
 ) -> Result<Vec<u8>, WolfCryptError> {
+    // SAFETY: ctx is a valid wolfcrypt_rsa_ctx pointer holding a private key; output buffer is properly sized
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
@@ -242,6 +244,7 @@ unsafe fn native_pkcs1v15_sign(
     msg: &[u8],
     hash_bits: i32,
 ) -> Result<Vec<u8>, WolfCryptError> {
+    // SAFETY: ctx is a valid wolfcrypt_rsa_ctx pointer holding a private key; sig buffer is key-size bytes
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
@@ -282,6 +285,7 @@ unsafe fn native_pkcs1v15_verify(
     sig: &[u8],
     hash_bits: i32,
 ) -> Result<(), WolfCryptError> {
+    // SAFETY: ctx is a valid wolfcrypt_rsa_ctx pointer; msg and sig slices provide valid pointers and lengths
     unsafe {
         let rc = wolfcrypt_rsa_pkcs1v15_verify(
             ctx,
@@ -315,6 +319,7 @@ unsafe fn native_pss_sign(
     msg: &[u8],
     hash_bits: i32,
 ) -> Result<Vec<u8>, WolfCryptError> {
+    // SAFETY: ctx is a valid wolfcrypt_rsa_ctx pointer holding a private key; sig buffer is key-size bytes
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
@@ -354,6 +359,7 @@ unsafe fn native_pss_verify(
     sig: &[u8],
     hash_bits: i32,
 ) -> Result<(), WolfCryptError> {
+    // SAFETY: ctx is a valid wolfcrypt_rsa_ctx pointer; msg and sig slices provide valid pointers and lengths
     unsafe {
         let rc = wolfcrypt_rsa_pss_verify(
             ctx,
@@ -384,6 +390,7 @@ unsafe fn native_pkcs1v15_encrypt(
     ctx: *mut c_void,
     plaintext: &[u8],
 ) -> Result<Vec<u8>, WolfCryptError> {
+    // SAFETY: ctx is a valid wolfcrypt_rsa_ctx pointer; output buffer is properly sized to key size
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
@@ -422,6 +429,7 @@ unsafe fn native_pkcs1v15_decrypt(
     ctx: *mut c_void,
     ciphertext: &[u8],
 ) -> Result<Vec<u8>, WolfCryptError> {
+    // SAFETY: ctx is a valid wolfcrypt_rsa_ctx pointer holding a private key; output buffer is properly sized
     unsafe {
         let key_size = wolfcrypt_rsa_key_size_bytes(ctx as *const _);
         if key_size <= 0 {
@@ -474,6 +482,7 @@ impl RsaPrivateKey {
     /// Import an RSA private key from a PKCS#1 DER-encoded `RSAPrivateKey`
     /// (RFC 8017 Appendix A.1.2).
     pub fn from_pkcs1_der(der: &[u8]) -> Result<Self, WolfCryptError> {
+        // SAFETY: wolfcrypt_rsa_new allocates a fresh ctx; import uses valid DER slice; ctx freed on error
         unsafe {
             let ctx = wolfcrypt_rsa_new();
             if ctx.is_null() {
@@ -495,6 +504,7 @@ impl RsaPrivateKey {
 
     /// Export the private key as a PKCS#1 DER-encoded `RSAPrivateKey`.
     pub fn to_pkcs1_der(&self) -> Result<Vec<u8>, WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer; buf is a 4096-byte output buffer
         unsafe {
             let ctx = *self.ctx.get();
             // 4096 bytes is sufficient for any RSA key up to 4096 bits.
@@ -514,6 +524,7 @@ impl RsaPrivateKey {
 
     /// Generate an RSA keypair of the given bit size (e.g. 2048, 3072, 4096).
     pub fn generate(bits: u32) -> Result<Self, WolfCryptError> {
+        // SAFETY: wolfcrypt_rsa_new allocates a fresh ctx; generate initializes it; ctx freed on error
         unsafe {
             let ctx = wolfcrypt_rsa_new();
             if ctx.is_null() {
@@ -539,6 +550,7 @@ impl RsaPrivateKey {
     /// independent `wolfcrypt_rsa_ctx` with no shared state with this key.
     /// Panics if the export/import fails (should not happen for a valid key).
     pub fn public_key(&self) -> RsaPublicKey {
+        // SAFETY: self.ctx is valid; export/import create an independent ctx with no shared state
         unsafe {
             let ctx = *self.ctx.get();
 
@@ -572,6 +584,7 @@ impl RsaPrivateKey {
         msg: &[u8],
         digest: RsaDigest,
     ) -> Result<RsaPkcs1v15Signature, WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer with a private key
         let sig = unsafe { native_pkcs1v15_sign(*self.ctx.get(), msg, digest.hash_bits())? };
         Ok(RsaPkcs1v15Signature(sig))
     }
@@ -593,6 +606,7 @@ impl RsaPrivateKey {
         msg: &[u8],
         digest: RsaDigest,
     ) -> Result<RsaPssSignature, WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer with a private key
         let sig = unsafe { native_pss_sign(*self.ctx.get(), msg, digest.hash_bits())? };
         Ok(RsaPssSignature(sig))
     }
@@ -602,11 +616,13 @@ impl RsaPrivateKey {
     /// For a 2048-bit key the maximum plaintext size is 190 bytes
     /// (256 - 2*32 - 2).
     pub fn encrypt_oaep(&self, plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer
         unsafe { native_oaep_encrypt_sha256(*self.ctx.get(), plaintext) }
     }
 
     /// Decrypt `ciphertext` with OAEP SHA-256/MGF1-SHA256 (RFC 8017 Section 7.1).
     pub fn decrypt_oaep(&self, ciphertext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer with a private key
         unsafe { native_oaep_decrypt_sha256(*self.ctx.get(), ciphertext) }
     }
 
@@ -615,17 +631,20 @@ impl RsaPrivateKey {
     /// For a 2048-bit key the maximum plaintext size is 245 bytes
     /// (256 - 11).
     pub fn encrypt_pkcs1v15(&self, plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer
         unsafe { native_pkcs1v15_encrypt(*self.ctx.get(), plaintext) }
     }
 
     /// Decrypt `ciphertext` with PKCS#1 v1.5 padding (RFC 8017 Section 7.2).
     pub fn decrypt_pkcs1v15(&self, ciphertext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer with a private key
         unsafe { native_pkcs1v15_decrypt(*self.ctx.get(), ciphertext) }
     }
 }
 
 impl Drop for RsaPrivateKey {
     fn drop(&mut self) {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer allocated by wolfcrypt_rsa_new
         unsafe {
             wolfcrypt_rsa_free(*self.ctx.get());
         }
@@ -673,6 +692,7 @@ impl RsaPublicKey {
     /// This is the standard format used by Wycheproof test vectors
     /// (`publicKeyDer` field) and produced by `wolfcrypt_rsa_export_public_spki`.
     pub fn from_der(der: &[u8]) -> Result<Self, WolfCryptError> {
+        // SAFETY: wolfcrypt_rsa_new allocates a fresh ctx; import uses valid DER slice; ctx freed on error
         unsafe {
             let ctx = wolfcrypt_rsa_new();
             if ctx.is_null() {
@@ -697,11 +717,13 @@ impl RsaPublicKey {
     /// RSA encryption only requires the public key. Decryption requires the
     /// private key held by [`RsaPrivateKey`].
     pub fn encrypt_oaep(&self, plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer
         unsafe { native_oaep_encrypt_sha256(*self.ctx.get(), plaintext) }
     }
 
     /// Encrypt `plaintext` with PKCS#1 v1.5 padding (RFC 8017 Section 7.2).
     pub fn encrypt_pkcs1v15(&self, plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer
         unsafe { native_pkcs1v15_encrypt(*self.ctx.get(), plaintext) }
     }
 
@@ -721,6 +743,7 @@ impl RsaPublicKey {
         sig: &RsaPkcs1v15Signature,
         digest: RsaDigest,
     ) -> Result<(), WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer
         unsafe { native_pkcs1v15_verify(*self.ctx.get(), msg, &sig.0, digest.hash_bits()) }
     }
 
@@ -739,12 +762,14 @@ impl RsaPublicKey {
         sig: &RsaPssSignature,
         digest: RsaDigest,
     ) -> Result<(), WolfCryptError> {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer
         unsafe { native_pss_verify(*self.ctx.get(), msg, &sig.0, digest.hash_bits()) }
     }
 }
 
 impl Drop for RsaPublicKey {
     fn drop(&mut self) {
+        // SAFETY: self.ctx is a valid wolfcrypt_rsa_ctx pointer allocated by wolfcrypt_rsa_new
         unsafe {
             wolfcrypt_rsa_free(*self.ctx.get());
         }
@@ -859,6 +884,7 @@ impl NativeRsaKey {
     /// Allocate a new, empty `RsaKey` via `wc_NewRsaKey`.
     fn alloc() -> Result<*mut wolfcrypt_rs::RsaKey, WolfCryptError> {
         let mut rc: core::ffi::c_int = 0;
+        // SAFETY: wc_NewRsaKey allocates and initializes a new RsaKey; null heap uses default allocator
         let key = unsafe {
             wolfcrypt_rs::wc_NewRsaKey(ptr::null_mut(), wolfcrypt_rs::INVALID_DEVID, &mut rc)
         };
@@ -879,10 +905,12 @@ impl NativeRsaKey {
         rng: &mut crate::rand::WolfRng,
     ) -> Result<Self, WolfCryptError> {
         let key = Self::alloc()?;
+        // SAFETY: key is a valid RsaKey pointer from alloc(); rng is a valid WC_RNG
         let rc = unsafe {
             wolfcrypt_rs::wc_MakeRsaKey(key, bits as core::ffi::c_int, 65537, &mut rng.rng)
         };
         if rc != 0 {
+            // SAFETY: key is a valid RsaKey pointer that must be freed on error
             unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -899,6 +927,7 @@ impl NativeRsaKey {
     pub fn to_pkcs1_der(&self) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
         // Start with a generous buffer; typical 2048-bit key DER is ~1200 bytes.
         let mut buf = alloc::vec![0u8; 4096];
+        // SAFETY: self.key is a valid RsaKey pointer; buf is a properly sized output buffer
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaKeyToDer(self.key, buf.as_mut_ptr(), len_as_u32(buf.len()))
         };
@@ -919,10 +948,12 @@ impl NativeRsaKey {
     pub fn from_private_der(der: &[u8]) -> Result<Self, WolfCryptError> {
         let key = Self::alloc()?;
         let mut idx: u32 = 0;
+        // SAFETY: key is a valid RsaKey pointer; der slice provides valid pointer and length
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaPrivateKeyDecode(der.as_ptr(), &mut idx, key, len_as_u32(der.len()))
         };
         if rc != 0 {
+            // SAFETY: key is a valid RsaKey pointer that must be freed on error
             // Clean up on failure.
             unsafe {
                 wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut());
@@ -942,10 +973,12 @@ impl NativeRsaKey {
     pub fn from_public_der(der: &[u8]) -> Result<Self, WolfCryptError> {
         let key = Self::alloc()?;
         let mut idx: u32 = 0;
+        // SAFETY: key is a valid RsaKey pointer; der slice provides valid pointer and length
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaPublicKeyDecode(der.as_ptr(), &mut idx, key, len_as_u32(der.len()))
         };
         if rc != 0 {
+            // SAFETY: key is a valid RsaKey pointer that must be freed on error
             unsafe {
                 wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut());
             }
@@ -963,6 +996,7 @@ impl NativeRsaKey {
     /// randomness source.
     pub fn generate(bits: u32, rng: &mut crate::rand::WolfRng) -> Result<Self, WolfCryptError> {
         let key = Self::alloc()?;
+        // SAFETY: key is a valid RsaKey pointer from alloc(); rng is a valid WC_RNG
         let rc = unsafe {
             wolfcrypt_rs::wc_MakeRsaKey(
                 key,
@@ -972,6 +1006,7 @@ impl NativeRsaKey {
             )
         };
         if rc != 0 {
+            // SAFETY: key is a valid RsaKey pointer that must be freed on error
             unsafe {
                 wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut());
             }
@@ -986,6 +1021,7 @@ impl NativeRsaKey {
     /// Return the RSA modulus size in bytes (i.e. the output size of
     /// `rsa_direct`).
     pub fn encrypt_size(&self) -> Result<usize, WolfCryptError> {
+        // SAFETY: self.key is a valid RsaKey pointer
         let sz = unsafe { wolfcrypt_rs::wc_RsaEncryptSize(self.key as *const _) };
         if sz <= 0 {
             return Err(WolfCryptError::Ffi {
@@ -1019,6 +1055,7 @@ impl NativeRsaKey {
         let mut out = vec![0u8; key_sz];
         let mut out_len: u32 = key_sz as u32;
 
+        // SAFETY: self.key is a valid RsaKey; input/out are properly sized to key modulus; rng is valid
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaFunction(
                 input.as_ptr(),
@@ -1057,6 +1094,7 @@ impl NativeRsaKey {
         iqmp: &[u8],
     ) -> Result<Self, WolfCryptError> {
         let key = Self::alloc()?;
+        // SAFETY: key is a valid RsaKey pointer; all component slices provide valid pointers and lengths
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaPrivateKeyDecodeRaw(
                 n.as_ptr(),
@@ -1079,6 +1117,7 @@ impl NativeRsaKey {
             )
         };
         if rc != 0 {
+            // SAFETY: key is a valid RsaKey pointer that must be freed on error
             unsafe { wolfcrypt_rs::wc_DeleteRsaKey(key, ptr::null_mut()) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -1090,6 +1129,7 @@ impl NativeRsaKey {
 
     /// Get the RSA key size (modulus size in bytes).
     pub fn key_size(&self) -> Result<usize, WolfCryptError> {
+        // SAFETY: self.key is a valid RsaKey pointer
         let rc = unsafe { wolfcrypt_rs::wc_RsaEncryptSize(self.key) };
         if rc < 0 {
             return Err(WolfCryptError::Ffi {
@@ -1112,6 +1152,7 @@ impl NativeRsaKey {
     ) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
         let key_sz = self.key_size()?;
         let mut out = alloc::vec![0u8; key_sz];
+        // SAFETY: self.key is a valid RsaKey; digest_info/out are properly sized; rng is valid
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaSSL_Sign(
                 digest_info.as_ptr(),
@@ -1140,6 +1181,7 @@ impl NativeRsaKey {
     ) -> Result<alloc::vec::Vec<u8>, WolfCryptError> {
         let key_sz = self.key_size()?;
         let mut out = alloc::vec![0u8; key_sz];
+        // SAFETY: self.key is a valid RsaKey; signature/out are properly sized buffers
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaSSL_Verify(
                 signature.as_ptr(),
@@ -1178,6 +1220,7 @@ impl NativeRsaKey {
         let mut p_sz = len_as_u32(p.len());
         let mut q_sz = len_as_u32(q.len());
 
+        // SAFETY: self.key is a valid RsaKey; output buffers are sized to key_size upper bound
         let rc = unsafe {
             wolfcrypt_rs::wc_RsaExportKey(
                 self.key,
@@ -1403,6 +1446,7 @@ fn der_skip_int(data: &[u8], pos: usize) -> Option<usize> {
 impl Drop for NativeRsaKey {
     fn drop(&mut self) {
         if !self.key.is_null() {
+            // SAFETY: self.key is a valid non-null RsaKey pointer allocated by wc_NewRsaKey
             unsafe {
                 wolfcrypt_rs::wc_DeleteRsaKey(self.key, ptr::null_mut());
             }

@@ -295,6 +295,8 @@ pub struct Algorithm {
     pub(crate) id: AlgorithmID,
 }
 
+// SAFETY: Algorithm contains only primitive fields and a function pointer.
+// All fields are immutable after construction; no interior mutability.
 unsafe impl Send for Algorithm {}
 
 impl Algorithm {

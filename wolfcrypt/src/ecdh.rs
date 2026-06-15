@@ -651,15 +651,19 @@ pub(crate) mod nist_ecdh_native {
             if tmp.is_null() {
                 return Err(WolfCryptError::ALLOC_FAILED);
             }
+            // SAFETY: tmp is non-null and initialised; bytes is a valid uncompressed point.
             let rc = unsafe { wc_ecc_import_x963(bytes.as_ptr(), bytes.len() as u32, tmp) };
             if rc != 0 {
+                // SAFETY: tmp is non-null and was allocated above; freed on error path.
                 unsafe { wc_ecc_key_free(tmp) };
                 return Err(WolfCryptError::Ffi {
                     code: rc,
                     func: "wc_ecc_import_x963",
                 });
             }
+            // SAFETY: tmp holds an imported public point; check validates curve membership.
             let rc = unsafe { wc_ecc_check_key(tmp) };
+            // SAFETY: tmp is non-null and was allocated above; freed after validation.
             unsafe { wc_ecc_key_free(tmp) };
             if rc != 0 {
                 return Err(WolfCryptError::Ffi {
@@ -746,6 +750,7 @@ pub(crate) mod nist_ecdh_native {
             // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
             let rc = unsafe { wc_InitRng(&mut rng) };
             if rc != 0 {
+                // SAFETY: key is non-null and was allocated above; freed on error path.
                 unsafe {
                     wc_ecc_key_free(key);
                 }
@@ -759,10 +764,12 @@ pub(crate) mod nist_ecdh_native {
             let rc =
                 unsafe { wc_ecc_make_key_ex(&mut rng, C::FIELD_SIZE as i32, key, C::CURVE_ID) };
             // Free RNG regardless of outcome.
+            // SAFETY: rng was successfully initialised above.
             unsafe {
                 wc_FreeRng(&mut rng);
             }
             if rc != 0 {
+                // SAFETY: key is non-null and was allocated above; freed on error path.
                 unsafe {
                     wc_ecc_key_free(key);
                 }
@@ -788,6 +795,7 @@ pub(crate) mod nist_ecdh_native {
             if scalar.len() != C::FIELD_SIZE {
                 return Err(WolfCryptError::INVALID_INPUT);
             }
+            // SAFETY: null heap hint is valid; returns heap-allocated key or null.
             let key = unsafe { wc_ecc_key_new(ptr::null_mut()) };
             if key.is_null() {
                 return Err(WolfCryptError::ALLOC_FAILED);
@@ -805,6 +813,7 @@ pub(crate) mod nist_ecdh_native {
                 )
             };
             if rc != 0 {
+                // SAFETY: key is non-null and was allocated above; freed on error path.
                 unsafe {
                     wc_ecc_key_free(key);
                 }
@@ -824,6 +833,7 @@ pub(crate) mod nist_ecdh_native {
         /// Returns an error if the key was created with `from_private_scalar`
         /// (public component not available without a separate derivation step).
         pub fn public_key(&self) -> Result<NistEcdhPublicKey<C>, WolfCryptError> {
+            // SAFETY: self.key is non-null and initialised; dereferencing the UnsafeCell pointer.
             let key = unsafe { *self.key.get() };
             let mut buf = vec![0u8; C::POINT_SIZE];
             let mut sz = buf.len() as u32;
@@ -851,11 +861,13 @@ pub(crate) mod nist_ecdh_native {
             peer_public: &NistEcdhPublicKey<C>,
         ) -> Result<NistEcdhSharedSecret<C>, WolfCryptError> {
             // ── Import peer public key ──────────────────────────────────────
+            // SAFETY: null heap hint is valid; returns heap-allocated key or null.
             let peer_key = unsafe { wc_ecc_key_new(ptr::null_mut()) };
             if peer_key.is_null() {
                 return Err(WolfCryptError::ALLOC_FAILED);
             }
 
+            // SAFETY: peer_key is initialised; peer_public.bytes is a validated uncompressed point.
             let rc = unsafe {
                 wc_ecc_import_x963(
                     peer_public.bytes.as_ptr(),
@@ -864,6 +876,7 @@ pub(crate) mod nist_ecdh_native {
                 )
             };
             if rc != 0 {
+                // SAFETY: peer_key is non-null and was allocated above; freed on error path.
                 unsafe {
                     wc_ecc_key_free(peer_key);
                 }
@@ -874,8 +887,10 @@ pub(crate) mod nist_ecdh_native {
             }
 
             // ── Paranoid: validate peer point is on the curve ───────────────
+            // SAFETY: peer_key holds an imported public point.
             let rc = unsafe { wc_ecc_check_key(peer_key) };
             if rc != 0 {
+                // SAFETY: peer_key is non-null and was allocated above; freed on error path.
                 unsafe {
                     wc_ecc_key_free(peer_key);
                 }
@@ -888,10 +903,13 @@ pub(crate) mod nist_ecdh_native {
             // ── Attach RNG to private key for blinding ──────────────────────
             // Required when ECC_TIMING_RESISTANT is defined (default).
             // wc_ecc_shared_secret returns MISSING_RNG_E without this.
+            // SAFETY: self.key is non-null and initialised; dereferencing the UnsafeCell pointer.
             let priv_key = unsafe { *self.key.get() };
             let mut rng = WC_RNG::zeroed();
+            // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
             let rc = unsafe { wc_InitRng(&mut rng) };
             if rc != 0 {
+                // SAFETY: peer_key is non-null; freed on error path.
                 unsafe {
                     wc_ecc_key_free(peer_key);
                 }
@@ -900,8 +918,10 @@ pub(crate) mod nist_ecdh_native {
                     func: "wc_InitRng",
                 });
             }
+            // SAFETY: priv_key is initialised and non-null; rng is live.
             let rc = unsafe { wc_ecc_set_rng(priv_key, &mut rng) };
             if rc != 0 {
+                // SAFETY: peer_key and rng were initialised; freed on error path.
                 unsafe {
                     wc_ecc_key_free(peer_key);
                     wc_FreeRng(&mut rng);
@@ -920,6 +940,7 @@ pub(crate) mod nist_ecdh_native {
                 unsafe { wc_ecc_shared_secret(priv_key, peer_key, out.as_mut_ptr(), &mut out_len) };
 
             // Always clean up peer key and RNG.
+            // SAFETY: peer_key and rng were both initialised; freed regardless of outcome.
             unsafe {
                 wc_ecc_key_free(peer_key);
                 wc_FreeRng(&mut rng);

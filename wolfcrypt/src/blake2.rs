@@ -73,6 +73,7 @@ impl Blake2b {
             return Err(WolfCryptError::InvalidInput);
         }
         let mut ctx = wolfcrypt_rs::WcBlake2b::zeroed();
+        // SAFETY: `ctx` is freshly zeroed; digest_size was validated above.
         let rc = unsafe {
             wolfcrypt_rs::wc_InitBlake2b(
                 &mut ctx as *mut wolfcrypt_rs::WcBlake2b,
@@ -97,6 +98,7 @@ impl Blake2b {
             return Err(WolfCryptError::InvalidInput);
         }
         let mut ctx = wolfcrypt_rs::WcBlake2b::zeroed();
+        // SAFETY: `ctx` is freshly zeroed; key/digest_size were validated above.
         let rc = unsafe {
             wolfcrypt_rs::wc_InitBlake2b_WithKey(
                 &mut ctx as *mut wolfcrypt_rs::WcBlake2b,
@@ -117,6 +119,7 @@ impl Blake2b {
         if data.is_empty() {
             return Ok(());
         }
+        // SAFETY: `ctx` was initialised; data pointer and length from a valid slice.
         let rc = unsafe {
             wolfcrypt_rs::wc_Blake2bUpdate(
                 &mut self.ctx as *mut wolfcrypt_rs::WcBlake2b,
@@ -130,6 +133,7 @@ impl Blake2b {
     /// Finalize the hash, consuming the hasher and returning the digest.
     pub fn finalize(mut self) -> Result<Vec<u8>, WolfCryptError> {
         let mut out = alloc::vec![0u8; self.digest_size as usize];
+        // SAFETY: `ctx` was initialised; `out` is exactly `digest_size` bytes.
         let rc = unsafe {
             wolfcrypt_rs::wc_Blake2bFinal(
                 &mut self.ctx as *mut wolfcrypt_rs::WcBlake2b,
@@ -199,6 +203,7 @@ impl Blake2s {
             return Err(WolfCryptError::InvalidInput);
         }
         let mut ctx = wolfcrypt_rs::WcBlake2s::zeroed();
+        // SAFETY: `ctx` is freshly zeroed; digest_size was validated above.
         let rc = unsafe {
             wolfcrypt_rs::wc_InitBlake2s(
                 &mut ctx as *mut wolfcrypt_rs::WcBlake2s,
@@ -223,6 +228,7 @@ impl Blake2s {
             return Err(WolfCryptError::InvalidInput);
         }
         let mut ctx = wolfcrypt_rs::WcBlake2s::zeroed();
+        // SAFETY: `ctx` is freshly zeroed; key/digest_size were validated above.
         let rc = unsafe {
             wolfcrypt_rs::wc_InitBlake2s_WithKey(
                 &mut ctx as *mut wolfcrypt_rs::WcBlake2s,
@@ -243,6 +249,7 @@ impl Blake2s {
         if data.is_empty() {
             return Ok(());
         }
+        // SAFETY: `ctx` was initialised; data pointer and length from a valid slice.
         let rc = unsafe {
             wolfcrypt_rs::wc_Blake2sUpdate(
                 &mut self.ctx as *mut wolfcrypt_rs::WcBlake2s,
@@ -256,6 +263,7 @@ impl Blake2s {
     /// Finalize the hash, consuming the hasher and returning the digest.
     pub fn finalize(mut self) -> Result<Vec<u8>, WolfCryptError> {
         let mut out = alloc::vec![0u8; self.digest_size as usize];
+        // SAFETY: `ctx` was initialised; `out` is exactly `digest_size` bytes.
         let rc = unsafe {
             wolfcrypt_rs::wc_Blake2sFinal(
                 &mut self.ctx as *mut wolfcrypt_rs::WcBlake2s,

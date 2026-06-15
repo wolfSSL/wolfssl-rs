@@ -82,6 +82,7 @@ impl EcdsaCurve for P256 {
 
     fn hash_message(msg: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
         let mut hash = vec![0u8; 32];
+        // SAFETY: msg is a valid slice; hash is 32 bytes matching SHA-256 output size.
         let rc = unsafe {
             wolfcrypt_rs::wc_Sha256Hash(msg.as_ptr(), msg.len() as u32, hash.as_mut_ptr())
         };
@@ -113,6 +114,7 @@ impl EcdsaCurve for P384 {
 
     fn hash_message(msg: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
         let mut hash = vec![0u8; 48];
+        // SAFETY: msg is a valid slice; hash is 48 bytes matching SHA-384 output size.
         let rc = unsafe {
             wolfcrypt_rs::wc_Sha384Hash(msg.as_ptr(), msg.len() as u32, hash.as_mut_ptr())
         };
@@ -147,6 +149,7 @@ impl EcdsaCurve for P521 {
 
     fn hash_message(msg: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
         let mut hash = vec![0u8; 64];
+        // SAFETY: msg is a valid slice; hash is 64 bytes matching SHA-512 output size.
         let rc = unsafe {
             wolfcrypt_rs::wc_Sha512Hash(msg.as_ptr(), msg.len() as u32, hash.as_mut_ptr())
         };
@@ -258,6 +261,7 @@ fn der_to_fixed_rs<C: EcdsaCurve>(
     let mut r_len = C::FIELD_SIZE as u32;
     let mut s_len = C::FIELD_SIZE as u32;
 
+    // SAFETY: der is a valid DER buffer of der_len bytes; r and s are FIELD_SIZE output buffers.
     let rc = unsafe {
         wc_ecc_sig_to_rs(
             der.as_ptr(),
@@ -315,6 +319,7 @@ impl<C: EcdsaCurve> Drop for EcdsaSigningKey<C> {
     fn drop(&mut self) {
         let key = *self.key.get_mut();
         if !key.is_null() {
+            // SAFETY: key is non-null and was allocated by wc_ecc_key_new; freed exactly once.
             unsafe { wc_ecc_key_free(key) };
         }
     }
@@ -323,6 +328,7 @@ impl<C: EcdsaCurve> Drop for EcdsaSigningKey<C> {
 impl<C: EcdsaCurve> EcdsaSigningKey<C> {
     /// Generate a fresh random ECDSA signing key on curve `C`.
     pub fn generate() -> Result<Self, WolfCryptError> {
+        // SAFETY: null heap hint is valid; returns heap-allocated key or null.
         let key = unsafe { wc_ecc_key_new(core::ptr::null_mut()) };
         if key.is_null() {
             return Err(WolfCryptError::ALLOC_FAILED);
@@ -332,6 +338,7 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
         let rc = unsafe { wc_InitRng(&mut rng) };
         if rc != 0 {
+            // SAFETY: key is non-null and was allocated above; freed on error path.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -342,8 +349,10 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         // SAFETY: key and rng are both initialised; FIELD_SIZE matches CURVE_ID.
         let rc = unsafe { wc_ecc_make_key_ex(&mut rng, C::FIELD_SIZE as c_int, key, C::CURVE_ID) };
         // Always free the RNG, success or failure.
+        // SAFETY: rng was successfully initialised by wc_InitRng above.
         unsafe { wc_FreeRng(&mut rng) };
         if rc != 0 {
+            // SAFETY: key is non-null and was allocated above; freed on error path.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -366,10 +375,12 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         if pub_bytes.len() != C::UNCOMPRESSED_POINT_SIZE || pub_bytes[0] != 0x04 {
             return Err(WolfCryptError::INVALID_INPUT);
         }
+        // SAFETY: null heap hint is valid; returns heap-allocated key or null.
         let key = unsafe { wc_ecc_key_new(core::ptr::null_mut()) };
         if key.is_null() {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
+        // SAFETY: key is initialised; priv/pub slices are valid with correct lengths.
         let rc = unsafe {
             wc_ecc_import_private_key_ex(
                 priv_bytes.as_ptr(),
@@ -381,6 +392,7 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
             )
         };
         if rc != 0 {
+            // SAFETY: key is non-null and was allocated above; freed on error path.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -399,10 +411,12 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
     /// In a `WOLF_CRYPTO_CB_ONLY_ECC` build this computation is dispatched to
     /// the registered CryptoCb device.
     pub fn from_private_key_bytes(priv_bytes: &[u8]) -> Result<Self, WolfCryptError> {
+        // SAFETY: null heap hint is valid; returns heap-allocated key or null.
         let key = unsafe { wc_ecc_key_new(core::ptr::null_mut()) };
         if key.is_null() {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
+        // SAFETY: key is initialised; priv_bytes is a valid slice; null pub key is accepted.
         let rc = unsafe {
             wc_ecc_import_private_key_ex(
                 priv_bytes.as_ptr(),
@@ -414,6 +428,7 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
             )
         };
         if rc != 0 {
+            // SAFETY: key is non-null and was allocated above; freed on error path.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -423,8 +438,10 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         // wc_ecc_import_private_key_ex with NULL public key leaves the key in
         // ECC_PRIVATEKEY_ONLY state, which blocks export and verify operations.
         // Derive the public point now so the full key is immediately usable.
+        // SAFETY: key holds a valid private scalar; null output writes pub into the key itself.
         let rc = unsafe { wc_ecc_make_pub(key, core::ptr::null_mut()) };
         if rc != 0 {
+            // SAFETY: key is non-null and was allocated above; freed on error path.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -439,9 +456,11 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
 
     /// Return the corresponding verifying (public) key.
     pub fn verifying_key(&self) -> Result<EcdsaVerifyingKey<C>, WolfCryptError> {
+        // SAFETY: self.key is non-null and initialised; dereferencing the UnsafeCell pointer.
         let key = unsafe { *self.key.get() };
         let mut buf = vec![0u8; C::UNCOMPRESSED_POINT_SIZE];
         let mut sz = buf.len() as u32;
+        // SAFETY: key is initialised with a public component; buf is POINT_SIZE bytes.
         let rc = unsafe { wc_ecc_export_x963(key, buf.as_mut_ptr(), &mut sz) };
         if rc != 0 {
             return Err(WolfCryptError::Ffi {
@@ -460,6 +479,7 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         if hash.len() != C::HASH_LEN {
             return Err(WolfCryptError::INVALID_INPUT);
         }
+        // SAFETY: self.key is non-null and initialised; dereferencing the UnsafeCell pointer.
         let key = unsafe { *self.key.get() };
 
         // Max DER ECDSA signature: SEQUENCE + 2 * (INTEGER + optional-zero + field).
@@ -470,6 +490,7 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         // blinding.  Required on software builds; harmless on CryptoCb builds where
         // the dispatch ignores it.
         let mut rng = WC_RNG::zeroed();
+        // SAFETY: rng is zero-initialised; wc_InitRng completes setup.
         let rc = unsafe { wc_InitRng(&mut rng) };
         if rc != 0 {
             return Err(WolfCryptError::Ffi {
@@ -479,8 +500,10 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
         }
 
         // Attach the RNG to the key so internal timing-resistant code can use it.
+        // SAFETY: key is initialised and non-null; rng is live.
         let rc = unsafe { wc_ecc_set_rng(key, &mut rng) };
         if rc != 0 {
+            // SAFETY: rng was successfully initialised; freed on error path.
             unsafe { wc_FreeRng(&mut rng) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -505,6 +528,7 @@ impl<C: EcdsaCurve> EcdsaSigningKey<C> {
             )
         };
         // Always free the RNG regardless of outcome.
+        // SAFETY: rng was successfully initialised above.
         unsafe { wc_FreeRng(&mut rng) };
         if rc != 0 {
             return Err(WolfCryptError::Ffi {
@@ -547,6 +571,7 @@ impl<C: EcdsaCurve> Drop for EcdsaVerifyingKey<C> {
     fn drop(&mut self) {
         let key = *self.key.get_mut();
         if !key.is_null() {
+            // SAFETY: key is non-null and was allocated by wc_ecc_key_new; freed exactly once.
             unsafe { wc_ecc_key_free(key) };
         }
     }
@@ -558,12 +583,15 @@ impl<C: EcdsaCurve> EcdsaVerifyingKey<C> {
         if bytes.len() != C::UNCOMPRESSED_POINT_SIZE || bytes[0] != 0x04 {
             return Err(WolfCryptError::INVALID_INPUT);
         }
+        // SAFETY: null heap hint is valid; returns heap-allocated key or null.
         let key = unsafe { wc_ecc_key_new(core::ptr::null_mut()) };
         if key.is_null() {
             return Err(WolfCryptError::ALLOC_FAILED);
         }
+        // SAFETY: key is initialised; bytes is a validated uncompressed point.
         let rc = unsafe { wc_ecc_import_x963(bytes.as_ptr(), bytes.len() as u32, key) };
         if rc != 0 {
+            // SAFETY: key is non-null and was allocated above; freed on error path.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -601,6 +629,7 @@ impl<C: EcdsaCurve> EcdsaVerifyingKey<C> {
         if sig_der.is_empty() {
             return Err(WolfCryptError::INVALID_INPUT);
         }
+        // SAFETY: self.key is non-null and initialised; dereferencing the UnsafeCell pointer.
         let key = unsafe { *self.key.get() };
         let mut res: c_int = 0;
         // SAFETY: sig_der and hash are non-empty slices; key holds a valid
@@ -635,6 +664,7 @@ impl<C: EcdsaCurve> signature_trait::Verifier<EcdsaSignature<C>> for EcdsaVerify
         signature: &EcdsaSignature<C>,
     ) -> Result<(), signature_trait::Error> {
         let hash = C::hash_message(msg).map_err(|_| signature_trait::Error::new())?;
+        // SAFETY: self.key is non-null and initialised; dereferencing the UnsafeCell pointer.
         let key = unsafe { *self.key.get() };
 
         // Convert fixed r||s to DER.
@@ -643,6 +673,7 @@ impl<C: EcdsaCurve> signature_trait::Verifier<EcdsaSignature<C>> for EcdsaVerify
         let mut der = vec![0u8; C::FIELD_SIZE * 2 + 16];
         let mut der_len = der.len() as u32;
 
+        // SAFETY: r and s are valid FIELD_SIZE slices; der is a properly sized output buffer.
         let rc = unsafe {
             wc_ecc_rs_raw_to_sig(
                 r.as_ptr(),
@@ -658,6 +689,7 @@ impl<C: EcdsaCurve> signature_trait::Verifier<EcdsaSignature<C>> for EcdsaVerify
         }
 
         let mut res: c_int = 0;
+        // SAFETY: der is a valid DER buffer; hash is HASH_LEN bytes; key holds a valid public key.
         let rc = unsafe {
             wc_ecc_verify_hash(
                 der.as_ptr(),

@@ -41,6 +41,8 @@ pub struct PublicKey {
     pub(crate) octets: Box<[u8]>,
 }
 
+// SAFETY: PublicKey contains only a Box<[u8]>, which is already Send+Sync.
+// Explicit impls are present because the module's other types require them.
 unsafe impl Send for PublicKey {}
 unsafe impl Sync for PublicKey {}
 

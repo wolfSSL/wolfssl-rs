@@ -340,6 +340,9 @@ impl PqdsaKeyPair {
     }
 }
 
+// SAFETY: PqdsaKeyPair exclusively owns an LcPtr<EVP_PKEY> and byte buffers for
+// the key material. The EVP_PKEY is immutable after construction; wolfSSL's
+// const-pointer operations on EVP_PKEY are reentrant.
 unsafe impl Send for PqdsaKeyPair {}
 unsafe impl Sync for PqdsaKeyPair {}
 

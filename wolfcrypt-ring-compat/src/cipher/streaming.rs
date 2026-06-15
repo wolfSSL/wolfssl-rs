@@ -26,6 +26,9 @@ pub struct StreamingEncryptingKey {
     output_generated: usize,
 }
 
+// SAFETY: StreamingEncryptingKey exclusively owns a heap-allocated EVP_CIPHER_CTX
+// via LcPtr. The C object has no thread-local state; ownership can safely move
+// between threads.
 unsafe impl Send for StreamingEncryptingKey {}
 
 /// A struct indicating the portion of a buffer written to, and/or not written to, during an
@@ -412,6 +415,9 @@ pub struct StreamingDecryptingKey {
     overflow_buf: Vec<u8>,
 }
 
+// SAFETY: StreamingDecryptingKey exclusively owns a heap-allocated EVP_CIPHER_CTX
+// via LcPtr. The C object has no thread-local state; ownership can safely move
+// between threads.
 unsafe impl Send for StreamingDecryptingKey {}
 
 impl StreamingDecryptingKey {

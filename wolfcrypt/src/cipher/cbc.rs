@@ -55,6 +55,7 @@ macro_rules! impl_aes_cbc_enc {
             aes: wolfcrypt_rs::WcAes,
         }
 
+        // SAFETY: WcAes contains no thread-local state; safe to move to another thread.
         unsafe impl Send for $name {}
 
         impl KeySizeUser for $name {
@@ -68,6 +69,7 @@ macro_rules! impl_aes_cbc_enc {
         impl KeyIvInit for $name {
             fn new(key: &GenericArray<u8, $key_size>, iv: &GenericArray<u8, U16>) -> Self {
                 let mut aes = wolfcrypt_rs::WcAes::zeroed();
+                // SAFETY: `aes` is freshly zeroed; null heap + INVALID_DEVID is standard.
                 let rc = unsafe {
                     wolfcrypt_rs::wc_AesInit(
                         &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -76,6 +78,7 @@ macro_rules! impl_aes_cbc_enc {
                     )
                 };
                 assert_eq!(rc, 0, "wc_AesInit failed");
+                // SAFETY: `aes` was initialised by wc_AesInit; key/iv are valid slices.
                 let rc = unsafe {
                     wolfcrypt_rs::wc_AesSetKey(
                         &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -121,6 +124,7 @@ macro_rules! impl_aes_cbc_dec {
             aes: wolfcrypt_rs::WcAes,
         }
 
+        // SAFETY: WcAes contains no thread-local state; safe to move to another thread.
         unsafe impl Send for $name {}
 
         impl KeySizeUser for $name {
@@ -134,6 +138,7 @@ macro_rules! impl_aes_cbc_dec {
         impl KeyIvInit for $name {
             fn new(key: &GenericArray<u8, $key_size>, iv: &GenericArray<u8, U16>) -> Self {
                 let mut aes = wolfcrypt_rs::WcAes::zeroed();
+                // SAFETY: `aes` is freshly zeroed; null heap + INVALID_DEVID is standard.
                 let rc = unsafe {
                     wolfcrypt_rs::wc_AesInit(
                         &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -142,6 +147,7 @@ macro_rules! impl_aes_cbc_dec {
                     )
                 };
                 assert_eq!(rc, 0, "wc_AesInit failed");
+                // SAFETY: `aes` was initialised by wc_AesInit; key/iv are valid slices.
                 let rc = unsafe {
                     wolfcrypt_rs::wc_AesSetKey(
                         &mut aes as *mut wolfcrypt_rs::WcAes,

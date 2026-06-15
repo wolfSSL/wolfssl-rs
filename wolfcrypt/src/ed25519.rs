@@ -322,9 +322,12 @@ pub fn ed25519_sign_raw(
 ) -> Result<[u8; 64], WolfCryptError> {
     let mut key = wc_ed25519_key::zeroed();
 
+    // SAFETY: `key` is zeroed; `wc_ed25519_init` will fully initialise it.
     let rc = unsafe { wc_ed25519_init(&mut key) };
     check(rc, "wc_ed25519_init")?;
 
+    // SAFETY: `key` is initialised. `seed` and `pub_key` are valid slices
+    // with lengths passed via `len_as_u32`.
     let rc = unsafe {
         wc_ed25519_import_private_key(
             seed.as_ptr(),
@@ -335,6 +338,7 @@ pub fn ed25519_sign_raw(
         )
     };
     if rc != 0 {
+        // SAFETY: `key` was successfully initialised; freed exactly once.
         unsafe { wc_ed25519_free(&mut key) };
         return Err(WolfCryptError::Ffi {
             code: rc,
@@ -344,6 +348,8 @@ pub fn ed25519_sign_raw(
 
     let mut sig = [0u8; 64];
     let mut sig_len: u32 = 64;
+    // SAFETY: `key` has both private and public components imported.
+    // `message` is a valid slice; `sig` is a 64-byte output buffer.
     let rc = unsafe {
         wc_ed25519_sign_msg(
             message.as_ptr(),
@@ -353,6 +359,7 @@ pub fn ed25519_sign_raw(
             &mut key,
         )
     };
+    // SAFETY: `key` was successfully initialised; freed exactly once.
     unsafe { wc_ed25519_free(&mut key) };
     check(rc, "wc_ed25519_sign_msg")?;
 
@@ -376,12 +383,15 @@ pub fn ed25519_verify_raw(
 ) -> Result<(), WolfCryptError> {
     let mut key = wc_ed25519_key::zeroed();
 
+    // SAFETY: `key` is zeroed; `wc_ed25519_init` will fully initialise it.
     let rc = unsafe { wc_ed25519_init(&mut key) };
     check(rc, "wc_ed25519_init")?;
 
+    // SAFETY: `key` is initialised. `pub_key` is a valid slice with length passed via `len_as_u32`.
     let rc =
         unsafe { wc_ed25519_import_public(pub_key.as_ptr(), len_as_u32(pub_key.len()), &mut key) };
     if rc != 0 {
+        // SAFETY: `key` was successfully initialised; freed exactly once.
         unsafe { wc_ed25519_free(&mut key) };
         return Err(WolfCryptError::Ffi {
             code: rc,
@@ -390,6 +400,8 @@ pub fn ed25519_verify_raw(
     }
 
     let mut result: core::ffi::c_int = 0;
+    // SAFETY: `key` has a valid public key imported. `sig` and `message`
+    // are valid slices. `result` receives 1 if valid, 0 otherwise.
     let rc = unsafe {
         wc_ed25519_verify_msg(
             sig.as_ptr(),
@@ -400,6 +412,7 @@ pub fn ed25519_verify_raw(
             &mut key,
         )
     };
+    // SAFETY: `key` was successfully initialised; freed exactly once.
     unsafe { wc_ed25519_free(&mut key) };
     check(rc, "wc_ed25519_verify_msg")?;
 

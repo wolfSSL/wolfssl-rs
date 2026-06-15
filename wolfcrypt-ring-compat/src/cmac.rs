@@ -321,6 +321,9 @@ impl Clone for Context {
     }
 }
 
+// SAFETY: Context exclusively owns a Key (heap-allocated CMAC_CTX via LcPtr)
+// and a Vec<u8> accumulator. No thread-local state; ownership can safely move
+// between threads.
 unsafe impl Send for Context {}
 
 impl core::fmt::Debug for Context {

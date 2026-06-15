@@ -20,10 +20,12 @@ pub struct AesXts {
     direction: i32,
 }
 
+// SAFETY: XtsAes contains no thread-local state; safe to move to another thread.
 unsafe impl Send for AesXts {}
 
 impl Drop for AesXts {
     fn drop(&mut self) {
+        // SAFETY: self.xts was initialised by wc_AesXtsInit; we have &mut self.
         unsafe {
             wolfcrypt_rs::wc_AesXtsFree(&mut self.xts as *mut wolfcrypt_rs::XtsAes);
         }
@@ -52,6 +54,7 @@ impl AesXts {
 
         let mut xts = wolfcrypt_rs::XtsAes::zeroed();
 
+        // SAFETY: `xts` is freshly zeroed; null heap + INVALID_DEVID is the standard init.
         let rc = unsafe {
             wolfcrypt_rs::wc_AesXtsInit(
                 &mut xts as *mut wolfcrypt_rs::XtsAes,
@@ -61,6 +64,7 @@ impl AesXts {
         };
         check(rc, "wc_AesXtsInit")?;
 
+        // SAFETY: `xts` was initialised by wc_AesXtsInit; key is a valid slice.
         let rc = unsafe {
             wolfcrypt_rs::wc_AesXtsSetKeyNoInit(
                 &mut xts as *mut wolfcrypt_rs::XtsAes,
@@ -71,6 +75,7 @@ impl AesXts {
         };
         if rc != 0 {
             // Free the already-initialized XtsAes before returning.
+            // SAFETY: `xts` was initialised by wc_AesXtsInit; must free on error.
             unsafe {
                 wolfcrypt_rs::wc_AesXtsFree(&mut xts as *mut wolfcrypt_rs::XtsAes);
             }
@@ -103,6 +108,7 @@ impl AesXts {
             return Err(WolfCryptError::InvalidInput);
         }
 
+        // SAFETY: `xts` is keyed for encryption; all pointers/lengths from valid slices.
         let rc = unsafe {
             wolfcrypt_rs::wc_AesXtsEncrypt(
                 &mut self.xts as *mut wolfcrypt_rs::XtsAes,
@@ -134,6 +140,7 @@ impl AesXts {
             return Err(WolfCryptError::InvalidInput);
         }
 
+        // SAFETY: `xts` is keyed for decryption; all pointers/lengths from valid slices.
         let rc = unsafe {
             wolfcrypt_rs::wc_AesXtsDecrypt(
                 &mut self.xts as *mut wolfcrypt_rs::XtsAes,

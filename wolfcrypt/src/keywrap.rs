@@ -43,6 +43,7 @@ pub fn aes_wrap_key(kek: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, WolfCryptEr
     }
 
     let mut out = vec![0u8; plaintext.len() + 8];
+    // SAFETY: kek/plaintext are valid slices; out is plaintext.len()+8 bytes.
     let rc = unsafe {
         wc_AesKeyWrap(
             kek.as_ptr(),
@@ -86,6 +87,7 @@ pub fn aes_unwrap_key(kek: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>, WolfCryp
     }
 
     let mut out = vec![0u8; ciphertext.len()];
+    // SAFETY: kek/ciphertext are valid slices; out is ciphertext.len() bytes.
     let rc = unsafe {
         wc_AesKeyUnWrap(
             kek.as_ptr(),

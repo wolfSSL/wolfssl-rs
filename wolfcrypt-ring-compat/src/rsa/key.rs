@@ -94,6 +94,9 @@ pub struct KeyPair {
 }
 
 impl Sealed for KeyPair {}
+// SAFETY: KeyPair exclusively owns an LcPtr<EVP_PKEY> and a PublicKey.
+// Per wolfSSL docs (see struct comment above): non-mutating (const-pointer)
+// functions may be called concurrently; all &self methods here are non-mutating.
 unsafe impl Send for KeyPair {}
 unsafe impl Sync for KeyPair {}
 

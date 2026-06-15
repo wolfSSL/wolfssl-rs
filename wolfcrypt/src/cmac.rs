@@ -111,6 +111,7 @@ macro_rules! impl_cmac {
                 // Prevent Drop from double-freeing.
                 let ctx = self.ctx;
                 self.ctx = core::ptr::null_mut();
+                // SAFETY: ctx was allocated by wolfcrypt_cmac_*_new and is non-null.
                 unsafe { wolfcrypt_rs::wolfcrypt_cmac_free(ctx) };
             }
         }

@@ -316,6 +316,7 @@ impl AeadInPlace for ChaCha20Poly1305 {
             } else {
                 (buffer.as_ptr(), buffer.as_mut_ptr())
             };
+            // SAFETY: `aead` is initialised; in_ptr/out_ptr are valid or sentinel.
             let rc = unsafe {
                 wolfcrypt_rs::wc_ChaCha20Poly1305_UpdateData(
                     &mut aead,
@@ -363,6 +364,7 @@ impl AeadInPlace for ChaCha20Poly1305 {
         }
 
         if !associated_data.is_empty() {
+            // SAFETY: `aead` is initialised; pointer/len from a valid slice.
             let rc = unsafe {
                 wolfcrypt_rs::wc_ChaCha20Poly1305_UpdateAad(
                     &mut aead,
@@ -384,6 +386,7 @@ impl AeadInPlace for ChaCha20Poly1305 {
             } else {
                 (buffer.as_ptr(), buffer.as_mut_ptr())
             };
+            // SAFETY: `aead` is initialised; in_ptr/out_ptr are valid or sentinel.
             let rc = unsafe {
                 wolfcrypt_rs::wc_ChaCha20Poly1305_UpdateData(
                     &mut aead,
@@ -403,6 +406,7 @@ impl AeadInPlace for ChaCha20Poly1305 {
         // point.  If tag verification fails, we MUST zero it before returning
         // to prevent the caller from observing unauthenticated plaintext.
         let mut computed_tag = [0u8; 16];
+        // SAFETY: `aead` has been through Init+Update*; tag buffer is 16 bytes.
         let rc = unsafe {
             wolfcrypt_rs::wc_ChaCha20Poly1305_Final(&mut aead, computed_tag.as_mut_ptr())
         };
@@ -411,7 +415,7 @@ impl AeadInPlace for ChaCha20Poly1305 {
             return Err(aead_trait::Error);
         }
 
-        // Constant-time tag comparison via wolfCrypt.
+        // SAFETY: Both tag pointers are valid 16-byte arrays; constant-time compare.
         let rc = unsafe {
             wolfcrypt_rs::wc_ChaCha20Poly1305_CheckTag(computed_tag.as_ptr(), tag.as_ptr())
         };

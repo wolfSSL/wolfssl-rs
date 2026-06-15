@@ -48,11 +48,15 @@ macro_rules! impl_digest_native {
         }
 
         #[$cfg_gate]
+        // SAFETY: Each digest type exclusively owns a heap-allocated C context
+        // via raw pointer. The C context has no thread-local state and is not
+        // aliased; ownership can safely move between threads.
         unsafe impl Send for $name {}
 
         #[$cfg_gate]
         impl Default for $name {
             fn default() -> Self {
+                // SAFETY: FFI call allocates and initialises a new hash context on the heap.
                 let ctx = unsafe { $new_fn() };
                 assert!(
                     !ctx.is_null(),
@@ -66,6 +70,7 @@ macro_rules! impl_digest_native {
         impl Clone for $name {
             fn clone(&self) -> Self {
                 let mut new_ctx: *mut core::ffi::c_void = core::ptr::null_mut();
+                // SAFETY: `self.ctx` is a valid, initialised hash context.
                 let rc = unsafe { $copy_fn(self.ctx, &mut new_ctx) };
                 assert_eq!(rc, 0, concat!(stringify!($name), ": clone (copy) failed"));
                 Self { ctx: new_ctx }
@@ -76,6 +81,7 @@ macro_rules! impl_digest_native {
         impl Drop for $name {
             fn drop(&mut self) {
                 if !self.ctx.is_null() {
+                    // SAFETY: `self.ctx` is non-null and was allocated by the shim; freed once.
                     unsafe { $free_fn(self.ctx) };
                 }
             }
@@ -94,6 +100,7 @@ macro_rules! impl_digest_native {
         #[$cfg_gate]
         impl digest_trait::Update for $name {
             fn update(&mut self, data: &[u8]) {
+                // SAFETY: `self.ctx` is valid; `data` pointer and length are consistent.
                 let rc = unsafe { $update_fn(self.ctx, data.as_ptr(), data.len() as u32) };
                 assert_eq!(rc, 0, concat!(stringify!($name), ": update failed"));
             }
@@ -102,11 +109,13 @@ macro_rules! impl_digest_native {
         #[$cfg_gate]
         impl digest_trait::FixedOutput for $name {
             fn finalize_into(mut self, out: &mut GenericArray<u8, Self::OutputSize>) {
+                // SAFETY: `self.ctx` is valid; `out` is OutputSize bytes.
                 let rc = unsafe { $final_fn(self.ctx, out.as_mut_ptr()) };
                 assert_eq!(rc, 0, concat!(stringify!($name), ": finalize failed"));
                 // Prevent Drop from double-freeing — free is our responsibility here.
                 let ctx = self.ctx;
                 self.ctx = core::ptr::null_mut();
+                // SAFETY: `ctx` is the valid context pointer; freed exactly once here.
                 unsafe { $free_fn(ctx) };
             }
         }
@@ -114,13 +123,16 @@ macro_rules! impl_digest_native {
         #[$cfg_gate]
         impl digest_trait::FixedOutputReset for $name {
             fn finalize_into_reset(&mut self, out: &mut GenericArray<u8, Self::OutputSize>) {
+                // SAFETY: `self.ctx` is valid; `out` is OutputSize bytes.
                 let rc = unsafe { $final_fn(self.ctx, out.as_mut_ptr()) };
                 assert_eq!(
                     rc, 0,
                     concat!(stringify!($name), ": finalize_into_reset failed")
                 );
                 // Re-init: free old context, allocate a fresh one.
+                // SAFETY: `self.ctx` was finalised above; freed exactly once.
                 unsafe { $free_fn(self.ctx) };
+                // SAFETY: allocates a fresh hash context on the heap.
                 self.ctx = unsafe { $new_fn() };
                 assert!(
                     !self.ctx.is_null(),
@@ -132,7 +144,9 @@ macro_rules! impl_digest_native {
         #[$cfg_gate]
         impl digest_trait::Reset for $name {
             fn reset(&mut self) {
+                // SAFETY: `self.ctx` is a valid context; freed exactly once.
                 unsafe { $free_fn(self.ctx) };
+                // SAFETY: allocates a fresh hash context on the heap.
                 self.ctx = unsafe { $new_fn() };
                 assert!(
                     !self.ctx.is_null(),

@@ -16,10 +16,12 @@ macro_rules! impl_aes_ofb {
             aes: wolfcrypt_rs::WcAes,
         }
 
+        // SAFETY: WcAes contains no thread-local state; safe to move to another thread.
         unsafe impl Send for $name {}
 
         impl Drop for $name {
             fn drop(&mut self) {
+                // SAFETY: self.aes was initialised by wc_AesInit; we have &mut self.
                 unsafe {
                     wolfcrypt_rs::wc_AesFree(&mut self.aes as *mut wolfcrypt_rs::WcAes);
                 }
@@ -38,6 +40,7 @@ macro_rules! impl_aes_ofb {
             fn new(key: &GenericArray<u8, $key_size>, iv: &GenericArray<u8, U16>) -> Self {
                 let mut aes = wolfcrypt_rs::WcAes::zeroed();
 
+                // SAFETY: `aes` is freshly zeroed; null heap + INVALID_DEVID is standard.
                 let rc = unsafe {
                     wolfcrypt_rs::wc_AesInit(
                         &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -47,6 +50,7 @@ macro_rules! impl_aes_ofb {
                 };
                 assert_eq!(rc, 0, "wc_AesInit failed (OOM or invalid device)");
 
+                // SAFETY: `aes` was initialised by wc_AesInit; key/iv are valid slices.
                 let rc = unsafe {
                     wolfcrypt_rs::wc_AesSetKey(
                         &mut aes as *mut wolfcrypt_rs::WcAes,
@@ -70,6 +74,7 @@ macro_rules! impl_aes_ofb {
                 let len = buf.len();
                 let (in_ptr, out_ptr) = buf.into_raw();
 
+                // SAFETY: `aes` is keyed; in_ptr/out_ptr from InOutBuf are valid.
                 let rc = unsafe {
                     wolfcrypt_rs::wc_AesOfbEncrypt(
                         &mut self.aes as *mut wolfcrypt_rs::WcAes,

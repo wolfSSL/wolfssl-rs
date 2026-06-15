@@ -96,6 +96,7 @@ impl EccKey {
         let rc = unsafe { wc_ecc_init_ex(key, ptr::null_mut(), -1) };
         if rc != 0 {
             // Init failed — free the allocation before returning.
+            // SAFETY: `key` was successfully allocated above; freed exactly once.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -111,8 +112,10 @@ impl EccKey {
         let key = Self::alloc_and_init()?;
 
         // Determine the key size in bytes from the curve ID.
+        // SAFETY: pure query function; `curve` is a valid ECC curve ID.
         let key_size = unsafe { wc_ecc_get_curve_size_from_id(curve as i32) };
         if key_size <= 0 {
+            // SAFETY: `key` was successfully allocated; freed exactly once.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::InvalidInput);
         }
@@ -120,6 +123,7 @@ impl EccKey {
         // SAFETY: `key` is initialised.  `rng.rng` is a valid WC_RNG.
         let rc = unsafe { wc_ecc_make_key_ex(&mut rng.rng, key_size, key, curve as i32) };
         if rc != 0 {
+            // SAFETY: `key` was successfully allocated; freed exactly once.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -153,6 +157,7 @@ impl EccKey {
             )
         };
         if rc != 0 {
+            // SAFETY: `key` was successfully allocated; freed exactly once.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -172,6 +177,8 @@ impl EccKey {
 
         // Pass NULL/0 for the public key — wolfCrypt will compute it
         // from the private scalar using the curve's generator point.
+        // SAFETY: `key` is initialised. `priv_key` is a valid slice; NULL
+        // public key tells wolfCrypt to derive it from the scalar.
         let rc = unsafe {
             wc_ecc_import_private_key_ex(
                 priv_key.as_ptr(),
@@ -183,6 +190,7 @@ impl EccKey {
             )
         };
         if rc != 0 {
+            // SAFETY: `key` was successfully allocated; freed exactly once.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -200,6 +208,7 @@ impl EccKey {
         // SAFETY: `key` is initialised.  `pub_key` is a valid slice.
         let rc = unsafe { wc_ecc_import_x963(pub_key.as_ptr(), len_as_u32(pub_key.len()), key) };
         if rc != 0 {
+            // SAFETY: `key` was successfully allocated; freed exactly once.
             unsafe { wc_ecc_key_free(key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -339,6 +348,8 @@ pub fn ecc_sig_der_to_rs(
     let mut r_len = r.len() as u32;
     let mut s_len = s.len() as u32;
 
+    // SAFETY: `der_sig` is a valid slice; `r`/`s` are 66-byte output buffers
+    // with corresponding length variables. All pointers are valid and non-null.
     let rc = unsafe {
         wolfcrypt_rs::wc_ecc_sig_to_rs(
             der_sig.as_ptr(),
@@ -360,6 +371,8 @@ pub fn ecc_sig_rs_to_der(r: &[u8], s: &[u8]) -> Result<alloc::vec::Vec<u8>, Wolf
     let mut out = [0u8; 144];
     let mut out_len = out.len() as u32;
 
+    // SAFETY: `r`/`s` are valid slices; `out` is a 144-byte buffer with
+    // `out_len` tracking its capacity. All pointers are valid and non-null.
     let rc = unsafe {
         wolfcrypt_rs::wc_ecc_rs_raw_to_sig(
             r.as_ptr(),

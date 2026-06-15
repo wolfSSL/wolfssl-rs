@@ -184,6 +184,9 @@ impl Debug for PublicKey {
     }
 }
 
+// SAFETY: PublicKey contains a fixed-size byte array and an LcPtr<EVP_PKEY>.
+// The EVP_PKEY is immutable after construction; wolfSSL's const-pointer
+// operations on EVP_PKEY are reentrant.
 unsafe impl Send for PublicKey {}
 unsafe impl Sync for PublicKey {}
 
@@ -210,6 +213,9 @@ impl KeyPair for Ed25519KeyPair {
     }
 }
 
+// SAFETY: Ed25519KeyPair exclusively owns an LcPtr<EVP_PKEY> and a PublicKey.
+// The EVP_PKEY is immutable after construction; wolfSSL's ed25519 sign operation
+// takes a const key pointer and is reentrant.
 unsafe impl Send for Ed25519KeyPair {}
 unsafe impl Sync for Ed25519KeyPair {}
 

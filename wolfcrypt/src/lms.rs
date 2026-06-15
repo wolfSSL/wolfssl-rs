@@ -136,6 +136,7 @@ impl LmsVerifyingKey {
 
         if pub_key.len() != expected_len as usize {
             // Clean up before returning the error.
+            // SAFETY: key was initialised by wc_LmsKey_Init above.
             unsafe { wc_LmsKey_Free(&mut key) };
             return Err(WolfCryptError::InvalidInput);
         }
@@ -143,6 +144,7 @@ impl LmsVerifyingKey {
         // SAFETY: `key` has parameters set, `pub_key` has the correct length.
         let rc = unsafe { wc_LmsKey_ImportPubRaw(&mut key, pub_key.as_ptr(), expected_len) };
         if rc != 0 {
+            // SAFETY: key was initialised by wc_LmsKey_Init above.
             unsafe { wc_LmsKey_Free(&mut key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -244,7 +246,9 @@ struct PrivKeyStore {
 /// `context` must point to a live `PrivKeyStore` (guaranteed by
 /// `LmsSigningKey`'s invariant).
 unsafe extern "C" fn lms_write_cb(priv_: *const u8, priv_sz: u32, context: *mut c_void) -> c_int {
+    // SAFETY: context points to a live PrivKeyStore, guaranteed by LmsSigningKey's invariant.
     let store = unsafe { &mut *(context as *mut PrivKeyStore) };
+    // SAFETY: priv_ is a valid pointer to priv_sz bytes, provided by wolfCrypt.
     let src = unsafe { core::slice::from_raw_parts(priv_, priv_sz as usize) };
     store.data.resize(src.len(), 0);
     store.data.copy_from_slice(src);
@@ -257,10 +261,12 @@ unsafe extern "C" fn lms_write_cb(priv_: *const u8, priv_sz: u32, context: *mut 
 ///
 /// `context` must point to a live `PrivKeyStore`.
 unsafe extern "C" fn lms_read_cb(priv_: *mut u8, priv_sz: u32, context: *mut c_void) -> c_int {
+    // SAFETY: context points to a live PrivKeyStore, guaranteed by LmsSigningKey's invariant.
     let store = unsafe { &*(context as *const PrivKeyStore) };
     if store.data.len() != priv_sz as usize {
         return -1; // size mismatch
     }
+    // SAFETY: priv_ is a valid pointer to priv_sz bytes, provided by wolfCrypt.
     let dst = unsafe { core::slice::from_raw_parts_mut(priv_, priv_sz as usize) };
     dst.copy_from_slice(&store.data);
     0 // success
@@ -295,9 +301,11 @@ impl LmsSigningKey {
     ) -> Result<Self, WolfCryptError> {
         let mut key = WcLmsKey::zeroed();
 
+        // SAFETY: key is zeroed; wc_LmsKey_Init fully initialises it.
         let rc = unsafe { wc_LmsKey_Init(&mut key, core::ptr::null_mut(), -1) };
         check(rc, "wc_LmsKey_Init")?;
 
+        // SAFETY: key is initialised; parameter values are caller-specified constants.
         let rc = unsafe {
             wc_LmsKey_SetParameters(
                 &mut key,
@@ -307,6 +315,7 @@ impl LmsSigningKey {
             )
         };
         if rc != 0 {
+            // SAFETY: key was initialised above; freed on error path.
             unsafe { wc_LmsKey_Free(&mut key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -319,24 +328,30 @@ impl LmsSigningKey {
 
         // Register callbacks before MakeKey.
         let ctx_ptr: *mut c_void = &mut *store as *mut PrivKeyStore as *mut c_void;
+        // SAFETY: key is initialised; lms_write_cb has the correct C ABI signature.
         let rc = unsafe { wc_LmsKey_SetWriteCb(&mut key, Some(lms_write_cb)) };
         if rc != 0 {
+            // SAFETY: key was initialised above; freed on error path.
             unsafe { wc_LmsKey_Free(&mut key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
                 func: "wc_LmsKey_SetWriteCb",
             });
         }
+        // SAFETY: key is initialised; lms_read_cb has the correct C ABI signature.
         let rc = unsafe { wc_LmsKey_SetReadCb(&mut key, Some(lms_read_cb)) };
         if rc != 0 {
+            // SAFETY: key was initialised above; freed on error path.
             unsafe { wc_LmsKey_Free(&mut key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
                 func: "wc_LmsKey_SetReadCb",
             });
         }
+        // SAFETY: key is initialised; ctx_ptr points to a Box-pinned PrivKeyStore that outlives key.
         let rc = unsafe { wc_LmsKey_SetContext(&mut key, ctx_ptr) };
         if rc != 0 {
+            // SAFETY: key was initialised above; freed on error path.
             unsafe { wc_LmsKey_Free(&mut key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -345,8 +360,10 @@ impl LmsSigningKey {
         }
 
         // Generate the key pair.
+        // SAFETY: key has params + callbacks set; rng is a valid initialised WolfRng.
         let rc = unsafe { wc_LmsKey_MakeKey(&mut key, &mut rng.rng) };
         if rc != 0 {
+            // SAFETY: key was initialised above; freed on error path.
             unsafe { wc_LmsKey_Free(&mut key) };
             return Err(WolfCryptError::Ffi {
                 code: rc,
@@ -366,12 +383,14 @@ impl LmsSigningKey {
     /// Returns the DER-encoded LMS/HSS signature.
     pub fn sign(&mut self, msg: &[u8]) -> Result<Vec<u8>, WolfCryptError> {
         let mut sig_len: u32 = 0;
+        // SAFETY: self.key is fully initialised with parameters set.
         let rc = unsafe { wc_LmsKey_GetSigLen(&*self.key.get(), &mut sig_len) };
         check(rc, "wc_LmsKey_GetSigLen")?;
 
         let mut sig = vec![0u8; sig_len as usize];
         let msg_len = len_as_c_int(msg.len());
 
+        // SAFETY: self.key is initialised with a generated private key; sig is sig_len bytes.
         let rc = unsafe {
             wc_LmsKey_Sign(
                 self.key.get(),
@@ -389,11 +408,13 @@ impl LmsSigningKey {
     /// Export the public key bytes.
     pub fn export_public(&self) -> Result<Vec<u8>, WolfCryptError> {
         let mut pub_len: u32 = 0;
+        // SAFETY: self.key is fully initialised with parameters set.
         let rc = unsafe { wc_LmsKey_GetPubLen(&*self.key.get(), &mut pub_len) };
         check(rc, "wc_LmsKey_GetPubLen")?;
 
         let mut buf = vec![0u8; pub_len as usize];
         let mut out_len = pub_len;
+        // SAFETY: self.key has a valid public key; buf is pub_len bytes.
         let rc =
             unsafe { wc_LmsKey_ExportPubRaw(&*self.key.get(), buf.as_mut_ptr(), &mut out_len) };
         check(rc, "wc_LmsKey_ExportPubRaw")?;
@@ -404,6 +425,7 @@ impl LmsSigningKey {
     /// Return the number of signatures remaining (0 = exhausted).
     pub fn remaining_signatures(&self) -> i32 {
         // wc_LmsKey_SigsLeft returns >0 for yes, 0 for no, negative on error.
+        // SAFETY: self.key is fully initialised with a generated key.
         unsafe { wc_LmsKey_SigsLeft(self.key.get()) }
     }
 
@@ -415,6 +437,7 @@ impl LmsSigningKey {
 
 impl Drop for LmsSigningKey {
     fn drop(&mut self) {
+        // SAFETY: self.key was initialised during construction; freed exactly once.
         unsafe { wc_LmsKey_Free(self.key.get_mut()) };
     }
 }

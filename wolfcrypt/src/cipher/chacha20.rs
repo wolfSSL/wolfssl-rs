@@ -46,11 +46,13 @@ impl KeyIvInit for WolfChaCha20 {
     fn new(key: &GenericArray<u8, typenum::U32>, nonce: &GenericArray<u8, typenum::U12>) -> Self {
         let mut ctx = wolfcrypt_rs::ChaCha::zeroed();
 
+        // SAFETY: `ctx` is freshly zeroed; key is a valid 32-byte slice.
         let rc = unsafe {
             wolfcrypt_rs::wc_Chacha_SetKey(&mut ctx as *mut wolfcrypt_rs::ChaCha, key.as_ptr(), 32)
         };
         assert_eq!(rc, 0, "wc_Chacha_SetKey failed (invalid key length)");
 
+        // SAFETY: `ctx` was keyed by wc_Chacha_SetKey; nonce is a valid 12-byte slice.
         let rc = unsafe {
             wolfcrypt_rs::wc_Chacha_SetIV(&mut ctx as *mut wolfcrypt_rs::ChaCha, nonce.as_ptr(), 0)
         };
@@ -68,6 +70,7 @@ impl StreamCipher for WolfChaCha20 {
         let len = buf.len();
         let (in_ptr, out_ptr) = buf.into_raw();
 
+        // SAFETY: `ctx` is keyed; in_ptr/out_ptr from InOutBuf are valid.
         let rc = unsafe {
             wolfcrypt_rs::wc_Chacha_Process(
                 &mut self.ctx as *mut wolfcrypt_rs::ChaCha,

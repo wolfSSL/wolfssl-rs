@@ -37,7 +37,11 @@ impl DigestContext {
     }
 }
 
+// SAFETY: DigestContext exclusively owns a heap-allocated EVP_MD_CTX via LcPtr.
+// The C object has no thread-local state and no aliased references.
 unsafe impl Send for DigestContext {}
+// SAFETY: &DigestContext only permits const-pointer access (as_ptr); wolfSSL's
+// EVP_MD_CTX read-only operations are reentrant.
 unsafe impl Sync for DigestContext {}
 
 impl Clone for DigestContext {

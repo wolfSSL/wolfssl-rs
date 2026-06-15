@@ -199,6 +199,8 @@ impl LcHmacCtx {
         Ok(new_ctx)
     }
 }
+// SAFETY: LcHmacCtx exclusively owns a heap-allocated HMAC_CTX via LcPtr.
+// The C object has no thread-local state; ownership can safely move between threads.
 unsafe impl Send for LcHmacCtx {}
 
 impl Clone for LcHmacCtx {

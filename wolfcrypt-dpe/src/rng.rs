@@ -23,13 +23,10 @@ pub(crate) fn rand_bytes(
 ) -> Result<(), CryptoError> {
     let rng = match rng.as_mut() {
         Some(r) => r,
-        None => {
-            *rng = Some(
-                wolfcrypt::WolfRng::new_with_dev_id(rng_dev_id)
-                    .map_err(|_| CryptoError::CryptoLibError(ERR_RNG_FAILURE))?,
-            );
-            rng.as_mut().unwrap()
-        }
+        None => rng.insert(
+            wolfcrypt::WolfRng::new_with_dev_id(rng_dev_id)
+                .map_err(|_| CryptoError::CryptoLibError(ERR_RNG_FAILURE))?,
+        ),
     };
     rng.fill_bytes(dst);
     Ok(())
