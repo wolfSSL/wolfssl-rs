@@ -33,5 +33,5 @@
 #include "wolfssl/wolfcrypt/dh.h"
 #include "wolfssl/wolfcrypt/cmac.h"
 #include "wolfssl/wolfcrypt/dilithium.h"
-#include "wolfssl/wolfcrypt/mlkem.h"
+#include "wolfssl/wolfcrypt/wc_mlkem.h"
 #include "wolfssl/wolfcrypt/cryptocb.h"
