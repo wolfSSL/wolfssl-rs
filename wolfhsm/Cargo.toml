@@ -9,6 +9,11 @@ repository = "https://github.com/wolfSSL/wolfssl-rs"
 readme = "README.md"
 
 [features]
+## Enable Unix Domain Socket transport.
+## Requires a wolfHSM source tree that includes posix_transport_uds.{c,h}
+## (upstream wolfHSM main, or a fork with UDS support).
+uds = []
+
 ## Enable ML-DSA (Dilithium) key support.
 ## Requires the linked wolfSSL to be built with HAVE_DILITHIUM.
 mldsa = []

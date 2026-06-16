@@ -11,7 +11,7 @@
 /// | Variant | wolfHSM C type           | Underlying mechanism        |
 /// |---------|-------------------------|-----------------------------|
 /// | `Tcp`   | `posixTransportTcpConfig` | TCP/IP socket               |
-/// | `Uds`   | `posixTransportUdsConfig` | Unix Domain Socket          |
+/// | `Uds`   | `posixTransportUdsConfig` | Unix Domain Socket (requires `uds` feature) |
 /// | `Shm`   | `posixTransportShmConfig` | POSIX shared memory (`shm_open`) |
 #[non_exhaustive]
 #[derive(Debug, Clone)]
@@ -28,6 +28,9 @@ pub enum Transport {
     },
 
     /// Unix Domain Socket connection to a wolfHSM server on the same host.
+    ///
+    /// Requires the `uds` cargo feature.
+    #[cfg(feature = "uds")]
     Uds {
         /// Filesystem path to the UDS socket file
         /// (e.g. `"/run/wolfhsm/wolfhsm.sock"`).

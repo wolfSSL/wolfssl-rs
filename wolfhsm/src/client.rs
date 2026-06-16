@@ -6,10 +6,13 @@ use wolfhsm_sys::{
     posixTransportShm_ClientInit, posixTransportShm_RecvResponse, posixTransportShm_SendRequest,
     posixTransportTcpClientContext, posixTransportTcpConfig, posixTransportTcp_CleanupConnect,
     posixTransportTcp_InitConnect, posixTransportTcp_RecvResponse, posixTransportTcp_SendRequest,
-    posixTransportUdsClientContext, posixTransportUdsConfig, posixTransportUds_CleanupConnect,
-    posixTransportUds_InitConnect, posixTransportUds_RecvResponse, posixTransportUds_SendRequest,
     whClientConfig, whClientContext, whCommClientConfig, whTransportClientCb, wh_Client_Cleanup,
     wh_Client_CommInfo, wh_Client_Echo, wh_Client_Init,
+};
+#[cfg(feature = "uds")]
+use wolfhsm_sys::{
+    posixTransportUdsClientContext, posixTransportUdsConfig, posixTransportUds_CleanupConnect,
+    posixTransportUds_InitConnect, posixTransportUds_RecvResponse, posixTransportUds_SendRequest,
 };
 
 use crate::error::Error;
@@ -29,6 +32,7 @@ struct TcpInner {
     _ip: CString,
 }
 
+#[cfg(feature = "uds")]
 struct UdsInner {
     transport_ctx: posixTransportUdsClientContext,
     transport_cfg: posixTransportUdsConfig,
@@ -47,6 +51,7 @@ struct ShmInner {
 
 enum TransportInner {
     Tcp(Box<TcpInner>),
+    #[cfg(feature = "uds")]
     Uds(Box<UdsInner>),
     Shm(Box<ShmInner>),
 }
@@ -68,6 +73,7 @@ impl TransportInner {
                 &mut inner.transport_ctx as *mut _ as *mut core::ffi::c_void,
                 &inner.transport_cfg as *const _ as *const core::ffi::c_void,
             ),
+            #[cfg(feature = "uds")]
             TransportInner::Uds(inner) => (
                 &inner.transport_cb as *const _,
                 &mut inner.transport_ctx as *mut _ as *mut core::ffi::c_void,
@@ -251,6 +257,7 @@ impl Client {
                 }))
             }
 
+            #[cfg(feature = "uds")]
             Transport::Uds { path } => {
                 let path_cstr = CString::new(path).map_err(|_| Error::InvalidInput {
                     msg: "path contains an interior NUL byte",
