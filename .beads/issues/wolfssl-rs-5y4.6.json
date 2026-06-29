@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-5y4.6",
+  "title": "wolfhsm-sys shims: silent u16 truncation of buffer sizes",
+  "description": "wolfhsm_ecc_shared_secret(), wolfhsm_curve25519_shared_secret(), and wolfhsm_rsa_sign() cast uint32_t out_len to uint16_t with no overflow check. For RSA with a 4096-bit key, out_len could plausibly be 512 bytes (fits fine), but a caller passing a larger buffer would get silent truncation. More importantly, in_len is cast to uint16_t in wolfhsm_rsa_sign via '(uint16_t)in_len', which silently truncates any input > 64KiB. Add explicit bounds checks and return an error code rather than silently truncating.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:00:25Z",
+  "updated_at": "2026-04-27T18:04:56Z",
+  "closed_at": "2026-04-27T18:04:56Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-5y4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:00:25Z"
+    }
+  ]
+}

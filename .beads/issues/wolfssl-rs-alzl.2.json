@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-alzl.2",
+  "title": "wolftpm-tss lib.rs quick-start example uses no_run,ignore \u2014 will silently bitrot",
+  "description": "The quick-start code example in wolftpm-tss/src/lib.rs uses ```no_run,ignore, which means rustdoc never compiles or runs it. It will silently diverge from the real API. The correct approach is to gate the example on the tss feature: `#[cfg_attr(feature = \"tss\", doc = \"...\")]` or use a separate cfg_doc integration test, so it at least compiles when the feature is enabled.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:40:06Z",
+  "updated_at": "2026-04-30T06:46:30Z",
+  "closed_at": "2026-04-30T06:46:30Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-alzl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:40:06Z"
+    }
+  ]
+}

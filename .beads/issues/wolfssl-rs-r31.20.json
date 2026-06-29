@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.20",
+  "title": "wolftpm-tss error.rs Display names only 3 transport codes \u2014 sparse, inconsistent with wolftpm error.rs",
+  "description": "wolftpm-tss/src/error.rs Error::Transport Display hardcodes symbolic names for only 3 codes (TPM_RC_SIZE, TPM_RC_SYMMETRIC, TPM_RC_COMMAND_CODE) with incorrect hex values (0x0095 = 149 = TPM_RC_SIZE, 0x0096 = 150 = TPM_RC_SYMMETRIC, 0x0143 = 323 = TPM_RC_COMMAND_CODE \u2014 these are decimal values used as hex, so 0x0095 = 149 decimal = TPM_RC_SIZE, but 0x0096 = 150 decimal = TPM_RC_SYMMETRIC, 0x0143 = 323 decimal = TPM_RC_COMMAND_CODE: these happen to be correct). The wolftpm crate has a complete tpm_rc_name table. wolftpm-tss's sparse table will be inconsistent as the project evolves. Consider either sharing tpm_rc_name or simply delegating to the wolftpm crate's formatting.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:06:23Z",
+  "updated_at": "2026-04-30T06:24:12Z",
+  "closed_at": "2026-04-30T06:24:12Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:06:23Z"
+    }
+  ]
+}

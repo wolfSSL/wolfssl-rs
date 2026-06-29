@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-dtv",
+  "title": "Audit wc_ecc_* bindings and RNG/blinding requirements",
+  "description": "Before implementing native ECDH, confirm all needed wc_ecc_* bindings are exposed in wolfcrypt-rs/src/lib.rs and identify any gaps. Key questions: (1) Is wc_ecc_set_rng bound? (wc_ecc_shared_secret may need an RNG attached to the key for scalar-blinding in a standard build.) (2) Is wc_ecc_check_key bound? (needed to reject invalid peer public key points before calling wc_ecc_shared_secret). (3) Confirm ECC_SECP521R1 constant value is correct (=16). Document any bindings that need to be added before implementation.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T06:56:01Z",
+  "updated_at": "2026-04-04T07:01:41Z",
+  "closed_at": "2026-04-04T07:01:41Z"
+}

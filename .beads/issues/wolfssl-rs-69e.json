@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-69e",
+  "title": "wolftpm-sys build.rs: no wolfTPM version compatibility guard",
+  "description": "wolftpm-sys/build.rs links against the wolfTPM static library discovered via DEP_WOLFTPM_SRC_* but performs no version check or minimum-version assertion. The shim (wolftpm_rs_shim.c) directly accesses internal wolfTPM struct fields whose layout is not ABI-stable. If a user substitutes a wolfTPM version with a different WOLFTPM2_CTX layout, the build succeeds silently and the shim produces undefined behavior at runtime. A compile-time version assertion (e.g. comparing LIBWOLFTPM_VERSION_HEX) would catch this early.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:01Z",
+  "updated_at": "2026-04-30T16:53:32Z",
+  "closed_at": "2026-04-30T16:53:32Z"
+}

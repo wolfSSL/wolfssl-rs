@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.5",
+  "title": "nvm_list cursor advance uses out_id not out_id+1",
+  "description": "In nvm_list(), after each wh_Client_NvmList call the cursor (start_id) is set to out_id, not out_id+1. The wolfHSM server (wh_NvmFlash_List, wh_NvmFlashLog_List) performs an exact-match lookup on start_id and returns the *next* object after the matched entry. Incrementing start_id to out_id+1 would cause spurious WH_ERROR_NOTFOUND for non-contiguous ID spaces because there is no guarantee that out_id+1 exists as a stored object. This was confirmed against the wolfHSM C source and upstream test suite (wh_test_clientserver.c). A contributor might 'simplify' this to out_id+1 imagining a lower-bound search semantics; that is wrong. The comment block in the code and this decision record both explain the exact-match contract.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:03Z",
+  "updated_at": "2026-04-27T22:36:50Z",
+  "closed_at": "2026-04-27T22:36:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:03Z"
+    }
+  ]
+}

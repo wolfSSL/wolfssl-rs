@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.7",
+  "title": "ecc: magic number 91 for P-256 SPKI DER size unexplained",
+  "description": "In src/crypto/ecc.rs, the literal 91 appears as the buffer size and initial out_len for public_key_der, and again in the doc comment for ecdh ('must be the 91-byte DER SubjectPublicKeyInfo'). There is no comment explaining where 91 comes from (it is the exact DER-encoded size of a P-256 SubjectPublicKeyInfo: 9-byte header + 1-byte tag + 65-byte uncompressed point). A contributor who changes this to a round number or who adds P-384 support will silently truncate or reject valid keys. Add a comment deriving the value.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:47Z",
+  "updated_at": "2026-04-27T21:13:49Z",
+  "closed_at": "2026-04-27T21:13:49Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:46Z"
+    }
+  ]
+}

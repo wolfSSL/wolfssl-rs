@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.17",
+  "title": "client::info() declares 14 individual mut variables before struct init",
+  "description": "client.rs Client::info() declares 14 separate mut local variables (version, build, comm_data_len, ..., nvm_state) purely to pass as out-pointers to wh_Client_CommInfo, then immediately moves them into a ServerInfo struct. The pattern is verbose and invites mismatches between variable names and struct field names. Suggested rewrite: zero-initialise a ServerInfo via Default (or MaybeUninit), then pass pointers to its fields directly. If the C API makes that awkward, at minimum declare all 14 as a single block comment-separated group rather than one-per-line to reduce the visual noise.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:32Z",
+  "updated_at": "2026-04-28T00:18:20Z",
+  "closed_at": "2026-04-28T00:18:20Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:32Z"
+    }
+  ]
+}

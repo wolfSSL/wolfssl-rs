@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.19",
+  "title": "ServerInfo fields are entirely undocumented",
+  "description": "client.rs: ServerInfo has 14 public fields (version, build, comm_data_len, nvm_object_count, keycache_count, keycache_bufsize, keycache_bigcount, keycache_bigbufsize, customcb_count, dmaaddr_count, debug_state, boot_state, lifecycle_state, nvm_state) and none of them has a doc comment. A caller of info() gets this struct back and cannot interpret any field without reading wolfHSM C headers. At minimum the struct-level doc should note which wolfHSM C function populates it (wh_Client_CommInfo) and what the state fields encode (debug_state, boot_state, lifecycle_state, nvm_state are opaque integer enums). Field-level comments or a reference to wh_comm.h would make this struct self-explanatory.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:51Z",
+  "updated_at": "2026-04-28T00:54:07Z",
+  "closed_at": "2026-04-28T00:54:07Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:50Z"
+    }
+  ]
+}

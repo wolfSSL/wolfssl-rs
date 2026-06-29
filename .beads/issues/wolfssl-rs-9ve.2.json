@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-9ve.2",
+  "title": "AES-GCM gcm_encrypt/gcm_decrypt: IV length not validated client-side",
+  "description": "gcm_encrypt and gcm_decrypt accept any iv.len() and forward it to the server. The doc says 'iv must be exactly 12 bytes; other lengths will cause the server to return an error' \u2014 but the error is Ffi{code} with no message identifying the cause. A caller passing iv.len() \\!= 12 gets an opaque server error instead of a clear BadArgs. Fix: add iv.len() == 12 guard at the top of both methods, returning Error::BadArgs { msg: \"iv must be exactly 12 bytes\" }.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:43:23Z",
+  "updated_at": "2026-04-28T01:44:50Z",
+  "closed_at": "2026-04-28T01:44:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9ve",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:43:23Z"
+    }
+  ]
+}

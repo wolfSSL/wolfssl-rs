@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.23",
+  "title": "KeyId and NvmId are pub newtypes with pub inner field, From<u16> both ways",
+  "description": "KeyId(pub u16) and NvmId(pub u16) are newtype structs with public inner fields and bidirectional From<u16>/From<KeyId/NvmId> conversions. The pub inner field is a deliberate escape hatch: downstream code that needs to pass the raw u16 to other C bindings or serialize it can do so without a separate accessor. Both types also carry ERASED/INVALID constants mirroring the C sentinel values. A future contributor might argue the inner field should be private (pub(crate)) for encapsulation, but given the C FFI context \u2014 where callers routinely need to pass raw IDs to other wolfSSL APIs not wrapped here \u2014 forced accessor verbosity would not add safety and would reduce usability.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:26:11Z",
+  "updated_at": "2026-04-27T19:07:39Z",
+  "closed_at": "2026-04-27T19:07:39Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:26:10Z"
+    }
+  ]
+}

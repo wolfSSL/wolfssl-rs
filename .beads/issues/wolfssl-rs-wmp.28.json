@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.28",
+  "title": "MlDsaKey generate invalid level returns Ffi not BadArgs",
+  "description": "MlDsaKey::generate returns Ffi for invalid level while all other validation failures use BadArgs. Callers matching on BadArgs miss the MlDsa case. Contributors copying the pattern fragment the error taxonomy.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:08:07Z",
+  "updated_at": "2026-04-27T22:19:32Z",
+  "closed_at": "2026-04-27T22:19:32Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:08:07Z"
+    }
+  ]
+}

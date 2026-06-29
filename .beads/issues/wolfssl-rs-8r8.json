@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-8r8",
+  "title": "wolfhsm-sys: crate scaffold and wrapper.h",
+  "description": "Create wolfhsm-sys/Cargo.toml (links=wolfhsm, deps: wolfcrypt-sys with vendored feature, build-deps: bindgen + wolfhsm-src), wolfhsm-sys/src/lib.rs (allow non_* + dead_code, include! bindings.rs, extern C declarations for all shim functions), and wolfhsm-sys/wrapper.h (includes for wh_common.h, wh_error.h, wh_comm.h, wh_client.h, wh_client_crypto.h, wh_client_cryptocb.h, wh_client_she.h, wh_auth.h, port/posix transport headers).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:17:55Z",
+  "updated_at": "2026-04-27T17:56:58Z",
+  "closed_at": "2026-04-27T17:56:58Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-717",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:19:50Z"
+    }
+  ]
+}

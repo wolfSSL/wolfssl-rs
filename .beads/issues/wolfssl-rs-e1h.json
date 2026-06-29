@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-e1h",
+  "title": "wolfhsm: transport.rs and client.rs",
+  "description": "transport.rs: Transport enum with Tcp{host,port}, Shm{name}, Uds{path}, Tls{host,port,...}. client.rs: Client struct wrapping RefCell<Box<whClientContext>> (making it !Send+!Sync) plus _transport: Box<dyn Any> owning C transport config structs (must outlive ctx). Client::connect(transport) allocates and initializes C transport config, calls wh_Client_Init; echo() and info() methods; Drop calls wh_Client_CommClose then wh_Client_Cleanup. Document that callers use Mutex<Client>+spawn_blocking for async.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:18:27Z",
+  "updated_at": "2026-04-27T19:06:33Z",
+  "closed_at": "2026-04-27T19:06:33Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fbj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:19:56Z"
+    }
+  ]
+}

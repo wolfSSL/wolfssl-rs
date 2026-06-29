@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-8z9",
+  "title": "wolfhsm: AuthPermissions exposes bindgen-generated C struct in public API",
+  "description": "pub type AuthPermissions = whAuthPermissions leaks a raw bindgen-generated struct into the published API. The internal C layout becomes a semver commitment. Callers cannot construct, inspect, or match on it using idiomatic Rust. Should be wrapped in a newtype or replaced with a Rust struct that mirrors the relevant fields.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:54:55Z",
+  "updated_at": "2026-04-27T22:04:41Z",
+  "closed_at": "2026-04-27T22:04:41Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-epj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:37Z"
+    }
+  ]
+}

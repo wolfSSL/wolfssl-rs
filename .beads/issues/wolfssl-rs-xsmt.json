@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-xsmt",
+  "title": "Review: wolftpm crates (standalone + TSS)",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T17:34:50Z",
+  "updated_at": "2026-04-30T17:51:13Z",
+  "closed_at": "2026-04-30T17:51:13Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 Two P2 issues: FMT1 code resolution affects any user who reads error messages from TPM; optional-source skip could produce linker errors on unusual wolfTPM versions.\nConfidence: 15% chance of missed bug. Least confident flags: the FMT1 resolution issue (xsmt.1/xsmt.2) \u2014 I'm confident about the diagnostic impact but not certain how often wolfTPM actually returns FMT1-qualified codes through the paths used here vs. base codes only. Uncertainty driven by: no runtime access to test with a real TPM; wolfTPM's actual return-code behavior for error paths in wolfTPM2_VerifyHashScheme not verified against source. Would raise confidence if: could run against a real or software TPM and inspect returned error codes.\nIdiom rating: CLEAN \u2014 no idiomatic Rust issues found. Ownership, error handling, lifetimes, unsafe, and trait impls are all correct and idiomatic. Rust idiom confidence: 10% chance of missed issue. Least confident flags: none. Uncertainty driven by: did not run clippy; could not observe actual wolfTPM return codes at runtime."
+}

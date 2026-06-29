@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.7",
+  "title": "tpm2-rs git dep pinned to exact rev with no stated reason or upgrade path",
+  "description": "wolftpm-tss/Cargo.toml pins tpm2-rs-client and tpm2-rs-base to rev=a7bf0e9 with no comment explaining why that specific commit was chosen or what tracking mechanism exists to notice upstream breaking changes. tpm-rs is not on crates.io. When that rev becomes incompatible (e.g. Connection trait changes) the failure will be silent until someone runs a build. Maintenance consequence: surprise breakage on upstream changes with no documented protocol for updating the pin.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:29:04Z",
+  "updated_at": "2026-04-30T06:37:41Z",
+  "closed_at": "2026-04-30T06:37:41Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:29:03Z"
+    }
+  ]
+}

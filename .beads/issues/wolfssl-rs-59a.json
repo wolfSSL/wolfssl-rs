@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-59a",
+  "title": "Review round 1: wolfhsm crate core API",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:23:28Z",
+  "updated_at": "2026-04-27T19:08:39Z",
+  "closed_at": "2026-04-27T19:08:39Z",
+  "notes": "Maintainer risk: HIGH \u2014 unsound use-after-free in CryptoCbGuard/Client drop ordering, hardcoded client_id=1 defeats server ACL, and two error-type misuse patterns that will spread to future contributors; all three require API-breaking fixes to resolve cleanly\nConfidence: 80% chance of no missed critical bug in the 8 files reviewed. Uncertainty driven by: (1) I cannot link and run the code \u2014 the pointer aliasing in connect() (get_unchecked_mut after Box::pin) is visually correct but not verified under Miri or under actual wolfHSM server calls. (2) The CryptoCb lifetime contract (guard must be dropped before Client) is documented in a comment but not enforced by the type system \u2014 if a caller drops Client while CryptoCbGuard is live, the C layer has a dangling context pointer. (3) The double-check pattern in nvm_available/nvm_metadata/nvm_read (check transport rc then check server out_rc) is correct per the C API contract, but that contract is only in the wolfHSM header comments, not verifiable here. Would raise confidence if: (a) Miri run on connect() and drop() passes, (b) CryptoCbGuard is given a PhantomData<&'client mut Client> borrow to enforce ordering at compile time (this would require API change), (c) integration test exercising drop ordering exists. Are we running out of real complaints? Yes, substantially. The 8 core files are clean, well-commented, and follow sound Rust FFI patterns. The remaining open questions are either (i) real but minor or require API change, or (ii) unverifiable without a running server. The review is not manufacturing problems \u2014 there are no dead code, no missing error checks, no obvious logic errors to report."
+}

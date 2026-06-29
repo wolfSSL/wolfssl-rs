@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-d6l",
+  "title": "Migrate NIST ECDH from EVP to native wc_ecc_*",
+  "description": "The nist_ecdh module in wolfcrypt/src/ecdh.rs currently uses the OpenSSL compat layer (EC_KEY/EC_GROUP/ECDH_compute_key) gated on wolfssl_openssl_extra. The goal is to replace it with native wolfCrypt wc_ecc_* calls \u2014 same pattern as ecdsa_native.rs and the RSA migration. After this migration, wolfssl_openssl_extra will only be needed by keywrap and AES-CFB.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T06:55:19Z",
+  "updated_at": "2026-04-04T07:13:10Z",
+  "closed_at": "2026-04-04T07:13:10Z"
+}

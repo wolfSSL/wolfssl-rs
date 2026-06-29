@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.8",
+  "title": "No nvm_add for creating new objects",
+  "description": "nvm.rs: The only write path is nvm_overwrite, which deletes the existing object before adding. There is no nvm_add API for creating a new object that does not already exist. A user who calls nvm_overwrite on a fresh ID will get an error from nvm_delete (which is the correct behaviour), but nvm_overwrite's name and doc imply it requires a pre-existing object without stating this explicitly. Add doc language clarifying that nvm_overwrite requires the object to already exist, and/or add an nvm_add for the create-only path, so callers are not surprised at 2am by a delete-fails-on-new-id error.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:10Z",
+  "updated_at": "2026-04-28T00:31:32Z",
+  "closed_at": "2026-04-28T00:31:32Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:09Z"
+    }
+  ]
+}

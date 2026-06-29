@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-88e",
+  "title": "wolftpm_rs_shim.c: mirrors wolfTPM internal transport dispatch",
+  "description": "wolftpm-sys/src/wolftpm_rs_shim.c replicates wolfTPM's internal INTERNAL_SEND_COMMAND #ifdef chain (WOLFTPM_LINUX_DEV / WOLFTPM_LINUX_DEV_AUTODETECT / WOLFTPM_SWTPM / TIS). If wolfTPM adds a new transport, renames an internal SendCommand symbol, or changes these #ifdef guards, the shim will silently fall through to the wrong transport or fail to link. There is no single source of truth: shim.c and wolfTPM's tpm2.c must be kept in sync by hand, with no automated check.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:39Z",
+  "updated_at": "2026-04-30T17:54:15Z",
+  "closed_at": "2026-04-30T17:54:15Z"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.4",
+  "title": "NvmMetadata access/flags fields undocumented raw C values",
+  "description": "NvmMetadata has public fields access: u16 and flags: u16 that are raw C values with no documented semantics in the Rust API. nvm_overwrite also takes access: u16 and flags: u16 with no guidance. Callers must either read the wolfHSM C headers or guess. There are no named constants or bit-flag types in the Rust surface. This will generate recurring issue reports asking what values are valid, and callers will cargo-cult zeros from examples without understanding the implications. At minimum, the doc comment should cross-reference the wolfHSM C header constant names.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:06:57Z",
+  "updated_at": "2026-04-27T22:19:41Z",
+  "closed_at": "2026-04-27T22:19:41Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:06:57Z"
+    }
+  ]
+}

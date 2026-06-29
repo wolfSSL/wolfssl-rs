@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-970.7",
+  "title": "ClientInner field drop order is intentional: guarantees wh_Client_Cleanup before field destruction",
+  "description": "Rust drops struct fields in declaration order. client.rs exploits this: Drop::drop() calls wh_Client_Cleanup first, then fields drop in order. The comment makes this explicit. Do not reorder fields or remove the comment \u2014 changing field order breaks memory safety if a raw pointer field outlives the cleanup.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:29:03Z",
+  "updated_at": "2026-04-28T02:32:15Z",
+  "closed_at": "2026-04-28T02:32:15Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-970",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:29:03Z"
+    }
+  ]
+}

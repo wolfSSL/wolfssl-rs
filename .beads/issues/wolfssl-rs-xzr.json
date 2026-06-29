@@ -1,0 +1,33 @@
+{
+  "id": "wolfssl-rs-xzr",
+  "title": "RSA migration: cross-validate post-migration output",
+  "description": "After the Rust rewrite (wolfssl-rs-7 Rust rewrite issue), run full cross-validation to confirm no regressions and exact deterministic byte-match where possible.\n\nChecks to run:\n1. PKCS#1v1.5 exact byte match: re-run baseline test vectors from wolfssl-rs-siu against new native path; signature bytes must be identical\n2. Wycheproof OAEP: re-run wolfssl-rs-573 vectors against new native path; all must pass\n3. Wycheproof PKCS#1v1.5 verify: run against new path; all must pass (covers malformed signatures)\n4. PSS round-trip: sign with new path, verify with new path; also verify with a reference (ring or RustCrypto rsa crate if available)\n5. Key round-trip: generate key \u2192 export PKCS#1 DER \u2192 reimport \u2192 export again \u2192 bytes identical\n6. Public key round-trip: export SPKI DER from private \u2192 reimport as public \u2192 encrypt/decrypt round-trip\n\nAcceptance criteria:\n- All 6 checks pass on both x86_64 (default build) and vendored build\n- No test is allowed to pass by softening assertions \u2014 if bytes differ, investigate before proceeding",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:11:04Z",
+  "updated_at": "2026-04-04T06:08:05Z",
+  "closed_at": "2026-04-04T06:08:05Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-573",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:32Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-6p0",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:32Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-siu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:31Z"
+    }
+  ]
+}

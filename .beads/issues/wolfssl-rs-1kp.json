@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-1kp",
+  "title": "Review round 2: wolfhsm API idiomaticity changes",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:20:52Z",
+  "updated_at": "2026-04-27T22:35:10Z",
+  "closed_at": "2026-04-27T22:35:10Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 four P1 issues remain: missing ERASED-key guard in ECC/Ed25519/Curve25519 generate (silent bad handles), SHE block-size validation using wrong error variant, she_verify_mac bool return inconsistent with all other verify methods, and newtype inner fields pub bypassing abstraction. No soundness holes; all issues are API contract and diagnostic quality gaps that accumulate maintenance debt as the crate grows."
+}

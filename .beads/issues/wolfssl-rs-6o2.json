@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-6o2",
+  "title": "verify(): FMT1 guard rejects qualified TPM_RC_SIGNATURE",
+  "description": "wolftpm/src/key.rs:201. Current guard: (rc & 0x80) != 0 && (rc & 0x100) == 0. FMT1 error codes encode the subject number in bits 11:8 (TPM2 Part 2 \u00a76.6.3). Subject >= 1 sets bit 8 (0x100), so the guard incorrectly classifies a qualified TPM_RC_SIGNATURE (e.g. 0x1DB = 0x9B|0x40|0x100 for P-flag+subject=1, or 0x3DB for subject=3) as a non-FMT1 code. The mask is then NOT applied and the code falls through to the Err branch instead of returning Ok(false). Fix: change guard to (rc & 0x80) != 0 && (rc & 0xF000) == 0 (bit 7 set = FMT1 format marker; bits 15:12 clear = not a negative/extension code). VER1 codes have bit 7 clear, so they correctly fail the first half.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:50:54Z",
+  "updated_at": "2026-04-30T16:47:46Z",
+  "closed_at": "2026-04-30T16:47:46Z"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.3",
+  "title": "with_xxx_key: deduplicate across 6 key types",
+  "description": "The with_rsa_key / with_aes_key / with_ecc_p256_key / with_ed25519_key / with_curve25519_key / with_cmac_key methods in rsa.rs, aes.rs, ecc.rs, ed25519.rs, curve25519.rs, cmac.rs are copy-paste identical (generate/cache \u2192 save id \u2192 call f \u2192 key_evict \u2192 match result). A single generic free function or macro \u2014 e.g. fn with_key<K, F, R>(key: K, id: KeyId, client: &mut Client, f: F) -> Result<R, WolfHsmError> where K: Evictable, F: FnOnce(&K, &mut Client) -> Result<R, WolfHsmError> \u2014 would hold the logic once; each with_xxx_key becomes a one-liner delegating to it. Six copies means six places to fix if eviction semantics change.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:37Z",
+  "updated_at": "2026-04-27T21:13:15Z",
+  "closed_at": "2026-04-27T21:13:15Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:37Z"
+    }
+  ]
+}

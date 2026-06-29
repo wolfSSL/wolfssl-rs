@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.9",
+  "title": "mldsa_sign: no guard against sig_len > cap before truncate",
+  "description": "wolfhsm_mldsa_sign is passed sig_len=cap (the pre-allocated buffer size) as an IN/OUT parameter. After the call, the code does sig.truncate(sig_len as usize) with no check that sig_len <= cap. If a misbehaving server writes back sig_len > cap, truncate is a no-op and the returned Vec has length cap \u2014 silently misrepresenting the actual signature length. Every other operation in the crate (ECC sign, RSA, ECDH, AES-GCM) has an explicit 'if out_len > buf.capacity() { return Err(ProtocolError) }' guard before set_len/truncate. ML-DSA is the only one that skips this check.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:12Z",
+  "updated_at": "2026-04-28T02:02:58Z",
+  "closed_at": "2026-04-28T02:02:58Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:11Z"
+    }
+  ]
+}

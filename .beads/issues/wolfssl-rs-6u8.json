@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-6u8",
+  "title": "Review round 2: wolfhsm post-fix validation",
+  "description": "Verify that the 8 P0/P1 fixes in round 1 are correct and no new P0/P1/P2 issues were introduced. Files changed: error.rs (new variants + constants), client.rs (port validation + client_id), cryptocb.rs (PhantomData lifetime), nvm.rs (offset fix + DataLost).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:35:30Z",
+  "updated_at": "2026-04-27T18:39:00Z",
+  "closed_at": "2026-04-27T18:39:00Z"
+}

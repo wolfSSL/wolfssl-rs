@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.4",
+  "title": "shim uses single cmdBuf for both command and response \u2014 concurrent transact calls corrupt each other",
+  "description": "wolftpm_rs_shim.c wolftpm_rs_transact: cmd is XMEMCPY'd into dev->ctx.cmdBuf, then RS_SEND_COMMAND dispatches and wolfTPM overwrites cmdBuf with the response. WOLFTPM2_DEV is per-connection and is not shared (the Rust wrapper is Send but not Sync), so concurrent callers should not be possible through the public API. However the SAFETY comment on Device says 'not Sync', yet the raw WolfTpmDev in connection.rs is also not Sync. This is correctly excluded. The shim comment documents 'caller must not share dev across threads'. The single-buffer design is a latent issue if wolfTPM itself spawns internal threads or if the shim is ever used from outside the Rust wrapper.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:03:50Z",
+  "updated_at": "2026-04-30T06:18:13Z",
+  "closed_at": "2026-04-30T06:18:13Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:03:49Z"
+    }
+  ]
+}

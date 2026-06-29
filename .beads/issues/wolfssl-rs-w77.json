@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-w77",
+  "title": "wolftpm_rs_shim.c: (void)packet comment contradicts subsequent packet.size use",
+  "description": "In wolftpm-sys/src/wolftpm_rs_shim.c at line 133, the statement '(void)packet; /* pos / size no longer needed */' claims that packet.size is not needed, but 11 lines later (line 144) the code reads packet.size in the bounds check: 'if (resp_len < TPM2_HEADER_SIZE || resp_len > packet.size)'. The (void) cast in C only suppresses unused-variable warnings; it does not make the variable inaccessible. A future maintainer reading the comment might refactor away packet.size access from line 144, breaking the safety-critical bounds check that prevents out-of-buffer reads. Fix: remove the misleading comment or replace packet.size with sizeof(dev->ctx.cmdBuf) directly to make the bounds check self-contained.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:42:37Z",
+  "updated_at": "2026-04-30T16:47:54Z",
+  "closed_at": "2026-04-30T16:47:54Z"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.21",
+  "title": "ML-DSA integration test is a self-oracle (no independent verification)",
+  "description": "tests/integration.rs mldsa_round_trip signs with wolfhsm MlDsaKey::sign and verifies with wolfhsm MlDsaKey::verify using the same key. This is a self-oracle \u2014 it proves the HSM can reverse itself, not that the output is FIPS 204 correct. Consequence: reinforces the self-oracle pattern; ML-DSA is new enough that interop bugs are plausible. Fix: cross-validate against ml-dsa crate or known NIST ML-DSA KAT vectors.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:31Z",
+  "updated_at": "2026-04-27T20:59:25Z",
+  "closed_at": "2026-04-27T20:59:25Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:30Z"
+    }
+  ]
+}

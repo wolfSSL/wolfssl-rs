@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.3",
+  "title": "cert.rs: eliminate usize->u16->usize roundtrip for label_len",
+  "description": "label_len is computed as label.len().min(24) as u16, then immediately converted back via label_len as usize in two slice operations. The u16 is only needed at the FFI call site. The roundtrip obscures the intent and forces two noisy casts. Rewrite: let label_len_usize = label.len().min(24); let label_len: u16 = label_len_usize as u16; then use label_len_usize for slice indexing and label_len for the FFI call. The comment 'min(24) <= u16::MAX, always safe' can stay on the as u16 line.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:16:12Z",
+  "updated_at": "2026-04-28T02:22:52Z",
+  "closed_at": "2026-04-28T02:22:52Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:16:12Z"
+    }
+  ]
+}

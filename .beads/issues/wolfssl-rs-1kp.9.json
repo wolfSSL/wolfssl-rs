@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.9",
+  "title": "ECC/Ed25519/Curve25519 miss ERASED-key guard post-generate",
+  "description": "EccP256Key::generate, Ed25519Key::generate, and Curve25519Key::generate initialize key_id to KeyId::ERASED (0) but do not check whether key_id is still 0 after the FFI call returns rc=0. RsaKey::generate and MlDsaKey::generate both have the guard; these three do not. If the HSM writes rc=0 but leaves key_id=0 the wrapper silently constructs a handle with an invalid ID; all subsequent operations fail with opaque FFI errors instead of a clear Ffi error. Maintenance consequence: every future key type added using ECC/Ed25519 as a template will silently inherit the missing guard.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:16Z",
+  "updated_at": "2026-04-27T22:29:27Z",
+  "closed_at": "2026-04-27T22:29:27Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:15Z"
+    }
+  ]
+}

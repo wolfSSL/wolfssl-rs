@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-5y4.1",
+  "title": "wolfhsm_cmac: missing wc_CmacFree leaks AES key material on stack",
+  "description": "shims.c wolfhsm_cmac() calls wc_InitCmac + wh_Client_Cmac but never calls wc_CmacFree(). The Cmac struct is stack-allocated and contains the AES key schedule (cmac.aes.devKey). Without wc_CmacFree(), key material is not zeroed and remains on the stack until overwritten by normal execution. Fix: call wc_CmacFree(&cmac) before each return path.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:59:53Z",
+  "updated_at": "2026-04-27T18:04:45Z",
+  "closed_at": "2026-04-27T18:04:45Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-5y4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:59:52Z"
+    }
+  ]
+}

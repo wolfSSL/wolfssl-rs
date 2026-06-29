@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.18",
+  "title": "she_load_key: M1-M5 caller-computation contract undocumented",
+  "description": "she.rs: she_load_key takes m1/m2/m3 as byte arrays but does not document that these must be computed according to the SHE AutoSAR key-loading protocol. A contributor cannot pass arbitrary bytes; they must be derived via a specific cryptographic computation involving the old key, new key, counter, and UID. Without this, a contributor will pass random inputs, get a failure, and have no idea why. Fix: add a doc comment stating M1/M2/M3 must be computed per the SHE AutoSAR CMD_LOAD_KEY protocol, and reference wh_she_crypto.h or the spec section.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:32Z",
+  "updated_at": "2026-04-28T02:13:07Z",
+  "closed_at": "2026-04-28T02:13:07Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:31Z"
+    }
+  ]
+}

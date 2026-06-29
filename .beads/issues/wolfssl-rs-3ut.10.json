@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-3ut.10",
+  "title": "PhantomData lifetime on CryptoCbGuard prevents key handle use-after-free \u2014 keep it",
+  "description": "CryptoCbGuard<'a> holds PhantomData<&'a mut Client> so the borrow checker prevents dropping Client while the guard is alive. The wolfCrypt CryptoCb global table stores a raw *mut whClientContext; without this lifetime, a user could drop Client and then trigger a CryptoCb operation via wolfcrypt-rs, producing a dangling pointer dereference. A future contributor might suggest simplifying to CryptoCbGuard() (no lifetime), citing that the raw pointer approach 'works in practice'. Reject: the lifetime is the ONLY thing making the safety invariant compile-time enforced.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:58:26Z",
+  "updated_at": "2026-04-27T19:02:08Z",
+  "closed_at": "2026-04-27T19:02:08Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-3ut",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:58:26Z"
+    }
+  ]
+}

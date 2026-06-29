@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-czg",
+  "title": "Review round 2: wolfhsm API polish",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:00:59Z",
+  "updated_at": "2026-04-27T21:12:03Z",
+  "closed_at": "2026-04-27T21:12:03Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 two correctness bugs (nvm_write first-write failure, key_cache zero-id acceptance) affect basic functionality; the with_xxx_key eviction-error-swallowing design is frozen into the public API and will require a breaking change to fix properly; the mldsa self-oracle test provides false conformance confidence for an algorithm where FIPS 204 interoperability matters.\nConfidence: 80% chance of missed bug. Uncertainty driven by: (1) wolfhsm_sys bindings not reviewed \u2014 cannot verify that u32/u16/i32 argument types match the actual C function signatures; a type mismatch here would be silent UB. (2) transport.rs, lib.rs, CryptoCbGuard implementation, and counter_* methods not reviewed \u2014 cannot assess correctness of the CryptoCb registration/unregistration logic or the counter API. (3) The mldsa test explicitly has no independent oracle; correctness of the HSM ML-DSA implementation is untested against an external reference. (4) nvm_list out_count semantics in the wolfHSM C API are not verified from source \u2014 the claim that it could enable batching may be wrong if out_count always equals 1. Would raise confidence if: reviewed wolfhsm_sys/src/lib.rs or the generated bindings file to check argument types; reviewed transport.rs and the CryptoCb guard; had access to a running wolfHSM server to exercise the integration tests."
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-mrnu.12",
+  "title": "wolftpm-tss Error::Transport wraps raw i32 code; no equivalent to wolftpm's TpmRc newtype",
+  "description": "wolftpm::Error uses TpmRc(u32) \u2014 a newtype with is_success(), raw(), Display \u2014 to wrap TPM return codes. wolftpm_tss::Error::Transport { code: i32 } uses a raw int. This inconsistency means TSS consumers get a raw i32 they must interpret, while wolftpm consumers get a typed, displayable TpmRc. A TssRc or TransportCode newtype in wolftpm-tss would be consistent with the wolftpm design and allow adding helper methods without a breaking change.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:04:44Z",
+  "updated_at": "2026-04-30T15:08:12Z",
+  "closed_at": "2026-04-30T15:08:12Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:04:44Z"
+    }
+  ]
+}

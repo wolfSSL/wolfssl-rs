@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-k70",
+  "title": "wolftpm: unused log dep in Cargo.toml",
+  "description": "wolftpm/Cargo.toml lists log = '0.4' as a dependency but no code in wolftpm/src/ uses it (grep confirms zero log:: / use log / extern crate log hits). This is dead code per project rules, increases build time, and misleads maintainers who might look for logging calls that don't exist. Remove the dep.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:42:23Z",
+  "updated_at": "2026-04-30T16:47:54Z",
+  "closed_at": "2026-04-30T16:47:54Z"
+}

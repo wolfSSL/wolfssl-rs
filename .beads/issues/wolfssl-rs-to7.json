@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-to7",
+  "title": "wolfhsm: Drop warns to stderr instead of releasing HSM cache slot",
+  "description": "Key handles (AesKey, EccP256Key, Ed25519Key, RsaKey, etc.) print an eprintln! warning when dropped without calling .evict(), but do not actually release the HSM cache slot. This silently leaks HSM RAM until the server rejects new operations with a cache-full error. RustCrypto types self-manage in Drop. The with_xxx_key RAII helpers exist but are opt-in; the bare generate()/cache() path is a footgun.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:54:51Z",
+  "updated_at": "2026-04-27T22:59:31Z",
+  "closed_at": "2026-04-27T22:59:31Z",
+  "notes": "NEEDS HUMAN DECISION: auto-eviction in Drop is problematic (Drop has no Result). Current log::warn design is correct; issue is whether to add an explicit eviction method or change the RAII shape.",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-epj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:36Z"
+    }
+  ]
+}

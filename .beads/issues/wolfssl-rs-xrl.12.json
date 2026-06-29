@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.12",
+  "title": "AtomicBool single-registration guard with rollback on FFI failure",
+  "description": "The REGISTERED AtomicBool uses compare_exchange to claim the global wolfCrypt CryptoCb slot before calling wc_CryptoCb_RegisterDevice, and restores it to false if the FFI call fails. wolfCrypt's CryptoCb table is a fixed-size C global with no thread safety; registering twice for the same DEV_ID would silently overwrite the first entry and leave the first Client's raw pointer registered without a corresponding guard to unregister it. The compare_exchange+rollback pattern correctly prevents double registration while not permanently consuming the slot if the underlying C call fails. A future contributor might suggest a Mutex instead, or removing the guard entirely and letting wolfCrypt handle it. wolfCrypt does not error on double registration, so the Rust-level gate is load-bearing.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:58Z",
+  "updated_at": "2026-04-27T21:12:38Z",
+  "closed_at": "2026-04-27T21:12:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:58Z"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-3ut.2",
+  "title": "shims.c has stale comment claiming Ed25519 needs no shim",
+  "description": "shims.c lines 6-8 say 'Ed25519 does NOT need a shim: ed25519_key is a concrete 256-byte type in wolfcrypt-rs, so Rust can allocate it directly.' But lines 335-377 define wolfhsm_ed25519_{make_key,sign,verify} shims. A future contributor reading only the comment will attempt to remove the shims, breaking the build. Fix: delete or rewrite the stale comment to say Ed25519 DOES use a shim because wolfhsm-sys bindgen only allows wh.* types.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:57:23Z",
+  "updated_at": "2026-04-27T19:00:34Z",
+  "closed_at": "2026-04-27T19:00:34Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-3ut",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:57:22Z"
+    }
+  ]
+}

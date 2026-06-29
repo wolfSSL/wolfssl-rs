@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-dpg",
+  "title": "Migrate keywrap.rs from EVP AES_wrap_key to native wc_AesKeyWrap",
+  "description": "wolfcrypt/src/keywrap.rs currently uses the OpenSSL compat layer (AES_set_encrypt_key/AES_set_decrypt_key/AES_wrap_key/AES_unwrap_key) gated on wolfssl_openssl_extra. The native wc_AesKeyWrap / wc_AesKeyUnWrap functions do the same thing in one call with no intermediate key schedule struct. After this migration wolfssl_openssl_extra will no longer be needed for keywrap \u2014 only ECDSA and AES-CFB will remain.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T07:28:38Z",
+  "updated_at": "2026-04-04T07:35:26Z",
+  "closed_at": "2026-04-04T07:35:26Z"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-eif",
+  "title": "Double-flush in Device::with_ecc_key",
+  "description": "In wolftpm/src/device.rs, with_ecc_key calls key.flush() explicitly on line 85 and then returns, at which point key drops and EccKey::drop calls flush() a second time. The explicit flush() call is redundant \u2014 Drop already handles cleanup. Either remove the manual flush() call, or add a forget() call to suppress the double-flush. The current pattern works because wolfTPM2_UnloadHandle is idempotent, but it is confusing and wasteful.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:40Z",
+  "updated_at": "2026-04-30T05:31:28Z",
+  "closed_at": "2026-04-30T05:31:28Z"
+}

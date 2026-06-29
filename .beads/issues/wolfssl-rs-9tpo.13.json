@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.13",
+  "title": "FMT1 modifier mask uses bit-level discriminator, not simple rc < threshold \u2014 correct",
+  "description": "The verify() FMT1 stripping uses (rc & 0x80) \\!= 0 && (rc & 0xF000) == 0 rather than a simpler range check. The comment explains why: subject number 1 sets bit 8, so 'bit 8 clear' would incorrectly strip TPM_RC_SIGNATURE+param_1. A future contributor might simplify this to a range check or remove one condition \u2014 this would be wrong. The existing discriminator is the correct implementation of TCG TPM2 Part 2 \u00a76.6.3.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:30:32Z",
+  "updated_at": "2026-04-30T06:38:09Z",
+  "closed_at": "2026-04-30T06:38:09Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:30:32Z"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-w5k",
+  "title": "wolfhsm: no RustCrypto trait implementations",
+  "description": "EccP256Key, Ed25519Key, RsaKey do not implement signature::Signer / signature::Verifier from the signature crate. Key types cannot be used anywhere that accepts a generic signer, and the crate is isolated from the RustCrypto ecosystem. At minimum: Ed25519Key should impl signature::Signer<ed25519::Signature> and EccP256Key should impl signature::Signer<p256::ecdsa::Signature>. This likely depends on resolving the &mut Client ergonomics issue first (issue wolfssl-rs-Nxx) since Signer::sign takes &self, not &self + &mut Client).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:29:10Z",
+  "updated_at": "2026-04-27T20:37:18Z",
+  "closed_at": "2026-04-27T20:37:18Z",
+  "notes": "Epic: wolfssl-rs-xsf",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-aee",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:29:43Z"
+    }
+  ]
+}

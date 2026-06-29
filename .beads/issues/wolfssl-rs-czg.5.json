@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.5",
+  "title": "mldsa_round_trip test uses self-oracle (sign and verify with same HSM)",
+  "description": "The mldsa_round_trip integration test (tests/integration.rs, cfg(feature=mldsa)) signs with wolfHSM and verifies with wolfHSM. This is a self-oracle: it proves the sign/verify functions are mutually consistent, not that they conform to the ML-DSA (FIPS 204) specification. A systematic implementation error (e.g. wrong message encoding, wrong level parameter mapping) would not be caught. An independent oracle (e.g. ml-dsa crate or NIST ACVP test vectors) is required per the project test design constraint.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:02:38Z",
+  "updated_at": "2026-04-27T21:07:25Z",
+  "closed_at": "2026-04-27T21:07:25Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:02:37Z"
+    }
+  ]
+}

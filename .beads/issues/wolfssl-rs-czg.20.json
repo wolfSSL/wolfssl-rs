@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.20",
+  "title": "cross-validation test design uses independent pure-Rust oracles throughout",
+  "description": "All cryptographic integration tests (ecc_p256_sign_verify_cross, ecc_p256_ecdh_cross, ed25519_sign_verify_cross, curve25519_x25519_ecdh_cross, rsa_round_trip) use an independent pure-Rust implementation as the verification oracle: p256 crate for ECDSA/ECDH, ed25519-dalek for Ed25519, x25519-dalek for X25519, and the rsa crate for raw RSA modular exponentiation. The RSA test goes further: it independently computes m^e mod n from the exported public key and compares byte-for-byte, so it detects not just round-trip consistency but also correctness of the HSM's PublicEncrypt against the mathematical definition. The mldsa_round_trip test is the only exception and is already commented 'no independent oracle; feature-gated'. A future contributor might suggest replacing these with wolfhsm-signs-wolfhsm-verifies tests to remove the external dependencies \u2014 that would make the tests worthless as correctness checks. The external crate dependencies in dev-dependencies are load-bearing.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:04:38Z",
+  "updated_at": "2026-04-27T21:10:43Z",
+  "closed_at": "2026-04-27T21:10:43Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:04:37Z"
+    }
+  ]
+}

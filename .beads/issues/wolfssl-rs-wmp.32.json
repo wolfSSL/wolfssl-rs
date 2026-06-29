@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.32",
+  "title": "RsaKey::generate casts c_int key size to u32 without range check",
+  "description": "wolfhsm_rsa_get_size writes the key size into a c_int (signed 32-bit). After the rc==0 success check, the code unconditionally casts out_size (c_int) to u32 via 'out_size as u32'. If the server returns 0 or a negative value (e.g., due to a server bug or unexpected state), the cast produces 0 or a very large u32 (up to 2^32-1). raw_op then allocates vec\\![0u8; self.key_size_bytes as usize] with that unchecked size, causing OOM or a zero-length output buffer. Fix: validate out_size > 0 after the rc check and before storing it.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:08:55Z",
+  "updated_at": "2026-04-27T22:19:09Z",
+  "closed_at": "2026-04-27T22:19:09Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:08:54Z"
+    }
+  ]
+}

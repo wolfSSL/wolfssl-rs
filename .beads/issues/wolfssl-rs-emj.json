@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-emj",
+  "title": "wolftpm-tss: create crate skeleton",
+  "description": "Create the wolftpm-tss crate with Cargo.toml, lib.rs, and workspace registration. No logic yet.\n\n## What\n- wolftpm-tss/Cargo.toml\n  - depends on wolftpm-sys (direct dep for DEP_WOLFTPM_SRC_* metadata)\n  - depends on tpm2-rs-client = { git = ... } or pinned crates.io 0.1.0\n  - features: linux-dev, swtpm (propagate to wolftpm-sys)\n- wolftpm-tss/src/lib.rs \u2014 module stubs\n- wolftpm-tss/src/connection.rs \u2014 placeholder WolfTpmLinuxDev and WolfTpmSwtpm structs\n- wolftpm-tss/README.md \u2014 what/why/how\n- Add wolftpm-tss to workspace Cargo.toml members\n\n## Design note\nwolftpm-tss does NOT use WOLFTPM2_NO_WOLFCRYPT \u2014 it needs the full TPM2_CTX definition including the ioCb field to call the transport callback directly. This means wolftpm-tss has its own bindgen invocation or reuses wolftpm-sys with the flag removed for this crate.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T04:44:32Z",
+  "updated_at": "2026-04-30T04:57:57Z",
+  "closed_at": "2026-04-30T04:57:57Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-sby",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T21:44:51Z"
+    }
+  ]
+}

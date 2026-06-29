@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.1",
+  "title": "HsmSha silent zero-output on HSM error is a footgun",
+  "description": "A caller uses HsmSha256/384/512 via the digest::Digest trait in generic code. The HSM goes offline mid-operation. finalize_into writes all-zero bytes to the output and emits a log::error\\!, but the function returns normally (the trait signature has no Result). The caller's hash is silently wrong. The doc comment explains this, but generic code that accepts impl Digest cannot read the caveats \u2014 every integration that uses HsmSha* in a generic hasher position will file a bug when crypto mysteriously fails after a transient HSM error.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:56:39Z",
+  "updated_at": "2026-04-28T02:05:55Z",
+  "closed_at": "2026-04-28T02:05:55Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:56:38Z"
+    }
+  ]
+}

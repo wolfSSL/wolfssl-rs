@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-3ut.8",
+  "title": "ecc::ecdh peer key format (DER SPKI) not obvious from signature or docs",
+  "description": "ecdh() takes peer_public_der: &[u8] with doc 'peer DER SubjectPublicKeyInfo'. Users who try raw 65-byte uncompressed points or 33-byte compressed points will get an opaque C error from wc_EccPublicKeyDecode. The natural assumption for an ECDH API is raw point format. The parameter name 'peer_public_der' is good but the doc should say explicitly: 'must be the 91-byte DER SubjectPublicKeyInfo as returned by public_key_der(), not a raw EC point'. Also: the doc on public_key_der() should say it produces the format expected by ecdh().",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:58:14Z",
+  "updated_at": "2026-04-27T19:02:04Z",
+  "closed_at": "2026-04-27T19:02:04Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-3ut",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:58:14Z"
+    }
+  ]
+}

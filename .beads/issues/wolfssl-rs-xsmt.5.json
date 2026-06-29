@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xsmt.5",
+  "title": "verify FMT1 stripping logic is correct and well-commented",
+  "description": "EccKey::verify strips FMT1 modifier bits (P-flag bit 6, subject-number bits 11:8, mask 0x0F40) before matching against TPM_RC_SIGNATURE. The condition (bit 7 set AND bits 15:12 clear) correctly identifies FMT1 codes and excludes wolfTPM internal codes (negative i32, high bit set). The detailed comment citing TPM2 Part 2 \u00a76.6.3 and explicitly rejecting the 'bit 8 clear' discriminator is exactly right. A future contributor might simplify this to a naive == comparison; resist that.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T17:43:09Z",
+  "updated_at": "2026-04-30T17:51:03Z",
+  "closed_at": "2026-04-30T17:51:03Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xsmt",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T10:43:09Z"
+    }
+  ]
+}

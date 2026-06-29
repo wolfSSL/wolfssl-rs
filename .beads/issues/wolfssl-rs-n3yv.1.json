@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-n3yv.1",
+  "title": "wolftpm-tss lib.rs doctest requires tss feature to compile-check",
+  "description": "The quick-start doctest in wolftpm-tss/src/lib.rs cannot use no_run (compile-check) because it imports tpm2_rs_client and tpm2_rs_base which are only available with --features tss. Current state: no_run,ignore (reverted from failed fix attempt). Proper fix: split into two doctests \u2014 one showing WolfTpmLinuxDev::open() without tss-specific types (always compile-checks), one with ignore showing the full tpm2_rs_client integration.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:43:05Z",
+  "updated_at": "2026-04-30T15:48:52Z",
+  "closed_at": "2026-04-30T15:48:52Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-n3yv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:43:05Z"
+    }
+  ]
+}

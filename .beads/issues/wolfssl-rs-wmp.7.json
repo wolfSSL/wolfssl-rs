@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.7",
+  "title": "AuthPermissions::from_raw redundant alongside From impl",
+  "description": "auth.rs has both from_raw(raw: whAuthPermissions) -> Self and impl From<whAuthPermissions> for AuthPermissions doing identical work. from_raw is dead weight \u2014 the From impl is idiomatic and covers all callers. Suggested rewrite: delete from_raw; update the one doc comment pointing to it to reference the From impl instead.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:07Z",
+  "updated_at": "2026-04-27T22:20:05Z",
+  "closed_at": "2026-04-27T22:20:05Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:07Z"
+    }
+  ]
+}

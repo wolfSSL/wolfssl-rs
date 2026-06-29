@@ -1,0 +1,27 @@
+{
+  "id": "wolfssl-rs-cgy",
+  "title": "Remove old EVP-based nist_ecdh module and update cfg gates in lib.rs",
+  "description": "After the native implementation passes all tests: (1) Delete the old nist_ecdh module (wolfcrypt/src/ecdh.rs lines 514-863, the block under #[cfg(all(wolfssl_openssl_extra, wolfssl_ecc))]). (2) In wolfcrypt/src/lib.rs, change the NIST ECDH re-export cfg gates from #[cfg(all(feature='ecdh', wolfssl_openssl_extra, wolfssl_ecc))] to #[cfg(all(feature='ecdh', wolfssl_ecc))]. (3) Remove the EVP imports (EC_GROUP_free, EC_KEY_free, ECDH_compute_key, NID_X9_62_prime256v1, etc.) from wolfcrypt-rs/src/lib.rs if they are no longer used anywhere else. (4) Update cfg(wolfssl_openssl_extra) in any conformance tests that tested the old NIST ECDH path.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T06:56:37Z",
+  "updated_at": "2026-04-04T07:13:10Z",
+  "closed_at": "2026-04-04T07:13:10Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-82b",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T23:56:50Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-bmw",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T23:56:50Z"
+    }
+  ]
+}

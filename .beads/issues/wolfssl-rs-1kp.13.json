@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.13",
+  "title": "she_verify_mac returns bool instead of Err for invalid MAC",
+  "description": "she_verify_mac returns Result<bool> where false means MAC invalid. All other verification functions in the crate (ecc verify_digest, ed25519 verify, mldsa verify) return Err(WolfHsmError::Ffi) for an invalid signature/MAC. A caller using the ? operator on she_verify_mac will silently pass even when the MAC is wrong, because false is an Ok value. Maintenance consequence: inconsistency means every new caller must remember the special bool contract; code review must catch the pattern each time.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:32Z",
+  "updated_at": "2026-04-27T22:29:37Z",
+  "closed_at": "2026-04-27T22:29:37Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:32Z"
+    }
+  ]
+}

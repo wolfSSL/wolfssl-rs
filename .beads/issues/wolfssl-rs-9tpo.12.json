@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.12",
+  "title": "TpmRc inner field made private with public raw() accessor \u2014 correct API boundary",
+  "description": "TpmRc(pub u32) \u2192 TpmRc(u32) with pub raw() and pub(crate) from_raw. This is the right call: external callers get read access via raw() but cannot construct arbitrary TpmRc values from raw u32s. A future contributor might suggest making from_raw public 'for convenience' \u2014 resist this: callers should receive TpmRc via Error::check or pattern matching, not construct them from scratch.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:30:24Z",
+  "updated_at": "2026-04-30T06:38:06Z",
+  "closed_at": "2026-04-30T06:38:06Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:30:24Z"
+    }
+  ]
+}

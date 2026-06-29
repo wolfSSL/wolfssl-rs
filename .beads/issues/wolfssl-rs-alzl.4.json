@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-alzl.4",
+  "title": "wolftpm-tss crate root does not re-export WolfTpmLinuxDev, WolfTpmSwtpm, Error",
+  "description": "wolftpm/src/lib.rs re-exports Device, EccKey, Error at crate root. wolftpm-tss/src/lib.rs does not re-export WolfTpmLinuxDev, WolfTpmSwtpm, or Error \u2014 callers must write 'use wolftpm_tss::connection::WolfTpmLinuxDev' instead of 'use wolftpm_tss::WolfTpmLinuxDev'. Inconsistent between the two crates. Add pub use in lib.rs, mirroring wolftpm pattern.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:41:02Z",
+  "updated_at": "2026-04-30T06:46:51Z",
+  "closed_at": "2026-04-30T06:46:51Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-alzl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:41:02Z"
+    }
+  ]
+}

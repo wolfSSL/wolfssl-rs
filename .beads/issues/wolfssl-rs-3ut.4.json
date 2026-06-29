@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-3ut.4",
+  "title": "MlDsaKey::level not validated before C call",
+  "description": "MlDsaKey::generate and sign/verify pass level: u8 directly to the C shim as c_int. Valid values are 44, 65, 87. Any other value produces an opaque C error (WH_ERROR_BADARGS or wc_MlDsaKey_SetParams failure) with no indication in the error message that level was the problem. Users passing 2/3/4 (FIPS naming) instead of 44/65/87 will see mysterious failures. Fix: add explicit validation before the C call: if !matches!(level, 44 | 65 | 87) { return Err(...) } with a clear message naming the valid levels.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:57:39Z",
+  "updated_at": "2026-04-27T19:00:38Z",
+  "closed_at": "2026-04-27T19:00:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-3ut",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:57:38Z"
+    }
+  ]
+}

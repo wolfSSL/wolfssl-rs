@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.17",
+  "title": "CryptoCb uses process-global AtomicBool not a Client lifetime borrow",
+  "description": "cryptocb.rs uses a process-global AtomicBool (REGISTERED) rather than tying CryptoCbGuard's lifetime to &mut Client. The wolfCrypt device table is a C process-global, so exclusion must also be process-global \u2014 a Client lifetime borrow would only prevent double-registration from one Client instance, not across two separate Clients. The AtomicBool correctly enforces the invariant across all instances. A future contributor might suggest a lifetime-bound CryptoCbGuard<'client> to avoid the global, but that would be false safety. SeqCst ordering is also correct: the compare_exchange must order before the C call on all platforms.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:39Z",
+  "updated_at": "2026-04-27T19:07:37Z",
+  "closed_at": "2026-04-27T19:07:37Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:39Z"
+    }
+  ]
+}

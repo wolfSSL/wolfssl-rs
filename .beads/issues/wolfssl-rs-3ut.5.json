@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-3ut.5",
+  "title": "RsaKey::function name is a footgun; magic rsa_type ints are undiscoverable",
+  "description": "The method name 'function' is vague. The rsa_type parameter takes magic integers 0/1/2/3 (RSA_PRIVATE_ENCRYPT etc.) documented only in a docstring, not as Rust constants. A caller must read the docs, memorize the mapping, and pass a raw i32 with no type safety. This will generate repeated issues asking 'how do I sign with RSA?' Fix: add a Rust enum RsaOperation { PrivateEncrypt=0, PrivateDecrypt=1, PublicEncrypt=2, PublicDecrypt=3 } and change the signature to take it; or at minimum add pub const definitions.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:57:46Z",
+  "updated_at": "2026-04-27T19:00:39Z",
+  "closed_at": "2026-04-27T19:00:39Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-3ut",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:57:46Z"
+    }
+  ]
+}

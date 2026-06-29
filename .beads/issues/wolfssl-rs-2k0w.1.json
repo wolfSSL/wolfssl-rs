@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-2k0w.1",
+  "title": "init_swtpm returns libc -1 disguised as wolfTPM error code",
+  "description": "When libc::setenv fails in swtpm.rs (e.g. ENOMEM), init_swtpm returns Err(-1). Callers treat this as a wolfTPM return code: wolftpm maps it to TpmRc(0xFFFFFFFF), wolftpm-tss maps it to Error::Transport { code: -1 }. Neither caller can distinguish this from a real wolfTPM error. The function's doc comment claims Err(rc) is always 'the nonzero wolfTPM return code from wolfTPM2_Init', which is false for this path. Fix: define a dedicated error type for init_swtpm, or return a distinct sentinel.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T16:20:33Z",
+  "updated_at": "2026-04-30T16:28:25Z",
+  "closed_at": "2026-04-30T16:28:25Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2k0w",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T09:20:32Z"
+    }
+  ]
+}

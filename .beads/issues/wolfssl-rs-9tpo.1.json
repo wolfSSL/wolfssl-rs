@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.1",
+  "title": "rsp.len() > i32::MAX returns wrong error variant",
+  "description": "In do_transact (wolftpm-tss/src/connection.rs), c_int::try_from(rsp.len()) failure returns Error::ResponseBufferTooSmall. But a buffer larger than i32::MAX is not 'too small' \u2014 it is too large to express. The cmd_sz case was fixed in this diff (now returns CommandTooLarge) but the rsp_buf_sz case was not fixed, creating an inconsistency and a misleading error message. Trigger: caller passes a response buffer larger than 2GB.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:28:22Z",
+  "updated_at": "2026-04-30T06:36:21Z",
+  "closed_at": "2026-04-30T06:36:21Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:28:21Z"
+    }
+  ]
+}

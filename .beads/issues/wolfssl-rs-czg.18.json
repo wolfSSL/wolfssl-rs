@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.18",
+  "title": "Pin<Box<ClientInner>> with explicit field-drop-order comment is correct",
+  "description": "Client stores all C state in a Pin<Box<ClientInner>> with fields declared in a specific order: client_ctx, then comm_cfg, then transport. The comment above ClientInner explains that Rust drops fields in declaration order and that wh_Client_Cleanup (called in Drop for Client before any fields drop) needs comm_cfg alive, and comm_cfg needs transport alive. Why this is correct: the alternative \u2014 storing raw pointers and relying on manual ordering \u2014 is more error-prone. The Pin ensures the heap address of client_ctx never changes after wh_Client_Init, which is required because wolfCrypt's CryptoCb system stores the raw pointer. A future contributor might: (1) reorder the fields for aesthetic reasons, breaking the drop invariant silently; (2) suggest removing Pin because 'Box already heap-allocates', missing that Pin also prevents moving out of the Box through safe code; (3) suggest splitting ClientInner into separate allocations, requiring careful lifetime management. The current design should be preserved and the comment should not be deleted.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:04:08Z",
+  "updated_at": "2026-04-27T21:10:37Z",
+  "closed_at": "2026-04-27T21:10:37Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:04:08Z"
+    }
+  ]
+}

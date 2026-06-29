@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-mrnu.2",
+  "title": "wolftpm_rs_shim.c accesses WOLFTPM2_CTX::cmdBuf internal field",
+  "description": "wolftpm-sys/src/wolftpm_rs_shim.c directly accesses dev->ctx.cmdBuf which is not part of wolfTPM's public API. Tested against wolfTPM v4.0.0/fbbf6fe. The _Static_assert guards catch size changes, but a wolfTPM upgrade that rearranges fields within the same struct size would silently corrupt data. Mitigation: track wolfTPM releases that touch tpm2.h/WOLFTPM2_CTX on every wolfTPM upgrade. Risk is bounded: compile-time guards catch most structural changes.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:03:22Z",
+  "updated_at": "2026-04-30T15:09:15Z",
+  "closed_at": "2026-04-30T15:09:15Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:03:22Z"
+    }
+  ]
+}

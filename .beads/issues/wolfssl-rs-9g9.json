@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-9g9",
+  "title": "wolfhsm: NvmMetadata.label is raw [u8; 24] with no helpers",
+  "description": "NvmMetadata.label is a [u8; 24] with no method to interpret it as a string or trim null padding. Users must manually find the first null byte and convert. Add label_str() -> Option<&str> (or &str with null-trimming) and consider a label_display() for Debug output. Minor but consistent with what a Rust user would expect from a named field.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:29:13Z",
+  "updated_at": "2026-04-27T20:37:04Z",
+  "closed_at": "2026-04-27T20:37:04Z",
+  "notes": "Epic: wolfssl-rs-xsf"
+}

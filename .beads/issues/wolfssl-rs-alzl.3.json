@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-alzl.3",
+  "title": "EccKey::create: two identical flush-on-error map_err blocks for SRK",
+  "description": "key.rs lines 78-83 and 101-107 have byte-for-byte identical map_err blocks that flush srk on error. Extract a local closure: 'let flush_srk_on_err = |e| { unsafe { wolfTPM2_UnloadHandle(dev_ptr, &mut srk.handle as *mut _); } e };' then use .map_err(flush_srk_on_err)?. Reduces two identical unsafe blocks to one.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:40:42Z",
+  "updated_at": "2026-04-30T06:46:34Z",
+  "closed_at": "2026-04-30T06:46:34Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-alzl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:40:42Z"
+    }
+  ]
+}

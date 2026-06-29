@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-970.5",
+  "title": "Error::check() two-level rc checking is the correct wolfHSM protocol model",
+  "description": "wolfHSM allows rc==0 (transport success) with out_rc!=0 (server rejected operation: NVM full, access denied, cert verify fail). Checking only the outer rc would silently succeed on server-side failures. The two-level check is required, not optional. Future contributors must not collapse this to a single check.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:29:00Z",
+  "updated_at": "2026-04-28T02:32:12Z",
+  "closed_at": "2026-04-28T02:32:12Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-970",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:28:59Z"
+    }
+  ]
+}

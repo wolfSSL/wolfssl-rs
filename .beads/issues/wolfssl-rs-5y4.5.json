@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-5y4.5",
+  "title": "wolfhsm-src: WolfSslMode enum is dead code",
+  "description": "locate_wolfssl_headers() returns WolfSslMode as its third tuple element. The caller binds it to _wolfssl_mode and never uses it. The enum variants are constructed but never matched, providing zero information. Remove the third return value and the WolfSslMode enum entirely; the mode distinction isn't needed by wolfhsm-src (it always sets WOLFSSL_USER_SETTINGS).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:00:17Z",
+  "updated_at": "2026-04-27T18:04:53Z",
+  "closed_at": "2026-04-27T18:04:53Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-5y4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:00:17Z"
+    }
+  ]
+}

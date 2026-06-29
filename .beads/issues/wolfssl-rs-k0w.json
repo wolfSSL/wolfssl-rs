@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-k0w",
+  "title": "Add Wycheproof ECDH P-521 test vectors",
+  "description": "wycheproof_ecdh.rs has runners for P-256 and P-384 but not P-521. The P521EcdhSecret type is exported and ecdh_secp521r1_ecpoint_test.json exists in the Wycheproof submodule. The absence is conspicuous: P-521 was added in this EVP-removal work but has no Wycheproof known-vector coverage for ECDH. Fix: add a wycheproof_ecdh_p521 test group to wycheproof_ecdh.rs following the same pattern as the P-256 and P-384 runners, gated on wolfssl_ecc_p521.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T08:27:18Z",
+  "updated_at": "2026-04-04T18:07:39Z",
+  "closed_at": "2026-04-04T18:07:39Z"
+}

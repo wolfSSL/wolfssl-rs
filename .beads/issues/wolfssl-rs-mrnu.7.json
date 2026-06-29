@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-mrnu.7",
+  "title": "wolftpm-src always defines WOLFSSL_USER_SETTINGS; wolftpm-sys has conditional logic",
+  "description": "wolftpm-src/build.rs unconditionally sets build.define('WOLFSSL_USER_SETTINGS', None) with a comment 'always define'. But wolftpm-sys/build.rs conditionally defines it (use_user_settings flag based on whether user_settings.h is detected). These are inconsistent. In practice wolftpm-src compiles the C library while wolftpm-sys compiles the shim and runs bindgen \u2014 if the shim defines WOLFSSL_USER_SETTINGS unconditionally but bindgen does not (or vice versa), the C preprocessor sees different views of wolfSSL headers. Verify they are consistent in all build configurations or align them explicitly.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:04:01Z",
+  "updated_at": "2026-04-30T15:09:17Z",
+  "closed_at": "2026-04-30T15:09:17Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:04:01Z"
+    }
+  ]
+}

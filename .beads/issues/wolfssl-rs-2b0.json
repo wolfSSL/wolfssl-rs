@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-2b0",
+  "title": "Review round 4: SEC0 correctness findings",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:46:46Z",
+  "updated_at": "2026-04-28T01:48:15Z",
+  "closed_at": "2026-04-28T01:48:15Z"
+}

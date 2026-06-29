@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-abl",
+  "title": "connection.rs: magic 0x0095 for TPM_RC_SIZE",
+  "description": "In wolftpm-tss/src/connection.rs line 38, the literal 0x0095 is compared against the wolfTPM return code to detect a too-small response buffer, with only a comment naming it TPM_RC_SIZE. This should use the named constant from the bindgen output. If the constant ever changes (unlikely but possible for wolfTPM-internal error remapping), this silently stops working and the caller gets a generic transport error instead of ResponseBufferTooSmall.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:28Z",
+  "updated_at": "2026-04-30T16:47:50Z",
+  "closed_at": "2026-04-30T16:47:50Z"
+}

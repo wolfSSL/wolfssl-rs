@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-5it",
+  "title": "wolfhsm: implement digest::Update+FixedOutput for HsmSha types",
+  "description": "## Why\\nThe plan called for `HsmSha256`, `HsmSha384`, `HsmSha512` types implementing `digest::Update + FixedOutput`. Currently only a one-shot `Client::sha256()` exists. Without the trait impls, the HSM SHA cannot be used anywhere the RustCrypto `Digest` trait is expected.\\n\\n## What needs to be done\\n- Add `HsmSha256<'a> { client: &'a mut Client, state: wc_Sha256 }` in `crypto/sha.rs`\\n- Implement `digest::Update` using `wh_Client_Sha256UpdateRequest`\\n- Implement `digest::FixedOutput` using `wh_Client_Sha256FinalRequest`\\n- Repeat for SHA-384 and SHA-512\\n- The one-shot `Client::sha256()` method can stay as a convenience\\n\\n## Acceptance criteria\\n- `HsmSha256` satisfies `digest::Digest` (which is `Update + FixedOutput + Default + ...`)\\n- Test: streaming hash of split input matches one-shot hash of same input (use sha2 crate as oracle)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:00:21Z",
+  "updated_at": "2026-04-28T01:33:01Z",
+  "closed_at": "2026-04-28T01:33:01Z"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.13",
+  "title": "nvm_read requests meta.len bytes even when offset > 0, exceeding object bounds",
+  "description": "nvm_read fetches meta.len from nvm_metadata then calls wh_Client_NvmRead with data_len = meta.len regardless of offset. When offset = 5 and meta.len = 10, the call requests 10 bytes starting at offset 5, asking for bytes 5-14, but the object only has bytes 0-9. The server truncates out_len to 5, which is then used to truncate the Vec, so the returned data is correct. However, the passed data_len = meta.len is semantically wrong: the buffer should be meta.len - offset bytes (or saturating_sub to avoid underflow when offset >= meta.len), and that is also what should be passed as data_len to the C call.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:23Z",
+  "updated_at": "2026-04-27T18:34:39Z",
+  "closed_at": "2026-04-27T18:34:39Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:22Z"
+    }
+  ]
+}

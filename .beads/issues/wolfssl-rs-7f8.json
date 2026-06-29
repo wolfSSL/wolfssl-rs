@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-7f8",
+  "title": "Rewrite cfb.rs using native wc_AesCfbEncrypt/Decrypt",
+  "description": "Replace the EVP-based cfb.rs implementation with native WcAes. Current state: AES_KEY struct + explicit iv:[u8;16] + num:c_int fields, initialized via AES_set_encrypt_key, operated via AES_cfb128_encrypt with AES_ENCRYPT/DECRYPT flag. New state: WcAes struct only (IV and partial-block counter managed internally). Use wc_AesInit + wc_AesSetKey(dir=AES_ENCRYPTION, always \u2014 CFB only uses forward AES schedule) in KeyIvInit. Use wc_AesCfbEncrypt in Enc types, wc_AesCfbDecrypt in Dec types (separate because CFB is asymmetric). Call wc_AesFree in Drop. Remove iv and num fields. Template: wolfcrypt/src/cipher/ofb.rs uses exact same WcAes pattern. Keep same six concrete types: Aes128/192/256 CfbEnc/Dec. Aes192 stays gated on wolfssl_aes_192. Check error codes from wc_AesCfbEncrypt/Decrypt (return c_int, 0=success).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T07:55:55Z",
+  "updated_at": "2026-04-04T08:00:56Z",
+  "closed_at": "2026-04-04T08:00:56Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-c60",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-04T00:56:06Z"
+    }
+  ]
+}

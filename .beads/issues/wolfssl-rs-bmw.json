@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-bmw",
+  "title": "Add Wycheproof ECDH conformance tests",
+  "description": "Create wolfcrypt-conformance/tests/wycheproof_ecdh.rs testing NistEcdhSecret against Wycheproof ecpoint-format vectors. Test vectors: ecdh_secp256r1_ecpoint_test.json (P-256) and ecdh_secp384r1_ecpoint_test.json (P-384). Format: each test case has 'private' (hex raw scalar), 'public' (hex uncompressed EC point, 04||x||y), 'shared' (expected shared secret x-coord), 'result' (valid/invalid/acceptable). Test logic: import private scalar via from_private_scalar(), import public point via NistEcdhPublicKey::from_bytes(), call diffie_hellman(), assert result matches expected shared secret for valid cases; assert error for invalid cases. Add NistEcdhEcpointTestGroup / NistEcdhEcpointTestCase structs to helpers/wycheproof.rs. Gate the test file on #![cfg(all(wolfssl_ecc))].",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T06:56:24Z",
+  "updated_at": "2026-04-04T07:11:14Z",
+  "closed_at": "2026-04-04T07:11:14Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-0qd",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T23:56:49Z"
+    }
+  ]
+}

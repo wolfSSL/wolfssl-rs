@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.10",
+  "title": "Error::check casts i32 to u32 for TpmRc \u2014 negative codes appear as large hex values",
+  "description": "wolftpm/src/error.rs Error::check does TpmRc(rc as u32). wolfTPM returns some internal error codes as negative i32 values (e.g. -100 = BAD_FUNC_ARG mapped to 0xFFFFFF9C). The tpm_rc_name table knows about 0xFFFFFF9C (TPM_RC_TIMEOUT) but only one such code. Other negative wolfTPM internal codes (BAD_FUNC_ARG = -173, etc.) will Display as 'TPM error 0xffffff53' with no symbolic name, which is misleading \u2014 it looks like a TPM2 spec error code but is actually a wolfTPM library internal code. Users filing issues will paste the hex without knowing it's a wolfTPM internal code. The wolfTPM error space should be documented (the distinction between TPM2-spec RCs < 0x1000 and wolfTPM internal codes < 0) and more wolfTPM internal codes should be named, or TpmRc should keep the i32 and display negative values separately.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:04:43Z",
+  "updated_at": "2026-04-30T06:18:52Z",
+  "closed_at": "2026-04-30T06:18:52Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:04:42Z"
+    }
+  ]
+}

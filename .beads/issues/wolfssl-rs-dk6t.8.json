@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-dk6t.8",
+  "title": "unsafe Send impl has correct and complete SAFETY comment",
+  "description": "Device explicitly implements Send with a SAFETY comment ('WOLFTPM2_DEV holds no thread-local state and no raw pointers shared across threads. The Box gives it a stable address.'). Intentionally not implementing Sync is the correct choice for a non-thread-safe C library. A future contributor might suggest deriving or auto-implementing Sync to allow shared access; this should be rejected \u2014 wolfTPM2_* functions are not thread-safe and concurrent calls on the same device without external locking would corrupt the cmdBuf internal state.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:56:53Z",
+  "updated_at": "2026-04-30T15:10:34Z",
+  "closed_at": "2026-04-30T15:10:34Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dk6t",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:56:53Z"
+    }
+  ]
+}

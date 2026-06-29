@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-3l3",
+  "title": "Remove wolfssl_openssl_extra from CFB cfg gates",
+  "description": "Two locations need updating after cfb.rs is rewritten: (1) wolfcrypt/src/cipher/mod.rs lines 69-72: change #[cfg(all(wolfssl_openssl_extra, wolfssl_aes_cfb))] to #[cfg(wolfssl_aes_cfb)] for both the mod cfb; and pub use cfb::*; lines. (2) wolfcrypt-conformance/tests/cipher_cfb.rs: the cfb_equiv! macro invocations gate on [wolfssl_openssl_extra, wolfssl_aes_cfb] and [wolfssl_openssl_extra, wolfssl_aes_cfb, wolfssl_aes_192] \u2014 remove wolfssl_openssl_extra from all three. Run cargo test -p wolfcrypt-conformance --test cipher_cfb to verify all cross-validation tests pass against the cfb-mode crate oracle.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T07:56:03Z",
+  "updated_at": "2026-04-04T08:02:04Z",
+  "closed_at": "2026-04-04T08:02:04Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-7f8",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-04T00:56:06Z"
+    }
+  ]
+}

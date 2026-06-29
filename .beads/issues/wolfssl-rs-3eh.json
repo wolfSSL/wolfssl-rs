@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-3eh",
+  "title": "Review round 1: wolftpm dual API surface",
+  "description": "Round 1 review of wolfssl-rs-sby implementation",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:28:18Z",
+  "updated_at": "2026-04-30T05:39:13Z",
+  "closed_at": "2026-04-30T05:39:13Z"
+}

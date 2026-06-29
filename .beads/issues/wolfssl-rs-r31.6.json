@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.6",
+  "title": "pcr_read accepts index > 23 \u2014 silent protocol violation",
+  "description": "Device::pcr_read takes index: u8 and passes it directly to wolfTPM2_ReadPCR as c_int::from(index). TPM spec defines SHA-256 PCR indices 0-23. Index values 24-255 are not valid SHA-256 bank indices. wolfTPM2_ReadPCR will forward the call to the TPM, which will return TPM_RC_VALUE or similar. The caller receives an opaque TpmRc error with no indication that the index was out of range. A pre-check returning Error::InvalidArg('PCR index must be 0-23') before the FFI call would give a better error message and prevent a useless round-trip to the TPM.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:04:07Z",
+  "updated_at": "2026-04-30T06:18:18Z",
+  "closed_at": "2026-04-30T06:18:18Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:04:06Z"
+    }
+  ]
+}

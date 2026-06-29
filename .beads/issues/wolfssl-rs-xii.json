@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-xii",
+  "title": "wolfhsm: implement signature::Signer for ECC and Ed25519 keys",
+  "description": "## Why\\nThe plan called for `EccP256Signer` and `Ed25519Signer` types implementing the RustCrypto `signature::Signer` trait. These are absent from the implementation. Without the trait impl, wolfhsm key types cannot be used as drop-in signers in any generic context (e.g. `fn sign_jwt<S: Signer<DerSignature>>(s: &S, ...)`). This is the biggest missing composability piece for RustCrypto users.\\n\\n## What needs to be done\\n- Add `EccP256Signer<'a>{ key: &'a EccP256Key, client: &'a mut Client }` and `impl signature::Signer<p256::ecdsa::DerSignature> for EccP256Signer<'a>` in `crypto/ecc.rs`\\n- Add `Ed25519Signer<'a>` and `impl signature::Signer<ed25519::Signature> for Ed25519Signer<'a>` in `crypto/ed25519.rs`\\n- Add `EccP256Key::signer<'a>(&'a self, client: &'a mut Client) -> EccP256Signer<'a>` and same for Ed25519Key\\n- The ECC signer must hash the message with SHA-256 in Rust before calling `sign_digest`\\n\\n## Acceptance criteria\\n- Both signer types satisfy the `signature::Signer` bound\\n- Test: `EccP256Key::signer()` can be passed to a generic function bounded on `Signer`\\n- Test: `Ed25519Key::signer()` same",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:00:15Z",
+  "updated_at": "2026-04-28T01:31:16Z",
+  "closed_at": "2026-04-28T01:31:16Z"
+}

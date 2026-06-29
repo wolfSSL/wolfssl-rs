@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-alzl.8",
+  "title": "EccKey missing Debug impl \u2014 public type unusable in debug-deriving structs",
+  "description": "EccKey<'dev> in wolftpm/src/key.rs has no Debug impl. Device was fixed in r9tpo.15 (manual impl showing pointer). EccKey contains two WOLFTPM2_KEY C structs (opaque, likely no Debug from bindgen) and &'dev mut Device. Add a manual impl showing at minimum the pointer address of self.key, mirroring Device's pattern: f.debug_struct(\"EccKey\").field(\"key\", &format_args\\!(\"{:p}\", &self.key)).finish(). A caller who wraps EccKey in a struct and derives Debug gets a compile error with no clear fix.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:42:22Z",
+  "updated_at": "2026-04-30T06:45:47Z",
+  "closed_at": "2026-04-30T06:45:47Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-alzl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:42:22Z"
+    }
+  ]
+}

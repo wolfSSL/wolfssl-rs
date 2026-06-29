@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-gctq.10",
+  "title": "SWTPM_INIT_LOCK mutex with documented scope limitations is the right design",
+  "description": "device.rs line 9, connection.rs line 14: process-wide mutex that serializes concurrent swtpm init calls. The doc comment explicitly states it does NOT protect against unrelated threads. This is the correct design \u2014 promising stronger guarantees would require intercepting all setenv/getenv calls process-wide, which is not feasible. The honest scoped guarantee plus documentation is better than a false safety promise.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:34:20Z",
+  "updated_at": "2026-04-30T15:41:34Z",
+  "closed_at": "2026-04-30T15:41:34Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-gctq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:34:19Z"
+    }
+  ]
+}

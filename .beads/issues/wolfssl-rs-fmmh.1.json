@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-fmmh.1",
+  "title": "stale NOTE in WolfTpmSwtpm::connect implies manual sync needed",
+  "description": "connection.rs:199 says 'Any bug fix to that function must also be applied here' but both WolfTpmSwtpm::connect and wolftpm::Device::open_swtpm now delegate to wolftpm_sys::swtpm::init_swtpm \u2014 there is no duplication to keep in sync. A future maintainer reading this NOTE will either (a) incorrectly duplicate a fix instead of updating the shared helper, or (b) waste time auditing two call sites that are already identical. The NOTE should be replaced with: 'Both delegate to wolftpm_sys::swtpm::init_swtpm; see that function for the setenv/init/unsetenv sequence.'",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:53:13Z",
+  "updated_at": "2026-04-30T16:00:35Z",
+  "closed_at": "2026-04-30T16:00:35Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fmmh",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:53:13Z"
+    }
+  ]
+}

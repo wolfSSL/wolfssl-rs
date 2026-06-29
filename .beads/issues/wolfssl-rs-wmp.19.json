@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.19",
+  "title": "wolfhsm_rsa_sign shim name misleads RsaKey::raw_op call site",
+  "description": "rsa.rs RsaKey::raw_op() is documented as a general RSA primitive dispatcher (PublicEncrypt, PublicDecrypt, PrivateEncrypt, PrivateDecrypt), but the underlying C shim it calls is named wolfhsm_rsa_sign. A reader of raw_op sees WolfHsmError::check(rc, \"wolfhsm_rsa_sign\") for decrypt and encrypt paths, which is confusing. Suggested rewrite: rename the shim in wolfhsm-sys/src/shims.c to wolfhsm_rsa_function (matching wolfCrypt's own naming for this primitive), regenerate bindings, and update the call site and error string accordingly.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:39Z",
+  "updated_at": "2026-04-28T00:20:03Z",
+  "closed_at": "2026-04-28T00:20:03Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:39Z"
+    }
+  ]
+}

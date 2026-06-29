@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-w3j",
+  "title": "Shim reads response size from TPM2 header, not packet.pos",
+  "description": "In wolftpm_rs_shim.c, after RS_SEND_COMMAND returns, the response length is parsed directly from cmdBuf[2..5] (the big-endian totalSize field in the TPM2 response header) rather than trusting packet.pos. This is correct because RS_SEND_COMMAND overwrites packet.buf with the response but does not update packet.pos -- packet.pos still holds the command size after the call. Reading resp_len from the header directly is the only reliable way to know how many response bytes were written. Getting this wrong would cause the shim to copy the wrong number of bytes (either too few, truncating the response, or too many, including garbage). The explicit comment in the shim explains this, which is essential for future maintainers who might be tempted to use packet.pos.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:46Z",
+  "updated_at": "2026-04-30T15:10:23Z",
+  "closed_at": "2026-04-30T15:10:23Z"
+}

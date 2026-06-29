@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.29",
+  "title": "nvm_list guards against ID=0 server response and u16 cursor wraparound",
+  "description": "nvm.rs: the nvm_list loop uses WH_ERROR_NOTFOUND in out_rc as the normal end-of-list signal (not an error). It also breaks on out_id==0 (WH_NVM_ID_INVALID) even when out_rc is success, which would otherwise leave start_id stuck at 0 and produce an infinite loop on a misbehaving server. The cursor advance uses checked_add(1) and breaks on overflow rather than wrapping around and re-scanning IDs. A future contributor might remove the out_id==0 guard as 'defensive bloat' or replace checked_add with +1. The guard is correct: the C server protocol does not guarantee well-formed responses and an infinite loop here would hang the caller indefinitely. The overflow break is correct: u16 ID space is finite and wrap-around would revisit IDs.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:08:11Z",
+  "updated_at": "2026-04-28T00:15:17Z",
+  "closed_at": "2026-04-28T00:15:17Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:08:10Z"
+    }
+  ]
+}

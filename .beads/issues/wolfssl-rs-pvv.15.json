@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.15",
+  "title": "Error::Wh has no human-readable name lookup for WH_ERROR_* codes",
+  "description": "Error::Wh { code: i32 } formats as 'wolfHSM error -2104'. Users filing issues will copy the raw integer; maintainers must grep wolfhsm/wh_error.h to translate -2104 to WH_ERROR_NOTFOUND. All other named error conditions (AlreadyRegistered, BadArgs, DataLost, InvalidSignature) have English descriptions. The WH_ERROR_NOTFOUND value is already special-cased as a private constant in nvm.rs but is not exposed to users. Every new user who hits a server-side error and files an issue will open with 'I got error -XXXX; what does that mean?' \u2014 a class of issues that is completely avoidable.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:27Z",
+  "updated_at": "2026-04-28T02:12:14Z",
+  "closed_at": "2026-04-28T02:12:14Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:27Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.3",
+  "title": "counter_init accepts NvmId::INVALID (0) without local validation",
+  "description": "nvm_add and nvm_overwrite both reject NvmId::INVALID with a BadArgs error before making any FFI call. counter_init does not; passing NvmId::INVALID (0) sends ID=0 to the server and produces an opaque server-side error code. A user who accidentally passes NvmId::INVALID::new(0) or forgets to initialize their NvmId gets a confusing Wh { code: -XXXX } instead of a clear BadArgs message. Inconsistency also means contributors adding future counter-like APIs will not know which validation pattern to follow.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:56:51Z",
+  "updated_at": "2026-04-28T02:03:02Z",
+  "closed_at": "2026-04-28T02:03:02Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:56:51Z"
+    }
+  ]
+}

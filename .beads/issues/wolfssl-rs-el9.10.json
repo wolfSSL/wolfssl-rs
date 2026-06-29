@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.10",
+  "title": "with_cert_verified_pubkey: RAII closure eviction is sound",
+  "description": "with_cert_verified_pubkey correctly handles the four cases: f succeeds + evict succeeds (return Ok), f succeeds + evict fails (return evict error, losing f's Ok value \u2014 intentional, cache slot leaked would be worse), f fails + evict succeeds (return original error), f fails + evict fails (log warn, return original error). This is exactly the right semantics for a network-backed RAII handle. A contributor might suggest returning both errors on the double-failure path, but that requires a compound error type and the log::warn is sufficient.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:16:56Z",
+  "updated_at": "2026-04-28T02:23:18Z",
+  "closed_at": "2026-04-28T02:23:18Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:16:56Z"
+    }
+  ]
+}

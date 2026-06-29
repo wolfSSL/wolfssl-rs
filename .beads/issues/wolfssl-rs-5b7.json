@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-5b7",
+  "title": "wolfhsm crate: optional features",
+  "description": "Implement feature-gated subsystems in wolfhsm. cert.rs (feature=cert): wraps wh_Client_Cert* \u2014 init, add_trusted, read_trusted, erase_trusted, verify, verify_and_cache_leaf_pubkey, verify_acert. auth.rs (feature=auth): wraps wh_Client_Auth* \u2014 set_credentials. she.rs (feature=she): wraps wh_Client_She* SHE automotive key management protocol. All three gated behind Cargo features and #[cfg(feature=...)] in lib.rs.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:17:30Z",
+  "updated_at": "2026-04-27T21:30:16Z",
+  "closed_at": "2026-04-27T21:30:16Z"
+}

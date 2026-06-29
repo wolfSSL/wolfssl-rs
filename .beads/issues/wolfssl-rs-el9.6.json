@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.6",
+  "title": "with_key\\! macro: structural coupling to .id field is unenforceable",
+  "description": "The with_key\\! macro accesses key.id directly by field name. Any new key type that names its handle field something other than 'id', or uses a wrapper type, will compile but produce wrong behavior (no eviction, or eviction of wrong slot). The contributor invariant doc added this commit names this requirement but it cannot be checked by the compiler. A future developer adding a key type that forgets invariant 1 gets a compile error (missing field), but one who uses a different approach (e.g. method accessor) silently breaks. A trait with an id() accessor would make this enforceable, but that is a larger refactor. Risk: each new key type added is a manual audit burden.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:16:32Z",
+  "updated_at": "2026-04-28T02:23:10Z",
+  "closed_at": "2026-04-28T02:23:10Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:16:31Z"
+    }
+  ]
+}

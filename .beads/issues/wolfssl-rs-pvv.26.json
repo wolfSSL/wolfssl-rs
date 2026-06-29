@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.26",
+  "title": "RsaKey caches key_size_bytes at generation time \u2014 defensible against lazy per-call get_size",
+  "description": "RsaKey::generate immediately calls wolfhsm_rsa_get_size and stores the result in key_size_bytes. This value is used by raw_op to pre-size the output buffer to exactly the modulus length, avoiding over-allocation or under-allocation. A contributor might suggest removing the get_size call from generate and computing the buffer size lazily (calling get_size in raw_op, or using a fixed max buffer). The eager approach is correct: it fails fast on an inconsistent server response (key ID returned but size is 0 or negative), and it avoids an extra round-trip on every raw_op call for the same key. The server-confirmed size is also exposed via key_size_bytes() for callers who need it without paying for an extra RPC.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:58:10Z",
+  "updated_at": "2026-04-28T02:06:58Z",
+  "closed_at": "2026-04-28T02:06:58Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:58:09Z"
+    }
+  ]
+}

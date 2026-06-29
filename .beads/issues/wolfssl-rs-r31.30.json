@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.30",
+  "title": "digest.len() as c_int in pcr_read uses 'as' cast \u2014 should be infallible constant",
+  "description": "device.rs:132: 'let mut digest_len: c_int = digest.len() as c_int' where digest is [0u8; 64]. The array length is a compile-time constant (64) that trivially fits in c_int. Using 'as' here adds no clarity and could mask truncation if the array is ever resized. The idiomatic form is '64i32' or 'i32::try_from(digest.len()).expect(\"const fits\")'. At minimum, a comment like '// 64 < i32::MAX' should accompany the cast.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:09:49Z",
+  "updated_at": "2026-04-30T06:19:40Z",
+  "closed_at": "2026-04-30T06:19:40Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:09:49Z"
+    }
+  ]
+}

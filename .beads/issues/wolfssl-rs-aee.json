@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-aee",
+  "title": "wolfhsm: key operation methods take &mut Client ergonomics",
+  "description": "All methods on key types (EccP256Key, Ed25519Key, etc.) take client: &mut Client as a parameter. A RustCrypto user expects either the key type to carry a borrow of the client (struct EccP256Key<'a> { client: &'a mut Client, id: KeyId }) so operations are self-contained, or for operations to be methods on Client. The current shape forces callers to juggle mutable borrows at every call site and reads backwards (key.sign(&mut client, msg) rather than client.sign(key, msg) or key.sign(msg)). Evaluate and document the chosen convention, or change it.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:29:03Z",
+  "updated_at": "2026-04-27T20:37:05Z",
+  "closed_at": "2026-04-27T20:37:05Z",
+  "notes": "Epic: wolfssl-rs-xsf"
+}

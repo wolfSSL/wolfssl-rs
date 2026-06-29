@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-4b1",
+  "title": "wolftpm: implement ECC P-256 key create/sign/verify",
+  "description": "Implement transient ECC P-256 key operations using wolfTPM2_* API.\n\n## What\n- EccKey struct wrapping WOLFTPM2_KEY (transient key on the TPM)\n- Device::with_ecc_key(|key, dev| ...) closure pattern matching wolfhsm\n  - Creates transient P-256 key (wolfTPM2_CreateKey with ECC P-256 template)\n  - Runs user closure\n  - Always flushes the transient key handle (wolfTPM2_UnloadKey) on exit\n- EccKey::sign(dev, hash: &[u8]) -> Result<Vec<u8>> \u2014 wolfTPM2_SignHashScheme\n- EccKey::verify(dev, hash: &[u8], sig: &[u8]) -> Result<bool> \u2014 wolfTPM2_VerifyHashScheme\n- EccKey::public_key_der(dev) -> Result<Vec<u8>> \u2014 export SubjectPublicKeyInfo DER\n\n## Files\n- wolftpm/src/key.rs (new)\n- wolftpm/src/lib.rs (add pub mod key; pub use key::EccKey)\n\n## Notes\nKey template: TPM_ALG_ECC, TPM_ECC_NIST_P256, TPM_ALG_ECDSA, TPM_ALG_SHA256.\nFlush transient key even when closure returns Err \u2014 same pattern as wolfhsm.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T04:44:24Z",
+  "updated_at": "2026-04-30T05:24:26Z",
+  "closed_at": "2026-04-30T05:24:26Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-30e",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T21:44:46Z"
+    }
+  ]
+}

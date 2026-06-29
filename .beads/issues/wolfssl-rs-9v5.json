@@ -1,0 +1,11 @@
+{
+  "id": "wolfssl-rs-9v5",
+  "title": "Review: feat(wolfhsm): add crypto module API",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:54:49Z",
+  "updated_at": "2026-04-27T19:01:32Z",
+  "closed_at": "2026-04-27T19:01:32Z"
+}

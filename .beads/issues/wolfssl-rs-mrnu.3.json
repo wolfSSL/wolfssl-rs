@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-mrnu.3",
+  "title": "wolftpm-tss: setenv failure returns Error::Transport{code:-1} instead of meaningful error",
+  "description": "In wolftpm-tss/src/connection.rs WolfTpmSwtpm::connect, when libc::setenv fails (returns -1, indicating ENOMEM or similar), the code returns Err(Error::Transport { code: -1 }). Error::Transport is intended for wolfTPM/TPM_RC codes. A display of 'wolfTPM transport error 0xffffffff' is misleading \u2014 this is a system-level failure setting an env var, not a TPM protocol error. The wolftpm crate handles this better by returning Error::InvalidArg with a descriptive message. Fix: either map to Error::InvalidArg or add an Error::SystemError variant.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:03:30Z",
+  "updated_at": "2026-04-30T15:07:50Z",
+  "closed_at": "2026-04-30T15:07:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:03:30Z"
+    }
+  ]
+}

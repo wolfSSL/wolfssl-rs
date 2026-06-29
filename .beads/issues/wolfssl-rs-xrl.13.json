@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.13",
+  "title": "nvm_write: deleted flag is redundant; use id != INVALID directly",
+  "description": "In nvm.rs nvm_write, a deleted: bool flag is set inside if id != NvmId::INVALID, then the closure map_add_err checks if deleted to decide which error to surface. The flag carries no new information \u2014 deleted is always equivalent to id != NvmId::INVALID. Remove the flag; rewrite the closure as |e| if id != NvmId::INVALID { WolfHsmError::DataLost { id: id.0 } } else { e }. The deletion-then-add non-atomicity is important; the flag obscures rather than clarifies it.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:59Z",
+  "updated_at": "2026-04-27T21:12:43Z",
+  "closed_at": "2026-04-27T21:12:43Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:59Z"
+    }
+  ]
+}

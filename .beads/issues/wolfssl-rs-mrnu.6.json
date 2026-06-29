@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-mrnu.6",
+  "title": "swtpm init env-var dance duplicated across wolftpm and wolftpm-tss",
+  "description": "The setenv/init/unsetenv sequence for swtpm initialization is copy-pasted between wolftpm/src/device.rs::open_swtpm and wolftpm-tss/src/connection.rs::WolfTpmSwtpm::connect. The two functions are structurally identical modulo error types. Since wolftpm-tss already depends on wolftpm-sys but not wolftpm, a shared helper in wolftpm-sys (or a small internal proc at the sys level) is impractical. The cleanest fix is to have wolftpm-tss depend on wolftpm and delegate. However, that creates a crate dependency that may not be desired. As-is, any bug fix must be applied in two places \u2014 document this explicitly with a comment pointing from one copy to the other.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:04:00Z",
+  "updated_at": "2026-04-30T15:09:40Z",
+  "closed_at": "2026-04-30T15:09:40Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:04:00Z"
+    }
+  ]
+}

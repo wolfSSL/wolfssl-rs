@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-6sq",
+  "title": "RSA migration: C shims for PKCS#1v1.5 sign/verify",
+  "description": "Add wolfcrypt_rsa_pkcs1v15_* C shims to compat_shim.c for PKCS#1v1.5 signature operations. These replace EVP_DigestSign/EVP_DigestVerify usage.\n\nFunctions to implement (guarded by #ifndef NO_RSA):\n- wolfcrypt_rsa_pkcs1v15_sign(void* ctx, int hash_nid, const byte* msg, word32 msg_len, byte* sig, word32* sig_len)\n  - Hash msg internally (wc_Sha256Hash / wc_Sha384Hash / wc_Sha512Hash per hash_nid)\n  - Build DigestInfo DER via wc_EncodeSignature\n  - Sign with wc_RsaSSL_Sign (PKCS#1v1.5 raw)\n- wolfcrypt_rsa_pkcs1v15_verify(void* ctx, int hash_nid, const byte* msg, word32 msg_len, const byte* sig, word32 sig_len)\n  - Hash msg internally\n  - Build DigestInfo DER via wc_EncodeSignature\n  - Verify with wc_RsaSSL_VerifyInline\n  - Compare decrypted DigestInfo to expected; return 0 or BAD_FUNC_ARG\n\nhash_nid values: WC_HASH_TYPE_SHA256 = 4, WC_HASH_TYPE_SHA384 = 5, WC_HASH_TYPE_SHA512 = 6 (from wolfssl/wolfcrypt/hash.h)\n\nAcceptance criteria:\n- Signs a test message and verifies it round-trip\n- PKCS#1v1.5 is deterministic: post-migration signature bytes must exactly match the EVP baseline from wolfssl-rs-siu",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:10:33Z",
+  "updated_at": "2026-04-04T05:20:06Z",
+  "closed_at": "2026-04-04T05:20:06Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-c9n",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:22Z"
+    }
+  ]
+}

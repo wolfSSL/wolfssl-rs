@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.23",
+  "title": "Two-level rc checking (transport rc AND server out_rc) \u2014 defensible against checking only the outer FFI return code",
+  "description": "Most wolfHSM NVM and auth operations have two return codes: the outer FFI call rc (was the request sent and a response received?) and an inner server out_rc (did the server successfully process the request?). The code checks both with Error::check() in sequence. A contributor might suggest 'simplifying' to check only rc, or asserting that out_rc == 0 whenever rc == 0. Neither is correct: the wolfHSM protocol permits rc == 0 (transport succeeded) with out_rc \\!= 0 (server rejected the operation, e.g. NVM full, access denied). Collapsing to a single check would silently succeed on server-side failures.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:48Z",
+  "updated_at": "2026-04-28T02:06:47Z",
+  "closed_at": "2026-04-28T02:06:47Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:48Z"
+    }
+  ]
+}

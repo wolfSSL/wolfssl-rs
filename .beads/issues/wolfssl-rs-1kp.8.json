@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.8",
+  "title": "ecc: sign_digest copies 128-byte stack buf to heap Vec",
+  "description": "ecc.rs sign_digest allocates a 128-byte stack array buf, writes the signature into it via FFI, then calls buf[..sig_len].to_vec() to return the result. The copy is unnecessary: pre-allocate a Vec<u8> with capacity 128, pass as_mut_ptr() to the FFI call, then truncate to sig_len. Eliminates a 128-byte memcopy on every ECDSA sign call.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:13Z",
+  "updated_at": "2026-04-27T22:34:32Z",
+  "closed_at": "2026-04-27T22:34:32Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:13Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.10",
+  "title": "WolfHsmError::check uses numeric range for WH_ERROR_* classification",
+  "description": "error.rs classifies return codes in -2302..=-2000 as Wh errors and anything else nonzero as Ffi errors. The range directly mirrors wolfHSM WH_ERROR_* header constants without re-exporting them. This is intentional: the range is stable, embedding it makes check() a one-liner, and the doc comment records it for header verification. A future contributor might suggest matching against exported constants instead, but that would pull all WH_ERROR_* symbols into Rust and add noise without correctness gain.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:09Z",
+  "updated_at": "2026-04-27T19:07:37Z",
+  "closed_at": "2026-04-27T19:07:37Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:08Z"
+    }
+  ]
+}

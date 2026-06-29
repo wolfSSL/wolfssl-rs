@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-sby",
+  "title": "wolftpm dual API surface: standalone + tpm-rs/TSS",
+  "description": "Implement two complementary API surfaces for wolftpm, mirroring how wolfcrypt does both RustCrypto traits and its own API surface.\n\n## Why\nwolftpm-sys has raw FFI bindings but no safe Rust API. Two surfaces are needed:\n1. Standalone safe API (wraps wolfTPM2_* functions directly)\n2. tpm-rs/TSS compatibility (implements tpm2_rs_client::Connection so wolfTPM becomes a backend for any code built on the tpm-rs stack)\n\n## Crate structure\nwolftpm-sys\n  \u251c\u2500\u2500 wolftpm           Standalone wolfTPM high-level API (Device, Key, Error)\n  \u2514\u2500\u2500 wolftpm-tss       tpm-rs Connection impl via wolfTPM transport layer\n\n## Key design decisions\n- wolftpm-tss calls TPM2_CTX::ioCb directly (only raw I/O interface in wolfTPM)\n- Response length read from bytes 2-5 of TPM2 response header (big-endian, per TCG spec)\n- tpm2-rs-client = 0.1.0 pinned (self-described unstable)\n- WOLFTPM2_NO_WOLFCRYPT kept in wolftpm-sys; wolftpm-tss uses full bindings\n- Phase 1 scope: Device + get_random + pcr_read + ECC P-256 sign/verify",
+  "status": "in_progress",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T04:43:40Z",
+  "updated_at": "2026-04-30T05:00:34Z",
+  "notes": "tpm-rs maintainers: Microsoft, Google, Huawei engineers \u2014 TCG charter project at github.com/tpm-rs/tpm-rs. Connection trait: transact(cmd: &[u8], rsp: &mut [u8]) -> Result<&mut [u8], Error>. TPM2 response header size field at bytes 2-5 (big-endian u32)."
+}

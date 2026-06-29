@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.24",
+  "title": "rsa.rs: wolfhsm_rsa_get_size non-positive result uses Ffi inconsistently",
+  "description": "In rsa.rs:67-71, when wolfhsm_rsa_get_size returns a non-positive value after a successful FFI call (rc==0), the code constructs Ffi{code: out_size, func: \"wolfhsm_rsa_get_size: returned non-positive key size\"}. This is actually a ProtocolError (server returned success but gave an impossible key size), not an FFI error in the wolfSSL sense. Once the ProtocolError variant from wolfssl-rs-1kp.14 exists, this site should be converted to ProtocolError{msg: \"wolfhsm_rsa_get_size returned non-positive key size\"}. Also note that out_size is a c_int so using it as the code field of Ffi{} conflates two different numeric namespaces. Tracking separately from wolfssl-rs-1kp.14 because the fix depends on that issue landing first.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:23:25Z",
+  "updated_at": "2026-04-27T23:09:53Z",
+  "closed_at": "2026-04-27T23:09:53Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:23:25Z"
+    }
+  ]
+}

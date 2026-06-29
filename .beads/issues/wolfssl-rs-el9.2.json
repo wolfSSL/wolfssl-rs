@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.2",
+  "title": "error.rs wh_error_name table wrong: all codes -2001..-2015 misnamed",
+  "description": "wh_error_name() in error.rs maps codes -2001 through -2015 to wrong symbolic names. The actual wh_error.h has a gap after -2011 (WH_ERROR_REQUEST_PENDING) and resumes at -2100 (WH_ERROR_LOCKED). Examples: -2001 is WH_ERROR_NOTREADY (not ABORTED), -2002 is WH_ERROR_ABORTED (not NOTREADY), -2005 is WH_ERROR_CERT_VERIFY (not NOTVERIFIED), -2010 is WH_ERROR_TIMEOUT (not NOSPC), codes -2012 through -2015 do not exist. Every Error::Wh diagnostic message for these codes displays the wrong name, causing misleading logs and error messages.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:16:08Z",
+  "updated_at": "2026-04-28T02:22:46Z",
+  "closed_at": "2026-04-28T02:22:46Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:16:07Z"
+    }
+  ]
+}

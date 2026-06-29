@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-mrnu.10",
+  "title": "DECISION: sign-with-TPM/verify-with-RustCrypto p256 is the correct test oracle",
+  "description": "key.rs::sign_and_verify_with_independent_oracle signs with the TPM and verifies with the p256 RustCrypto crate as the independent oracle. This is the right design per CLAUDE.md test constraints. A contributor might suggest 'also verify with the TPM's own verify to save the p256 dependency' \u2014 the comment says 'Also confirm the TPM's own verify agrees (sanity check)' which is correct, but the PRIMARY oracle is p256, not the TPM. Do not swap primary/secondary oracles.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:04:21Z",
+  "updated_at": "2026-04-30T15:09:47Z",
+  "closed_at": "2026-04-30T15:09:47Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:04:20Z"
+    }
+  ]
+}

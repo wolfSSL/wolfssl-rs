@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-6tm",
+  "title": "Workspace: add wolfhsm crates to Cargo.toml",
+  "description": "Add wolfhsm-src, wolfhsm-sys, wolfhsm to the workspace members list in the root Cargo.toml. Required before any of the new crates can be built or tested. Straightforward 3-line edit.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:17:31Z",
+  "updated_at": "2026-04-27T17:38:40Z",
+  "closed_at": "2026-04-27T17:38:40Z"
+}

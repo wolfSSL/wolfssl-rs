@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-alzl.5",
+  "title": "shim.c: cross-reference to build.rs wolfTPM version warning is incomplete",
+  "description": "wolftpm_rs_shim.c line 101: 'See: wolftpm-sys/build.rs for the wolfTPM version warning' \u2014 a reader of the C file must hunt for the warning without knowing what to look for. The comment should briefly state the warning (e.g., 'build.rs emits a warning if wolfTPM version != 4.0.0; this shim was tested against fbbf6fe / 4.0.0') so the C file is self-contained.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:41:09Z",
+  "updated_at": "2026-04-30T06:46:59Z",
+  "closed_at": "2026-04-30T06:46:59Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-alzl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:41:09Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-mrnu.11",
+  "title": "DECISION: #[non_exhaustive] on Error enums preserves future extensibility",
+  "description": "Both wolftpm::Error and wolftpm_tss::Error are marked #[non_exhaustive]. A contributor might suggest removing this to let downstream code write exhaustive matches. Do not. Both error types are version 0.1.0 and the TPM space has many error variants we haven't wrapped yet (HMAC sessions, NV storage, etc.). Non-exhaustive is the correct API contract for an evolving library.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:04:22Z",
+  "updated_at": "2026-04-30T15:09:49Z",
+  "closed_at": "2026-04-30T15:09:49Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:04:21Z"
+    }
+  ]
+}

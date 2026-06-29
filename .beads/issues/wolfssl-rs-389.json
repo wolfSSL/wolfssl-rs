@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-389",
+  "title": "wolfhsm-sys: build.rs",
+  "description": "Implement wolfhsm-sys/build.rs: (1) read DEP_WOLFCRYPT_SYS_INCLUDE and DEP_WOLFCRYPT_SYS_SETTINGS_INCLUDE; (2) propagate to wolfhsm-src via unsafe { env::set_var(...) } (safe in single-threaded build script, must be wrapped in unsafe for Rust 2024+); (3) read DEP_WOLFHSM_SRC_INCLUDE and DEP_WOLFHSM_SRC_LIB; (4) emit cargo:rustc-link-search=native and link-lib=static for wolfhsm and wolfhsm_shims; (5) run bindgen over wrapper.h with clang args for all include paths, allowlist_type wh.*/WH.*/posix_transport_.*, allowlist_function wh_Client_.*, allowlist_item WH_.*; (6) compile shims.c as separate cc::Build into libwolfhsm_shims.a.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:18:10Z",
+  "updated_at": "2026-04-27T17:56:59Z",
+  "closed_at": "2026-04-27T17:56:59Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-665",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:19:51Z"
+    }
+  ]
+}

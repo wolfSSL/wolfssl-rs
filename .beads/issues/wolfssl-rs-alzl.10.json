@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-alzl.10",
+  "title": "Error::check is pub in wolftpm but pub(crate) in wolftpm-tss \u2014 inconsistent surface",
+  "description": "wolftpm::error::Error::check is pub, but wolftpm_tss::error::Error::check is pub(crate). The wolftpm version exposes a raw wolfTPM rc -> Result mapper that users don't need (they have no raw rc values to map; that's the library's job). Make it pub(crate) in both crates for consistency and to avoid unnecessary public API surface.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:43:09Z",
+  "updated_at": "2026-04-30T06:46:07Z",
+  "closed_at": "2026-04-30T06:46:07Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-alzl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:43:08Z"
+    }
+  ]
+}

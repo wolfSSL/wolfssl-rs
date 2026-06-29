@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-xsmt.4",
+  "title": "wolftpm-src/build.rs: no-transport path on non-Linux compiles silently unusable library",
+  "description": "When neither linux-dev nor swtpm feature is selected on a non-Linux target (macOS, Windows), generate_wolftpm_options emits no WOLFTPM_LINUX_DEV or WOLFTPM_SWTPM define. wolfTPM's hal/tpm_io.h is left without a transport definition, which may produce a cryptic compile or link error. Fix: add an explicit panic\\! in the build script when no transport is selected on non-Linux, with a message explaining which feature to enable.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T17:42:52Z",
+  "updated_at": "2026-04-30T17:50:57Z",
+  "closed_at": "2026-04-30T17:50:57Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xsmt",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T10:42:51Z"
+    }
+  ]
+}

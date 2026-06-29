@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.16",
+  "title": "TransportInner bundles C context/config/vtable/CString in one Box \u2014 defensible against splitting into separate ClientInner fields",
+  "description": "TcpInner/UdsInner/ShmInner each heap-allocate the transport_ctx, transport_cfg, transport_cb, and the CString that backs the pointer field in cfg \u2014 all together in one Box. This keeps all FFI pointer targets stable in a single allocation and ensures they are always co-located. A contributor might suggest flattening these into separate fields on ClientInner (or the top-level Client) to 'simplify.' That would break the address-stability invariant because ClientInner is already inside a Pin<Box>, but the individual CStrings and config structs need their own stable addresses independently \u2014 the C transport_cfg holds a raw pointer into the CString, not into ClientInner. The bundled-Box design is the correct layout.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:28Z",
+  "updated_at": "2026-04-28T02:06:31Z",
+  "closed_at": "2026-04-28T02:06:31Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:28Z"
+    }
+  ]
+}

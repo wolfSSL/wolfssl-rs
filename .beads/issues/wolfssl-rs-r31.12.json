@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.12",
+  "title": "WolfTpmLinuxDev struct always compiled but Connection impl is feature-gated \u2014 inconsistency",
+  "description": "connection.rs: WolfTpmLinuxDev struct and its open() method are always compiled (no feature gate). The Connection impl is gated on #[cfg(feature = 'tss')]. This means a user who adds wolftpm-tss without the 'tss' feature gets a WolfTpmLinuxDev that can be opened but cannot be passed to any tpm-rs function \u2014 the only use of WolfTpmLinuxDev is as a Connection. The public struct without any usable operation will confuse users and generate issues. Either the struct should also be gated on 'tss', or the crate should explain in the lib.rs doc what you do with WolfTpmLinuxDev when tss is disabled (i.e. nothing useful). The feature table in lib.rs does not make this clear.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:05:00Z",
+  "updated_at": "2026-04-30T06:18:57Z",
+  "closed_at": "2026-04-30T06:18:57Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:05:00Z"
+    }
+  ]
+}

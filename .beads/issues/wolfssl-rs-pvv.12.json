@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.12",
+  "title": "nvm_list: capacity hint uses implicit first-iteration guard",
+  "description": "In nvm.rs nvm_list, the capacity reservation 'if ids.is_empty() { ids.reserve(out_count) }' uses ids.is_empty() as an implicit 'first iteration' flag. The reader has to understand that ids starts empty and the hint is only useful before any pushes. Rewrite: hoist the capacity hint by restructuring the first call outside the loop, or replace the guard with an explicit 'let mut capacity_hinted = false' bool. Either makes the once-only intent explicit rather than relying on the list starting empty.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:17Z",
+  "updated_at": "2026-04-28T02:06:22Z",
+  "closed_at": "2026-04-28T02:06:22Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:17Z"
+    }
+  ]
+}

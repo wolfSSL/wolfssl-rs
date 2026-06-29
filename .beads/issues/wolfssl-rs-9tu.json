@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-9tu",
+  "title": "Review round 3: wolftpm dual API surface",
+  "description": "Round 3 review after R2 fixes",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:48:09Z",
+  "updated_at": "2026-04-30T17:44:51Z",
+  "closed_at": "2026-04-30T17:44:51Z"
+}

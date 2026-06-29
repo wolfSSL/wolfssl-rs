@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.7",
+  "title": "swtpm env-var init is a process-global footgun with inadequate documentation",
+  "description": "Both device.rs and connection.rs temporarily set SWTPM_SERVER_NAME/PORT in the process environment to pass the swtpm host/port to wolfTPM2_Init, which reads them internally. The mutex only serializes callers through the Rust wrapper. A user who sets SWTPM_SERVER_NAME externally before running (e.g. in a test harness) will have it clobbered silently. A user who reads the env var from another thread not holding the lock will see a transient value. The doc comment warns 'does not protect against unrelated threads', but does not tell users what they should do instead (e.g. do not rely on SWTPM_SERVER_NAME from the env; set it via this API only). This will generate a steady stream of hard-to-reproduce bug reports from users running parallel test suites.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:04:16Z",
+  "updated_at": "2026-04-30T06:18:23Z",
+  "closed_at": "2026-04-30T06:18:23Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:04:15Z"
+    }
+  ]
+}

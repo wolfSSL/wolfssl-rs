@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-2k0w.3",
+  "title": "hash_sz try_from after earlier len check creates unreachable error branch",
+  "description": "In key.rs::sign() and key.rs::verify(), hash.len() is validated to be exactly 32 at the top of the function, then a try_from conversion is done: let hash_sz = std::ffi::c_int::try_from(hash.len()).map_err(|_| Error::InvalidArg(...))?. The error branch is dead: 32 always fits in c_int. The comment even says 'hash is validated to be 32 bytes above; 32 fits in c_int on all targets.' The try_from adds noise, an unreachable branch, and implies a runtime check that isn't needed. Rewrite as: let hash_sz = 32_i32; (or hash.len() as c_int with a safety comment).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T16:21:03Z",
+  "updated_at": "2026-04-30T16:34:32Z",
+  "closed_at": "2026-04-30T16:34:32Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2k0w",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T09:21:03Z"
+    }
+  ]
+}

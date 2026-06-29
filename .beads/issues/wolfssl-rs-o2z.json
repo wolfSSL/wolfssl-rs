@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-o2z",
+  "title": "wolfhsm: RsaKey::perform uses pub bits field for buffer sizing (unsound)",
+  "description": "RsaKey::perform allocates its output buffer as self.bits / 8. The bits field is pub, so a caller can set it to the wrong value and silently get a truncated output or a buffer overrun. bits should be private; actual key size should come from key_size_bytes() or be stored at generate time from the server's confirmed value.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:28:54Z",
+  "updated_at": "2026-04-27T20:37:25Z",
+  "closed_at": "2026-04-27T20:37:25Z",
+  "notes": "Epic: wolfssl-rs-xsf"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.12",
+  "title": "nvm_list: out_id==0 guard needs infinite-loop explanation",
+  "description": "nvm_list() lines 106-109: 'if out_id == 0 { break; }' has a comment 'should not occur after a successful response' but does not explain the consequence of removing the guard. Without it, start_id stays 0, the next iteration sends the same query, gets the same out_id == 0 response, and the loop never terminates. A contributor debugging this and seeing 'should not occur' may remove the guard as apparent dead code. The comment should say: 'Guard against an infinite loop: if the server returns 0 after a success response, start_id would not advance and the next request would repeat indefinitely.'",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:17Z",
+  "updated_at": "2026-04-27T19:08:38Z",
+  "closed_at": "2026-04-27T19:08:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:16Z"
+    }
+  ]
+}

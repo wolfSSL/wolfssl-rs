@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.17",
+  "title": "with_ecc/ed25519/curve25519_key: doc omits evict-on-error-path semantics",
+  "description": "In src/crypto/ecc.rs, ed25519.rs, and curve25519.rs, the with_xxx_key helper doc comments say only 'Guarantees the HSM cache slot is released even when f returns Err.' They do not document the asymmetric error behavior that with_rsa_key does document: on error path the eviction error is swallowed and the original error is returned; on the success path the eviction error is surfaced. A contributor who copies the ecc/ed25519/curve25519 doc comment will miss this subtle behavior. Bring the doc comments in line with with_rsa_key.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:12Z",
+  "updated_at": "2026-04-27T21:13:37Z",
+  "closed_at": "2026-04-27T21:13:37Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:12Z"
+    }
+  ]
+}

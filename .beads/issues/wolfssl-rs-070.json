@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-070",
+  "title": "setenv return value silently ignored in open_swtpm and WolfTpmSwtpm::connect",
+  "description": "In wolftpm/src/device.rs (lines 47-48) and wolftpm-tss/src/connection.rs (lines 159-160), libc_setenv wraps setenv() but discards its i32 return value. If setenv() fails (e.g. ENOMEM, EINVAL), the environment variable is not set, wolfTPM2_Init proceeds with missing/stale env vars, and the init may silently connect to the wrong host or use a stale port from a previous call. The error then surfaces as a wolfTPM init failure with a misleading error code rather than an environment-setup error. Fix: propagate setenv return value; return Error::InvalidArg or a new Error::Os variant if setenv fails.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:21Z",
+  "updated_at": "2026-04-30T16:47:46Z",
+  "closed_at": "2026-04-30T16:47:46Z"
+}

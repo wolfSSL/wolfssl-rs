@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.23",
+  "title": "she.rs: Ffi{code:-1} used for caller-size BadArgs and block validation",
+  "description": "Several sites in she.rs misuse Ffi{code:-1} for argument validation that happens entirely on the caller side before any FFI call. (1) she_secure_boot:69, she_extend_seed:192, she_generate_mac:314, she_verify_mac:348 use Ffi{code:-1} for u32::try_from overflow of caller-supplied slices; should be BadArgs. (2) validate_she_block_size (she.rs:373-381) uses Ffi for both block-size check (len==0 or len%16!=0) and u32 overflow; both are pre-FFI caller-argument errors that should be BadArgs. Suggested fix: change all Ffi{code:-1} at these sites to BadArgs{msg:...} with appropriate static messages.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:23:16Z",
+  "updated_at": "2026-04-27T22:36:49Z",
+  "closed_at": "2026-04-27T22:36:49Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:23:15Z"
+    }
+  ]
+}

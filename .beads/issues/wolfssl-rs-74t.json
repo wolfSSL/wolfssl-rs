@@ -1,0 +1,51 @@
+{
+  "id": "wolfssl-rs-74t",
+  "title": "wolfhsm crate: idiomatic Rust / RustCrypto API review",
+  "description": "## Why\\nThe wolfhsm crate is solid at the FFI level (correct Pin<Box<>>, RAII, Result<> everywhere, safe unsafe) but has several gaps and rough edges that would surprise a RustCrypto user or fail a standard Rust library review. This epic tracks the fixes identified in the initial code review.\\n\\n## Findings summary\\nSee child issues for details. In priority order:\\n- P1: Error type naming (WolfHsmError \u2192 Error) and semver safety (#[non_exhaustive])\\n- P2: Missing signature::Signer trait impls for ECC/Ed25519 (biggest composability gap)\\n- P3: Missing digest::Update/FixedOutput for SHA, aead::AeadInPlace for AES, label ergonomics\\n- P4: Crate-level docs explaining the with_xxx_key closure pattern\\n\\n## Acceptance criteria\\n- All child issues closed\\n- cargo doc renders meaningful crate-level documentation\\n- wolfhsm::Error is the public error type\\n- ECC and Ed25519 key types satisfy signature::Signer bounds",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:01:07Z",
+  "updated_at": "2026-04-28T01:45:19Z",
+  "closed_at": "2026-04-28T01:45:19Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-0bs",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:24:12Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-0mm",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:24:15Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-5it",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:24:14Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-66x",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:24:14Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-vpy",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:24:12Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-xii",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:24:13Z"
+    }
+  ]
+}

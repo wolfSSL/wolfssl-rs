@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-8fx",
+  "title": "Rewrite keywrap.rs using native wc_AesKeyWrap/wc_AesKeyUnWrap",
+  "description": "Replace the implementation in wolfcrypt/src/keywrap.rs: (1) Remove AES_set_encrypt_key, AES_set_decrypt_key, AES_wrap_key, AES_unwrap_key imports. (2) Remove the AesKeyGuard RAII struct \u2014 no key schedule to zeroize with native API. (3) Rewrite aes_wrap_key: import wc_AesKeyWrap, call wc_AesKeyWrap(kek.as_ptr(), kek.len() as u32, plaintext.as_ptr(), plaintext.len() as u32, out.as_mut_ptr(), out.len() as u32, ptr::null()), check rc > 0, truncate output. (4) Rewrite aes_unwrap_key: same pattern with wc_AesKeyUnWrap. (5) Remove cfg gate wolfssl_openssl_extra \u2014 the module now only needs wolfssl_aes_keywrap. Keep input validation (kek len 16/24/32, plaintext multiple of 8 and >= 16, ciphertext multiple of 8 and >= 24). Update module-level docstring to remove EVP references.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T07:29:21Z",
+  "updated_at": "2026-04-04T07:35:22Z",
+  "closed_at": "2026-04-04T07:35:22Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-drq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-04T00:29:30Z"
+    }
+  ]
+}

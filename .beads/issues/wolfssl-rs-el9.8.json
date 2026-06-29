@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.8",
+  "title": "error.rs WH_ERROR_MIN/MAX range excludes valid codes -2100..-2105",
+  "description": "WH_ERROR_MAX = -2000 and WH_ERROR_MIN = -2302 span the entire enum but the doc comment says 'WH_ERROR_BADARGS' is the max. This is correct. However, if the wolfHSM C library adds new error codes outside this range in a future version, Error::check will route them to Error::Ffi instead of Error::Wh, changing the error type silently. This is a version-drift maintenance risk \u2014 the range bounds are not derived from the header at compile time.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:16:39Z",
+  "updated_at": "2026-04-28T02:23:06Z",
+  "closed_at": "2026-04-28T02:23:06Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:16:39Z"
+    }
+  ]
+}

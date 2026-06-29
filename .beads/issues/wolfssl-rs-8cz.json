@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-8cz",
+  "title": "wolfhsm: integration test suite",
+  "description": "Write 20 integration tests for wolfhsm crate. Skip body when WOLFHSM_SERVER env var absent. Uses independent oracles only \u2014 p256 crate verifies ECDSA, ed25519-dalek verifies Ed25519, rsa crate verifies RSA, sha2 crate for SHA vectors, NIST CMAC test vectors. Tests: connect_disconnect, echo, nvm_write_read, nvm_overwrite, nvm_not_found, nvm_label_too_long, counter_lifecycle, ecc_keygen_sign_verify, ecc_ecdh, ecc_export_der, ed25519_sign_verify, curve25519_dh, rsa_sign_verify, mldsa_sign_verify, aes_gcm_roundtrip, sha256_known_vector, cmac_known_vector, cryptocb_routes_to_hsm (register then drop guard, same call fails), signer_trait_ecc, signer_trait_ed25519.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:17:31Z",
+  "updated_at": "2026-04-27T20:24:53Z",
+  "closed_at": "2026-04-27T20:24:53Z"
+}

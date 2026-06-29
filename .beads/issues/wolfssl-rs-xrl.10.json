@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.10",
+  "title": "AesKey::cache vs CmacKey::cache: inconsistent length guard",
+  "description": "AesKey::cache (aes.rs:22) uses if !matches!(key_bytes.len(), 16 | 24 | 32) { return Err(...) } while CmacKey::cache (cmac.rs:22) uses match key_bytes.len() { 16 | 24 | 32 => {} _ => return Err(...) } for exactly the same validation. They should use the same idiom \u2014 prefer if !matches!(...) for the guard form, since it reads as a guard rather than a dispatch. This inconsistency is a distraction when reading both files back-to-back.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:53Z",
+  "updated_at": "2026-04-27T21:12:32Z",
+  "closed_at": "2026-04-27T21:12:32Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:52Z"
+    }
+  ]
+}

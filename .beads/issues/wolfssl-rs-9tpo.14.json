@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.14",
+  "title": "SRK flushed before propagating error from wolfTPM2_GetKeyTemplate_ECC \u2014 correct",
+  "description": "EccKey::create flushes the SRK transient slot before propagating any error out of wolfTPM2_GetKeyTemplate_ECC or wolfTPM2_CreateAndLoadKey. The refactored map_err idiom preserves this guarantee in fewer lines. A future contributor might refactor the error handling and accidentally drop the srk flush on the error path \u2014 that would leak a TPM transient slot, causing eventual TPM_RC_OBJECT_MEMORY failures. The flush must remain on all error paths before returning from create().",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:30:39Z",
+  "updated_at": "2026-04-30T06:38:12Z",
+  "closed_at": "2026-04-30T06:38:12Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:30:39Z"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.18",
+  "title": "do_transact maps oversized cmd_sz to ResponseBufferTooSmall \u2014 wrong error variant",
+  "description": "connection.rs do_transact: 'cmd.len() not fitting in c_int' is mapped to Error::ResponseBufferTooSmall. But ResponseBufferTooSmall means the response buffer was too small, not the command. An oversized command should map to a different error, e.g. Error::Transport{code: BAD_FUNC_ARG} or a new variant. A user who passes a 3 GB command buffer and receives ResponseBufferTooSmall will be baffled. The comment 'treated as the same category as ResponseBufferTooSmall' is a workaround for the lack of an appropriate error variant, not a justification. Add Error::CommandTooLarge or Error::InvalidArg and use it here.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:06:06Z",
+  "updated_at": "2026-04-30T06:23:49Z",
+  "closed_at": "2026-04-30T06:23:49Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:06:05Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-7gx",
+  "title": "wolfhsm tests: core (tests 1-7)",
+  "description": "Write wolfhsm/tests/integration.rs infrastructure and core tests. server_addr() fn returns WOLFHSM_SERVER env var; skip test body if None. Tests: connect_disconnect (Client::connect then drop), echo (byte-exact), nvm_write_read (byte-exact), nvm_overwrite (second value wins), nvm_not_found (Error::NotFound), nvm_label_too_long (Error::LabelTooLong no round-trip), counter_lifecycle (init/increment/read/destroy). Simulator: cd ~/GIT/wolfHSM && make wh_server_sim && ./wh_server_sim & export WOLFHSM_SERVER=127.0.0.1:8080.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:19:29Z",
+  "updated_at": "2026-04-27T21:00:24Z",
+  "closed_at": "2026-04-27T21:00:24Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-230",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:20:11Z"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-573",
+  "title": "RSA migration: add Wycheproof OAEP conformance tests",
+  "description": "Add Wycheproof test vectors for RSA-OAEP encryption/decryption to wolfcrypt-conformance. PSS and OAEP are randomized so exact byte comparison is not possible; Wycheproof vectors provide the independent oracle.\n\nWhat to do:\n- Locate Wycheproof RSA-OAEP JSON vector files (third_party/wycheproof or download)\n- Implement a test runner that decrypts Wycheproof OAEP ciphertexts and validates plaintext\n- Cover rsa_oaep_2048_sha256_mgf1sha256 and rsa_oaep_2048_sha1_mgf1sha1 at minimum\n- Also add Wycheproof vectors for RSA-PKCS#1v1.5 signature verification (covers malformed signatures)\n\nAcceptance criteria:\n- wolfcrypt-conformance test passes against Wycheproof RSA vectors using current EVP-based code\n- Test is independent of wolfcrypt implementation (uses known ciphertexts/plaintext pairs)\n- Will be re-run after migration to confirm native path produces identical results",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:10:13Z",
+  "updated_at": "2026-04-04T05:12:34Z",
+  "closed_at": "2026-04-04T05:12:34Z"
+}

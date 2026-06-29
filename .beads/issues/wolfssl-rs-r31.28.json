@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.28",
+  "title": "libc_unsetenv wrapper discards return value \u2014 silent failure on env cleanup",
+  "description": "libc_unsetenv() in both device.rs and connection.rs is declared returning () by discarding the c_int return from unsetenv(3). POSIX unsetenv can fail (EINVAL). In idiomatic Rust, discarding a fallible return value requires explicit acknowledgment. Either propagate the error or document why EINVAL is impossible (the names are always valid ASCII). This is the same class of problem as #[must_use] violation.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:09:35Z",
+  "updated_at": "2026-04-30T06:19:28Z",
+  "closed_at": "2026-04-30T06:19:28Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:09:35Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.3",
+  "title": "comm_pointers: three identical match arms",
+  "description": "TransportInner::comm_pointers() has three match arms whose bodies are character-for-character identical \u2014 same three field accesses, same pointer casts, only the concrete type differs. Because TcpInner/UdsInner/ShmInner share the same field layout (transport_cb, transport_ctx, transport_cfg) a macro_rules! macro (or a private sealed trait) over the three inner types would express this once and eliminate the copy-paste maintenance hazard. Suggested rewrite: define macro comm_ptr_arm!($inner:ident) { (&$inner.transport_cb as *const _, &mut $inner.transport_ctx as *mut _ as *mut c_void, &$inner.transport_cfg as *const _ as *const c_void) } and invoke it in each arm.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:24:48Z",
+  "updated_at": "2026-04-27T19:07:40Z",
+  "closed_at": "2026-04-27T19:07:40Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:24:48Z"
+    }
+  ]
+}

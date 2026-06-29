@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.4",
+  "title": "rsa: raw_function calls wolfhsm_rsa_sign with no name-mismatch comment",
+  "description": "In src/crypto/rsa.rs, the Rust method is named raw_function but it calls the C function wolfhsm_rsa_sign with no comment explaining the discrepancy. A contributor adding a new raw operation, or reading an error message that says 'wolfhsm_rsa_sign', will have no idea the underlying C symbol has this name. Add a comment on the unsafe block or the method explaining that wolfhsm_rsa_sign is wolfHSM's generic RSA primitive dispatcher \u2014 the C function name predates any Rust naming.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:40Z",
+  "updated_at": "2026-04-27T21:13:44Z",
+  "closed_at": "2026-04-27T21:13:44Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:40Z"
+    }
+  ]
+}

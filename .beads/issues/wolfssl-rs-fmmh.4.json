@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-fmmh.4",
+  "title": "EccKey::flush private method signals intended reuse that never happened",
+  "description": "wolftpm/src/key.rs:116: EccKey::flush is a private fn called only from Drop::drop. A private method that exists in exactly one call site is noise \u2014 it has the shape of 'might be reused someday' without being public or documented. Suggested rewrite: inline the three unsafe lines directly into Drop::drop with the existing SAFETY comment. If explicit flush-before-drop semantics are wanted in the future (e.g., to inspect the error from wolfTPM2_UnloadHandle), that's the moment to make it pub with a return value, not now.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:53:46Z",
+  "updated_at": "2026-04-30T16:00:44Z",
+  "closed_at": "2026-04-30T16:00:44Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fmmh",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:53:46Z"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-1x4",
+  "title": "RSA migration: C shims for PSS sign/verify",
+  "description": "Add wolfcrypt_rsa_pss_* C shims to compat_shim.c for RSA-PSS signature operations. Replaces EVP_PKEY_CTX + RSA_PKCS1_PSS_PADDING usage.\n\nFunctions to implement (guarded by #ifndef NO_RSA):\n- wolfcrypt_rsa_pss_sign(void* ctx, int hash_type, int salt_len, const byte* msg, word32 msg_len, byte* sig, word32* sig_len)\n  - Hash msg internally\n  - wc_RsaPSS_Sign_ex with the given hash type and saltLen\n- wolfcrypt_rsa_pss_verify(void* ctx, int hash_type, int salt_len, const byte* msg, word32 msg_len, const byte* sig, word32 sig_len)\n  - Hash msg internally\n  - wc_RsaPSS_VerifyCheck_ex with explicit saltLen\n  - saltLen=-1 means RSA_PSS_SALT_LEN_DISCOVER (let wolfCrypt parse from encoding)\n  - saltLen=-2 means use hash length (common default)\n\nWC_RNG requirement: PSS signing requires a RNG for the salt. The ctx struct (from key lifecycle shim) must embed a WC_RNG, already initialized by wolfcrypt_rsa_new.\n\nAcceptance criteria:\n- PSS sign + verify round-trip succeeds\n- Verify correctly rejects a tampered signature\n- saltLen=-2 (hash-length salt) is tested as it is the most common production use",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:10:40Z",
+  "updated_at": "2026-04-04T05:24:34Z",
+  "closed_at": "2026-04-04T05:24:34Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-c9n",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:23Z"
+    }
+  ]
+}

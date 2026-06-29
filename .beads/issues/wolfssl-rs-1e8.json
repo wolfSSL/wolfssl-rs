@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-1e8",
+  "title": "Migrate 3DES to native wc_Des3* shims",
+  "description": "Replace EVP_CIPHER_CTX/EVP_des_ede3_cbc with wolfcrypt_des3_* C shims; add des3.h includes + shims to compat_shim.c + lib.rs; remove wolfssl_openssl_extra from des3.rs",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T01:23:53Z",
+  "updated_at": "2026-04-04T01:48:54Z",
+  "closed_at": "2026-04-04T01:48:54Z"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-p0w",
+  "title": "wolfhsm: RsaKey::perform exposes raw RSA without padding scheme",
+  "description": "RsaKey::perform returns raw modular exponentiation output. No padding scheme (PKCS#1 v1.5, PSS, OAEP) is documented or enforced. The RsaOperation enum uses PrivateEncrypt/PublicDecrypt naming that implies textbook RSA. Users cannot safely sign or encrypt without knowing what the server applies. The API should either (a) expose explicit pad-scheme parameters, (b) wrap in named methods (sign_pkcs1, verify_pkcs1, etc.), or (c) document exactly what the wolfHSM server does and refuse to compile unsafe combinations.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:28:59Z",
+  "updated_at": "2026-04-27T20:37:26Z",
+  "closed_at": "2026-04-27T20:37:26Z",
+  "notes": "Epic: wolfssl-rs-xsf"
+}

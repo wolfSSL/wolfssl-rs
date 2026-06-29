@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-3ut.3",
+  "title": "key types have no Drop \u2014 HSM cache slots leak silently",
+  "description": "EccP256Key, Ed25519Key, Curve25519Key, RsaKey, AesKey, CmacKey have no Drop impl. If the handle is dropped without calling evict(), the HSM RAM key cache slot is permanently leaked for the session. The wolfHSM key cache is small (typically 4-8 slots); leaking one slot per dropped handle triggers 'cache full' errors that are very hard to diagnose. The evict() design (takes self + &mut Client) intentionally prevents a Drop impl. This must be documented on every key type with a doc comment: 'Must call evict() to release the HSM cache slot; dropping without evicting leaks the slot.'",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:57:31Z",
+  "updated_at": "2026-04-27T19:00:36Z",
+  "closed_at": "2026-04-27T19:00:36Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-3ut",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:57:30Z"
+    }
+  ]
+}

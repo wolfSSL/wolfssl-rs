@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.20",
+  "title": "aes/ecc/rsa: tag/output length passed as magic literal instead of typed constant",
+  "description": "In crypto/aes.rs gcm_encrypt, the AES-GCM tag size is passed to the C shim as the bare integer 16 (wolfhsm_aes_gcm_encrypt(..., tag.as_mut_ptr(), 16)). The tag buffer is [u8; 16], so tag.len() is 16 by construction \u2014 but the reader has to cross-reference the declaration to confirm the literal matches. In crypto/ecc.rs public_key_der, the capacity is the magic literal 91. In both cases the literal is correct but the connection to the type is implicit. Rewrite: derive lengths from the buffer: tag.len() as u32 / 32 for the tag, and introduce a named constant P256_SPKI_DER_LEN: u32 = 91 for the ECC public key buffer.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:38Z",
+  "updated_at": "2026-04-28T02:12:55Z",
+  "closed_at": "2026-04-28T02:12:55Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:37Z"
+    }
+  ]
+}

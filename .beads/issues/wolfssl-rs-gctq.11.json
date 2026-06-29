@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-gctq.11",
+  "title": "_Static_assert size guards in wolftpm_rs_shim.c detect struct layout changes",
+  "description": "wolftpm_rs_shim.c lines 60-63: _Static_assert checks on sizeof(TPM2_CTX) and sizeof(WOLFTPM2_DEV) catch wolfTPM version upgrades that restructure internal structs. Since the shim accesses dev->ctx.cmdBuf directly (an internal field), any struct change will fail to compile rather than silently corrupt memory. This is the correct failure mode and should be defended against removal.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:34:21Z",
+  "updated_at": "2026-04-30T15:41:37Z",
+  "closed_at": "2026-04-30T15:41:37Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-gctq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:34:21Z"
+    }
+  ]
+}

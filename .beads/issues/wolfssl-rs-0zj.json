@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-0zj",
+  "title": "RSA migration: C shims for OAEP and PKCS#1v1.5 encrypt/decrypt",
+  "description": "Add wolfcrypt_rsa_encrypt/decrypt C shims to compat_shim.c for RSA encryption operations. Replaces EVP_PKEY_CTX + RSA_PKCS1_OAEP_PADDING / RSA_PKCS1_PADDING usage.\n\nFunctions to implement (guarded by #ifndef NO_RSA):\n- wolfcrypt_rsa_oaep_encrypt(void* ctx, int hash_type, int mgf_hash_type, const byte* label, word32 label_len, const byte* in, word32 in_len, byte* out, word32* out_len)\n  - wc_RsaPublicEncrypt_ex with WC_RSA_OAEP_PAD\n- wolfcrypt_rsa_oaep_decrypt(void* ctx, int hash_type, int mgf_hash_type, const byte* label, word32 label_len, const byte* in, word32 in_len, byte* out, word32* out_len)\n  - wc_RsaPrivateDecrypt_ex with WC_RSA_OAEP_PAD\n- wolfcrypt_rsa_pkcs1v15_encrypt(void* ctx, const byte* in, word32 in_len, byte* out, word32* out_len)\n  - wc_RsaPublicEncrypt (WC_RSA_PKCSV15_PAD)\n- wolfcrypt_rsa_pkcs1v15_decrypt(void* ctx, const byte* in, word32 in_len, byte* out, word32* out_len)\n  - wc_RsaPrivateDecrypt (WC_RSA_PKCSV15_PAD)\n\nWC_RNG needed for encrypt operations \u2014 use embedded RNG from ctx (already initialized by wolfcrypt_rsa_new).\n\nAcceptance criteria:\n- OAEP encrypt + decrypt round-trip succeeds\n- Wycheproof OAEP decryption vectors (from wolfssl-rs-573) pass\n- PKCS#1v1.5 encrypt + decrypt round-trip succeeds",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:10:46Z",
+  "updated_at": "2026-04-04T05:44:04Z",
+  "closed_at": "2026-04-04T05:44:04Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-c9n",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:23Z"
+    }
+  ]
+}

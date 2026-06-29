@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-gctq.1",
+  "title": "README claims rand::RngCore impl that does not exist",
+  "description": "wolftpm/README.md line 46 lists 'Expose wolfTPM2_GetRandom as a rand::RngCore implementation' as a feature the crate provides. No such impl exists anywhere in the codebase. Users who read the README will expect RngCore compatibility and be surprised when it is absent. This is a documentation correctness bug \u2014 the public README is the contract.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:33:21Z",
+  "updated_at": "2026-04-30T15:35:26Z",
+  "closed_at": "2026-04-30T15:35:26Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-gctq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:33:21Z"
+    }
+  ]
+}

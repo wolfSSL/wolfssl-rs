@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.5",
+  "title": "mldsa_round_trip integration test has no independent oracle",
+  "description": "The mldsa_round_trip test signs a message with wolfHSM and verifies it with wolfHSM. The test comment explicitly notes '(no independent oracle)'. This violates the codebase's documented test design constraint (CLAUDE.md: 'A test that encrypts with function A and decrypts with function A proves nothing'). An ML-DSA implementation bug that consistently produces and accepts invalid signatures will pass this test. This pattern will also be copied by contributors adding future PQC algorithms, anchoring a weak test pattern in the codebase.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:04Z",
+  "updated_at": "2026-04-28T01:59:17Z",
+  "closed_at": "2026-04-28T01:59:17Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:03Z"
+    }
+  ]
+}

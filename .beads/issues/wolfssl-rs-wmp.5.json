@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.5",
+  "title": "WolfHsmError::check inlines two-level triage with zero-cost func name",
+  "description": "error.rs: WolfHsmError::check takes an i32 return code and a &'static str function name, then routes to Wh{code} for the WH_ERROR_* range or Ffi{code,func} for everything else. The &'static str is zero-cost at runtime (it is a literal in the binary) and eliminates the need to grep headers to identify which C call failed. A future contributor might suggest removing func from Ffi to simplify the enum, or replacing it with a String to allow runtime-constructed names. Both would be regressions: removing func makes production error messages unactionable without reattaching a debugger; using String adds allocation to every failed FFI call on the hot path and loses the compile-time guarantee that the name is a string literal. The current shape \u2014 a single inline fn that is called immediately after every unsafe block \u2014 is also the pattern that makes auditing unsafe code tractable.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:02Z",
+  "updated_at": "2026-04-28T00:15:02Z",
+  "closed_at": "2026-04-28T00:15:02Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:01Z"
+    }
+  ]
+}

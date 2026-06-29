@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.7",
+  "title": "aes.rs: public gcm_decrypt tag param uses bare [u8; 16] not constant",
+  "description": "gcm_decrypt takes tag: &[u8; 16] in its public signature, and gcm_encrypt returns (Vec<u8>, [u8; 16]). The file defines AES_GCM_TAG_LEN for this exact purpose but the public API surface still uses the bare literal. When AES_GCM_TAG_LEN is changed to usize (per elegance issue wolfssl-rs-el9.1), the signatures can become &[u8; AES_GCM_TAG_LEN] and (Vec<u8>, [u8; AES_GCM_TAG_LEN]), making the meaning of 16 explicit to callers reading the function signature without consulting the body. This is blocked on the usize fix.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:16:36Z",
+  "updated_at": "2026-04-28T02:23:03Z",
+  "closed_at": "2026-04-28T02:23:03Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:16:35Z"
+    }
+  ]
+}

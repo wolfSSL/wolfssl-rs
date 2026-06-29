@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-n6n",
+  "title": "Review: wolfhsm optional features (cert, auth, she)",
+  "description": "Pre-merge code review of wolfhsm cert.rs, auth.rs, she.rs feature-gated modules and build system changes",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:27:41Z",
+  "updated_at": "2026-04-27T21:30:16Z",
+  "closed_at": "2026-04-27T21:30:16Z"
+}

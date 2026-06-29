@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.19",
+  "title": "Error::DataLost carries the NVM ID \u2014 defensible against collapsing to a generic error",
+  "description": "nvm_overwrite deletes the old object then adds the new one. If the add fails after a successful delete the data is permanently gone. The dedicated Error::DataLost { id } variant surfaces the ID of the lost object, which is the piece of information callers need to decide how to recover (e.g. re-create from backup, alert an operator). A contributor might suggest collapsing this into the existing Error::Ffi variant to reduce enum size. That would lose the ID and the semantic distinction between 'transport error' and 'NVM object is permanently gone.' The dedicated variant is correct \u2014 callers matching on Error::Ffi cannot determine whether data was lost.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:35Z",
+  "updated_at": "2026-04-28T02:06:36Z",
+  "closed_at": "2026-04-28T02:06:36Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:35Z"
+    }
+  ]
+}

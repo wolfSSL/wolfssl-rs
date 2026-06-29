@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-2ye",
+  "title": "wolfhsm crate: crypto modules",
+  "description": "Implement wolfhsm/src/crypto/ modules wrapping HSM crypto ops via C shims and direct FFI. Modules: ecc.rs (EccP256Key + EccP256Signer impl signature::Signer<DerSignature>), ed25519.rs (Ed25519Key + Ed25519Signer, no shim needed \u2014 ed25519_key is 256 bytes), curve25519.rs (Curve25519Key X25519 DH), rsa.rs (RsaKey sign/verify/keygen via shim), mldsa.rs (MlDsaKey feature=mldsa), aes.rs (AesKey GCM/CBC/CTR + AeadInPlace impl), sha.rs (HsmSha256/384/512 + digest::Digest + digest::Update + digest::FixedOutput), cmac.rs (CmacKey compute), hkdf.rs (make_cache_key, make_export_key), rng.rs (generate). All key types have generate/load/commit/evict lifecycle.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:17:18Z",
+  "updated_at": "2026-04-27T18:50:21Z",
+  "closed_at": "2026-04-27T18:50:21Z"
+}

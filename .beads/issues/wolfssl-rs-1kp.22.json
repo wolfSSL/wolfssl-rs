@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.22",
+  "title": "AuthPermissions::as_raw_mut doc names no C macros to look up",
+  "description": "auth.rs AuthPermissions::as_raw_mut: the doc says 'for use with wolfHSM C macros that set individual permission bits' but names no macro. A user who wants to set a permission has to search the wolfHSM headers for macros on whAuthPermissions. Add one or two example macro names (e.g. WH_AUTH_PERM_SET_xxx from wh_auth.h) to the doc comment so a reader knows where to start, even if the full list is in the header.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:23:03Z",
+  "updated_at": "2026-04-28T00:55:16Z",
+  "closed_at": "2026-04-28T00:55:16Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:23:03Z"
+    }
+  ]
+}

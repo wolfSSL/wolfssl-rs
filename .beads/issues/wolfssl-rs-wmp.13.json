@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.13",
+  "title": "eprintln! in library for eviction failure breaks library hygiene",
+  "description": "with_key! macro (key.rs) and the MlDsaKey inline equivalent both use eprintln! to report key eviction failure on the error path. Libraries must not write to stderr without the caller's consent \u2014 this makes wolfhsm unusable in daemons, embedded runtimes, or any program that has its own logging framework. The message also discloses timing information (eviction happened during an error path) that callers may not want visible. The correct pattern is to surface the eviction error to the caller, either by wrapping the original error or by returning a compound error type.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:21Z",
+  "updated_at": "2026-04-27T22:19:20Z",
+  "closed_at": "2026-04-27T22:19:20Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:21Z"
+    }
+  ]
+}

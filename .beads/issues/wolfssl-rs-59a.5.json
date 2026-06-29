@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.5",
+  "title": "nvm_available returns anonymous 4-tuple",
+  "description": "nvm_available() returns (u32, u16, u32, u16) \u2014 an anonymous tuple. Call sites must destructure positionally and remember that index 0 is avail_size, index 1 is avail_objects, etc. ServerInfo and NvmMetadata already use named structs for the same reason. Suggested rewrite: introduce pub struct NvmAvailability { pub avail_size: u32, pub avail_objects: u16, pub reclaim_size: u32, pub reclaim_objects: u16 } and return that instead. No extra boilerplate \u2014 it is strictly more readable and consistent with the rest of the crate.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:24:54Z",
+  "updated_at": "2026-04-27T19:08:37Z",
+  "closed_at": "2026-04-27T19:08:37Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:24:54Z"
+    }
+  ]
+}

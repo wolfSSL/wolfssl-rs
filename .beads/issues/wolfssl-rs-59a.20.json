@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.20",
+  "title": "nvm_list uses WH_ERROR_NOTFOUND as loop termination, not as error",
+  "description": "nvm.rs defines WH_ERROR_NOTFOUND=-2104 as a module-local constant and explicitly checks out_rc==WH_ERROR_NOTFOUND before passing out_rc to WolfHsmError::check. This correctly implements the wolfHSM protocol: the server returns NOTFOUND in out_rc when the enumeration is exhausted, which is the normal termination condition, not an error. A future contributor might remove the NOTFOUND special-case and let check() handle it (which would return Err), breaking all NVM list enumeration. The constant's module-private visibility and the comment explain why it exists.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:48Z",
+  "updated_at": "2026-04-27T19:07:38Z",
+  "closed_at": "2026-04-27T19:07:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:47Z"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-cro",
+  "title": "verify() hardcoded 155 misses decorated TPM_RC_SIGNATURE codes",
+  "description": "In wolftpm/src/key.rs EccKey::verify (line 200), signature verification failure is detected by checking rc == 155 (TPM_RC_SIGNATURE = 0x9B). However the TPM2 spec allows responseCode to carry parameter-selector modifier bits: a real wolfTPM2_VerifyHashScheme response may return TPM_RC_SIGNATURE | TPM_RC_P | TPM_RC_2 = 0x9B | 0x40 | 0x200 = 0x2DB = 731, not bare 155. When parameter modifiers are present the check fails and verify() returns Err instead of Ok(false), causing callers to treat a valid but non-matching signature as a fatal transport/protocol error. Fix: mask off modifier bits before comparing or check wolfTPM docs for whether VerifyHashScheme strips them.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:13Z",
+  "updated_at": "2026-04-30T16:47:51Z",
+  "closed_at": "2026-04-30T16:47:51Z"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-0qd",
+  "title": "Implement native wc_ecc_* NIST ECDH replacing nist_ecdh EVP module",
+  "description": "Core implementation: replace the nist_ecdh module (wolfcrypt/src/ecdh.rs lines 521-851) with a native wc_ecc_* implementation. Design: (1) NistCurve sealed trait: replace const NID: c_int with const CURVE_ID: c_int (wolfcrypt curve ID); keep FIELD_SIZE and POINT_SIZE unchanged. (2) NistEcdhSecret<C>: store *mut wc_ecc_key (heap-allocated via wc_ecc_key_new). generate() calls wc_ecc_key_new + wc_ecc_make_key_ex(rng, FIELD_SIZE as i32, key, CURVE_ID). from_private_scalar() calls wc_ecc_import_private_key_ex with null public key pointer. (3) public_key(): wc_ecc_export_x963 into POINT_SIZE buf. (4) diffie_hellman(): wc_ecc_key_new for peer, wc_ecc_import_x963 peer bytes, attach RNG via wc_ecc_set_rng if blinding is needed, call wc_ecc_shared_secret, free peer key. (5) Drop: wc_ecc_key_free. (6) NistEcdhPublicKey<C> and NistEcdhSharedSecret<C>: public API unchanged. Update cfg gates to remove wolfssl_openssl_extra.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T06:56:16Z",
+  "updated_at": "2026-04-04T07:08:51Z",
+  "closed_at": "2026-04-04T07:08:51Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-var",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T23:56:48Z"
+    }
+  ]
+}

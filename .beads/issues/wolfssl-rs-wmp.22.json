@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.22",
+  "title": "ServerInfo opaque state fields need value interpretation",
+  "description": "client.rs: ServerInfo fields debug_state, boot_state, lifecycle_state, and nvm_state are all u32 with no documentation. A user calling client.info() gets numbers with no way to interpret them without reading wolfHSM C headers. Add doc comments pointing to the wolfHSM C enums or header that defines the valid values for each state field, or at minimum note which header contains the definitions. This is the first thing a user will look at when debugging a server problem at 2am.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:46Z",
+  "updated_at": "2026-04-28T00:49:50Z",
+  "closed_at": "2026-04-28T00:49:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:45Z"
+    }
+  ]
+}

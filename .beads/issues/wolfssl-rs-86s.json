@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-86s",
+  "title": "double-flush in with_ecc_key: EccKey dropped twice",
+  "description": "In wolftpm/src/device.rs Device::with_ecc_key (line 85), key.flush() is called explicitly, then key drops at the end of the function calling EccKey::Drop which calls flush() again. The SAFETY comment on EccKey::flush claims wolfTPM2_UnloadHandle is a no-op if the handle is already null, but this is only true if wolfTPM zeroes handle.hndl after unloading. If wolfTPM does NOT zero the handle field on success, the second UnloadHandle sends a TPM command with a stale handle value. This is at best a spurious TPM command (wasting a round-trip) and at worst may unload a transient slot that was re-assigned by a concurrent operation. Fix: remove the explicit key.flush() call from with_ecc_key and rely solely on Drop, or add a flushed: bool guard to EccKey and make flush() idempotent by checking it.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:00Z",
+  "updated_at": "2026-04-30T16:47:47Z",
+  "closed_at": "2026-04-30T16:47:47Z"
+}

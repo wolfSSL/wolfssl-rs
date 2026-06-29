@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-hww",
+  "title": "sign_prehash dual-RNG use needs explaining comment",
+  "description": "ecdsa_native.rs sign_prehash calls wc_ecc_set_rng(key, &mut rng) and then passes &mut rng again as the RNG argument to wc_ecc_sign_hash. Both references point to the same RNG object. wolfCrypt uses the key-attached RNG for scalar blinding and the call-site RNG for nonce generation; using the same object for both is allowed by wolfCrypt but is not obvious. A reviewer or future maintainer will suspect aliasing or a redundant call. Fix: add a comment at the wc_ecc_sign_hash call explaining that wolfCrypt accepts the same RNG for both blinding and nonce generation, and that this is intentional.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T08:27:14Z",
+  "updated_at": "2026-04-04T18:07:38Z",
+  "closed_at": "2026-04-04T18:07:38Z"
+}

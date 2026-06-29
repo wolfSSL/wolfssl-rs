@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.5",
+  "title": "she.rs: iv_buf.len() as u32 on a [u8;16] copy misleads reader",
+  "description": "In she_enc_cbc and she_dec_cbc, after copying the fixed-size iv: &[u8; 16] into iv_buf: [u8; 16], the code passes iv_buf.len() as u32 to the C call. Because iv_buf is a statically-sized [u8; 16], .len() always returns 16 at compile time \u2014 but a reader scanning the call site sees a runtime .len() call and wonders whether the length might vary or whether this is accidentally passing something other than 16. Using 16u32 directly, or a named constant (once AES_BLOCK_SZ or AES_GCM_IV_LEN is introduced), makes the static nature obvious and eliminates the false impression of a runtime computation.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:16:25Z",
+  "updated_at": "2026-04-28T02:23:08Z",
+  "closed_at": "2026-04-28T02:23:08Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:16:25Z"
+    }
+  ]
+}

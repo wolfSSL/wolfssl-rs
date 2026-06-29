@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.21",
+  "title": "Thorough SAFETY comments on every unsafe block \u2014 should be defended if anyone proposes removal",
+  "description": "Every unsafe block in device.rs, key.rs, and connection.rs has a SAFETY comment explaining the invariant being upheld. This is correctly required for Rust unsafe code and above the baseline for most FFI crates. A future contributor might suggest removing them as 'obvious'. They should be kept: the invariants (zeroed initial state, stable address from Box, lifetime bounds on dev_ptr) are non-obvious to someone unfamiliar with wolfTPM's initialization contract.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:06:31Z",
+  "updated_at": "2026-04-30T06:20:44Z",
+  "closed_at": "2026-04-30T06:20:44Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:06:31Z"
+    }
+  ]
+}

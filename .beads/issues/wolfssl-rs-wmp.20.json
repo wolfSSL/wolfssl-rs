@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.20",
+  "title": "Double out_rc check distinguishes transport failure from server-side failure",
+  "description": "auth.rs, nvm.rs: every wolfHSM call returns two error codes: the transport RC (function return value) and an out_rc written by the server. Both are checked separately with distinct func strings, e.g. 'wh_Client_AuthLogin' vs 'wh_Client_AuthLogin(server)'. A transport error means the request never reached the server; a server-side error means it was received and rejected. Conflating them produces misleading diagnostics. A future contributor might suggest checking only the non-zero one. That loses failure-location information. The (server) suffix convention is cheap and unambiguous.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:40Z",
+  "updated_at": "2026-04-28T00:15:10Z",
+  "closed_at": "2026-04-28T00:15:10Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:40Z"
+    }
+  ]
+}

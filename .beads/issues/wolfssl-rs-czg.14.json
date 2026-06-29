@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.14",
+  "title": "ctx_ptr safety comment omits the pinning invariant",
+  "description": "client.rs ctx_ptr() uses get_unchecked_mut() to obtain a mutable pointer through a Pin<Box<ClientInner>>. The safety comment says 'We only expose a pointer, we never move through it' but does not explain why get_unchecked_mut is sound here: the Pin guarantee is that the ClientInner is heap-allocated and will never be moved; the pointer obtained is valid for the lifetime of the pin, not just the call. A reader who knows Pin semantics will understand eventually, but the comment invites confusion about why this specific unsafe fn is safe rather than, say, just using &mut self.inner.client_ctx via DerefMut. What would make it clear: add a comment explaining that Pin<Box<T>> guarantees the Box heap allocation is stable, so the raw pointer into client_ctx remains valid as long as the Pin exists \u2014 and that get_unchecked_mut is needed because Pin<Box<T>> does not implement DerefMut to its interior.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:03:29Z",
+  "updated_at": "2026-04-27T21:11:47Z",
+  "closed_at": "2026-04-27T21:11:47Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:03:29Z"
+    }
+  ]
+}

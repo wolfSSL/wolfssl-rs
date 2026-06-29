@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-970",
+  "title": "Review R7: wolfhsm R6 pass",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:24:23Z",
+  "updated_at": "2026-04-28T02:32:17Z",
+  "closed_at": "2026-04-28T02:32:17Z",
+  "notes": "Maintainer risk: LOW \u2014 one P1 inconsistency (echo overflow), three P3 polish items. No security issues, no data loss risks beyond what's already documented.\nConfidence: 8% chance of missed bug. Uncertainty from: not running test suite, not verifying wolfhsm-sys bindings against C headers. Would raise confidence if: cargo test -p wolfhsm passes clean."
+}

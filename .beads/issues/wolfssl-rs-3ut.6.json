@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-3ut.6",
+  "title": "rsa::function calls key_size_bytes (extra server round-trip) on every operation",
+  "description": "rsa.rs::function calls self.key_size_bytes(client) to size the output buffer, which issues a wh_Client_RsaGetSize RPC to the server. This doubles the server round-trips per RSA operation. Since self.bits is already stored on the struct, the output size is always bits/8 bytes for RSA private-encrypt/public-decrypt. Fix: size the output buffer as (self.bits / 8) as usize (capped) without the extra RPC. key_size_bytes can remain as a public method for callers who need it.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:57:56Z",
+  "updated_at": "2026-04-27T19:01:56Z",
+  "closed_at": "2026-04-27T19:01:56Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-3ut",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:57:56Z"
+    }
+  ]
+}

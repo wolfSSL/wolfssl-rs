@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-3i8",
+  "title": "wolfhsm: client parameter threaded through every key method",
+  "description": "Every crypto operation requires passing &mut Client explicitly (e.g. key.sign_digest(&mut client, digest)). This inverts the RustCrypto receiver/argument convention where methods are called on the key or primitive itself. The underlying constraint is real (one in-flight request over a stateful socket), but the ergonomic cost is high and the shape will be unfamiliar to anyone coming from RustCrypto.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:54:40Z",
+  "updated_at": "2026-04-27T22:55:42Z",
+  "closed_at": "2026-04-27T22:55:42Z",
+  "notes": "NEEDS HUMAN DECISION: client-as-parameter vs. associated-client shape. See issue description for options. No unilateral change at 0.1.0.",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-epj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:35Z"
+    }
+  ]
+}

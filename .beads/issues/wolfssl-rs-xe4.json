@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-xe4",
+  "title": "verify(): unconditional FMT1 mask turns TPM_RC_INITIALIZE into Ok(true)",
+  "description": "wolftpm/src/key.rs, EccKey::verify(), lines 200-209.\n\nThe FMT1 modifier mask (0x0F40) is applied unconditionally to all rc values, including VER1 error codes. VER1 errors have bit 8 (0x100) set; the mask strips bit 8. Specifically:\n\n  TPM_RC_INITIALIZE = 0x100 \u2192 0x100 & ~0x0F40 = 0x000 \u2192 match arm '0 => Ok(true)'\n\nThis means that if wolfTPM2_VerifyHashScheme returns TPM_RC_INITIALIZE (e.g. the TPM was powered down between Init and Verify), the Rust caller receives Ok(true) \u2014 a falsely reported valid signature \u2014 instead of an error.\n\nAlso affected: 0x140 (if it were returned) and 0x900 (RC_WARN base), all of which also mask to 0.\n\nFix: only apply the FMT1 modifier mask when the rc is in the FMT1 range (bit 7 set, bit 8 clear):\n  let base_rc = if (rc & 0x80 != 0) && (rc & 0x100 == 0) {\n      rc & !FMT1_MODIFIER_MASK\n  } else {\n      rc\n  };\n\nThis preserves the correct demultiplexing of decorated FMT1 codes like TPM_RC_SIGNATURE|P_bit|subject while leaving VER1, WARN, and other classes intact.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:43:01Z",
+  "updated_at": "2026-04-30T16:47:55Z",
+  "closed_at": "2026-04-30T16:47:55Z"
+}

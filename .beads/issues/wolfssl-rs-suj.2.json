@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-suj.2",
+  "title": "wolfhsm error.rs: WolfHsmError enum and check() helper",
+  "description": "Create wolfhsm/src/error.rs. Define WolfHsmError enum with variants: Wh { code: i32 } for all WH_ERROR_* codes, and Ffi { code: i32, func: &'static str } for wolfSSL/wolfCrypt errors. Implement check(rc: i32, func: &'static str) -> Result<(), WolfHsmError>: rc == 0 => Ok(()), rc in [-2302..-2000] range => Err(Wh { code: rc }), else => Err(Ffi { code: rc, func }). Implement Debug, Display (include error code value), Clone, Copy, PartialEq, Eq. In lib.rs: pub mod error; pub use error::WolfHsmError;",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:10:53Z",
+  "updated_at": "2026-04-27T18:13:24Z",
+  "closed_at": "2026-04-27T18:13:24Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-suj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:10:53Z"
+    }
+  ]
+}

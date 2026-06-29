@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-3zn",
+  "title": "libc_setenv/unsetenv duplicated across two crates",
+  "description": "The libc_setenv and libc_unsetenv helpers (inline extern \"C\" declarations for POSIX setenv/unsetenv) are copied verbatim in wolftpm/src/device.rs and wolftpm-tss/src/connection.rs. Because wolftpm-tss depends on wolftpm (or both are workspace crates), this should live once \u2014 either in a shared internal module in wolftpm re-exported to the sibling crate, or as a tiny private workspace crate. The current duplication means any future fix (e.g. error handling, Windows stub) must be applied in two places.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:50Z",
+  "updated_at": "2026-04-30T05:31:41Z",
+  "closed_at": "2026-04-30T05:31:41Z"
+}

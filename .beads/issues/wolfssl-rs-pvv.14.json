@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.14",
+  "title": "cert.rs label_len: panicky try_from for already-bounded value",
+  "description": "In cert.rs cert_add_trusted, label_len is computed as: u16::try_from(label.len().min(24)).unwrap(). The .min(24) already guarantees the value is <=24, so the try_from cannot fail \u2014 but .unwrap() hides that and would panic in impossible circumstances. Compare nvm_add and nvm_overwrite, which use the cleaner 'let label_len = label.len().min(24)' (usize) and cast only at the call site. Rewrite cert_add_trusted to match that pattern: let label_len = label.len().min(24); label_buf[..label_len].copy_from_slice(...); then cast to u16 inline at the FFI call.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:23Z",
+  "updated_at": "2026-04-28T02:12:46Z",
+  "closed_at": "2026-04-28T02:12:46Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:23Z"
+    }
+  ]
+}

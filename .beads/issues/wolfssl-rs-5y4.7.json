@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-5y4.7",
+  "title": "wolfhsm-sys: wolfhsm_aes_gcm_encrypt allows NULL tag (unauthenticated output)",
+  "description": "wolfhsm_aes_gcm_encrypt() accepts tag=NULL and passes enc_tag=NULL to wh_Client_AesGcm. wh_Client_AesGcm does not validate enc_tag for encryption path. A caller passing NULL tag gets ciphertext with no authentication tag \u2014 the AES-GCM authentication guarantee is silently lost. Add: if (tag == NULL) return WH_ERROR_BADARGS; at the top of the encrypt shim.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:00:32Z",
+  "updated_at": "2026-04-27T18:04:59Z",
+  "closed_at": "2026-04-27T18:04:59Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-5y4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:00:32Z"
+    }
+  ]
+}

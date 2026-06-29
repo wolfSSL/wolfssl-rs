@@ -1,0 +1,26 @@
+{
+  "id": "wolfssl-rs-2ye.2",
+  "title": "wolfhsm/src/crypto: ECC P-256, Ed25519, Curve25519 modules",
+  "description": "Create wolfhsm/src/crypto/mod.rs and three modules: ecc.rs (EccP256Key: generate, evict, sign_digest, verify_digest, ecdh, export_public_der), ed25519.rs (Ed25519Key: generate, evict, sign, verify - no shim), curve25519.rs (Curve25519Key: generate, evict, diffie_hellman). All key types store KeyId, take &mut Client.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:41:59Z",
+  "updated_at": "2026-04-27T18:50:18Z",
+  "closed_at": "2026-04-27T18:50:18Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2ye",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:41:59Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-2ye.1",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:42:10Z"
+    }
+  ]
+}

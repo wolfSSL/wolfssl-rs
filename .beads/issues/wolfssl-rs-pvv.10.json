@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.10",
+  "title": "TCP port accepted as u16 but only validated at connect() not at construction",
+  "description": "Transport::Tcp { port: u16 } accepts any u16 value at struct construction. Ports above 32767 are only rejected inside Client::connect() with a BadArgs error referencing 'C transport uses i16'. A user who builds a Transport::Tcp from a config file, stores it, and passes it to connect() much later gets a confusing error that references an internal C type. The port 32767 limit is lower than the IANA/OS valid range (1-65535) and will surprise anyone using a port like 50000 from a standard config. This will generate recurring user confusion issues.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:14Z",
+  "updated_at": "2026-04-28T02:06:05Z",
+  "closed_at": "2026-04-28T02:06:05Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:13Z"
+    }
+  ]
+}

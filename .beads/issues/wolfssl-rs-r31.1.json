@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.1",
+  "title": "setenv rollback on SWTPM_SERVER_PORT failure ignores unsetenv error",
+  "description": "In device.rs open_swtpm and connection.rs WolfTpmSwtpm::connect: when libc_setenv for SWTPM_SERVER_PORT fails, the rollback calls libc_unsetenv(SWTPM_SERVER_NAME) but discards its return value. If unsetenv itself fails (e.g. EINVAL on a corrupt env), SWTPM_SERVER_NAME is left set in the process environment. A subsequent call from another thread that acquires the lock will see a stale SWTPM_SERVER_NAME while SWTPM_SERVER_PORT is absent, potentially causing wolfTPM2_Init to connect to the wrong host.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:03:13Z",
+  "updated_at": "2026-04-30T06:18:01Z",
+  "closed_at": "2026-04-30T06:18:01Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:03:13Z"
+    }
+  ]
+}

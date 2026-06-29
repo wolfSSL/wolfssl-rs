@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.10",
+  "title": "raw_function name on RsaKey does not signal unsafe-primitive semantics",
+  "description": "RsaKey::raw_function() performs a bare modular exponentiation with no padding. The name 'raw_function' (derived from the C wh_Client_RsaFunction name) does not communicate to contributors that this is a padding-free textbook RSA primitive. Callers who misread this as a PKCS1/PSS-safe sign/encrypt will produce cryptographically incorrect output with no compile-time or runtime indication. The doc comment does warn, but the function name itself is a maintainability hazard: future contributors adding PKCS1/OAEP wrappers may accidentally use raw_function as the implementation of a higher-level abstraction without adding padding. Consequence: silent cryptographic misuse that passes all current tests.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:02:59Z",
+  "updated_at": "2026-04-27T21:09:22Z",
+  "closed_at": "2026-04-27T21:09:22Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:02:59Z"
+    }
+  ]
+}

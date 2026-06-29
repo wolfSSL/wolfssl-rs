@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-2k0w.2",
+  "title": "Error::Transport display duplicates tpm_rc_name lookup (divergence risk)",
+  "description": "wolftpm-tss/src/error.rs Error::Transport display has a hardcoded match arm for 3 wolfTPM error codes (TIMEOUT, BAD_FUNC_ARG, BAD_STATE_E). The same codes (and 3 more) are already in wolftpm_sys::tpm_rc::tpm_rc_name. If new wolfTPM error codes are added to tpm_rc.rs, the Transport display will silently show raw hex codes instead of symbolic names. Transport errors are the most common errors users will see. Fix: replace the inline match with a call to wolftpm_sys::tpm_rc::tpm_rc_name(*code as u32).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T16:20:55Z",
+  "updated_at": "2026-04-30T16:33:53Z",
+  "closed_at": "2026-04-30T16:33:53Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2k0w",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T09:20:54Z"
+    }
+  ]
+}

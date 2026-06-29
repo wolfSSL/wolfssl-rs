@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-82b",
+  "title": "Add ECDH round-trip integration test",
+  "description": "Add a test in wolfcrypt-conformance/tests/ (either a new ecdh.rs or appended to an existing file) that exercises the full key lifecycle: (1) Generate keypair A via NistEcdhSecret::generate(). (2) Generate keypair B via NistEcdhSecret::generate(). (3) Compute shared = A.diffie_hellman(B.public_key()). (4) Compute shared2 = B.diffie_hellman(A.public_key()). (5) Assert shared == shared2. Run for both P-256 and P-384. Also test wrong-key rejection: use A's private with C's public, B's private with A's public, assert they produce different secrets. Gate on wolfssl_ecc (no wolfssl_openssl_extra required).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T06:56:29Z",
+  "updated_at": "2026-04-04T07:09:08Z",
+  "closed_at": "2026-04-04T07:09:08Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-0qd",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T23:56:49Z"
+    }
+  ]
+}

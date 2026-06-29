@@ -1,0 +1,39 @@
+{
+  "id": "wolfssl-rs-6p0",
+  "title": "RSA migration: rewrite RsaPrivateKey and RsaPublicKey in Rust",
+  "description": "Rewrite wolfcrypt/src/rsa.rs to use the native wolfcrypt_rsa_* shims instead of EVP/OpenSSL compat functions. This is the main migration issue.\n\nScope:\n- Replace all EVP_PKEY, RSA*, BIGNUM, i2d_*/d2i_* API calls with wolfcrypt_rsa_* shims\n- RsaPrivateKey: holds opaque void* ctx; impl generate, from_pkcs1_der, to_pkcs1_der, to_public_spki_der, sign_pkcs1v15, sign_pss, decrypt_oaep, decrypt_pkcs1v15\n- RsaPublicKey: holds opaque void* ctx; impl from_spki_der, to_spki_der, verify_pkcs1v15, verify_pss, encrypt_oaep, encrypt_pkcs1v15, from_private_key (export public from private)\n- Remove wolfssl_openssl_extra from any RSA-specific cfg gates (the shims work without OPENSSL_EXTRA)\n- All unsafe blocks confined to wolfcrypt-rs (no unsafe in wolfcrypt/src/rsa.rs)\n\nPreserve exactly:\n- Public API surface (all existing method names and signatures)\n- Key format contract: private key = PKCS#1 DER, public key = SPKI DER\n\nDo NOT change:\n- Test structure (tests live in wolfcrypt-conformance, not in rsa.rs)\n- Any non-RSA files\n\nAcceptance criteria:\n- cargo build -p wolfcrypt succeeds\n- All existing RSA-related tests in wolfcrypt-conformance pass\n- wolfssl_openssl_extra no longer required in RSA code paths",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:10:57Z",
+  "updated_at": "2026-04-04T06:02:57Z",
+  "closed_at": "2026-04-04T06:02:57Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-0zj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:27Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-1x4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:27Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-6sq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:27Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-c9n",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:26Z"
+    }
+  ]
+}

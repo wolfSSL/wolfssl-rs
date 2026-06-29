@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.30",
+  "title": "TCP port capped at 32767 rejects valid high ports",
+  "description": "Client::connect rejects TCP ports 32768-65535 with BadArgs because posixTransportTcpConfig.server_port is a C i16. Valid TCP ports include the entire range 1-65535. Any user whose wolfHSM server listens on a port above 32767 (e.g. 40000, 50000, 8443) will get an opaque error message rather than a working connection. The i16 field in the C struct is a wolfHSM C library issue, but the Rust wrapper should document this as a known limitation and note the workaround (use ports <= 32767).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:08:14Z",
+  "updated_at": "2026-04-27T22:19:36Z",
+  "closed_at": "2026-04-27T22:19:36Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:08:14Z"
+    }
+  ]
+}

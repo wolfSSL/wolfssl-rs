@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.1",
+  "title": "nvm_read: redundant metadata round-trip on every read",
+  "description": "nvm_read (nvm.rs:187) always calls nvm_metadata before the actual read, adding a full HSM IPC round-trip per read. Over a transport (SPI, shared memory IPC) each round-trip is not a free function call. At scale \u2014 reading many NVM objects in a loop, or repeatedly reading a known-size object \u2014 this doubles transport latency. Fix: add nvm_read_with_len(id, offset, len) that skips the metadata fetch when the caller already knows the size, and make the current nvm_read call it after the metadata fetch (so the extra allocation path is pay-what-you-use).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:25Z",
+  "updated_at": "2026-04-27T20:50:16Z",
+  "closed_at": "2026-04-27T20:50:16Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:25Z"
+    }
+  ]
+}

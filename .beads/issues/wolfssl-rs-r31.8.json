@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.8",
+  "title": "shim dev->ctx.cmdBuf access is a fragile private-API dependency without a version pin",
+  "description": "wolftpm_rs_shim.c directly accesses dev->ctx.cmdBuf, which is a wolfTPM internal field not part of the public API. The build.rs emits a cargo:warning pinning the tested version (4.0.0 / fbbf6fe) but there is no hard version constraint in wolftpm-src's Cargo.toml that would prevent building against a newer wolfTPM that reorganizes TPM2_CTX. The _Static_assert on struct sizes would catch layout regressions that shrink cmdBuf but would pass silently if wolfTPM adds fields before cmdBuf (shifting its offset). Users who upgrade wolfTPM will get a silent miscompile, not a compile error, unless they also hit the size assertion. A version range check in build.rs or a comment explaining exactly which field offset is assumed would reduce maintenance cost.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:04:26Z",
+  "updated_at": "2026-04-30T06:12:58Z",
+  "closed_at": "2026-04-30T06:12:58Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:04:25Z"
+    }
+  ]
+}

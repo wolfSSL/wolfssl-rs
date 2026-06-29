@@ -1,0 +1,38 @@
+{
+  "id": "wolfssl-rs-suj.4",
+  "title": "wolfhsm client.rs: Client struct, connect, echo, info, Drop",
+  "description": "Create wolfhsm/src/client.rs. Client wraps Pin<Box<wolfhsm_sys::whClientContext>> plus the transport structs (whCommClientConfig, posixTransport*Config, posixTransport*ClientContext, whClientConfig) pinned together via a Box. Must not implement Clone (wolfCrypt CryptoCb stores raw pointer into Client). Must implement Send but not Sync (wolfHSM single-thread client). Methods: connect(transport: Transport) -> Result<Self, WolfHsmError> calls wh_Client_Init; echo(data: &[u8], buf: &mut [u8]) -> Result<usize, WolfHsmError> calls wh_Client_Echo with u16 length clamp and returns actual echo length; info() -> Result<ServerInfo, WolfHsmError> calls wh_Client_CommInfo; Drop: calls wh_Client_Cleanup exactly once. ServerInfo struct holds version, build, cfg_comm_data_len, cfg_nvm_object_count, cfg_keycache_count. All wh_Client_* calls go through error::check(). No key material logged.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:11:11Z",
+  "updated_at": "2026-04-27T18:19:07Z",
+  "closed_at": "2026-04-27T18:19:07Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-suj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:11:11Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-suj.1",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:12:20Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-suj.2",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:12:21Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-suj.3",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:12:22Z"
+    }
+  ]
+}

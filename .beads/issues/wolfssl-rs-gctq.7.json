@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-gctq.7",
+  "title": "Duplicate libc_setenv/libc_unsetenv helpers in device.rs and connection.rs",
+  "description": "libc_setenv and libc_unsetenv are defined identically in wolftpm/src/device.rs (lines 209-218) and wolftpm-tss/src/connection.rs (lines 294-303). These are thin safety wrappers around libc calls; the duplication is unavoidable unless a shared private crate is introduced or the functions are exposed from wolftpm-sys. Current duplication is manageable given the trivial size, but documenting this explicitly would help future contributors understand why they're not shared.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:33:58Z",
+  "updated_at": "2026-04-30T15:41:21Z",
+  "closed_at": "2026-04-30T15:41:21Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-gctq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:33:57Z"
+    }
+  ]
+}

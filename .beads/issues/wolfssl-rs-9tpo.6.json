@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.6",
+  "title": "sign_verify_roundtrip test uses wolfTPM as its own oracle",
+  "description": "wolftpm/src/key.rs test sign_verify_roundtrip signs with EccKey::sign and verifies with EccKey::verify against the same key. Per CLAUDE.md test integrity rules: 'A test that encrypts with function A and decrypts with function A proves nothing.' A bug in the sign/verify FFI binding (e.g. wrong algorithm constant, transposed sig and hash arguments) would not be caught. The test was pre-existing before 4797181 but it remains present and uncorrected. Independent oracle required: e.g. verify the signature with ring::signature::UnparsedPublicKey or openssl, or use a known P-256 ECDSA test vector.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:28:56Z",
+  "updated_at": "2026-04-30T06:37:34Z",
+  "closed_at": "2026-04-30T06:37:34Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:28:56Z"
+    }
+  ]
+}

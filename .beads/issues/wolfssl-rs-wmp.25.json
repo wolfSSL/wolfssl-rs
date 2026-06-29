@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.25",
+  "title": "KeyId::ERASED sentinel plus Drop leak warning is the right RAII shape for HSM cache slots",
+  "description": "key.rs, aes.rs, ecc.rs et al: each key type stores a KeyId that starts non-zero. evict() calls mem::replace(&mut self.id, KeyId::ERASED) before calling key_evict so that the subsequent Drop check sees ERASED and stays silent. If a key is dropped without eviction, Drop emits an eprintln warning with the leaked ID. A future contributor might suggest making Drop call key_evict automatically. That is impossible: key_evict needs &mut Client which is unavailable in Drop. The with_key! macro is the composable RAII abstraction; manual evict() is the explicit fallback. The leak warning fires at exactly the moment the slot is lost, with the ID, without panicking in Drop (which is unsound).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:56Z",
+  "updated_at": "2026-04-28T00:15:11Z",
+  "closed_at": "2026-04-28T00:15:11Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:55Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.13",
+  "title": "she_get_status: u8 return value is opaque",
+  "description": "she.rs: she_get_status returns a raw u8 'status register byte' with no guidance on bit layout. The SHE AutoSAR specification defines the SREG register bits (ERC_BUSY, ERC_SECURE, ERC_BOOT_PROTECTION, ERC_DEBUGGER_PROTECTION, ERC_KEY_NO_NEW_KEY, ERC_KEY_EMPTY, ERC_KEY_WRITE_PROTECTED, ERC_KEY_BOOT_PROTECTED). A contributor receiving 0x03 cannot interpret it. The doc comment should either define the bit positions inline or reference the SHE AutoSAR spec section (section 4.6 of the SHE spec, or wh_she_common.h constants).",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:21Z",
+  "updated_at": "2026-04-28T02:13:04Z",
+  "closed_at": "2026-04-28T02:13:04Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:20Z"
+    }
+  ]
+}

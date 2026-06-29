@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-2n4",
+  "title": "WolfTpmSwtpm::drop missing SAFETY comment",
+  "description": "In wolftpm-tss/src/connection.rs, the Drop impl for WolfTpmSwtpm (lines 185-191) contains an unsafe block calling wolfTPM2_Cleanup but has no SAFETY comment. The sibling WolfTpmLinuxDev::drop (lines 94-101) has the comment: 'SAFETY: dev was initialised by wolfTPM2_Init; cleanup is idempotent.' Add the same comment to WolfTpmSwtpm::drop for consistency and to explain the invariant being upheld.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:43Z",
+  "updated_at": "2026-04-30T15:19:30Z",
+  "closed_at": "2026-04-30T15:19:30Z"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "wolfssl-rs-dk6t.11",
+  "title": "verify returns Result<bool, Error> \u2014 bool conflates two distinct conditions",
+  "description": "What the code does: EccKey::verify returns Ok(true) for valid signature, Ok(false) for invalid signature, Err(_) for TPM errors. What idiomatic Rust would do: the three-outcome case is a natural fit for a three-variant type: enum VerifyResult { Valid, Invalid, Error(Error) } or, more ergonomically, return Result<(), Error> where Ok(()) means valid and a dedicated Error::SignatureInvalid means invalid. The current bool return means callers can accidentally ignore the bool (let _ = key.verify(...)?) and still get an Ok result, silently ignoring an invalid signature. This is a real footgun: a caller using '?' on a Result<bool> will propagate Err but will drop the false case silently if they write 'key.verify(h, s)?; // assume true'. Why it matters: this is a cryptographic API \u2014 treating Ok(false) as Ok(true) is a security bypass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:57:35Z",
+  "updated_at": "2026-04-30T14:53:59Z",
+  "closed_at": "2026-04-30T14:53:59Z",
+  "notes": "Requires breaking API change before 1.0: change Result<bool, Error> to Result<(), Error> with Error::SignatureInvalid variant, or a three-variant VerifyResult enum. This is the most important safety-critical API issue to fix before publish. Defer to pre-1.0.",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dk6t",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:57:35Z"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-gvm",
+  "title": "dev_ptr_mut bypassed inside Device methods",
+  "description": "In wolftpm/src/device.rs, the Device::drop, get_random, and pcr_read methods all write self.dev.as_mut() as *mut _ directly instead of calling self.dev_ptr_mut(), which exists precisely for this purpose. All callers inside Device itself should use dev_ptr_mut() for consistency and to keep the raw-pointer pattern in one place.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:31Z",
+  "updated_at": "2026-04-30T15:19:30Z",
+  "closed_at": "2026-04-30T15:19:30Z"
+}

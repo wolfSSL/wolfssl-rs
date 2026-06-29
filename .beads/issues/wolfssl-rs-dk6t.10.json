@@ -1,0 +1,22 @@
+{
+  "id": "wolfssl-rs-dk6t.10",
+  "title": "Error::InvalidArg stores &'static str \u2014 can't describe runtime values",
+  "description": "What the code does: Error::InvalidArg(&'static str) stores a hard-coded string literal. For user-facing error types, this means the error message cannot include the actual invalid value (e.g. 'PCR index 25 out of range 0-23'). What idiomatic Rust would do: use a structured variant like InvalidArg { msg: &'static str } already has the msg field, but since the string is 'static, runtime values cannot be included. A pattern like InvalidPcrIndex(u8) or InvalidHashLen { expected: usize, got: usize } would let callers programmatically handle the error and produce better messages. Why it matters: callers building diagnostic output must either reparse the string or silently swallow the context. The variant is #[non_exhaustive] so adding structured variants is non-breaking. This should be done before 1.0 while the API is still malleable.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:57:25Z",
+  "updated_at": "2026-04-30T14:53:57Z",
+  "closed_at": "2026-04-30T14:53:57Z",
+  "notes": "Requires breaking API change before 1.0: replace &'static str with structured variants (InvalidPcrIndex(u8), InvalidHashLen{expected, got}). Defer to pre-1.0 API design pass.",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dk6t",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:57:24Z"
+    }
+  ]
+}

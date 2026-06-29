@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.16",
+  "title": "lib.rs feature table claims linux-dev enables /dev/tpm0 but Device::open is always available",
+  "description": "wolftpm/src/lib.rs documents 'linux-dev | Linux /dev/tpm0 kernel driver transport'. But Device::open() in device.rs has no #[cfg(feature = 'linux-dev')] guard \u2014 it is always compiled. The linux-dev feature only controls whether wolftpm-sys/wolftpm-src compile wolfTPM with WOLFTPM_LINUX_DEV defined; at runtime, if the feature is not set and wolfTPM autodetects, Device::open() still works. The feature table description implies 'without linux-dev, /dev/tpm0 is unavailable', which is false. This will confuse users who read the docs. The table entry should say 'linux-dev | compile wolfTPM with explicit Linux kernel driver transport (default: autodetect)'.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:05:48Z",
+  "updated_at": "2026-04-30T06:23:31Z",
+  "closed_at": "2026-04-30T06:23:31Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:05:48Z"
+    }
+  ]
+}

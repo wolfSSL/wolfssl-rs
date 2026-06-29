@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.31",
+  "title": "WolfTpmDev private struct missing Debug derive",
+  "description": "connection.rs: WolfTpmDev is a private struct that wraps a Box<WOLFTPM2_DEV>. It is missing #[derive(Debug)]. In idiomatic Rust, nearly all structs should derive Debug so that containing types (WolfTpmLinuxDev, WolfTpmSwtpm) can also derive Debug. Without it, users cannot print transport types for diagnostics. WOLFTPM2_DEV is an opaque C type so the inner derive may need a manual impl, but the outer type should at least try.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:09:56Z",
+  "updated_at": "2026-04-30T06:19:51Z",
+  "closed_at": "2026-04-30T06:19:51Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:09:56Z"
+    }
+  ]
+}

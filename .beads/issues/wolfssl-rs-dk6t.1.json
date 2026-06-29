@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-dk6t.1",
+  "title": "shim rejects valid response buffers larger than cmdBuf",
+  "description": "Trigger: do_transact passes rsp.len() as rsp_buf_sz to wolftpm_rs_transact. If caller passes a buffer > sizeof(cmdBuf) (~2048 bytes), the shim returns BAD_FUNC_ARG (-173) at wolftpm_rs_shim.c:108 ('if rsp_buf_sz > sizeof(dev->ctx.cmdBuf) return BAD_FUNC_ARG'). Actual bad behavior: valid callers who supply a conservatively-large response buffer (e.g. 4096 bytes) get Transport { code: -173 } instead of success. The upper bound on rsp_buf_sz is unnecessary \u2014 resp_len is bounded by packet.size = sizeof(cmdBuf), so the XMEMCPY at line 147 can never write past cmdBuf regardless of how large the caller's rsp is. Fix: remove the upper-bound check on rsp_buf_sz; keep only 'rsp_buf_sz <= 0'.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:53:30Z",
+  "updated_at": "2026-04-30T07:03:53Z",
+  "closed_at": "2026-04-30T07:03:53Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dk6t",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:53:30Z"
+    }
+  ]
+}

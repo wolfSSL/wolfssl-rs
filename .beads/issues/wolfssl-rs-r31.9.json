@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.9",
+  "title": "libc_setenv/unsetenv duplicated in two crates \u2014 divergence risk",
+  "description": "wolftpm/src/device.rs and wolftpm-tss/src/connection.rs each contain identical implementations of libc_setenv and libc_unsetenv with a NOTE comment acknowledging the duplication. The rationale given is 'avoid a shared internal crate dependency.' If a bug is found in these helpers (e.g. the overwrite=1 semantics are wrong for some platform), it must be fixed in two places. A future contributor will fix one and miss the other. Options: extract to a wolftpm-sys-private helper or a very small internal crate, or add a workspace-level test that checks both are byte-identical.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:04:33Z",
+  "updated_at": "2026-04-30T06:18:36Z",
+  "closed_at": "2026-04-30T06:18:36Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:04:33Z"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.27",
+  "title": "TpmRc missing Display impl \u2014 pub type formats as TpmRc(155) not a symbolic name",
+  "description": "TpmRc is a public type (pub struct TpmRc(pub u32)) that users can hold and print. It has no Display impl, so format\\!(\"{:?}\", rc) gives 'TpmRc(155)' and format\\!(\"{}\", rc) fails to compile. Error::Display delegates to tpm_rc_name() but callers who hold a TpmRc directly cannot use the symbolic name. Add impl fmt::Display for TpmRc delegating to tpm_rc_name().",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:09:29Z",
+  "updated_at": "2026-04-30T06:19:17Z",
+  "closed_at": "2026-04-30T06:19:17Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:09:29Z"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "wolfssl-rs-dk6t.3",
+  "title": "libc_setenv/libc_unsetenv duplicated across two crates with no sync enforcement",
+  "description": "Scenario: wolftpm/src/device.rs and wolftpm-tss/src/connection.rs each contain identical libc_setenv/libc_unsetenv implementations. A comment says 'fix it in both files' but nothing enforces this \u2014 no test, no shared module. If a soundness bug is found in one copy (e.g. wrong SAFETY conditions, POSIX edge case), a developer fixing it in one crate will plausibly miss the other. Maintenance consequence: silent divergence between two copies of safety-critical unsafe code that manipulates process-global state. Fix: extract to a small shared internal crate (e.g. wolftpm-internal) or duplicate the fix with a CI check that asserts the two copies are byte-for-byte identical.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:54:58Z",
+  "updated_at": "2026-04-30T14:53:53Z",
+  "closed_at": "2026-04-30T14:53:53Z",
+  "notes": "No simple mechanical fix. Options: (a) create wolftpm-internal crate with shared setenv helpers, (b) add a CI check comparing the two copies byte-for-byte. Both require broader structural decisions about the crate graph. Defer to pre-1.0 API cleanup pass.",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dk6t",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:54:58Z"
+    }
+  ]
+}

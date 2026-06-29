@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-6u8.2",
+  "title": "nvm_read: doc says Ok(vec![]) for offset>=len but actually returns Err",
+  "description": "In nvm_read, when offset >= meta.len, saturating_sub yields data_len=0 and the call proceeds to the server. The server's _HandleNvmRead checks 'if (offset >= meta.len) return WH_ERROR_BADARGS' (wh_server_nvm.c:67-68) and rejects the request with an error code. The Rust caller therefore receives Err, not Ok(vec![]).\n\nThe docstring at line 160 says: 'Returns an empty Vec when offset >= meta.len.' This is a false contract.\n\nFix: add an early return 'if data_len == 0 { return Ok(vec![]); }' before the FFI call. This also avoids a round-trip to the server for a trivially-known-empty result.\n\nNote: zero-length data_len with a dangling-but-non-null Vec pointer is technically safe because the server rejects before writing, but the documented/actual behavior mismatch is the primary problem.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:38:25Z",
+  "updated_at": "2026-04-27T18:38:58Z",
+  "closed_at": "2026-04-27T18:38:58Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-6u8",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:38:24Z"
+    }
+  ]
+}

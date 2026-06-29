@@ -1,0 +1,26 @@
+{
+  "id": "wolfssl-rs-2ye.3",
+  "title": "wolfhsm/src/crypto: RSA, ML-DSA modules",
+  "description": "rsa.rs (RsaKey: generate bits/e, evict, sign rsa_type, get_size, export_public_der). mldsa.rs behind #[cfg(feature=mldsa)]: MlDsaKey: generate level, evict, sign, verify. Both wrap shim functions.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:42:00Z",
+  "updated_at": "2026-04-27T18:50:19Z",
+  "closed_at": "2026-04-27T18:50:19Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2ye",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:41:59Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-2ye.1",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:42:11Z"
+    }
+  ]
+}

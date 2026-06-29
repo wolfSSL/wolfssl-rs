@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.9",
+  "title": "nvm_overwrite DataLost error carries the NVM id for targeted recovery",
+  "description": "Error::DataLost { id: u16 } lets callers identify exactly which NVM object was lost in the delete-then-add race. Without the id, the caller would have to track state externally. Contributors might suggest replacing this with a combined atomic server-side update operation, but that does not exist in the wolfHSM protocol, so carrying the id in the error is the correct response to a real protocol limitation.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:16:50Z",
+  "updated_at": "2026-04-28T02:23:15Z",
+  "closed_at": "2026-04-28T02:23:15Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:16:49Z"
+    }
+  ]
+}

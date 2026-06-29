@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-99x",
+  "title": "pcr_read returns BufferTooSmall for wrong digest length",
+  "description": "In wolftpm/src/device.rs, pcr_read() returns Err(Error::BufferTooSmall) when digest_len \\!= 32 (line 122-124). The buffer (64 bytes) was not too small \u2014 the TPM returned an unexpected output size. Using BufferTooSmall here is misleading; a reader would expect this error to mean the caller's buffer was undersized. A dedicated variant (e.g. UnexpectedResponseSize) or InvalidArg would communicate the actual problem. At minimum a doc comment on the return path should explain why BufferTooSmall is reused here.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:38Z",
+  "updated_at": "2026-04-30T05:31:42Z",
+  "closed_at": "2026-04-30T05:31:42Z"
+}

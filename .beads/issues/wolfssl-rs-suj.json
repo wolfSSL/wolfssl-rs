@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-suj",
+  "title": "wolfhsm crate: core API",
+  "description": "Add wolfhsm workspace crate with safe Rust API for the wolfHSM client. Modules: error.rs (WolfHsmError enum mapping WH_ERROR_* constants, check() helper), transport.rs (Tcp/Shm/Uds/Tls enum), client.rs (Client wrapping RefCell<Box<whClientContext>>, connect/echo/info/Drop), key.rs (KeyId newtype, evict/commit/erase/revoke/wrap helpers), nvm.rs (NvmObject, available/list/read/write/delete/find_by_label \u2014 handle NOTFOUND as loop termination, write must destroy-then-add), counter.rs (Counter RAII handle, init/increment/read/reset/destroy), cryptocb.rs (DEV_ID=0x57484D53, register() returning CryptoCbGuard RAII, AtomicBool double-registration guard).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:17:18Z",
+  "updated_at": "2026-04-27T18:22:44Z",
+  "closed_at": "2026-04-27T18:22:44Z"
+}

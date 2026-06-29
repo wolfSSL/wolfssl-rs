@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.27",
+  "title": "with_key\\! macro surfaces eviction error on success, swallows it on failure",
+  "description": "key.rs: the with_key\\! macro runs the closure, then always evicts. On the Ok path, an eviction error is propagated via ?. On the Err path, eviction is attempted best-effort and the original error is returned unchanged. This asymmetry is correct: if the operation succeeded the caller deserves to know if cleanup failed (the cache slot is still occupied). If the operation failed the caller needs the original error, not a secondary eviction error that would mask it. A future contributor might 'simplify' by always propagating the eviction error or always ignoring it. Always propagating would lose the original error on failure. Always ignoring would silently leak cache slots on success.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:08:02Z",
+  "updated_at": "2026-04-28T00:15:12Z",
+  "closed_at": "2026-04-28T00:15:12Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:08:02Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.1",
+  "title": "aes.rs: define TAG/IV constants as usize not u32",
+  "description": "AES_GCM_TAG_LEN and AES_GCM_IV_LEN are defined as u32 (matching the C FFI type), but their primary use is in Rust size/length contexts that want usize: [u8; AES_GCM_TAG_LEN as usize], iv.len() != AES_GCM_IV_LEN as usize, etc. This forces as usize at every Rust-side site and as u32 only at the two FFI call sites. The canonical Rust idiom is the opposite: define as usize (natural for sizes), cast to u32 at FFI boundary. Rewrite: const AES_GCM_TAG_LEN: usize = 16; const AES_GCM_IV_LEN: usize = 12; then use AES_GCM_TAG_LEN as u32 at the two wolfhsm_aes_gcm_{en,de}crypt call sites. This also makes [u8; AES_GCM_TAG_LEN] work without a cast in both the return type and tag parameter.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:16:06Z",
+  "updated_at": "2026-04-28T02:22:50Z",
+  "closed_at": "2026-04-28T02:22:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:16:05Z"
+    }
+  ]
+}

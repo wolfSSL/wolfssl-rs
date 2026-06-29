@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.4",
+  "title": "Per-transport heap bundles ctx+cfg+vtable+CString in one Box allocation",
+  "description": "TcpInner/UdsInner/ShmInner each pack the C context struct, config struct, vtable, and the CString (IP/path/name) into one Box. This is correct and important: the C config struct holds a raw pointer (server_ip_string, server_path, name) into the CString data. By placing both in the same struct on the heap, the pointer and its target share a single allocation lifetime \u2014 they cannot be separated. A future contributor might suggest breaking these apart (e.g. keeping CStrings in a Vec<CString> or in the Client struct directly) to 'simplify', but that would introduce a gap where the config struct exists with a dangling pointer between allocation and connection. The single-bundle approach eliminates this class of bug structurally.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:24:53Z",
+  "updated_at": "2026-04-27T19:07:37Z",
+  "closed_at": "2026-04-27T19:07:37Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:24:52Z"
+    }
+  ]
+}

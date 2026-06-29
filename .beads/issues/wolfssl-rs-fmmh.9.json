@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-fmmh.9",
+  "title": "TpmRc implements Eq but not Hash",
+  "description": "wolftpm/src/error.rs:19: TpmRc derives Debug,Clone,Copy,PartialEq,Eq but not Hash. A type that implements Eq should almost always also implement Hash, because callers will naturally want to use it in HashSet<TpmRc> or HashMap<TpmRc, ...> (e.g., to deduplicate or count error codes). Omitting Hash forces callers to use BTreeSet (requiring Ord) or wrap in a newtype. Since TpmRc wraps a u32, Hash is trivially derived: add Hash to the derive list. Also add Hash to wolftpm-tss::Error for the same reason \u2014 the tss error enum contains only u8/usize/i32/u32/&'static str, all of which are Hash.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:55:52Z",
+  "updated_at": "2026-04-30T16:00:42Z",
+  "closed_at": "2026-04-30T16:00:42Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fmmh",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:55:52Z"
+    }
+  ]
+}

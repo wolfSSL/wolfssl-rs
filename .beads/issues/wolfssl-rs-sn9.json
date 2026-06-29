@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-sn9",
+  "title": "Audit wc_AesKeyWrap bindings and wolfssl_aes_keywrap cfg flag",
+  "description": "Before implementing: (1) Confirm wc_AesKeyWrap and wc_AesKeyUnWrap are NOT yet bound in wolfcrypt-rs/src/lib.rs. (2) Confirm wolfssl_aes_keywrap cfg flag is emitted by wolfcrypt-sys/build.rs (maps to HAVE_AES_KEYWRAP in wolfSSL). (3) Check the exact C signatures from ~/wolfssl/wolfssl/wolfcrypt/aes.h: wc_AesKeyWrap(key, keySz, in, inSz, out, outSz, iv) and wc_AesKeyUnWrap(key, keySz, in, inSz, out, outSz, iv) \u2014 note all sizes are word32, key/in/out are byte*, iv is const byte*. (4) Check return semantics: positive = bytes written, negative = error. (5) Confirm wolfcrypt-ring-compat still uses the old AES_wrap_key symbols so those bindings must NOT be removed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T07:29:14Z",
+  "updated_at": "2026-04-04T07:31:13Z",
+  "closed_at": "2026-04-04T07:31:13Z"
+}

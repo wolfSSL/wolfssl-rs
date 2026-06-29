@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-fmmh.3",
+  "title": "wolftpm-tss error code table is a diverging subset of wolftpm's",
+  "description": "wolftpm/src/error.rs has a comprehensive tpm_rc_name() covering all TPM2-spec VER1/FMT1/WARN codes plus wolfTPM internal codes. wolftpm-tss/src/error.rs has a smaller inline match arm with only ~14 entries. These two tables will drift over time \u2014 if a new wolfTPM internal code is added to wolftpm's table, it won't appear in wolftpm-tss's Display. Suggested rewrite: expose tpm_rc_name() from wolftpm-sys (or a shared crate) and call it from both places, or have wolftpm-tss::Error::TpmLayer { rc } call back into wolftpm's tpm_rc_name for its Display. The shared tpm_rc_name already lives at the right layer (wolftpm-sys) conceptually.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:53:36Z",
+  "updated_at": "2026-04-30T16:00:46Z",
+  "closed_at": "2026-04-30T16:00:46Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fmmh",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:53:36Z"
+    }
+  ]
+}

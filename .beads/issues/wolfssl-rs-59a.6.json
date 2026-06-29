@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.6",
+  "title": "WH_ERROR_* range hardcoded; new wolfHSM error codes misclassified",
+  "description": "error.rs line 39 hardcodes -2302..=-2000 as the WH_ERROR_* range. The C header constant names are not referenced anywhere. wolfHSM has already grown to -2302; any future expansion silently routes new Wh errors into the Ffi variant. Callers matching on WolfHsmError::Wh{} will silently miss new error codes and log misleading 'FFI function failed' messages naming the wrong C function. No comment records which wolfhsm header version this range was read from.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:24:55Z",
+  "updated_at": "2026-04-27T18:34:47Z",
+  "closed_at": "2026-04-27T18:34:47Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:24:55Z"
+    }
+  ]
+}

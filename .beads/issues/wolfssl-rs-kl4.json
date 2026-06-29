@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-kl4",
+  "title": "Migrate AES-CBC/ECB to native wc_Aes* API",
+  "description": "Replace AES_KEY/AES_set_*_key/AES_cbc_encrypt/AES_ecb_encrypt with WcAes + wc_AesCbcEncrypt/wc_AesEcbEncrypt pattern (same as ctr.rs); remove wolfssl_openssl_extra from cipher/mod.rs gates",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T01:23:52Z",
+  "updated_at": "2026-04-04T01:48:55Z",
+  "closed_at": "2026-04-04T01:48:55Z"
+}

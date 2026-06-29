@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-dk6t.4",
+  "title": "wolftpm-tss: null-byte programmer error silently maps to Error::Transport{code:-1}",
+  "description": "Scenario: WolfTpmSwtpm::connect(host, port) returns Error::Transport { code: -1 } if host contains a null byte. The code -1 is neither a wolfTPM internal error code (those are large negative i32 like -173) nor a TPM2 spec code (positive). A caller that pattern-matches Error::Transport cannot distinguish 'programmer passed a bad host string' from 'the transport returned -1'. The comment acknowledges 'wolftpm-tss has no InvalidArg variant' but does not offer a path forward. Maintenance consequence: since Error is #[non_exhaustive], a dedicated InvalidArg variant can be added without breaking downstream matches. Users who file an issue about misleading errors cannot easily understand the root cause. Fix: add an InvalidArg(&'static str) variant to wolftpm_tss::Error (non_exhaustive allows this without a semver break) and use it in WolfTpmSwtpm::connect.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:55:58Z",
+  "updated_at": "2026-04-30T07:04:08Z",
+  "closed_at": "2026-04-30T07:04:08Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dk6t",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:55:58Z"
+    }
+  ]
+}

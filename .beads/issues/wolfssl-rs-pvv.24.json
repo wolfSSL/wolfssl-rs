@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.24",
+  "title": "she_rnd: returns SHE_KEY_SZ-typed array for random output, not key material",
+  "description": "In she.rs, she_rnd returns Result<[u8; SHE_KEY_SZ], Error>. SHE_KEY_SZ is the AES-128 key size (16 bytes), but the output is random data, not a key \u2014 the names SHE_KEY_SZ and she_rnd carry mismatched semantics. A reader must know that the SHE PRNG output happens to be 16 bytes (= 1 AES block) to understand why SHE_KEY_SZ is used as the array length. Rewrite: introduce a SHE_RND_SZ: usize = 16 constant (which can equal SHE_KEY_SZ) and use it as the return type annotation: Result<[u8; SHE_RND_SZ], Error>. This makes clear that 16 is the fixed random output size, not incidentally the key size.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:54Z",
+  "updated_at": "2026-04-28T02:12:59Z",
+  "closed_at": "2026-04-28T02:12:59Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:54Z"
+    }
+  ]
+}

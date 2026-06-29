@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-j6a",
+  "title": "wolftpm_rs_shim.c: direct access to dev->ctx.cmdBuf",
+  "description": "wolftpm-sys/src/wolftpm_rs_shim.c directly accesses dev->ctx.cmdBuf (WOLFTPM2_CTX.cmdBuf), which is an internal field not declared as stable API in wolfTPM headers. Any refactor or layout change in WOLFTPM2_CTX between wolfTPM versions will produce a silent mismatch: the shim will write/read at wrong offsets, potentially corrupting memory or producing garbage TPM responses with no compile error. This is the highest-severity coupling risk in the crate.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:34Z",
+  "updated_at": "2026-04-30T17:54:04Z",
+  "closed_at": "2026-04-30T17:54:04Z"
+}

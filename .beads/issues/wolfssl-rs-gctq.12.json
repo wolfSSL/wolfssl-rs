@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-gctq.12",
+  "title": "Independent oracle test for ECDSA: TPM sign verified by RustCrypto p256",
+  "description": "key.rs line 283: sign_and_verify_with_independent_oracle() uses the p256 crate to verify TPM-produced signatures. This proves standards compliance, not just round-trip consistency. Per the project's CLAUDE.md test design constraint, this is the required approach. A future contributor might 'simplify' this to sign+verify with wolfTPM only \u2014 that test proves nothing. Defend the independent oracle.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:34:23Z",
+  "updated_at": "2026-04-30T15:41:40Z",
+  "closed_at": "2026-04-30T15:41:40Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-gctq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:34:23Z"
+    }
+  ]
+}

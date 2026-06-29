@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-mrnu",
+  "title": "Review: wolftpm crates (src/sys/high-level/tss)",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:02:56Z",
+  "updated_at": "2026-04-30T15:09:52Z",
+  "closed_at": "2026-04-30T15:09:52Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 The cmdBuf internal field access is the main long-term fragility. Error type conflation in wolftpm-tss (TssError/Transport/setenv) is a public API design problem that should be fixed at 0.1.0. Everything else is low risk.\nEfficiency: nothing to flag. No hot paths, no unnecessary allocations beyond get_random returning Vec (unavoidable given the API contract).\nConfidence: 15% chance of missed bug. Least confident flags: FMT1 modifier stripping in key.rs::verify (complex bitmath, hard to reason about without a real TPM to test edge cases). Uncertainty driven by: cannot test against a real TPM; cannot verify wolfTPM's actual RS_SEND_COMMAND behavior at the shim level. Would raise confidence if: had an integration test suite run against a hardware TPM or swtpm.\nRust idiom check: no unwrap/expect in non-test code; no Box<dyn Error> in library APIs; no index loops; no .len()==0; no format!() where to_string() suffices. All clean.\nIdiom rating: ACCEPTABLE \u2014 The code is generally idiomatic Rust. The TpmRc/i32 inconsistency between the two error types is the main idiom gap. Unsafe blocks all have SAFETY comments. No gratuitous clones.\nRust idiom confidence: 90% chance of no missed issue. Least confident flags: none. Uncertainty driven by: did not run clippy directly on the code (would catch any remaining clippy-level issues definitively)."
+}

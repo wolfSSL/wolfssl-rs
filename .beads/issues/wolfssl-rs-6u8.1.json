@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-6u8.1",
+  "title": "error.rs: WH_ERROR_MAX doc comment names wrong constant",
+  "description": "In error.rs line 5, the doc comment for WH_ERROR_MAX reads: 'Inclusive upper bound of the wolfHSM WH_ERROR_* code range (WH_ERROR_GENERAL).'\n\nThere is no WH_ERROR_GENERAL in wolfhsm/wh_error.h. The constant at -2000 is WH_ERROR_BADARGS. The runtime value (-2000) is correct; only the parenthetical name in the comment is wrong.\n\nThis is a documentation error introduced in the current round when WH_ERROR_MAX was added. A maintainer reading this comment and then grepping the header for WH_ERROR_GENERAL will not find it, which could cause confusion when verifying the boundary or extending error handling.\n\nFix: change the comment to read '(WH_ERROR_BADARGS)' or drop the parenthetical entirely.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:38:04Z",
+  "updated_at": "2026-04-27T18:38:58Z",
+  "closed_at": "2026-04-27T18:38:58Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-6u8",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:38:03Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1s0",
+  "title": "wolfhsm crypto: ECC P-256 (ecc.rs)",
+  "description": "Implement EccP256Key{id:KeyId} with generate, load(label), commit(label), evict, public_key_der (-> DER SubjectPublicKeyInfo), sign_digest (-> DER ECDSA sig via wolfhsm_ecc_sign shim), verify_digest, ecdh (-> shared secret bytes), signer() -> EccP256Signer. Implement EccP256Signer<'a> with signature::Signer<p256::ecdsa::DerSignature>: hash msg with SHA-256 in Rust, call sign_digest for the HSM operation.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:18:48Z",
+  "updated_at": "2026-04-27T21:00:24Z",
+  "closed_at": "2026-04-27T21:00:24Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-230",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:20:02Z"
+    }
+  ]
+}

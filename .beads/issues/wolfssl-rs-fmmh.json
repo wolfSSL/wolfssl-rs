@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-fmmh",
+  "title": "Review: wolftpm/wolftpm-sys/wolftpm-tss crates",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:51:56Z",
+  "updated_at": "2026-04-30T16:00:49Z",
+  "closed_at": "2026-04-30T16:00:49Z",
+  "notes": "Maintainer risk: LOW \u2014 No correctness bugs found. Core logic (FMT1 modifier stripping, transient handle cleanup, setenv mutex) is sound. Two P1 maintainability issues: missing Send on TSS types, and a stale NOTE that will mislead future maintainers.\nConfidence: 10% chance of missed bug. Least confident flags: (1) TssError::get() return type and sign \u2014 if it returns i32, the 'as u32' cast in wolftpm-tss/src/error.rs:131 could produce unexpected values for negative codes; (2) wolfTPM thread-local state in future versions \u2014 the Send safety argument is documented for v4.0.0 only. Uncertainty driven by: cannot fully audit the tpm-rs library's TssError type without fetching the repo; cannot verify wolfTPM's absence of thread-local state at runtime without a hardware TPM.\nIdiom rating: CLEAN \u2014 No ownership antipatterns, no gratuitous clone, no unwrap in production paths, SAFETY comments on all unsafe, proper error enum with non_exhaustive. Two minor issues: missing Hash derive on TpmRc, and a redundant as-u32 cast on TssError::get().\nRust idiom confidence: 85% \u2014 no missed issues likely. Least confident flags: (1) TssError::get() return type verified against git source; (2) Checked for all common clippy patterns. Uncertainty driven by: cannot run clippy directly in this session to catch any remaining automated warnings."
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.5",
+  "title": "sign_verify_roundtrip test is its own oracle \u2014 violates test design constraint",
+  "description": "key.rs tests::sign_verify_roundtrip calls key.sign(&hash) then key.verify(&hash, &sig) on the same TPM key. This proves the sign and verify paths are wired up but does NOT prove the signature is cryptographically correct \u2014 wolfTPM could return any bytes as 'sig' and then accept them as valid in verify. The CLAUDE.md test design constraint explicitly forbids this. A correct test would take a pre-computed ECDSA P-256 signature over the SHA-256 of 'hello' from an external source (e.g. OpenSSL) and verify that signature against the key's public component \u2014 or would export the public key and verify with a pure-Rust verifier. As written, the test is marked #[ignore] so it does not run in CI, but if it were ever enabled it would give false confidence.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:03:59Z",
+  "updated_at": "2026-04-30T06:12:53Z",
+  "closed_at": "2026-04-30T06:12:53Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:03:58Z"
+    }
+  ]
+}

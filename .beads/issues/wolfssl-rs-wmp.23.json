@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.23",
+  "title": "AuthMethod and RsaRawOp manual column alignment breaks rustfmt",
+  "description": "auth.rs AuthMethod and rsa.rs RsaRawOp use manual space-padding to align discriminant values and trailing comments into columns. cargo fmt --check reports diffs for both files at these enums. Manual alignment defeats rustfmt and will drift whenever a variant is added. Suggested rewrite: let rustfmt own the formatting; move the C constant names into the doc comment above each variant rather than a trailing inline comment.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:49Z",
+  "updated_at": "2026-04-27T22:20:11Z",
+  "closed_at": "2026-04-27T22:20:11Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:48Z"
+    }
+  ]
+}

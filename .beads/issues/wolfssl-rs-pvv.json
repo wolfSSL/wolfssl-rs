@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-pvv",
+  "title": "Review R5: wolfhsm post-polish pass",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:54:59Z",
+  "updated_at": "2026-04-28T02:13:11Z",
+  "closed_at": "2026-04-28T02:13:11Z",
+  "notes": "SEC2: NO_EFFICIENCY_ISSUES\nSEC0: found 2 new correctness issues: wolfssl-rs-pvv.6 (nvm_read/nvm_read_raw: out_len not clamped before truncate, stale zeros silently returned) and wolfssl-rs-pvv.9 (mldsa_sign: no sig_len > cap guard before truncate, unlike all other crypto ops). No other correctness issues found.\nSEC7 confidence: 12% chance of missed bug. nvm_read_raw gap: does not check out_len <= requested len. Bikeshedding: NO.\nMaintainer risk: HIGH \u2014 eight issues: silent wrong hash from HsmSha*, missing RAII for cert pubkey, missing counter_init ID validation, untyped SHE key slot IDs, ML-DSA test with no independent oracle, confusing TCP port limit, opaque WH_ERROR_* integers in Display, and fragile with_key! macro sentinel convention that contributors will break silently"
+}

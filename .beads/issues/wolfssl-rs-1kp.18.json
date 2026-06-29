@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.18",
+  "title": "NvmMetadata.len field undocumented",
+  "description": "nvm.rs line 58: NvmMetadata.len has no doc comment. It is not self-evident whether 'len' is the object length in bytes, a block count, or something else. Every other field on the struct now has a doc comment (id, access, flags, label all gained docs) except len. Add a /// doc comment stating it is the data length in bytes as reported by the wolfHSM server.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:43Z",
+  "updated_at": "2026-04-28T00:54:06Z",
+  "closed_at": "2026-04-28T00:54:06Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:43Z"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "wolfssl-rs-suj.7",
+  "title": "wolfhsm counter.rs: Counter RAII handle",
+  "description": "Create wolfhsm/src/counter.rs. Counter struct holds id: NvmId and a ref to Client (or is a method namespace on Client). Client methods: counter_init(id: NvmId, value: u32) -> Result<u32, WolfHsmError> calls wh_Client_CounterInit (returns server confirmation value). counter_increment(id: NvmId) -> Result<u32, WolfHsmError> calls wh_Client_CounterIncrement. counter_read(id: NvmId) -> Result<u32, WolfHsmError> calls wh_Client_CounterRead. counter_reset(id: NvmId) -> Result<u32, WolfHsmError> calls wh_Client_CounterReset. counter_destroy(id: NvmId) -> Result<(), WolfHsmError> calls wh_Client_CounterDestroy. All through error::check(). Counters saturate at u32::MAX per wolfHSM spec \u2014 document this in comments. In lib.rs: pub mod counter;",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:11:40Z",
+  "updated_at": "2026-04-27T18:23:02Z",
+  "closed_at": "2026-04-27T18:23:02Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-suj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:11:39Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-suj.4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:12:24Z"
+    }
+  ]
+}

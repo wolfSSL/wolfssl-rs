@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.27",
+  "title": "ctx_ptr takes &mut self \u2014 defensible against &self simplification",
+  "description": "Client::ctx_ptr returns a raw *mut whClientContext and takes &mut self. Taking &mut self is the correct choice: it statically prevents two callers from simultaneously holding raw pointers to the same C context, which would be UB via aliased mutable pointers. A contributor might change this to &self with the reasoning that 'we're just getting a pointer, not modifying Rust state.' That reasoning is wrong \u2014 the C context has internal mutable state (socket buffers, sequence numbers, etc.) that is mutated on every call, and &self would allow safe Rust to create two &mut whClientContext aliases by calling ctx_ptr twice under shared access.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:58:17Z",
+  "updated_at": "2026-04-28T02:07:04Z",
+  "closed_at": "2026-04-28T02:07:04Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:58:16Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.18",
+  "title": "RsaRawOp enum exposes raw modular exponentiation honestly; padding is caller's responsibility",
+  "description": "RsaRawOp names the four directions (PrivateEncrypt, PrivateDecrypt, PublicEncrypt, PublicDecrypt) that map 1:1 to wolfCrypt's RSA_* constants, and the doc comment and method name (raw_function) explicitly state no padding is applied. This is honest: wolfHSM's wh_Client_RsaFunction performs raw modular exponentiation. A future contributor might try to add PKCS1v15Sign/PSS-Sign variants here and implement padding in the wrapper. wolfHSM does not perform padding in the server \u2014 the primitive is genuinely raw. Wrapping it in a function that names it 'sign' without making padding explicit would mislead callers into thinking the protocol is handling PKCS#1 framing. The current design correctly forces the caller to understand what they're asking for.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:16Z",
+  "updated_at": "2026-04-27T21:12:50Z",
+  "closed_at": "2026-04-27T21:12:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:16Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.14",
+  "title": "nvm: NvmMetadata access/flags fields undocumented",
+  "description": "In src/nvm.rs, NvmMetadata fields access and flags are raw u16 with no doc comments. nvm_write also takes access and flags as u16 parameters with no guidance. A contributor has no idea what bit definitions are valid or where to look (wolfHSM wh_Nvm.h defines WH_NVM_ACCESS_* and WH_NVM_FLAGS_* constants). Add doc comments pointing to the wolfHSM constants or at minimum explaining the fields are opaque bitmasks passed through to the server.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:01Z",
+  "updated_at": "2026-04-27T21:13:33Z",
+  "closed_at": "2026-04-27T21:13:33Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:01Z"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-3ut",
+  "title": "Review: feat(wolfhsm): add crypto module API",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:55:03Z",
+  "updated_at": "2026-04-27T19:02:12Z",
+  "closed_at": "2026-04-27T19:02:12Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 Key cache leak on drop is the primary risk; users will hit 'cache full' on long-running systems. RsaKey::function footgun will generate recurring issue reports. Both are fixable before API fossilizes.\nConfidence: 30% chance of missed bug. Uncertainty driven by: (1) no hardware to run against \u2014 the 32-byte P-256 size hardcode in wolfhsm_ecc_make_key and key format expectations (DER vs raw point) are unverified, (2) wolfHSM server-side validation behavior on bad inputs not verified. Would raise confidence if: integration tests exercise each operation round-trip, especially ECC ECDH with a real peer DER SPKI."
+}

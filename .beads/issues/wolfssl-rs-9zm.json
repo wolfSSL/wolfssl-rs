@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-9zm",
+  "title": "Create stubbed wolftpm-src/wolftpm-sys/wolftpm crates",
+  "description": "Create three new workspace crates following the wolfhsm-src/wolfhsm-sys/wolfhsm pattern: wolftpm-src (compiles wolfTPM C library from source via cc crate), wolftpm-sys (bindgen FFI bindings), and wolftpm (safe Rust wrapper stub). Add submodule entry, workspace members, and .cargo/config.toml WOLFTPM_SRC entry.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T04:23:32Z",
+  "updated_at": "2026-04-30T04:29:20Z",
+  "closed_at": "2026-04-30T04:29:20Z"
+}

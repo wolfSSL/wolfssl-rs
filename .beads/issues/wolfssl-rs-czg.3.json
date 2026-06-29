@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.3",
+  "title": "nvm_write fails on first-ever write because nvm_delete returns error for non-existent id",
+  "description": "nvm_write() unconditionally calls self.nvm_delete(id)? before the add. If no NVM object with that id exists yet (first-time write), nvm_delete calls wh_Client_NvmDestroyObjects which returns WH_ERROR_NOTFOUND (-2104). WolfHsmError::check maps this to Err(WolfHsmError::Wh { code: -2104 }) and the ? operator propagates it \u2014 the write fails before the add is ever attempted. Callers must pre-delete or pre-check existence before calling nvm_write, but this is not documented and contradicts the docstring that says 'Write (or overwrite) an NVM object'.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:02:31Z",
+  "updated_at": "2026-04-27T21:07:23Z",
+  "closed_at": "2026-04-27T21:07:23Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:02:31Z"
+    }
+  ]
+}

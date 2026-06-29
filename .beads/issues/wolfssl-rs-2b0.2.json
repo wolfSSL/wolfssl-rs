@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-2b0.2",
+  "title": "nvm_list: no termination guard \u2014 infinite loop on stuck server cursor",
+  "description": "nvm_list advances by passing start_id=last_seen_out_id. If the server returns the same out_id as start_id on successive calls (server cursor bug), the loop repeats forever. Fix: detect out_id == start_id (for non-zero cursor) as a stuck-cursor condition and return ProtocolError, or add a u16::MAX iteration cap.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:46:57Z",
+  "updated_at": "2026-04-28T01:48:14Z",
+  "closed_at": "2026-04-28T01:48:14Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2b0",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:46:57Z"
+    }
+  ]
+}

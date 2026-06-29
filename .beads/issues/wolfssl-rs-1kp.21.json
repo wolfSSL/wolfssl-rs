@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.21",
+  "title": "cert.rs: Ffi{code:-1} used for caller-size BadArgs",
+  "description": "Four sites in cert.rs use Ffi{code:-1} to report that a caller-supplied slice is too large for a u32 cast: cert_add_trusted (cert.rs:37), cert_verify (cert.rs:112), cert_verify_and_cache_leaf_pubkey (cert.rs:147), cert_verify_acert (cert.rs:183). These happen before any FFI call. They should use WolfHsmError::BadArgs{msg:...} matching the same pattern used everywhere else in the codebase for pre-FFI size validation (e.g. cmac.rs:39, aes.rs:47). Suggested rewrite: replace .map_err(|_| WolfHsmError::Ffi{code:-1, func:\"...\"}) with .map_err(|_| WolfHsmError::BadArgs{msg:\"cert exceeds u32::MAX bytes\"}) at each of the four sites.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:58Z",
+  "updated_at": "2026-04-27T22:37:21Z",
+  "closed_at": "2026-04-27T22:37:21Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:58Z"
+    }
+  ]
+}

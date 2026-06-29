@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.11",
+  "title": "Library crates should not write to stderr directly",
+  "description": "aes.rs, cmac.rs, ecc.rs, ed25519.rs, curve25519.rs, rsa.rs, key.rs: All Drop impls and the with_key! macro use eprintln! to warn about leaked keys and eviction failures. A library crate writing directly to stderr is surprising and unconfigurable \u2014 it breaks applications that capture or suppress stderr, and violates the principle that libraries should not produce output. The intent (warn on leak) is good but the mechanism should be documented with a comment explaining why a log crate is not used here (e.g. no_std constraints or to avoid a dependency), or replaced with log::warn! if a dependency is acceptable.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:16Z",
+  "updated_at": "2026-04-28T00:30:11Z",
+  "closed_at": "2026-04-28T00:30:11Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:16Z"
+    }
+  ]
+}

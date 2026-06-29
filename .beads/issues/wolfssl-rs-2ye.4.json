@@ -1,0 +1,26 @@
+{
+  "id": "wolfssl-rs-2ye.4",
+  "title": "wolfhsm/src/crypto: AES-GCM, SHA-256, CMAC, RNG modules",
+  "description": "aes.rs (AesKey: KeyId + bits; gcm_encrypt/gcm_decrypt using shims). sha.rs (sha256 one-shot). cmac.rs (CmacKey: compute). rng.rs (generate(client, size) -> Vec<u8> via wh_Client_Rng). Add mod declarations and pub re-exports in crypto/mod.rs and lib.rs.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:42:01Z",
+  "updated_at": "2026-04-27T18:50:20Z",
+  "closed_at": "2026-04-27T18:50:20Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2ye",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:42:00Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-2ye.1",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:42:12Z"
+    }
+  ]
+}

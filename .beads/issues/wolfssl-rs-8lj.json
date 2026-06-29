@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-8lj",
+  "title": "wolfhsm: key handles leak cache slots on error paths (no Drop eviction)",
+  "description": "Every HSM key type (EccP256Key, Ed25519Key, RsaKey, Curve25519Key) requires a manual .evict(&mut client) call. Any early return on an error path silently leaks a cache slot. The HSM key cache is finite; leaks accumulate until wh_Client_* calls fail with cache-full. Fix: introduce a KeyGuard<'_, K> type that borrows the client and the key together and calls evict in Drop.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:28:51Z",
+  "updated_at": "2026-04-27T20:36:56Z",
+  "closed_at": "2026-04-27T20:36:56Z",
+  "notes": "Epic: wolfssl-rs-xsf"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-jle",
+  "title": "pcr_read returns BufferTooSmall for wrong-length SHA-256 digest",
+  "description": "In wolftpm/src/device.rs Device::pcr_read (lines 122-124), if wolfTPM2_ReadPCR succeeds but returns digest_len \\!= 32, the function returns Error::BufferTooSmall. That variant's documented meaning is 'the buffer supplied to receive a response was too small'. Here the internal 64-byte digest buffer is large enough; the issue is that the TPM returned an unexpected digest length for a SHA-256 PCR read (which should always be 32 bytes on success). Returning BufferTooSmall is semantically wrong and misleads callers into thinking they should enlarge their buffer to fix the problem, when the real issue is a protocol/data error. Fix: return a distinct error such as Error::Tpm with an appropriate rc, or add an Error::UnexpectedLength variant.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:37Z",
+  "updated_at": "2026-04-30T16:47:53Z",
+  "closed_at": "2026-04-30T16:47:53Z"
+}

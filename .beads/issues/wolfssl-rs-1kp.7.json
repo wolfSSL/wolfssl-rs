@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.7",
+  "title": "rsa_get_size result validated >0 not just success rc",
+  "description": "After wolfhsm_rsa_get_size returns a successful rc (0), the code additionally checks that out_size > 0 before casting to u32. A future contributor might argue the >0 check is redundant because a successful rc guarantees a valid size. It is not redundant: out_size is a c_int output parameter; the C API contract does not prevent a buggy or adversarial server from returning rc=0 with out_size=0 or a negative value. Casting a zero or negative c_int to u32 would produce a nonsensical key_size_bytes value that would later cause a zero-length or gigantic allocation in raw_op(). The >0 guard is a defensive boundary check at the FFI boundary, which is the right place for it per the codebase's safety conventions.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:11Z",
+  "updated_at": "2026-04-27T22:36:50Z",
+  "closed_at": "2026-04-27T22:36:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:10Z"
+    }
+  ]
+}

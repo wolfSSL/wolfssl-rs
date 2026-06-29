@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.22",
+  "title": "Client is Send but not Sync; justification is in a safety comment",
+  "description": "client.rs implements unsafe impl Send for Client with a safety comment explaining that the C context is not thread-safe for concurrent access but safe to transfer ownership across threads (no thread-local state). !Sync is the default because Client contains raw pointers. This is the correct threading model: Send allows using Client inside a Mutex or passing to spawn_blocking; !Sync prevents simultaneous access from multiple threads. A future contributor might try to add Sync to avoid mutex overhead, but the C comm layer is explicitly documented as not thread-safe. The Send-but-not-Sync split is a well-established Rust pattern for FFI types with exclusive-access semantics.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:26:02Z",
+  "updated_at": "2026-04-27T19:07:39Z",
+  "closed_at": "2026-04-27T19:07:39Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:26:02Z"
+    }
+  ]
+}

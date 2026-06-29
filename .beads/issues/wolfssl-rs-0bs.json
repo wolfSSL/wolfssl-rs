@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-0bs",
+  "title": "wolfhsm: add #[non_exhaustive] to Error enum",
+  "description": "## Why\\nThe `WolfHsmError` (soon to be `Error`) enum is missing `#[non_exhaustive]`. Adding new variants in a future release will break any caller that writes an exhaustive `match` on the error. This is a semver hazard for a published library.\\n\\n## What needs to be done\\nAdd `#[non_exhaustive]` attribute to the error enum in `wolfhsm/src/error.rs`.\\n\\n## Acceptance criteria\\n- `#[non_exhaustive]` is present on the error enum\\n- No change to variant names or behavior",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:00:06Z",
+  "updated_at": "2026-04-28T01:29:18Z",
+  "closed_at": "2026-04-28T01:29:18Z"
+}

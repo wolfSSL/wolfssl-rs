@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.24",
+  "title": "unwrap() on Mutex::lock() in production code lacks poison justification",
+  "description": "device.rs:61 and connection.rs:190 call SWTPM_INIT_LOCK.lock().unwrap() with no comment explaining why mutex poison cannot occur. In idiomatic Rust, every .unwrap() in production code must have an accompanying comment proving it cannot panic. The correct fix is .expect(\"SWTPM_INIT_LOCK poisoned\") with a comment, or if poison truly cannot happen, a // SAFETY: this mutex is never held across a panic note.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:09:11Z",
+  "updated_at": "2026-04-30T06:13:35Z",
+  "closed_at": "2026-04-30T06:13:35Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:09:10Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-970.6",
+  "title": "with_key! macro contributor invariant documentation is exemplary",
+  "description": "key.rs explicitly documents the three implicit requirements (id field, Drop impl, ERASED sentinel) with consequences for each. This prevents future key type authors from accidentally creating silent cache leaks. Worth keeping even if it looks verbose.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:29:02Z",
+  "updated_at": "2026-04-28T02:32:13Z",
+  "closed_at": "2026-04-28T02:32:13Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-970",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:29:01Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.7",
+  "title": "with_xxx_key silently discards evict error on f() failure \u2014 no design escape hatch",
+  "description": "The with_xxx_key helpers (all seven key types) silently discard the eviction error when f() returns Err. The current API provides no way for callers to observe both the original error AND the eviction failure simultaneously. Once this API is published at 1.0, fixing it to surface both errors requires a breaking change to the return type or a new function variant. Scenario: server drops the connection mid-operation \u2014 f() returns Err(connection error) AND key_evict returns Err(connection error). The user sees only one error and has no way to know the cache slot leaked. Consequence: silently growing cache exhaustion in long-running services.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:02:45Z",
+  "updated_at": "2026-04-27T21:07:41Z",
+  "closed_at": "2026-04-27T21:07:41Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:02:45Z"
+    }
+  ]
+}

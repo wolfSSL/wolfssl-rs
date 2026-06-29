@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.3",
+  "title": "verify() FMT1 strip: rc is i32, bitwise AND with 0x80 may false-positive on negative codes",
+  "description": "key.rs EccKey::verify(): the FMT1 detection condition is '(rc & 0x80) \\!= 0 && (rc & 0xF000) == 0'. rc is i32. If wolfTPM returns a negative error code (e.g. -100 = 0xFFFFFF9C), rc & 0x80 is non-zero (bit 7 set) and rc & 0xF000 is also non-zero (bits 15:12 are all 1s), so the condition is false and the code passes through to the match. That case is handled correctly. But if wolfTPM returns a FMT1-encoded error with a subject-number modifier like 0x0180 (FMT1 base with param-1), rc & 0x80 = 0x80 (non-zero), rc & 0xF000 = 0 (bits 15:12 clear), so the condition fires and FMT1_MODIFIER_MASK is stripped. That is the intended path. The logic appears correct for the documented cases. However the comment says 'bit 7 set AND bits 15:12 clear' yet the code checks bit 7 of i32 which can be set by WARN codes (0x900+). For example TPM_RC_RETRY = 0x922: 0x922 & 0x80 = 0, so safe. TPM_RC_OBJECT_MEMORY = 0x902: 0x902 & 0x80 = 0, safe. TPM_RC_CONTEXT_GAP = 0x901: & 0x80 = 0, safe. All WARN codes start at 0x900 and have bit 7 clear in the low byte. wolfTPM extension negative codes: 0xFFFFFF9C & 0xF000 = 0xF000 \\!= 0, so they pass through. The logic seems correct but the comment 'bit 7 set' refers to the global bit-7 of the 32-bit code, not just the low byte. If a future wolfTPM version returns a code like 0x0080 (which is not currently defined), it would be incorrectly stripped. Recommend the comment and condition be tightened to match the spec precisely: FMT1 codes have bits 15:8 = 0x00 and bit 7 set, i.e. (rc & 0xFF80) == 0x0080, not the current two-condition form.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:03:41Z",
+  "updated_at": "2026-04-30T06:12:49Z",
+  "closed_at": "2026-04-30T06:12:49Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:03:40Z"
+    }
+  ]
+}

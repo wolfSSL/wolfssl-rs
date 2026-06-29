@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-ns9",
+  "title": "wolftpm: expand Error type with TPM_RC codes",
+  "description": "Replace the stub Error type in wolftpm/src/error.rs with a complete implementation covering TPM_RC error codes.\n\n## What\nCurrent error.rs has a placeholder Error::Tpm { code, func } variant. Expand to:\n- Map TPM_RC_* values to named variants or a structured Tpm { rc: TpmRc } variant\n- Provide a wh_error_name-style lookup table for TPM_RC symbolic names\n- Error::check(rc, func) helper matching the wolfhsm pattern\n- impl Display with human-readable messages\n- impl std::error::Error\n\n## Files\n- wolftpm/src/error.rs (replace stub)\n\n## Reference\nTPM_RC codes are in wolftpm-sys bindings (TPM_RC_* constants from wolftpm/tpm2.h)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T04:44:22Z",
+  "updated_at": "2026-04-30T05:03:56Z",
+  "closed_at": "2026-04-30T05:03:56Z"
+}

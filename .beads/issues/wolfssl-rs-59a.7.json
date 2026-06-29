@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.7",
+  "title": "client_id hardcoded to 1; server-side ACL policy silently broken",
+  "description": "client.rs line 253 hardcodes comm_cfg.client_id = 1 with no documentation and no way for callers to override. wolfHSM uses the client ID for server-side access-control on keys and NVM objects. Every client from this API presents as client 1, making multi-client deployments and server ACL policies silently ineffective. This is a fossilizing API surface: adding client_id to connect() is a breaking change after anyone ships against this crate.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:01Z",
+  "updated_at": "2026-04-27T18:34:52Z",
+  "closed_at": "2026-04-27T18:34:52Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:01Z"
+    }
+  ]
+}

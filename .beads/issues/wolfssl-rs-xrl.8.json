@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.8",
+  "title": "key handle Drop leaks HSM cache slot silently",
+  "description": "Any AesKey/EccP256Key/Ed25519Key/Curve25519Key/CmacKey/RsaKey/MlDsaKey dropped without calling evict() silently leaks a wolfHSM server-side RAM cache slot. When the cache fills, all subsequent HSM calls fail with a cryptic 'cache full' error. No Drop impl exists on any key type. This is the most likely recurring user issue: early-return on error, panic, or ? propagation in a closure all trigger it. Consequence: steady stream of 'my HSM calls stop working after N operations' issues. Fix: implement Drop that calls evict, or add a compile-time lint.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:49Z",
+  "updated_at": "2026-04-27T20:59:01Z",
+  "closed_at": "2026-04-27T20:59:01Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:48Z"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-3hv",
+  "title": "wolftpm-tss error.rs: 0x0099 mislabeled as TPM_RC_COMMAND_CODE",
+  "description": "In wolftpm-tss/src/error.rs, the Display impl for Error::Transport has an inline name table where 0x0099 (153 decimal) is labeled 'TPM_RC_COMMAND_CODE'. This is wrong: 153 has no name in the TPM2 Part 2 spec (it falls between TPM_RC_SELECTOR=152 and TPM_RC_INSUFFICIENT=154). The real TPM_RC_COMMAND_CODE is a VER1 code: 0x143 = 323. A maintainer debugging a transport error that hits this arm would see the wrong symbolic name, leading to incorrect diagnosis. Fix by either removing the incorrect entry or changing it to the correct 0x143/323 VER1 value.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:42:30Z",
+  "updated_at": "2026-04-30T05:45:38Z",
+  "closed_at": "2026-04-30T05:45:38Z"
+}

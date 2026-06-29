@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-2j0",
+  "title": "Box<WOLFTPM2_DEV> for stable C pointer",
+  "description": "Device and WolfTpmLinuxDev heap-allocate WOLFTPM2_DEV via Box rather than storing it inline. This gives the C wolfTPM2_* functions a stable memory address for the duration of the device's lifetime. If stored inline in a Rust struct, Rust could move the struct on assignment or vector reallocation, leaving the C library with a dangling pointer. The Box is also the mechanism that makes unsafe impl Send for Device safe: no thread-local state and a fixed address. Alternative rejected: Pin<Box<...>> was unnecessary since no self-referential Rust structs are involved; plain Box is sufficient.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:47Z",
+  "updated_at": "2026-04-30T15:10:25Z",
+  "closed_at": "2026-04-30T15:10:25Z"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.23",
+  "title": "MlDsaKey::level is pub and mutable, enabling level mismatch after construction",
+  "description": "MlDsaKey has 'pub level: u8'. A caller can write key.level = 65 on a key generated at level 44, then call sign() or verify() which passes self.level to wolfhsm_mldsa_sign/verify. The HSM operates on a level-44 key but is asked to sign as level-65, producing undefined/wrong output. This is a public API surface that will fossilize once the crate ships. Consequence: hard-to-diagnose correctness bug that looks like an HSM malfunction. Fix: make level private (pub(crate) or remove the field entirely, exposing only a level() getter).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:41Z",
+  "updated_at": "2026-04-27T20:50:03Z",
+  "closed_at": "2026-04-27T20:50:03Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:41Z"
+    }
+  ]
+}

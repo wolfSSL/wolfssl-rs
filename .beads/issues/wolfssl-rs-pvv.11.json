@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.11",
+  "title": "cert_verify_and_cache_leaf_pubkey: cached_key_flags undocumented",
+  "description": "cert.rs: cert_verify_and_cache_leaf_pubkey has a cached_key_flags: u16 parameter with no documentation. Unlike the access/flags parameters on nvm_add (which point to WH_NVM_ACCESS_* / WH_NVM_FLAGS_* in wolfhsm/wh_nvm.h), this parameter is completely silent. A contributor cannot tell what values are valid, whether 0 is safe, or what the flags control. This is a security-adjacent API \u2014 a wrong flags value could affect key access control. Fix: add a doc comment pointing to the relevant wolfHSM C header constants (e.g., WH_KEYTYPE_* or WH_NVM_FLAGS_*) and note that 0 gives default behavior.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:15Z",
+  "updated_at": "2026-04-28T02:12:34Z",
+  "closed_at": "2026-04-28T02:12:34Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:14Z"
+    }
+  ]
+}

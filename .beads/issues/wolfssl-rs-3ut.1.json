@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-3ut.1",
+  "title": "rsa::function and mldsa::sign use 'as u32' truncation without overflow check",
+  "description": "rsa.rs:63 passes 'in_buf.len() as u32' and mldsa.rs:49 passes 'msg.len() as u32' without TryFrom. On 64-bit systems if in_buf/msg > 4 GiB this truncates silently. The C shim catches it (checks > 0xFFFF), but the inconsistency with every other method in the codebase (which uses u32::try_from) means future callers copying the pattern in a shim without the C guard will silently corrupt the length. Fix: use u32::try_from(...).map_err(...) as done in sign_digest, sha256, etc.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:57:15Z",
+  "updated_at": "2026-04-27T19:00:32Z",
+  "closed_at": "2026-04-27T19:00:32Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-3ut",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:57:15Z"
+    }
+  ]
+}

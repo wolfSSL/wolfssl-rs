@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.11",
+  "title": "ed25519/curve25519: public_key unsafe blocks missing SAFETY comment",
+  "description": "In src/crypto/ed25519.rs (Ed25519Key::public_key, line 37) and src/crypto/curve25519.rs (Curve25519Key::public_key, line 37), the unsafe blocks have no SAFETY comment. Every other unsafe block in those files and in rsa.rs/ecc.rs has a SAFETY annotation. A contributor auditing unsafe code will notice the asymmetry and either assume the invariant is obvious (it isn't \u2014 ctx_ptr lifetime must be valid) or add a boilerplate comment without understanding it. Add consistent SAFETY comments.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:55Z",
+  "updated_at": "2026-04-27T21:13:30Z",
+  "closed_at": "2026-04-27T21:13:30Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:54Z"
+    }
+  ]
+}

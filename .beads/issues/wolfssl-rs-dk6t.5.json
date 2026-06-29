@@ -1,0 +1,22 @@
+{
+  "id": "wolfssl-rs-dk6t.5",
+  "title": "with_ecc_key closure fixed to Error \u2014 breaks callers with their own error types",
+  "description": "Scenario: Device::with_ecc_key<F, T> requires F: FnOnce(&mut EccKey<'_>) -> Result<T, Error>. Callers that use their own error types inside the closure must call .map_err(Into::into) or convert manually. Once this API is published, changing the bound to a generic E is a breaking change. Users doing anything non-trivial with the signing key (e.g. integrating with a larger application error type) will be forced to use From/Into conversions at every call site. Maintenance consequence: a common pattern in Rust scoped-resource APIs (see r2d2's Pool::run, deadpool) is to be generic over E. Fix before 1.0: change signature to 'where F: FnOnce(&mut EccKey<'_>) -> Result<T, E>, Error: Into<E>' or use a separate error enum, so callers control the error type.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:56:12Z",
+  "updated_at": "2026-04-30T14:53:55Z",
+  "closed_at": "2026-04-30T14:53:55Z",
+  "notes": "Requires a breaking API change before 1.0: change 'F: FnOnce(...) -> Result<T, Error>' to be generic over E. Defer to pre-1.0 API design pass alongside other API surface decisions.",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dk6t",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:56:11Z"
+    }
+  ]
+}

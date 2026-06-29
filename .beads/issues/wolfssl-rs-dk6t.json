@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-dk6t",
+  "title": "Review: wolftpm crates device/key/tss/shim",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:52:14Z",
+  "updated_at": "2026-04-30T15:10:36Z",
+  "closed_at": "2026-04-30T15:10:36Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 two P0 correctness bugs (shim response buffer check, test oracle), three P1 API/maintenance risks (error type, setenv duplication, closure type). No memory safety issues found.\nConfidence: 15% chance of missed bug. Least confident flags: (1) shim response buffer limit may be intentional to prevent over-large allocations \u2014 worth confirming wolfTPM cmdBuf size in practice; (2) FMT1 stripping coverage \u2014 only the main strip path tested, not FMT1+P-flag combinations. Uncertainty driven by: cannot run tests without /dev/tpm0; cannot verify FMT1 behavior without a real TPM or a wolfTPM mock. Would raise confidence if: swtpm-based integration tests were run.\nIdiom rating: ACCEPTABLE \u2014 no unsafe without SAFETY comments, no gratuitous clones, no index-loop anti-patterns. Two real idiom issues: Error::InvalidArg loses runtime values (pre-1.0 fixable), verify returning bool is a security footgun. No clippy-level issues found.\nRust idiom confidence: 10% chance of missed issue. Least confident flags: verify bool-return is flagged as a design issue but current tpm-rs Connection::Error trait may constrain the design space. Uncertainty driven by: cannot see full tpm-rs trait requirements without running the build."
+}

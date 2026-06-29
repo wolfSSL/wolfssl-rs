@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.6",
+  "title": "len-to-u32 conversion: extract helper",
+  "description": "u32::try_from(x.len()).map_err(|_| WolfHsmError::Ffi { code: -1, func: \"...\" }) appears ~12 times across aes.rs, ecc.rs, rsa.rs, ed25519.rs, cmac.rs, rng.rs, sha.rs. Extract a private helper: fn len_u32(n: usize, ctx: &'static str) -> Result<u32, WolfHsmError> { u32::try_from(n).map_err(|_| WolfHsmError::Ffi { code: -1, func: ctx }) }. Every call site collapses to len_u32(slice.len(), \"wolfhsm_xxx: input too large\")?.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:44Z",
+  "updated_at": "2026-04-27T21:13:22Z",
+  "closed_at": "2026-04-27T21:13:22Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:43Z"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-alzl.9",
+  "title": "TpmRc type not re-exported at wolftpm crate root \u2014 users can't name the type",
+  "description": "wolftpm/src/lib.rs does 'pub use error::Error' but not 'pub use error::TpmRc'. Users who pattern-match 'Error::Tpm { rc }' and want to call rc.raw() or rc.is_success() have a value of type wolftpm::error::TpmRc that they cannot name at the crate root. Add 'pub use error::TpmRc;' to lib.rs so callers can write 'use wolftpm::TpmRc' instead of 'use wolftpm::error::TpmRc'.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:42:58Z",
+  "updated_at": "2026-04-30T06:45:50Z",
+  "closed_at": "2026-04-30T06:45:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-alzl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:42:58Z"
+    }
+  ]
+}

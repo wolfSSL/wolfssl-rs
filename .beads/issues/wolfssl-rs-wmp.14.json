@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.14",
+  "title": "Ffi{code:-1} used as logic-error sentinel, not FFI error",
+  "description": "Several sites (key.rs key_cache, crypto/cmac.rs compute, crypto/ecc.rs verify_digest, crypto/ed25519.rs sign, crypto/curve25519.rs diffie_hellman) return WolfHsmError::Ffi { code: -1, func: \"...: unexpected output length\" } for conditions detected entirely in Rust, not from a C return code. Using a fake code -1 under the Ffi variant misrepresents what happened. Suggested rewrite: use WolfHsmError::BadArgs { msg } for post-call sanity checks detected in Rust, or add a dedicated ProtocolError { msg } variant if the distinction between arg validation and unexpected server responses matters.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:26Z",
+  "updated_at": "2026-04-28T00:06:30Z",
+  "closed_at": "2026-04-28T00:06:30Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:25Z"
+    }
+  ]
+}

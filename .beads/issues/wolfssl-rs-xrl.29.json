@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.29",
+  "title": "rsa::public_key_der: 512-byte buffer too small for 4096-bit RSA SPKI DER",
+  "description": "rsa.rs public_key_der allocates 512 bytes and passes max_size=512 to wolfhsm_rsa_export_public_der. A 4096-bit RSA SubjectPublicKeyInfo DER is ~550 bytes (verified: openssl produces 550 bytes). wc_RsaKeyToPublicDer returns BUFFER_E when the buffer is too small, so the call fails for any 4096-bit key. The comment claims 512 bytes is sufficient for 4096-bit keys, which is wrong. Fix: use a buffer of at least 600 bytes, or query required size before allocating.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:46:02Z",
+  "updated_at": "2026-04-27T20:49:34Z",
+  "closed_at": "2026-04-27T20:49:34Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:46:02Z"
+    }
+  ]
+}

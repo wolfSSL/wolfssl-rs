@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-55p",
+  "title": "wolfhsm crypto: SHA, CMAC, HKDF, RNG",
+  "description": "sha.rs: HsmSha256/384/512<'a> each holding client ref and internal wc_Sha* state; implement digest::Update + digest::FixedOutput + digest::Digest; use wh_Client_Sha*UpdateRequest/FinalRequest for streaming, wolfhsm_sha256 shim for one-shot. cmac.rs: CmacKey{id:KeyId} with generate(bits), load(label), compute(data)->[u8;16] via wolfhsm_cmac shim. hkdf.rs: make_cache_key(hash_type,salt_key_id?,ikm_key_id,info,target_len)->KeyId; make_export_key(same args)->Vec<u8>. rng.rs: generate(size)->Vec<u8>.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:19:12Z",
+  "updated_at": "2026-04-27T21:00:24Z",
+  "closed_at": "2026-04-27T21:00:24Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-230",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:20:04Z"
+    }
+  ]
+}

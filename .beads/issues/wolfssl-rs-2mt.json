@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-2mt",
+  "title": "wolfhsm-sys crate",
+  "description": "Add wolfhsm-sys workspace crate providing raw FFI bindings to wolfHSM (via bindgen over wrapper.h) plus C shims for opaque key structs. Build script pulls DEP_WOLFCRYPT_SYS_* metadata, propagates wolfSSL paths to wolfhsm-src, links wolfhsm + wolfhsm_shims static libs. Allowlist: wh_.*/WH_.*/posix_transport_.* types, wh_Client_.* functions, WH_.* constants. shims.c provides stack-allocated wrappers for ECC, Curve25519, RSA, ML-DSA, AES-GCM, SHA-256, CMAC where key structs are zero-sized in generated bindings.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:17:17Z",
+  "updated_at": "2026-04-27T17:57:11Z",
+  "closed_at": "2026-04-27T17:57:11Z"
+}

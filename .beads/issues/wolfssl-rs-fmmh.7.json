@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-fmmh.7",
+  "title": "with_ecc_key closure pattern correctly guarantees key cleanup on error",
+  "description": "wolftpm/src/device.rs:100: with_ecc_key uses a closure + Drop to guarantee the TPM transient object handles are flushed even if the caller's closure returns Err. This is the correct RAII pattern for TPM transient objects: the TPM has a finite number of transient object slots, so leaking handles under error conditions would eventually cause TPM_RC_OBJECT_MEMORY. The EccKey::Drop impl ensures flush always runs. A contributor might suggest returning EccKey directly (more flexible) \u2014 that design should be defended only if the user can be trusted to call flush/drop explicitly, which they cannot in practice.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:54:14Z",
+  "updated_at": "2026-04-30T15:57:01Z",
+  "closed_at": "2026-04-30T15:57:01Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fmmh",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:54:13Z"
+    }
+  ]
+}

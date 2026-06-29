@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-3ut.9",
+  "title": "AesKey::gcm_encrypt IV length is advisory, not enforced; error will be opaque",
+  "description": "gcm_encrypt doc says 'iv should be 12 bytes for GCM' \u2014 using 'should' implies it's a recommendation. wolfHSM GCM requires exactly 12 bytes (96-bit IV is the only standardized non-length-computation path); other lengths will cause the server to return an error with no indication the IV length was wrong. Change 'should' to 'must be exactly 12 bytes'. Optionally add a Rust check: if iv.len() != 12 { return Err(...) } with a message.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:58:15Z",
+  "updated_at": "2026-04-27T19:02:06Z",
+  "closed_at": "2026-04-27T19:02:06Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-3ut",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:58:15Z"
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "id": "wolfssl-rs-epj",
+  "title": "wolfhsm API idiomaticity and RustCrypto compatibility",
+  "description": "The wolfhsm crate wraps wolfHSM correctly at the FFI level but diverges from RustCrypto conventions in ways that would surprise ecosystem users. This epic tracks findings from the API review: ergonomic shape issues, missing trait implementations, resource-management footguns, type safety gaps, and internal hygiene items. Goal: a crate that feels native to someone already using RustCrypto.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:55:24Z",
+  "updated_at": "2026-04-27T22:37:33Z",
+  "closed_at": "2026-04-27T22:37:33Z",
+  "notes": "All implementable P0/P1/P2 issues resolved. Three P1 architectural issues remain open and flagged for human decision: wolfssl-rs-3i8 (client shape), wolfssl-rs-fcd (RustCrypto traits), wolfssl-rs-to7 (Drop eviction).",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2or",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:37Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-3i8",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:35Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-58a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:38Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-74q",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:38Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-7mq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:39Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-8z9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:37Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-968",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:39Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-fcd",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:35Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-q8x",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:36Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-to7",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:36Z"
+    }
+  ]
+}

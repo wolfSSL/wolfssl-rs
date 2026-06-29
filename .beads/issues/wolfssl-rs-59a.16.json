@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.16",
+  "title": "nvm_write: INVALID id server behavior undocumented",
+  "description": "nvm_write() doc comment explains what happens when id \\!= NvmId::INVALID (delete first, then add) but is silent on what happens when id IS NvmId::INVALID. The code skips deletion and passes 0 directly to wh_Client_NvmAddObject. Whether the server auto-assigns an ID, rejects the call, or treats 0 as a valid ID is not described anywhere in the Rust API surface. A caller using nvm_write(NvmId::INVALID, ...) as 'create a new object' has no way to know if that is supported or what ID is assigned. Doc comment should state: 'If id is NvmId::INVALID the existing-object deletion is skipped and id 0 is passed to the server; server behavior for id 0 is [expected behavior here].'",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:34Z",
+  "updated_at": "2026-04-27T19:08:38Z",
+  "closed_at": "2026-04-27T19:08:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:33Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.16",
+  "title": "KeyId/NvmId/UserId public inner fields defeat newtype abstraction",
+  "description": "All three newtypes (KeyId, NvmId, UserId) expose their inner field as pub u16. This means callers can construct KeyId(0) directly, mix up raw u16 values with typed IDs, and the type system cannot enforce any invariant. If the inner type must change (e.g. to u32 for a future wolfHSM server protocol), pub .0 is a breaking surface the compiler will not fully catch in downstream code. The From<u16> impls already provide ergonomic construction; the pub field is redundant and undermines the abstraction. Maintenance consequence: any invariant added to the newtype (e.g. non-zero construction) must also audit all direct .0 construction sites.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:40Z",
+  "updated_at": "2026-04-27T22:32:44Z",
+  "closed_at": "2026-04-27T22:32:44Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:40Z"
+    }
+  ]
+}

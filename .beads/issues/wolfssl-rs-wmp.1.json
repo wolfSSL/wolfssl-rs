@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.1",
+  "title": "with_mldsa_key duplicates with_key! macro body inline",
+  "description": "MlDsaKey::with_mldsa_key in crypto/mldsa.rs manually inlines the same logic as the with_key! macro defined in key.rs, rather than calling the macro. Every other key type (AES, CMAC, ECC, Ed25519, Curve25519, RSA) uses with_key!. A contributor adding a new key type will see two patterns and copy whichever is nearest, causing the eviction logic to diverge silently. If the error-path semantics of with_key! are ever changed, the mldsa path will be missed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:06:45Z",
+  "updated_at": "2026-04-27T22:19:13Z",
+  "closed_at": "2026-04-27T22:19:13Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:06:45Z"
+    }
+  ]
+}

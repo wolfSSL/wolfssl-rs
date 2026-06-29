@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.3",
+  "title": "nvm_list discards out_count, missing Vec::with_capacity",
+  "description": "nvm_list (nvm.rs:102-144) calls Vec::new() then push()s one NvmId per loop iteration, discarding the out_count value the C API populates on each call. If out_count on the first iteration reflects the total remaining objects, a single Vec::with_capacity(out_count as usize) before the loop would eliminate O(log N) reallocations. Expected impact: small in practice (NVM object counts are bounded by server config, typically < a few hundred), but the fix is zero-risk and the information is already in-hand from the first IPC round-trip.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:06:55Z",
+  "updated_at": "2026-04-27T22:19:54Z",
+  "closed_at": "2026-04-27T22:19:54Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:06:54Z"
+    }
+  ]
+}

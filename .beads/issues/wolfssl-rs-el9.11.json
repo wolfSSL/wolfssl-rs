@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-el9.11",
+  "title": "nvm_list cursor-stuck guard prevents infinite loop on misbehaving server",
+  "description": "The guard at nvm.rs line 178 checks out_id == start_id && start_id != 0 and returns ProtocolError, preventing an infinite loop if the server returns the same cursor ID without advancing. The start_id != 0 carve-out correctly avoids false-tripping on the initial call (where start_id = 0 = WH_NVM_ID_INVALID). A contributor might suggest always checking out_id == start_id, but that would misfire on the empty-NVM first-call case.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:17:03Z",
+  "updated_at": "2026-04-28T02:23:20Z",
+  "closed_at": "2026-04-28T02:23:20Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-el9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:17:03Z"
+    }
+  ]
+}

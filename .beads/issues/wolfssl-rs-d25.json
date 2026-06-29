@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-d25",
+  "title": "wolfhsm: auth.rs and she.rs (features=auth,she)",
+  "description": "auth.rs (feature=auth): wrap wh_Client_Auth* \u2014 set_credentials(client,user_id:u16,token:&[u8])->Result<(),Error>. she.rs (feature=she): wrap wh_Client_She* functions for the SHE automotive key management protocol. See wolfHSM she header for full API surface.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:19:22Z",
+  "updated_at": "2026-04-28T00:54:39Z",
+  "closed_at": "2026-04-28T00:54:39Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fbj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:20:10Z"
+    }
+  ]
+}

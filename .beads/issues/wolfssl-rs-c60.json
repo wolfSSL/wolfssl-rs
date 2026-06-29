@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-c60",
+  "title": "Add wc_AesCfbEncrypt/Decrypt bindings to wolfcrypt-rs",
+  "description": "wc_AesCfbEncrypt and wc_AesCfbDecrypt exist in the wolfSSL C headers (~/wolfssl/wolfssl/wolfcrypt/aes.h lines 548-562) but have no Rust FFI bindings in wolfcrypt-rs/src/lib.rs. Add them under #[cfg(wolfssl_aes_cfb)] next to the existing wc_AesOfbEncrypt binding (line ~2931). Signatures: wc_AesCfbEncrypt(aes: *mut WcAes, out: *mut u8, in_: *const u8, sz: u32) -> c_int; wc_AesCfbDecrypt same. WcAes struct and wc_AesInit/wc_AesSetKey/wc_AesFree are already bound.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T07:55:39Z",
+  "updated_at": "2026-04-04T07:58:31Z",
+  "closed_at": "2026-04-04T07:58:31Z"
+}

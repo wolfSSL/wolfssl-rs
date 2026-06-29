@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-30e",
+  "title": "wolftpm: implement Device type (init/cleanup/get_random/pcr_read)",
+  "description": "Implement the Device type wrapping WOLFTPM2_DEV with safe init, cleanup, and core operations.\n\n## What\n- Device struct wrapping WOLFTPM2_DEV (opaque, not Clone)\n- Device::open() -> Result<Device> \u2014 opens /dev/tpm0 via wolfTPM2_Init with WOLFTPM_LINUX_DEV\n- Device::open_swtpm(addr: &str) -> Result<Device> \u2014 connects to swtpm/IBM simulator via TCP\n- Device: Send (can move across threads), not Sync\n- Drop impl: calls wolfTPM2_Cleanup\n- get_random(n: usize) -> Result<Vec<u8>> \u2014 wolfTPM2_GetRandom\n- pcr_read(index: u8) -> Result<[u8; 32]> \u2014 wolfTPM2_ReadPCR (SHA-256 bank)\n\n## Files\n- wolftpm/src/device.rs (new)\n- wolftpm/src/lib.rs (add pub mod device; pub use device::Device)\n\n## Notes\nWOLFTPM2_DEV must be pinned or heap-allocated if it contains self-referential pointers \u2014 check wolfTPM source to confirm whether it is safe to move after init.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T04:44:23Z",
+  "updated_at": "2026-04-30T05:18:30Z",
+  "closed_at": "2026-04-30T05:18:30Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-ns9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T21:44:45Z"
+    }
+  ]
+}

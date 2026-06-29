@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-58a",
+  "title": "wolfhsm: UserId is a type alias for u16, not a newtype",
+  "description": "pub type UserId = u16 means any u16 is accepted where a UserId is required, with no type-level distinction. This is inconsistent with KeyId(pub u16) and NvmId(pub u16) in the same crate, which are proper newtypes. Change UserId to a newtype struct to match the established pattern and prevent accidental misuse.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:55:02Z",
+  "updated_at": "2026-04-27T22:04:40Z",
+  "closed_at": "2026-04-27T22:04:40Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-epj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:38Z"
+    }
+  ]
+}

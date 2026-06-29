@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.8",
+  "title": "FMT1 stripping logic in verify() is not unit-tested at the Rust level",
+  "description": "The FMT1 modifier stripping in EccKey::verify is the most subtle logic in the crate (non-trivial bit arithmetic with a nuanced condition on bit 7 + bits 15:12), but it is only tested indirectly via the hardware-only sign_verify_roundtrip integration test. The stripping logic does not depend on a live TPM and can be unit-tested by calling the match logic on carefully chosen synthetic rc values (0x009B, 0x1DB for sig+param1, 0x101 for VER1 code). Rewrite: extract the FMT1 stripping into a small pure function and add a #[test] for each case.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:29:35Z",
+  "updated_at": "2026-04-30T06:37:48Z",
+  "closed_at": "2026-04-30T06:37:48Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:29:34Z"
+    }
+  ]
+}

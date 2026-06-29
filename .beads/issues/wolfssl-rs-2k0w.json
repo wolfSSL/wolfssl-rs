@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-2k0w",
+  "title": "Review: wolftpm crates",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T16:20:24Z",
+  "updated_at": "2026-04-30T16:34:39Z",
+  "closed_at": "2026-04-30T16:34:39Z",
+  "notes": "Maintainer risk: LOW \u2014 one API contract violation in init_swtpm (returns libc error code, not wolfTPM code), one divergence risk in error display. No security surface issues, no unsafe soundness problems, no API lock-in issues beyond existing transient-key lifecycle decisions.\nConfidence: 15% chance of missed bug. Least confident flags: FMT1 stripping correctness under wolfTPM-modified error codes (tested logic against spec, no live TPM). Uncertainty driven by: can't run integration tests (no /dev/tpm0); can't verify wolfTPM actually returns modifier-qualified TPM_RC_SIGNATURE in practice. Would raise confidence if: ran wolfTPM 4.0.0 against swtpm and observed actual VerifySignature failure codes.\nIdiom rating: CLEAN \u2014 unsafe blocks all have SAFETY comments; ownership and lifetime design is idiomatic; error types are properly non_exhaustive; no gratuitous clones. Two issues: init_swtpm should return a typed error instead of bare i32, and hash_sz try_from is dead code in sign/verify.\nRust idiom confidence: 10% chance of missed issue. Least confident flags: none \u2014 I'm satisfied the unsafe blocks, ownership model, and error handling are correct. Uncertainty driven by: can't verify at runtime that FMT1-qualified TPM_RC_SIGNATURE is the actual return from wolfTPM2_VerifyHashScheme (no TPM hardware). Would raise confidence if: ran integration tests against swtpm."
+}

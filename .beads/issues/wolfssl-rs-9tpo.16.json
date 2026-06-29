@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.16",
+  "title": "Mutex::lock().unwrap() without poison-handling comment",
+  "description": "device.rs line 67 and connection.rs line 218 both call SWTPM_INIT_LOCK.lock().unwrap() with no comment explaining the unwrap. In idiomatic Rust, Mutex::lock() returns Err only if the lock is poisoned (i.e., a thread panicked while holding it). Calling .unwrap() here propagates the panic into the current thread, which may or may not be the desired behavior. The standard pattern for 'ignore poison' is .unwrap_or_else(|e| e.into_inner()), and the standard pattern for 'propagate' requires a comment. Without a comment, reviewers will flag this as an unexamined unwrap. A one-line comment like '// Poisoned state is unrecoverable; propagate the panic' is sufficient.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:32:03Z",
+  "updated_at": "2026-04-30T06:36:46Z",
+  "closed_at": "2026-04-30T06:36:46Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:32:03Z"
+    }
+  ]
+}

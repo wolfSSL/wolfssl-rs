@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-2b0.1",
+  "title": "set_len without capacity bounds check after FFI: latent UB",
+  "description": "ecc.rs sign_digest, public_key_der, ecdh and rsa.rs public_key_der all call buf.set_len(returned_len) after FFI with no assertion that returned_len <= buf.capacity(). If the wolfHSM server misbehaves and writes back a length larger than the capacity hint we passed in, set_len triggers immediate UB (setting len > capacity). Fix: before set_len, check returned_len <= cap and return ProtocolError if violated.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:46:56Z",
+  "updated_at": "2026-04-28T01:48:13Z",
+  "closed_at": "2026-04-28T01:48:13Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2b0",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:46:56Z"
+    }
+  ]
+}

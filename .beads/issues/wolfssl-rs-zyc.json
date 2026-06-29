@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-zyc",
+  "title": "WolfTpmSwtpm::connect uses MalformedResponse for invalid host arg",
+  "description": "In wolftpm-tss/src/connection.rs lines 153 and 155, CString conversion failures (null byte in host or port string) are mapped to Error::MalformedResponse. That variant's doc string says 'TPM response header is malformed (size field is zero or truncated)' \u2014 a pre-call argument validation failure has nothing to do with a response header. This will confuse callers reading the error. Map to a dedicated argument-error variant or return a distinct type that communicates 'invalid argument' rather than a response parsing failure.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:51Z",
+  "updated_at": "2026-04-30T15:19:30Z",
+  "closed_at": "2026-04-30T15:19:30Z"
+}

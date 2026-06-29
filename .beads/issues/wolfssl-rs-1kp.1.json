@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.1",
+  "title": "nvm_overwrite fails silently when object does not yet exist",
+  "description": "nvm_overwrite calls nvm_delete unconditionally before the add. If the object does not already exist, nvm_delete returns WH_ERROR_NOTFOUND (or equivalent) and nvm_overwrite propagates that error without attempting the add \u2014 making it impossible to create a new NVM object via nvm_overwrite. The delete step should treat NOT_FOUND as success (object was already absent) and proceed to the add.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:21:42Z",
+  "updated_at": "2026-04-27T22:29:06Z",
+  "closed_at": "2026-04-27T22:29:06Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:21:41Z"
+    }
+  ]
+}

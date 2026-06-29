@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-5q0",
+  "title": "Migrate DH to native wc_Dh* shims",
+  "description": "Replace DH_new_by_nid/DH_generate_key/DH_compute_key/BIGNUM with wolfcrypt_dh_* C shims; add shims to compat_shim.c + lib.rs; remove wolfssl_openssl_extra from dh.rs",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T01:23:53Z",
+  "updated_at": "2026-04-04T01:48:54Z",
+  "closed_at": "2026-04-04T01:48:54Z"
+}

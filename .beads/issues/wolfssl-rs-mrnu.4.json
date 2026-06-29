@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-mrnu.4",
+  "title": "wolftpm-tss: From<TssError> maps TPM-layer errors to Error::Transport \u2014 no way to distinguish",
+  "description": "wolftpm-tss/src/error.rs: From<TssError> for Error maps tpm2_rs_base::errors::TssError (a TPM response code from the TPM's response header) to Error::Transport { code }. This conflates two distinct error classes: (1) transport failures (socket down, device not present) and (2) TPM-layer protocol errors (e.g. TPM_RC_AUTH_FAIL). Callers that want to distinguish 'TPM said no' from 'could not talk to TPM' must inspect the code field. Since we are at 0.1.0, the fix is to add Error::TpmLayer { rc: u32 } before the API fossilizes.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:03:40Z",
+  "updated_at": "2026-04-30T15:07:52Z",
+  "closed_at": "2026-04-30T15:07:52Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:03:40Z"
+    }
+  ]
+}

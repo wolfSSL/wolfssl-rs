@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.2",
+  "title": "ClientInner field ordering encodes drop order as a correctness invariant",
+  "description": "client.rs declares ClientInner fields as: client_ctx, comm_cfg, transport. Rust drops struct fields in declaration order (first declared, first dropped). The comment explicitly documents this: wh_Client_Cleanup (called in Drop::drop before any field drops) needs comm_cfg still alive; comm_cfg needs transport still alive. The chosen order (client_ctx \u2192 comm_cfg \u2192 transport, dropping last-declared first) is therefore: transport drops last, comm_cfg drops before transport, client_ctx drops first \u2014 i.e. the reverse of declaration. This is correct: Drop for Client manually calls wh_Client_Cleanup first (which references comm_cfg), then struct fields drop in reverse-declaration order so comm_cfg outlives transport. A future contributor might try to simplify by reordering fields alphabetically or grouping by purpose, which would silently break the safety invariant. The field order IS the safety proof and must not change without updating the Drop impl.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:24:45Z",
+  "updated_at": "2026-04-27T19:07:36Z",
+  "closed_at": "2026-04-27T19:07:36Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:24:44Z"
+    }
+  ]
+}

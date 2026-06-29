@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-970.1",
+  "title": "echo(): unwrap_or(u16::MAX) instead of BadArgs on overflow",
+  "description": "client.rs: rcv_len uses unwrap_or(u16::MAX) when buf.len() > u16::MAX, silently clamping to 65535 instead of returning BadArgs. Every other FFI method (aes_gcm_encrypt, she_enc_ecb, etc.) returns BadArgs on overflow. This inconsistency means a caller passing a large buffer gets truncated output with no error. Fix: u16::try_from(buf.len()).map_err(|_| Error::BadArgs { msg: 'echo: buf exceeds u16::MAX bytes' })",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:28:39Z",
+  "updated_at": "2026-04-28T02:31:52Z",
+  "closed_at": "2026-04-28T02:31:52Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-970",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:28:39Z"
+    }
+  ]
+}

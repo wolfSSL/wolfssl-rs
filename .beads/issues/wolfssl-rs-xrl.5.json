@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.5",
+  "title": "Pin<Box<ClientInner>> prevents UB from C storing pointers into movable Rust data",
+  "description": "wh_Client_Init stores the address of the whClientContext (and comm_cfg) in wolfCrypt's global CryptoCb table and in the wolfHSM internal state. If Client were on the stack or in a Vec that could reallocate, those stored pointers would dangle the moment Rust moved the struct. The Pin<Box<ClientInner>> design makes the address stable for the Client's entire lifetime. A future contributor might suggest simplifying to a plain struct or using Box<Client> without Pin. Pin is warranted here because the C library is an intrusive user of the address \u2014 plain Box is not sufficient to prevent moves (you can still move out of a Box via *box_val = new_val or mem::replace on the pointer). The pattern (all C state in one heap allocation, filled after boxing, with the initialization comment explaining the two-phase approach) is exactly the correct Rust idiom for this situation.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:42Z",
+  "updated_at": "2026-04-27T21:13:19Z",
+  "closed_at": "2026-04-27T21:13:19Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:41Z"
+    }
+  ]
+}

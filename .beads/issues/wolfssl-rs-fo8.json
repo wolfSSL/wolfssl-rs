@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-fo8",
+  "title": "TPM_RC_SIGNATURE decoded as Ok(false) not Err",
+  "description": "EccKey::verify maps TPM return code 155 (TPM_RC_SIGNATURE) to Ok(false) rather than Err. TPM_RC_SIGNATURE means the signature was structurally valid but cryptographically incorrect -- a legitimate negative verification result, not a transport or protocol error. If mapped to Err, callers cannot distinguish 'bad signature' from 'TPM communication failure'. The three-way split -- Ok(true) verified, Ok(false) not-verified, Err transport/protocol error -- is the correct API shape for a verify function. Alternative rejected: returning Err(SignatureInvalid) as a distinct variant forces callers to unwrap a Result just to get a bool, which is awkward for the common case.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:32Z",
+  "updated_at": "2026-04-30T15:10:24Z",
+  "closed_at": "2026-04-30T15:10:24Z"
+}

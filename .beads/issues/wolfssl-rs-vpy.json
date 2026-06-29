@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-vpy",
+  "title": "wolfhsm: rename WolfHsmError to Error",
+  "description": "## Why\\nEvery RustCrypto crate exposes its error type as `crate::Error`, not `crate::FooCrateError`. The name `WolfHsmError` is redundant with the crate name and forces callers to write the crate name twice (e.g. `wolfhsm::WolfHsmError`). This is immediately jarring to anyone familiar with the RustCrypto ecosystem.\\n\\n## What needs to be done\\nRename the type from `WolfHsmError` to `Error` in `wolfhsm/src/error.rs` and update all use sites across the crate. Add a `pub use error::Error;` re-export at the crate root so callers can write `wolfhsm::Error`.\\n\\n## Acceptance criteria\\n- `wolfhsm::Error` is the public name\\n- No `WolfHsmError` symbol is exported\\n- All internal use sites updated",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:00:02Z",
+  "updated_at": "2026-04-28T01:29:17Z",
+  "closed_at": "2026-04-28T01:29:17Z"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-z2k",
+  "title": "EcdsaCurve::HASH_LEN doc comment wrong for P-521",
+  "description": "The EcdsaCurve trait doc comment states HASH_LEN is 'same as FIELD_SIZE for ECDSA'. For P-521, FIELD_SIZE=66 and HASH_LEN=64 (SHA-512). The comment is false and will mislead anyone adding a new curve who reads it as an invariant. Fix: remove the false equality claim from the doc comment and document the actual relationship (hash output length in bytes; may differ from field size as in P-521/SHA-512).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T08:27:09Z",
+  "updated_at": "2026-04-04T18:07:38Z",
+  "closed_at": "2026-04-04T18:07:38Z"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-vsg",
+  "title": "EccKey creation flushes SRK on partial failure",
+  "description": "In EccKey::create, if step 2 or step 3 fails after the SRK has already been created, the code explicitly calls wolfTPM2_UnloadHandle on the SRK before returning the error. Without this, a failed key-creation attempt would leak the SRK transient slot on the TPM. Transient slots are scarce and the error path is exactly where a maintainer is least likely to think about cleanup. Pattern: create resource, on error in subsequent step, free resource then propagate error. Alternative rejected: a RAII guard struct was considered but adds complexity; explicit flush before return is simpler and equally correct since the SRK is not yet wrapped in a safe Rust type at that point.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:14Z",
+  "updated_at": "2026-04-30T15:10:24Z",
+  "closed_at": "2026-04-30T15:10:24Z"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-v12",
+  "title": "Add P-521 to ecdsa_native.rs",
+  "description": "Add P521 curve marker and EcdsaCurve impl to ecdsa_native.rs. Needs wc_Sha512Hash binding (check if it exists in wolfcrypt-rs/src/lib.rs, add if missing). Gate on wolfssl_ecc_p521 cfg. Add type aliases P521SigningKey/P521VerifyingKey/P521Signature.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T07:43:42Z",
+  "updated_at": "2026-04-04T07:47:15Z",
+  "closed_at": "2026-04-04T07:47:15Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-8lv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-04T00:43:45Z"
+    }
+  ]
+}

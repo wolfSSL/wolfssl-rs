@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.12",
+  "title": "inconsistent key-length validation idiom in aes vs cmac",
+  "description": "AesKey::cache uses: if !matches!(key_bytes.len(), 16 | 24 | 32) { return Err(...) } CmacKey::cache uses: match key_bytes.len() { 16 | 24 | 32 => {} _ => return Err(...) } Both validate the same constraint (AES key size) on the same type (&[u8]). The idioms are semantically identical but visually inconsistent, making it look like a deliberate difference when it is not. Suggested rewrite: standardise on the if !matches!(...) form throughout, as it is more concise and reads as a guard clause.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:03:13Z",
+  "updated_at": "2026-04-27T21:11:45Z",
+  "closed_at": "2026-04-27T21:11:45Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:03:13Z"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-4qh",
+  "title": "TPM_RC_SIZE intercepted as ResponseBufferTooSmall",
+  "description": "In wolftpm_tss/connection.rs, do_transact explicitly checks for TPM_RC_SIZE (0x0095) before the generic Error::check path and maps it to Error::ResponseBufferTooSmall. This gives callers a typed, recoverable signal: they can retry the operation with a larger buffer. If TPM_RC_SIZE fell through to the generic Transport{code} path, callers would have to inspect the raw numeric code to distinguish 'my buffer was too small' from 'the TPM has a problem'. The shim also returns TPM_RC_SIZE when the caller-supplied rsp buffer is too small, so the signal propagates correctly end-to-end from C shim through Rust to the tpm2-rs Connection trait consumer. Alternative rejected: having the shim return a different sentinel value was considered but would require coordinating a non-standard error code; reusing the standard TPM_RC_SIZE is cleaner.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:53Z",
+  "updated_at": "2026-04-30T15:10:23Z",
+  "closed_at": "2026-04-30T15:10:23Z"
+}

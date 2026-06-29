@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-5k6",
+  "title": "Remove EVP ecdsa.rs and clean up cfg gates",
+  "description": "After ecdsa_native.rs is complete: (1) delete wolfcrypt/src/ecdsa.rs, (2) change lib.rs to always use ecdsa_native.rs (drop wolfssl_openssl_extra condition and not(wolfssl_openssl_extra) condition), (3) update P-521 re-export gate to remove wolfssl_openssl_extra, (4) update conformance test cfg guards in ecdsa.rs and wycheproof_ecdsa.rs.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T07:43:42Z",
+  "updated_at": "2026-04-04T07:48:46Z",
+  "closed_at": "2026-04-04T07:48:46Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-v12",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-04T00:43:45Z"
+    }
+  ]
+}

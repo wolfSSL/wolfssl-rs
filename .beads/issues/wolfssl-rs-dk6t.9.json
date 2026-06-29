@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-dk6t.9",
+  "title": "FMT1 modifier stripping in verify is spec-correct with clear explanation",
+  "description": "EccKey::verify strips TPM2 FMT1 modifier bits (P-flag bit 8, S-flag bit 6, subject number bits 11:9 = mask 0x0F40) before comparing to TPM_RC_SIGNATURE. The condition (rc & 0x80) \\!= 0 && (rc & 0xF000) == 0 is the correct discriminator for FMT1 codes per TPM2 Part 2 \u00a76.6.3. The comment explains why 'bit 8 clear' is not used as the discriminator (subject number 1 sets bit 8, so TPM_RC_SIGNATURE+param_1 = 0x1DB would bypass stripping). A future contributor might suggest simplifying this to a direct rc == TPM_RC_SIGNATURE check; this would break for any FMT1-decorated return code from wolfTPM.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:57:03Z",
+  "updated_at": "2026-04-30T15:10:32Z",
+  "closed_at": "2026-04-30T15:10:32Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dk6t",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:57:03Z"
+    }
+  ]
+}

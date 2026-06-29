@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-7avu",
+  "title": "Review pass 2: wolftpm crates post-fixes",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T16:01:13Z",
+  "updated_at": "2026-04-30T16:01:59Z",
+  "closed_at": "2026-04-30T16:01:59Z",
+  "notes": "Maintainer risk: LOW \u2014 All P1/P2 findings fixed. One residual: wolftpm-tss Transport error display still has a 3-entry inline match for wolfTPM internal codes; could also call wolftpm_sys::tpm_rc::tpm_rc_name but the codes are different (transport-layer vs TPM-layer) and the inline table is correct. Opinion-level remaining item only.\nConfidence: 5% chance of missed bug. No new issues introduced by the fixes. All tests pass. Idiom rating: CLEAN. Loop has converged \u2014 both passes produce only opinion-level findings."
+}

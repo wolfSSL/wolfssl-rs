@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-dk6t.2",
+  "title": "sign_verify_roundtrip test is its own oracle",
+  "description": "Trigger: key.sign(hash) and key.verify(hash, sig) use the same EccKey on the same TPM. Bad behavior: if both sign and verify are consistently mis-implemented (e.g. wrong hash algorithm, wrong curve), the test still passes \u2014 it proves round-trip self-consistency, not correctness. An interop bug (signatures not verifiable by openssl/RustCrypto) would not be caught. Per the project test integrity rule: 'Never write a test that uses the code under test as its own oracle.' Fix: add a test that verifies a hard-coded externally-generated ECDSA P-256/SHA-256 signature against a known key \u2014 OR export the TPM public key and verify the produced signature with p256/ecdsa from RustCrypto as an independent oracle.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:54:05Z",
+  "updated_at": "2026-04-30T07:04:06Z",
+  "closed_at": "2026-04-30T07:04:06Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dk6t",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:54:07Z"
+    }
+  ]
+}

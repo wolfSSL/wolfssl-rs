@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.16",
+  "title": "AuthPermissions has no way to inspect bits from Rust",
+  "description": "auth.rs: AuthPermissions wraps whAuthPermissions but exposes no Rust-visible constants for individual permission bits. The doc says to use wolfHSM C macros but does not cite the header file or macro names. A contributor who wants to check or set a specific permission bit has no starting point without reading C headers manually. Add at minimum a doc cross-reference to the wolfHSM wh_user.h header and the WH_AUTH_PERM_* macro names, so the workflow for setting permissions is self-contained in the Rust docs.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:28Z",
+  "updated_at": "2026-04-28T00:43:23Z",
+  "closed_at": "2026-04-28T00:43:23Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:27Z"
+    }
+  ]
+}

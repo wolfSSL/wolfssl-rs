@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-jzz",
+  "title": "RSA migration: audit remaining OPENSSL_EXTRA users and measure code size",
+  "description": "After RSA cfg gates are cleaned up, audit ALL remaining wolfssl_openssl_extra usages across the workspace and determine whether OPENSSL_EXTRA can be removed from wolfssl-src/user_settings.h.\n\nAudit steps:\n1. grep -r 'wolfssl_openssl_extra' --include='*.rs' to list all remaining users\n2. For each user: determine if it's RSA (should be gone), or something else still legitimately needing it\n3. Check wolfcrypt-ring-compat: does it use any EVP/OPENSSL_EXTRA functions?\n4. Check wolfcrypt-dpe and wolfcrypt-dpe-hw: do they use any OpenSSL compat functions?\n5. If all non-RSA users have been migrated or confirmed unnecessary, remove #define OPENSSL_EXTRA from wolfssl-src/user_settings.h\n\nCode size measurement:\n- Build wolfssl-src with and without OPENSSL_EXTRA\n- Record .text size delta via nm/size on libwolfssl.a\n- Document expected saving in commit message\n\nAcceptance criteria:\n- All remaining wolfssl_openssl_extra users are documented with rationale (keep vs migrate)\n- If OPENSSL_EXTRA is removed: full test suite still passes; code size saving is documented\n- If OPENSSL_EXTRA cannot yet be removed: a follow-up issue is filed for each remaining blocker",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:11:18Z",
+  "updated_at": "2026-04-04T06:06:09Z",
+  "closed_at": "2026-04-04T06:06:09Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-ecz",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T21:11:32Z"
+    }
+  ]
+}

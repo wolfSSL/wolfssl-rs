@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-0mm",
+  "title": "wolfhsm: document with_xxx_key closure RAII pattern at crate level",
+  "description": "## Why\\nThe `with_xxx_key` closure-based RAII pattern (e.g. `client.with_ecc_p256_key(|key, client| {...})`) is unfamiliar to RustCrypto users who expect RAII-drop types. A module-level doc comment in `crypto/mod.rs` explains the design, but there is no crate-level docs explaining the pattern and why it was chosen over RAII drop types.\\n\\n## What needs to be done\\n- Add a crate-level doc comment in `lib.rs` (or a `README.md` linked from it) with a section explaining:\\n  - Why `&mut Client` is required for every operation (serial request-response socket)\\n  - Why key lifetime uses closures rather than RAII drop (borrow checker: can't hold `&mut Client` inside a struct that also needs `&mut Client` to evict)\\n  - Usage example for `with_ecc_p256_key`\\n  - How to use multiple keys in sequence\\n\\n## Acceptance criteria\\n- `cargo doc -p wolfhsm` shows meaningful crate-level documentation\\n- The design rationale for `with_xxx_key` is visible at the top level",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:00:56Z",
+  "updated_at": "2026-04-28T01:32:01Z",
+  "closed_at": "2026-04-28T01:32:01Z"
+}

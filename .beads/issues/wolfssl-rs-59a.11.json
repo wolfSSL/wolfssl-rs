@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.11",
+  "title": "CryptoCbGuard has no lifetime binding to Client; use-after-free possible",
+  "description": "register_cryptocb() stores a *mut whClientContext into wolfCrypt's global CryptoCb table and returns a CryptoCbGuard with no lifetime tying it to the Client. If the caller drops the Client while holding the guard (e.g. let guard = client.register_cryptocb()?; drop(client);), the Client::drop runs wh_Client_Cleanup and frees the inner Box, leaving a dangling pointer in the wolfCrypt table. Any subsequent wolfCrypt operation dispatched to DEV_ID dereferences freed memory.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:15Z",
+  "updated_at": "2026-04-27T18:34:35Z",
+  "closed_at": "2026-04-27T18:34:35Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:14Z"
+    }
+  ]
+}

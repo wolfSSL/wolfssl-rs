@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.31",
+  "title": "nvm_list skips all objects after first",
+  "description": "nvm_list passes start_id = out_id + 1 on each iteration. The wolfHSM NvmList API requires start_id to be an existing ID (or 0); it searches for an exact match and returns the NEXT object after it. When start_id = out_id + 1 and that value is not an existing ID, the server finds no match and returns count=0, id=0, terminating the loop. Result: only the first NVM object is ever returned; all subsequent objects are silently dropped. Fix: pass start_id = out_id (unchanged) instead of out_id + 1, matching the pattern in the wolfHSM demo and test code.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:08:47Z",
+  "updated_at": "2026-04-27T22:19:05Z",
+  "closed_at": "2026-04-27T22:19:05Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:08:47Z"
+    }
+  ]
+}

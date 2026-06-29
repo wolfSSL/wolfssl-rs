@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-xsf",
+  "title": "wolfhsm: API polish \u2014 idiomatic Rust shape",
+  "description": "The wolfhsm crate wraps the wolfHSM C client API but has several patterns that would surprise a RustCrypto user or cause real bugs. This epic tracks the full cleanup needed to make the crate safe and ergonomic. Issues in priority order: (P1) key cache slot leaks on error paths; (P1) RsaKey pub bits field unsound; (P1) raw RSA without padding scheme; (P2) &mut Client passed to every key op; (P2) sha256 free function vs Client methods inconsistency; (P2) no RustCrypto trait implementations; (P3) NvmMetadata label helpers.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:29:20Z",
+  "updated_at": "2026-04-27T21:14:03Z",
+  "closed_at": "2026-04-27T21:14:03Z"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-alzl.1",
+  "title": "sig.len() cast to c_int via 'as' in EccKey::sign \u2014 inconsistent with hash_sz try_from",
+  "description": "key.rs line 140: sig_sz initialized with 'sig.len() as c_int' while hash_sz on line 146 uses try_from. The 128-byte constant is trivially in range, but the inconsistency means a contributor who changes the buffer size may not think to add bounds checking \u2014 a future buf resize to >2GiB (unlikely) would silently truncate. Apply try_from consistently.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:39:49Z",
+  "updated_at": "2026-04-30T06:46:01Z",
+  "closed_at": "2026-04-30T06:46:01Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-alzl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:39:48Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.16",
+  "title": "&mut Client as explicit parameter on key methods enforces single-inflight-operation on stateful protocol",
+  "description": "Every crypto key method (sign_digest, verify_digest, ecdh, sign, verify, raw_function, etc.) takes client: &mut Client rather than storing a reference inside the key handle. The wolfHSM protocol is a request/response protocol over a socket; the C layer is not re-entrant and cannot interleave requests. Taking &mut Client ensures Rust's borrow checker statically prevents two concurrent calls. The module-level doc comment (crypto/mod.rs) explicitly documents this reasoning. A future contributor might propose storing a reference or Arc<Mutex<Client>> in the key struct to make the API more ergonomic. Storing a reference would require a lifetime parameter on every key type (viral complexity). Using Arc<Mutex<Client>> would hide the single-operation constraint behind a runtime lock and add allocation overhead. The explicit &mut Client parameter is the idiomatic Rust expression of an exclusive-access protocol requirement.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:07Z",
+  "updated_at": "2026-04-27T21:12:46Z",
+  "closed_at": "2026-04-27T21:12:46Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:07Z"
+    }
+  ]
+}

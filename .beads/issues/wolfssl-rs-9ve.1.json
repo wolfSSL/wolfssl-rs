@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-9ve.1",
+  "title": "HsmSha finalize_into: undocumented silent-zeros on HSM error",
+  "description": "HsmSha256/384/512::finalize_into zeroes the output buffer and calls log::error\\! when the HSM call fails, but this behavior is completely undocumented. The digest::FixedOutput trait cannot propagate errors, so callers have no way to detect failure. A caller that checks the output for a known-bad value (all zeros) would need to know to do this. Fix: add explicit doc to each HsmSha* struct saying 'If the HSM call fails, finalize_into writes all-zero bytes to the output and emits a log::error\\! entry. There is no other signal.'",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:43:19Z",
+  "updated_at": "2026-04-28T01:44:49Z",
+  "closed_at": "2026-04-28T01:44:49Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9ve",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:43:18Z"
+    }
+  ]
+}

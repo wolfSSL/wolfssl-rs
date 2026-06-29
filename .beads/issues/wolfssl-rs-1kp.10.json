@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-1kp.10",
+  "title": "with_key! macro centralises evict-on-error across all key types",
+  "description": "The with_key! macro in key.rs is used by all five with_*_key() methods (rsa, mldsa, ecc_p256, ed25519, curve25519) to guarantee eviction on both the success and error paths. On success, an eviction error is propagated (?). On error, eviction is best-effort and the original error is returned (not the eviction error). A future contributor might inline the evict logic into each with_*_key() method, or convert the macro to a generic function. The macro is preferable here: it needs to set key.id = KeyId::ERASED on the key *before* calling evict in order to suppress the Drop warning without triggering a double-evict, and doing this via a closure or trait would require either an additional trait bound or unsafe manipulation. The macro makes the ERASED sentinel assignment visible and auditable at the point of use in one place.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:18Z",
+  "updated_at": "2026-04-27T22:36:49Z",
+  "closed_at": "2026-04-27T22:36:49Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:18Z"
+    }
+  ]
+}

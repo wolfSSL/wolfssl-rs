@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.2",
+  "title": "EccKey double-flush: flush() called by drop, then drop re-calls flush via Drop impl",
+  "description": "Device::with_ecc_key comment says 'Drop flushes the key via EccKey::drop; no explicit flush needed.' EccKey::flush is pub(crate) and EccKey::Drop calls self.flush(). This path is fine. However, if wolfTPM2_UnloadHandle on a handle that has already been unloaded by a prior error-path flush in create() is not idempotent when the handle value is non-zero but stale, a double-unload could be issued. More specifically: after wolfTPM2_CreateAndLoadKey fails, create() calls UnloadHandle on srk and returns Err \u2014 but key was zeroed and never loaded, so no key handle exists. The subsequent EccKey construction is aborted (Err path returns before Ok(Self{...})). No actual double-flush of a live key occurs in the current code. However, flush() on a zeroed WOLFTPM2_KEY (handle == 0) being passed to wolfTPM2_UnloadHandle is undocumented; if wolfTPM treats handle-value 0 as TPM_RH_NULL and that is not a no-op, this could generate a spurious TPM command. Not a guaranteed bug but wolfTPM's contract on handle==0 is not documented in the Rust code or SAFETY comments.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:03:26Z",
+  "updated_at": "2026-04-30T06:12:37Z",
+  "closed_at": "2026-04-30T06:12:37Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:03:25Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.1",
+  "title": "eviction error silently dropped on with_xxx_key error path",
+  "description": "When f() returns Err in with_mldsa_key / with_rsa_key / with_aes_key / with_ecc_p256_key / with_ed25519_key / with_curve25519_key / with_cmac_key, the evict variable (Result<(), WolfHsmError>) is silently dropped \u2014 the eviction error is lost. The HSM cache slot may remain leaked with no diagnostic. Trigger: f returns Err AND key_evict also fails (e.g. server restarted between generate and evict). Bad behavior: caller sees only the original error; cache slot is never freed, and no error or warning about the failed eviction is surfaced.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:02:17Z",
+  "updated_at": "2026-04-27T21:07:39Z",
+  "closed_at": "2026-04-27T21:07:39Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:02:17Z"
+    }
+  ]
+}

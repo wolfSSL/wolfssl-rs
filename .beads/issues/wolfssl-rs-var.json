@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-var",
+  "title": "Add missing wc_ecc_* bindings to wolfcrypt-rs if needed",
+  "description": "Add wc_ecc_set_rng to the extern block in wolfcrypt-rs/src/lib.rs. This is the only missing binding: wc_ecc_check_key is already bound (line 3037). wc_ecc_set_rng is required because ECC_TIMING_RESISTANT is enabled in the pre-built wolfssl-install, causing wc_ecc_shared_secret to return MISSING_RNG_E if private_key->rng == NULL. Pattern: follow the style of existing wc_ecc_* bindings around line 3037. Declaration in wolfssl header: int wc_ecc_set_rng(ecc_key* key, WC_RNG* rng). After adding, run cargo build to confirm the symbol links.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T06:56:06Z",
+  "updated_at": "2026-04-04T07:02:03Z",
+  "closed_at": "2026-04-04T07:02:03Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-dtv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-03T23:56:48Z"
+    }
+  ]
+}

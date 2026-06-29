@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-drq",
+  "title": "Add wc_AesKeyWrap and wc_AesKeyUnWrap bindings to wolfcrypt-rs",
+  "description": "Add two bindings to the extern block in wolfcrypt-rs/src/lib.rs, gated under #[cfg(wolfssl_aes_keywrap)] if appropriate (or ungated if the symbol is always present). Signatures from wolfssl/wolfcrypt/aes.h: int wc_AesKeyWrap(const byte* key, word32 keySz, const byte* in, word32 inSz, byte* out, word32 outSz, const byte* iv); int wc_AesKeyUnWrap(const byte* key, word32 keySz, const byte* in, word32 inSz, byte* out, word32 outSz, const byte* iv). In Rust: pub fn wc_AesKeyWrap(key: *const u8, keySz: u32, in_: *const u8, inSz: u32, out: *mut u8, outSz: u32, iv: *const u8) -> c_int. Place near the existing AES key wrap section (around line 1442). Run cargo build -p wolfcrypt-rs to confirm symbols link.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T07:29:17Z",
+  "updated_at": "2026-04-04T07:31:45Z",
+  "closed_at": "2026-04-04T07:31:45Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-sn9",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-04T00:29:30Z"
+    }
+  ]
+}

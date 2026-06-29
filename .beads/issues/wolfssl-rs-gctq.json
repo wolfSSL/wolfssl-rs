@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-gctq",
+  "title": "Review: wolftpm crate suite (Device, EccKey, TSS Connection)",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:33:06Z",
+  "updated_at": "2026-04-30T15:41:43Z",
+  "closed_at": "2026-04-30T15:41:43Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 duplicate swtpm init is the primary concern; it is a maintenance-time bomb not a runtime bug. The Send impl is a structural risk but wolfTPM is stable and well-tested.\nConfidence: 15% chance of missed bug. Least confident flags: unsafe impl Send for Device (depends on wolfTPM internal thread safety guarantees I cannot verify from this repo). Uncertainty driven by: C library internals not visible; FMT1 modifier bit logic relies on TPM2 spec interpretation. Would raise confidence if: wolfTPM source tree reviewed for global state; FMT2 variant codes (with modifier combinations) were tested against an actual TPM.\nIdiom rating: CLEAN \u2014 error types are structured and non-exhaustive, all unsafe blocks have SAFETY comments, borrows are correctly scoped, no gratuitous clone, iterator patterns are used correctly. The only idiomatic concern is the duplicate helpers across crates which is a structural consequence of the crate split, not a Rust idiom failure.\nRust idiom confidence: 10% chance of missed issue. Least confident flags: e.get() as u32 cast in wolftpm-tss/src/error.rs:126 (depends on TssError::get() return type from unpublished tpm-rs crate). Uncertainty driven by: tpm-rs git dep not in local checkout."
+}

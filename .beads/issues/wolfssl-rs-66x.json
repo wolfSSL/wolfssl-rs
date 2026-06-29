@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-66x",
+  "title": "wolfhsm: accept &str labels on nvm_add and key_cache",
+  "description": "## Why\\nBoth `Client::nvm_add` and `Client::key_cache` take `label: &[u8]`. NVM labels in practice are ASCII strings (e.g. `\"my-key\"`). Requiring `.as_bytes()` at every call site is slightly more friction than necessary. Accepting `impl AsRef<[u8]>` (which both `&str` and `&[u8]` satisfy) would let callers pass string literals directly.\\n\\n## What needs to be done\\n- Change `label: &[u8]` to `label: impl AsRef<[u8]>` on `nvm_add`, `nvm_overwrite`, and `key_cache`\\n- Add a `.as_ref()` call at the start of each function body\\n- Internal call sites that already pass `b\"aes\"` byte literals continue to work\\n\\n## Acceptance criteria\\n- `client.nvm_add(id, 0, 0, \"my-label\", &data)` compiles without `.as_bytes()`\\n- `client.nvm_add(id, 0, 0, b\"my-label\", &data)` also compiles",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:00:55Z",
+  "updated_at": "2026-04-28T01:30:41Z",
+  "closed_at": "2026-04-28T01:30:41Z"
+}

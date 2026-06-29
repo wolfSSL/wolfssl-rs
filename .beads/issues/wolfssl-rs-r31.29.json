@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.29",
+  "title": "TpmRc pub field exposes raw u32 \u2014 no invariant protection or controlled access",
+  "description": "TpmRc(pub u32) exposes its inner field publicly. The type has an is_success() method suggesting it is meant to be used through its API, but callers can write TpmRc(0) or read .0 directly. If the intent is a value type, the field should be private with an accessor fn raw(&self) -> u32. Public fields on newtypes are idiomatic only when the newtype adds zero semantic meaning \u2014 here is_success() proves it adds meaning.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:09:42Z",
+  "updated_at": "2026-04-30T06:19:35Z",
+  "closed_at": "2026-04-30T06:19:35Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:09:41Z"
+    }
+  ]
+}

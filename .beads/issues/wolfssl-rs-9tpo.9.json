@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.9",
+  "title": "Error::check in wolftpm::error and wolftpm-tss::error are symmetric but separate",
+  "description": "wolftpm::Error::check (maps rc\u2192Tpm{rc}) and wolftpm_tss::Error::check (maps rc\u2192Transport{code}) have identical structure but produce different error types. This is correct and intentional given the two error domains. However, wolftpm_tss::Error::check is pub(crate) while wolftpm::Error::check is pub \u2014 inconsistency with no stated reason. A future contributor may make one public by copying the other. Suggest documenting why wolftpm_tss::Error::check is crate-private.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:29:43Z",
+  "updated_at": "2026-04-30T06:37:56Z",
+  "closed_at": "2026-04-30T06:37:56Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:29:42Z"
+    }
+  ]
+}

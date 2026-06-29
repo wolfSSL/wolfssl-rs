@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.8",
+  "title": "aes: redundant iv len conversion after exact-size guard",
+  "description": "In crypto/aes.rs, gcm_encrypt and gcm_decrypt both check iv.len() != 12 then immediately do u32::try_from(iv.len()), which can never fail (12 fits in u32). The try_from exists for mechanical consistency with the other conversions but obscures that iv_len is always the constant 12. Rewrite: remove the try_from and write let iv_len: u32 = 12; (or pass 12u32 directly to the FFI call), making clear the length is structurally fixed.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:10Z",
+  "updated_at": "2026-04-28T02:12:42Z",
+  "closed_at": "2026-04-28T02:12:42Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:10Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.2",
+  "title": "with_xxx_key RAII helpers: correct error priority when eviction also fails",
+  "description": "with_rsa_key/with_ecc_p256_key/with_ed25519_key use a FnOnce closure + explicit evict-after pattern that always attempts eviction, but surfaces the original operation error rather than an eviction error on the failure path (and surfaces the eviction error only on the success path). A future contributor might suggest using a Drop impl on the key handle to auto-evict, which would silently swallow the eviction error or require a separate error channel. The current design is correct: HSM cache slot leaks are a liveness issue (will eventually exhaust slots), the operation error is the root cause the caller needs to act on, and the eviction error on success is a distinct failure the caller should know about.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:40:33Z",
+  "updated_at": "2026-04-27T21:12:57Z",
+  "closed_at": "2026-04-27T21:12:57Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:40:33Z"
+    }
+  ]
+}

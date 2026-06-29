@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-2k0w.8",
+  "title": "hash_sz try_from in sign/verify is unreachable dead code",
+  "description": "In key.rs::sign() and key.rs::verify(), after validating hash.len() == 32, the code does: let hash_sz = std::ffi::c_int::try_from(hash.len()).map_err(|_| Error::InvalidArg(...))?; The error branch is provably unreachable (32 fits in c_int; the comment even says so). The try_from is noise that implies a runtime check without providing one (clippy::useless_conversion). Idiomatic Rust: let hash_sz: c_int = 32; or hash.len() as c_int with a comment.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T16:24:27Z",
+  "updated_at": "2026-04-30T16:34:36Z",
+  "closed_at": "2026-04-30T16:34:36Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2k0w",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T09:24:27Z"
+    }
+  ]
+}

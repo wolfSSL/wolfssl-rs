@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.17",
+  "title": "she.rs CBC: IV length passed as magic literal 16u32",
+  "description": "In she.rs, she_enc_cbc and she_dec_cbc pass the IV length to the C API as the literal 16u32, even though the IV is typed as &[u8; 16] (so iv_buf.len() is 16 by construction). All other slice lengths in the file are derived from the slice itself. Rewrite: pass iv_buf.len() as u32 (or a named constant like SHE_BLOCK_SZ = 16) so the relationship between the type and the argument is explicit rather than a bare magic literal.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:30Z",
+  "updated_at": "2026-04-28T02:12:50Z",
+  "closed_at": "2026-04-28T02:12:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:29Z"
+    }
+  ]
+}

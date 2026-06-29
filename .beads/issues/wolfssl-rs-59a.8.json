@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.8",
+  "title": "WH_ERROR_GENERAL misused as sentinel for unrelated errors",
+  "description": "Two sites use WolfHsmError::Wh { code: -2000 } (WH_ERROR_GENERAL) to signal conditions that are not WH_ERROR_GENERAL: (1) client.rs register_cryptocb line 59: 'already registered' maps to -2000. (2) key.rs key_cache line 40: 'data too large for u16' maps to -2000. In both cases the error display will say 'wolfHSM error -2000' which looks like a server error, not a local precondition failure. Suggested rewrite: add a WolfHsmError::Client { msg: &'static str } variant (or reuse WolfHsmError::Ffi with code: -1 and a descriptive func string, which is already done in other precondition checks in the same file) for locally-detected errors that have no WH error code. Using Ffi { code: -1, func: \"register_cryptocb: already registered\" } is self-consistent with the existing pattern in echo() and nvm_write().",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:02Z",
+  "updated_at": "2026-04-27T19:08:38Z",
+  "closed_at": "2026-04-27T19:08:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:02Z"
+    }
+  ]
+}

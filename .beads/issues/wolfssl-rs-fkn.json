@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-fkn",
+  "title": "Magic number 11 for TPM_ALG_SHA256 in pcr_read",
+  "description": "In wolftpm/src/device.rs line 115, the SHA-256 algorithm ID is passed as a bare integer literal `11` with only an inline comment, rather than using the typed constant `wolftpm_sys::TPM_ALG_ID_T_TPM_ALG_SHA256` that key.rs uses for the same purpose. This inconsistency means a reader has to look up the constant to confirm correctness, and a future refactor might miss this site. Replace with the same typed cast pattern used in key.rs.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:32Z",
+  "updated_at": "2026-04-30T05:31:42Z",
+  "closed_at": "2026-04-30T05:31:42Z"
+}

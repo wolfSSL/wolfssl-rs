@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-wmp",
+  "title": "Review round 1: wolfhsm API idiomaticity changes",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:05:31Z",
+  "updated_at": "2026-04-27T22:20:35Z",
+  "closed_at": "2026-04-27T22:20:35Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 API surface is well-structured and the RAII key-lifetime pattern is sound, but there are 8 specific issues: one logic divergence (mldsa inlines with_key!), one opaque API footgun (NVM access/flags), one real functionality hole (TCP port cap at 32767), two error taxonomy inconsistencies (AuthPermissions no PartialEq, MlDsaKey Ffi vs BadArgs), one undocumented protocol assumption (nvm_list sequential IDs), one library hygiene violation (eprintln! in error path), and one naming trap (wolfhsm_rsa_sign for all RSA ops). None individually is a release blocker, but together they will generate a steady trickle of issue reports and contributor confusion.\nConfidence: 15% chance of missed bug. Uncertainty driven by: (1) I cannot see the wolfhsm-sys shims.c or wolfhsm_sys C bindings \u2014 if wolfhsm_rsa_sign truly is a general-purpose dispatch shim, that's fine, but if it only wires up sign paths and ignores the op discriminant for decrypt, that's a correctness bug I cannot rule out from the Rust side alone; (2) I cannot verify the wh_Client_NvmList wire protocol \u2014 if the server does not guarantee ascending ID ordering, nvm_list.10 is worse than filed (data corruption, not just docs); (3) the wolfhsm-sys generated bindings for whAuthPermissions are not visible \u2014 if that struct contains padding bytes, derived PartialEq on it would be wrong and wmp.2 is a correctness bug, not just ergonomics. Would raise confidence if: I could read shims.c to confirm wolfhsm_rsa_sign is truly a full RSA primitive dispatcher; and if I could read the wolfHSM C NvmList docs to confirm monotone-ascending ID semantics. Running out of real complaints: yes. The two issues I labeled opinion (wmp.17, wmp.9) are the only ones I found where the engineering case does not survive scrutiny. Every other filed issue has a real engineering basis.\nReview converged after 1 round(s). P0=2 P1=8 P2=1 found, all fixed. Final review: wolfssl-rs-wmp."
+}

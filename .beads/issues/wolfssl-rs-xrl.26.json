@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.26",
+  "title": "evict() takes key by value preventing use-after-evict",
+  "description": "The evict() method on RsaKey, EccP256Key, and Ed25519Key takes self by value: fn evict(self, client: &mut Client). Consuming self means the key handle cannot be used after eviction; any attempt to call sign_digest or similar after evict() is a compile error. A future contributor might change this to &self or &mut self. Taking &self would allow calling evict() and then continuing to use the key handle, which would cause the HSM to return an error on the next operation (key slot gone). Taking self is correct: eviction is a terminal operation and the type system should enforce that.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:42:05Z",
+  "updated_at": "2026-04-27T21:13:08Z",
+  "closed_at": "2026-04-27T21:13:08Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:42:04Z"
+    }
+  ]
+}

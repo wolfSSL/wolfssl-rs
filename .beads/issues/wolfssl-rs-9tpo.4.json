@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.4",
+  "title": "duplicated libc env helpers are a silent divergence risk",
+  "description": "libc_setenv and libc_unsetenv are byte-for-byte duplicated between wolftpm/src/device.rs and wolftpm-tss/src/connection.rs with a comment saying 'fix it in both files.' A future contributor who finds a bug (e.g. missing overwrite=1 flag on setenv) will fix one copy and not the other. The duplication comment is the only protection against drift \u2014 it won't be read by a contributor who does not search both files. Maintenance consequence: class of bugs where the two copies diverge silently.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:28:41Z",
+  "updated_at": "2026-04-30T06:37:19Z",
+  "closed_at": "2026-04-30T06:37:19Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:28:41Z"
+    }
+  ]
+}

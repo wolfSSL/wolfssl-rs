@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-fmmh.5",
+  "title": "WolfTpmLinuxDev::open doc comment names WOLFTPM_LINUX_DEV but transport is feature-driven",
+  "description": "wolftpm-tss/src/connection.rs:133: The doc for WolfTpmLinuxDev::open says 'Calls wolfTPM2_Init with the WOLFTPM_LINUX_DEV transport. When wolfTPM is built with --enable-devtpm, ioCb is not used.' This is accurate but incomplete: the actual transport (WOLFTPM_LINUX_DEV, WOLFTPM_LINUX_DEV_AUTODETECT, or TIS) depends on which Cargo feature (linux-dev or none) was used to build wolftpm-sys. Without the linux-dev feature, wolfTPM falls back to its compile-time default (TIS/autodetect). A user reading this doc for the no-feature case won't understand what transport they're getting. The comment should describe the feature flag's effect on transport selection, mirroring the equivalent doc in wolftpm::Device::open.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:53:57Z",
+  "updated_at": "2026-04-30T16:00:47Z",
+  "closed_at": "2026-04-30T16:00:47Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fmmh",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:53:56Z"
+    }
+  ]
+}

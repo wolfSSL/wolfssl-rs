@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-717",
+  "title": "wolfhsm-src: build.rs",
+  "description": "Implement wolfhsm-src/build.rs: locate source tree via WOLFHSM_SRC or ~/GIT/wolfHSM (panic with clear message if missing); accept WOLFSSL_INCLUDE_DIR + WOLFSSL_SETTINGS_INCLUDE env vars; compile all 20 src/ files (wh_comm.c, wh_message_comm/crypto/keystore/nvm/counter/auth/she.c, wh_client.c, wh_client_crypto/nvm/cryptocb/keywrap/auth/cert/she.c, wh_keyid/lock/log/utils.c) and 7 port/posix/ files; include paths: wolfhsm root, port/posix, wolfssl_include, wolfssl_settings; compile flag -DWOLFHSM_CFG_NO_WOLFCRYPT=0; emit cargo:INCLUDE and cargo:LIB; rerun-if-env-changed for all env vars. Note: wh_message.c does not exist \u2014 use individually named files.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:17:49Z",
+  "updated_at": "2026-04-27T17:46:55Z",
+  "closed_at": "2026-04-27T17:46:55Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-0uy",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:19:45Z"
+    }
+  ]
+}

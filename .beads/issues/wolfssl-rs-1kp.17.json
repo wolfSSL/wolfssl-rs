@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-1kp.17",
+  "title": "add InvalidSignature variant for verify rejection",
+  "description": "Ffi{code:-1} is used to signal cryptographic signature rejection in three verify functions: ecc.rs:92 (ecc_verify result\\!=1), ed25519.rs:102 (ed25519_verify result\\!=1), mldsa.rs:112 (mldsa_verify result\\!=1). These are not FFI failures \u2014 the FFI returned 0 and the cryptographic check ran to completion, but the signature was invalid. This is a distinct semantic category from protocol errors and from FFI errors. Suggested fix: add WolfHsmError::InvalidSignature variant (no fields needed) and use it at all three sites. The Display impl can emit 'signature verification failed'. This makes match arms unambiguous for callers who want to distinguish 'bad signature' from 'transport failed'.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:22:42Z",
+  "updated_at": "2026-04-27T23:09:52Z",
+  "closed_at": "2026-04-27T23:09:52Z",
+  "notes": "NEEDS HUMAN DECISION: adding InvalidSignature variant is a public API change. Same decision scope as ProtocolError (wolfssl-rs-1kp.14).",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-1kp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:22:42Z"
+    }
+  ]
+}

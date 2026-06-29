@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-5y4",
+  "title": "Review: wolfhsm-src and wolfhsm-sys crates",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:59:46Z",
+  "updated_at": "2026-04-27T18:05:07Z",
+  "closed_at": "2026-04-27T18:05:07Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 2 correctness bugs (CMAC key material leak, silent file skip) + link order bug will cause test failures; all fixable before wolfhsm crate ships.\nConfidence: 25% chance of missed bug. Uncertainty driven by: wh_Client_AesGcm/Cmac API behavior with NULL args not fully verified from source; wolfHSM key import behavior in shims not tested end-to-end. Would raise confidence if: integration tests pass against a live wolfHSM server or the mem-transport mock."
+}

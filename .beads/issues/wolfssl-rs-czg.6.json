@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.6",
+  "title": "nvm_list ignores out_count; may make excess round-trips",
+  "description": "wh_Client_NvmList returns out_count on each call. The current nvm_list loop calls the API once per object, advancing start_id by 1 each iteration and ignoring out_count entirely. If the wolfHSM server can return multiple IDs per call (batch listing), ignoring out_count forces O(N) round-trips instead of O(N/batch) round-trips to enumerate N NVM objects. Expected impact: on a device with many NVM objects (counters, certs, keys) this is linear in N; each round-trip has non-trivial latency over IPC transports. Needs verification against the C API spec to confirm whether out_count > 1 is ever meaningful, but the current code is provably sub-optimal if it is.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:02:40Z",
+  "updated_at": "2026-04-27T21:09:28Z",
+  "closed_at": "2026-04-27T21:09:28Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:02:40Z"
+    }
+  ]
+}

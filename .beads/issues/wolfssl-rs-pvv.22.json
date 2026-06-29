@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.22",
+  "title": "client.rs TransportInner::comm_pointers: three identical match arms",
+  "description": "In client.rs, TransportInner::comm_pointers has three match arms that are structurally identical: each extracts (&inner.transport_cb, &mut inner.transport_ctx as *mut _ as *mut c_void, &inner.transport_cfg as *const _ as *const c_void). The only difference is the concrete type behind the pointer. Because the fields share names (transport_cb, transport_ctx, transport_cfg) across all three Inner structs, a helper macro or a shared trait would eliminate the repetition. Alternatively, extracting a per-variant 'fn as_comm_pointers(&mut self) -> (...)' method on each Inner struct (via a local trait CommPtrs) makes the pattern explicit: impl CommPtrs for TcpInner { fn comm_pointers(&mut self) -> ... { ... } } and then the match arm is just inner.comm_pointers(). This avoids the three-way copy-paste while preserving the unsafe pointer extraction in one place.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:47Z",
+  "updated_at": "2026-04-28T02:06:42Z",
+  "closed_at": "2026-04-28T02:06:42Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:47Z"
+    }
+  ]
+}

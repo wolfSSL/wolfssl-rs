@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.15",
+  "title": "nvm_list infinite-loop guard comment obscures server contract",
+  "description": "The comment on the out_id == 0 guard in nvm_list reads: 'Safety guard against an infinite loop: if the server returns id 0 after a success response, start_id would not advance and the next iteration would send the same query forever.' This frames it as a Rust-side defensive measure, but out_id == 0 means the server returned WH_NVM_ID_INVALID as the next object ID \u2014 that is a server contract violation, not a normal condition we are gracefully handling. A reader who does not know the wolfHSM API will not understand why id 0 is special or how serious this is. What would make it clear: rewrite as 'out_id == 0 is WH_NVM_ID_INVALID \u2014 the server should never return this as a valid object ID. If it does, the list is corrupt; break rather than looping forever on the same query.' Optionally return an error instead of silently truncating the list.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:03:37Z",
+  "updated_at": "2026-04-27T21:11:50Z",
+  "closed_at": "2026-04-27T21:11:50Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:03:37Z"
+    }
+  ]
+}

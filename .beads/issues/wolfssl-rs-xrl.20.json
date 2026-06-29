@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.20",
+  "title": "NvmId::INVALID sentinel distinguishes auto-assign from overwrite; DataLost surfaces non-atomic delete-add hazard",
+  "description": "nvm_write uses NvmId::INVALID (0) as a sentinel to distinguish 'create with server-assigned ID' from 'overwrite existing ID'. When overwriting, the delete-then-add is not atomic (NVM has no rollback), and if the add fails the original object is permanently lost. The WolfHsmError::DataLost { id } variant is returned in that case, carrying the affected ID so the caller has full diagnostic information. A future contributor might suggest treating a failed overwrite as a plain Ffi error, or trying to restore the old object. The NVM protocol has no rollback primitive; pretending the error is recoverable would be wrong. Naming it DataLost and carrying the ID is the correct honest contract: the caller knows exactly what was lost and can decide whether to write audit logs, alert, or halt.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:26Z",
+  "updated_at": "2026-04-27T21:13:00Z",
+  "closed_at": "2026-04-27T21:13:00Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:25Z"
+    }
+  ]
+}

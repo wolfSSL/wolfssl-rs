@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-5y4.9",
+  "title": "wolfhsm-sys: wolfhsm_cfg.h include path is fragile for wh_settings.h",
+  "description": "wolfhsm_cfg.h is generated in wolfhsm-src's OUT_DIR and passed as DEP_WOLFHSM_SRC_LIB. wolfhsm-sys prepends this with -I to bindgen and cc. This is the only correct way to inject a generated header without modifying the wolfHSM source tree. A contributor might suggest 'just copy wolfhsm_cfg.h into the src/ directory' \u2014 don't do this; it would need to be committed and kept in sync manually. The OUT_DIR approach is correct.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:00:47Z",
+  "updated_at": "2026-04-27T18:05:05Z",
+  "closed_at": "2026-04-27T18:05:05Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-5y4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:00:47Z"
+    }
+  ]
+}

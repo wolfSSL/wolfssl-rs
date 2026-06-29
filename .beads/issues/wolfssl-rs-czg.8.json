@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.8",
+  "title": "with_*_key pattern copy-pasted across 7 files",
+  "description": "The scoped-key guard pattern (generate/cache, call f, mark ERASED, evict, propagate result) is copy-pasted verbatim in aes.rs, cmac.rs, ecc.rs, ed25519.rs, curve25519.rs, rsa.rs, and mldsa.rs. The logic is identical in all 7 cases. Any bug fix or policy change (e.g. how to handle eviction errors on the error path) must be applied 7 times. Suggested rewrite: extract a free function in client.rs or a shared internal module: fn with_key<K, F, R>(key: K, id: KeyId, client: &mut Client, f: F) -> Result<R, WolfHsmError> where K: ..., F: FnOnce(&K, &mut Client) -> Result<R, WolfHsmError> { let result = f(&key, client); // set ERASED, evict, propagate } Each with_*_key method becomes a one-liner that calls this helper. Alternatively a declarative macro would also eliminate the duplication.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:02:49Z",
+  "updated_at": "2026-04-27T21:11:54Z",
+  "closed_at": "2026-04-27T21:11:54Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:02:49Z"
+    }
+  ]
+}

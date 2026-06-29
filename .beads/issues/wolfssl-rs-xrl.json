@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-xrl",
+  "title": "Review round 1: wolfhsm API polish",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:39:22Z",
+  "updated_at": "2026-04-27T21:13:55Z",
+  "closed_at": "2026-04-27T21:13:55Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 key-handle leak without Drop is the highest-frequency user issue; RSA and ML-DSA self-oracle tests violate test integrity and set a bad precedent; MlDsaKey::level public mutable field is a correctness trap that will fossilize as API; nvm_write auto-assign returns no ID. No memory-safety or hostile-input issues found."
+}

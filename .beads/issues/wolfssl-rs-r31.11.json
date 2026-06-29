@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.11",
+  "title": "WolfTpmLinuxDev inner field is dead_code \u2014 allow(dead_code) suppresses a real question",
+  "description": "connection.rs WolfTpmLinuxDev.inner is annotated #[allow(dead_code)]. The comment says 'Accessed by the tss feature's Connection impl and by Drop propagation.' When the 'tss' feature is disabled, inner is truly dead because there is no Connection impl to use dev. However Drop is still implemented on WolfTpmDev which is accessed via inner.dev in the Drop impl of... wait, WolfTpmLinuxDev does not have a Drop impl \u2014 Drop is on WolfTpmDev, so inner being dropped transitively calls WolfTpmDev::drop. The #[allow(dead_code)] suppresses a warning that the field is 'never read', which is technically correct: the field is held only for its Drop side effect. A comment explaining this RAII intent would prevent a future contributor from 'cleaning up' the field.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:04:52Z",
+  "updated_at": "2026-04-30T06:13:12Z",
+  "closed_at": "2026-04-30T06:13:12Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:04:52Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-suj.3",
+  "title": "wolfhsm transport.rs: safe transport config types",
+  "description": "Create wolfhsm/src/transport.rs. Expose Rust-friendly transport config types: TcpTransport { ip: String, port: u16 }, UdsTransport { path: String }, ShmTransport { name: String, req_size: u16, resp_size: u16 }. Each holds owned Rust data and provides a method that builds the C config struct (lifetime tied to self). The C structs (posixTransportTcpConfig, etc.) are in wolfhsm-sys bindings. Use unsafe internally to build C structs; public API is safe. In lib.rs: pub mod transport;",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:11:00Z",
+  "updated_at": "2026-04-27T18:14:16Z",
+  "closed_at": "2026-04-27T18:14:16Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-suj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:11:00Z"
+    }
+  ]
+}

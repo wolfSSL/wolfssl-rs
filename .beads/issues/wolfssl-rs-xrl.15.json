@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.15",
+  "title": "RSA integration test is a self-oracle (no independent verification)",
+  "description": "tests/integration.rs rsa_round_trip encrypts with wolfhsm PublicEncrypt and decrypts with wolfhsm PrivateDecrypt using the same key. This is a self-oracle: it tests only that the HSM can reverse its own operation, not that the operation is correct per any standard. A bug that corrupts both encrypt and decrypt symmetrically would pass. Consequence: sets a pattern that contributors will copy for future key types; weakens regression signal. Fix: cross-validate against a pure-Rust RSA crate (e.g. rsa crate) or known PKCS#1 test vectors.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:03Z",
+  "updated_at": "2026-04-27T20:59:14Z",
+  "closed_at": "2026-04-27T20:59:14Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:03Z"
+    }
+  ]
+}

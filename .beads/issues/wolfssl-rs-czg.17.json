@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.17",
+  "title": "Drop+eprintln+consuming evict() RAII pattern is correct and should be defended",
+  "description": "Every key type (AesKey, CmacKey, EccP256Key, Ed25519Key, Curve25519Key, RsaKey, MlDsaKey) implements Drop to emit an eprintln warning if the key ID is not ERASED at drop time, and exposes a consuming evict(self, client) method rather than an &mut self method. Why this is correct: (1) evict() consuming self ensures the key handle is inaccessible after eviction, making use-after-evict a compile error rather than a runtime bug. (2) Drop uses eprintln rather than panic\\! because panicking in Drop is unsound (double-panic aborts the process) and can trigger during stack unwind, hiding the original error. (3) The ERASED sentinel pattern (replacing id before eviction) prevents the Drop warning from firing on the happy path without requiring an Option<KeyId>. A future contributor might suggest: 'use Option<KeyId> instead of a sentinel' (more idiomatic but adds a branch to every operation); 'panic in Drop' (unsound); or 'impl Drop that auto-evicts by storing a Client reference' (would require Client to be Rc/Arc, which contradicts the \\!Sync design). The current pattern is the right trade-off for a \\!Sync, non-Clone, FFI-backed resource handle.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:03:59Z",
+  "updated_at": "2026-04-27T21:10:35Z",
+  "closed_at": "2026-04-27T21:10:35Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:03:58Z"
+    }
+  ]
+}

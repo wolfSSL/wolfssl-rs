@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.19",
+  "title": "nvm_write delete-then-add is non-atomic; silent data loss on partial failure",
+  "description": "nvm.rs nvm_write calls nvm_delete(id) before NvmAddObject. If NvmAddObject fails (NVM full, server error, network drop), the original object is permanently gone with no rollback. The doc comment says 'deleted first' but does not warn of non-atomicity or the data-loss window. Users who catch the error and assume the original value is still present will silently operate on a missing object. This will generate hard-to-reproduce bug reports whenever NVM is near capacity.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:46Z",
+  "updated_at": "2026-04-27T18:35:00Z",
+  "closed_at": "2026-04-27T18:35:00Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:46Z"
+    }
+  ]
+}

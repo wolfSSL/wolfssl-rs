@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-0ip.1",
+  "title": "cert_read_trusted: clamps out_len > buffer instead of ProtocolError (inconsistent with nvm_read)",
+  "description": "cert.rs: after calling wh_Client_CertReadTrusted, uses .min(meta.len) to clamp a server-reported out_len > buffer size, silently hiding the anomaly. nvm_read, ecc ops, rsa ops all return ProtocolError on the same condition. Fix: check out_len as usize > buf.len() \u2192 ProtocolError, then buf.truncate(out_len as usize). No actual memory safety risk (C API respects the passed-in cap), but the inconsistency makes the crate harder to audit.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:34:57Z",
+  "updated_at": "2026-04-28T02:35:12Z",
+  "closed_at": "2026-04-28T02:35:12Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-0ip",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:34:56Z"
+    }
+  ]
+}

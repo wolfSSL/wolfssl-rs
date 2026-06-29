@@ -1,0 +1,26 @@
+{
+  "id": "wolfssl-rs-suj.6",
+  "title": "wolfhsm nvm.rs: NvmObject, list, read, write, delete, find_by_label",
+  "description": "Create wolfhsm/src/nvm.rs. NvmId(u16) newtype. NvmMetadata { id: NvmId, access: u16, flags: u16, len: u16, label: [u8; 24] }. Client methods: nvm_available() -> Result<(u32, u16, u32, u16), WolfHsmError> (avail_size, avail_objects, reclaim_size, reclaim_objects). nvm_list() -> Result<Vec<NvmId>, WolfHsmError>: loop calling wh_Client_NvmList starting from WH_NVM_ID_INVALID=0, advancing to next id; break when NOTFOUND (-2104) is returned (that is normal termination, NOT an error). nvm_read(id: NvmId, offset: u16) -> Result<Vec<u8>, WolfHsmError>: first call NvmGetMetadata to get len, then allocate vec and call NvmRead. nvm_write(id: NvmId, access: u16, flags: u16, label: &[u8], data: &[u8]) -> Result<(), WolfHsmError>: first call NvmDestroyObjects with id if id != WH_NVM_ID_INVALID to handle overwrite, then call NvmAddObject. nvm_delete(id: NvmId): calls NvmDestroyObjects with single-id list. nvm_find_by_label(label: &[u8]) -> Result<Option<NvmId>, WolfHsmError>: iterate nvm_list and call NvmGetMetadata for each until label matches. Note: wh_Client_NvmGetAvailable has out_rc, out_avail_size, out_avail_objects, out_reclaim_size, out_reclaim_objects \u2014 call check() on the out_rc i32, not the function return. In lib.rs: pub mod nvm;",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:11:33Z",
+  "updated_at": "2026-04-27T18:23:01Z",
+  "closed_at": "2026-04-27T18:23:01Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-suj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:11:32Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-suj.4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:12:23Z"
+    }
+  ]
+}

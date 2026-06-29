@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.17",
+  "title": "tpm_rc_name match arms use decimal literals for TPM RC codes \u2014 unreadable without a calculator",
+  "description": "wolftpm/src/error.rs tpm_rc_name: all match arms use decimal integer literals (e.g. 256, 2305, 155). The TPM2 spec and wolfTPM headers define these as hex values (0x100, 0x901, 0x09B). A maintainer verifying that the table is complete must mentally convert every entry. The symbolic groups (VER1 0x100-0x17f, FMT1 0x080-0x0BF, WARN 0x900-0x93F) are documented in comments but the actual values don't visually reflect that structure. Rewriting with hex literals would make it immediately obvious which range each code belongs to and allow spot-checking against the spec.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:05:58Z",
+  "updated_at": "2026-04-30T06:23:36Z",
+  "closed_at": "2026-04-30T06:23:36Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:05:57Z"
+    }
+  ]
+}

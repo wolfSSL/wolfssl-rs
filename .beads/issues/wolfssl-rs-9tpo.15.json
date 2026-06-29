@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.15",
+  "title": "Device, WolfTpmLinuxDev, WolfTpmSwtpm missing Debug impl",
+  "description": "wolftpm::Device, wolftpm_tss::WolfTpmLinuxDev, and WolfTpmSwtpm have no Debug impl. Any caller that puts these in a struct that derives Debug, or wants to use {:?} in error logging, is blocked. WolfTpmDev (private) correctly implements manual Debug showing only the pointer address; the public wrapper types should delegate to it or implement the same pattern. Missing Debug on public types is a friction point in the Rust ecosystem \u2014 #[derive(Debug)] is the standard expectation for any library type.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:31:57Z",
+  "updated_at": "2026-04-30T06:36:38Z",
+  "closed_at": "2026-04-30T06:36:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:31:56Z"
+    }
+  ]
+}

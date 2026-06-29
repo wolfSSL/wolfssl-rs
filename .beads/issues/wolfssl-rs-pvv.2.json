@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.2",
+  "title": "cert_verify_and_cache_leaf_pubkey returns raw KeyId with no RAII helper",
+  "description": "cert_verify_and_cache_leaf_pubkey returns a KeyId and documents 'caller is responsible for evicting'. Every other key-producing API in this crate uses a with_xxx_key closure pattern that guarantees eviction. A new contributor, following the dominant pattern, will expect a with_cert_pubkey helper and will be confused when none exists. Callers who forget the manual key_evict leak HSM cache slots; HSM RAM cache exhaustion will manifest as spurious errors in unrelated operations, making the root cause non-obvious.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:56:45Z",
+  "updated_at": "2026-04-28T02:12:29Z",
+  "closed_at": "2026-04-28T02:12:29Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:56:44Z"
+    }
+  ]
+}

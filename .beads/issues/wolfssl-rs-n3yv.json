@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-n3yv",
+  "title": "Review pass 2: wolftpm crate suite (post-fixes)",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:41:51Z",
+  "updated_at": "2026-04-30T15:48:53Z",
+  "closed_at": "2026-04-30T15:48:53Z",
+  "notes": "Pass 2 findings: found SWTPM_INIT_LOCK pub visibility (fixed) and doctest feature-gate issue (deferred). No new correctness bugs. Idiom rating: CLEAN. Confidence: 5% chance of missed issue \u2014 the refactored init_swtpm is a simple delegation with no logic changes."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.6",
+  "title": "nvm_read: out_len not clamped before truncate; stale zeros returned",
+  "description": "nvm_read allocates data_len bytes (meta.len - offset), passes data_len to the C call, then does data.truncate(out_len as usize). If a misbehaving server returns out_len > data_len, Vec::truncate is a no-op (it only shrinks) so the returned Vec has data_len bytes \u2014 the trailing zeros from the allocation appear to be real server data. cert_read_trusted guards this correctly with .min(meta.len), but nvm_read and nvm_read_raw do not. Same flaw in nvm_read_raw: data.truncate(out_len as usize) with no upper-bound check.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:06Z",
+  "updated_at": "2026-04-28T02:02:55Z",
+  "closed_at": "2026-04-28T02:02:55Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:05Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xsmt.7",
+  "title": "sign_and_verify uses RustCrypto p256 as independent oracle \u2014 correct test design",
+  "description": "sign_and_verify_with_independent_oracle exports the TPM public key, signs a SHA-256 digest on the TPM, then verifies with RustCrypto p256 (a completely separate implementation). This proves TPM output is standards-compliant, not merely self-consistent. A future contributor might add a simpler sign+TPM-verify test; that test proves nothing additional and should not replace this one.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T17:43:17Z",
+  "updated_at": "2026-04-30T17:51:08Z",
+  "closed_at": "2026-04-30T17:51:08Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xsmt",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T10:43:17Z"
+    }
+  ]
+}

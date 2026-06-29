@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-2k0w.4",
+  "title": "SAFETY comments on unsafe impl Send are exemplary",
+  "description": "Both Device (wolftpm/src/device.rs) and WolfTpmLinuxDev / WolfTpmSwtpm (wolftpm-tss/src/connection.rs) have thorough SAFETY comments on unsafe impl Send, citing: (1) no process-global mutable state in wolfTPM, with specific files verified (src/tpm2.c, tpm2_wrap.c); (2) stable heap address via Box; (3) non-Sync so concurrent shared references are prevented; (4) exact wolfTPM version pinned with a forward-maintenance note. A future contributor should not 'simplify' these to bare unsafe impl Send; the reasoning is load-bearing. If wolfTPM upgrades past fbbf6fe, the SAFETY note explicitly flags a re-audit requirement.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T16:21:24Z",
+  "updated_at": "2026-04-30T16:25:28Z",
+  "closed_at": "2026-04-30T16:25:28Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-2k0w",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T09:21:26Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.28",
+  "title": "RsaRawOp enum values inverted vs wolfCrypt RSA_* constants",
+  "description": "RsaRawOp::PrivateEncrypt=0, PrivateDecrypt=1, PublicEncrypt=2, PublicDecrypt=3 but wolfCrypt defines RSA_PUBLIC_ENCRYPT=0, RSA_PUBLIC_DECRYPT=1, RSA_PRIVATE_ENCRYPT=2, RSA_PRIVATE_DECRYPT=3 (wolfssl/wolfcrypt/rsa.h). Every discriminant is misnamed: calling RsaRawOp::PrivateEncrypt invokes RSA_PUBLIC_ENCRYPT at the C layer, and RsaRawOp::PublicEncrypt invokes RSA_PRIVATE_ENCRYPT. All four names are swapped relative to the actual operation performed.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:45:55Z",
+  "updated_at": "2026-04-27T20:49:25Z",
+  "closed_at": "2026-04-27T20:49:25Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:45:55Z"
+    }
+  ]
+}

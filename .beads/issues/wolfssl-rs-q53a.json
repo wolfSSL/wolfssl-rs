@@ -1,0 +1,11 @@
+{
+  "id": "wolfssl-rs-q53a",
+  "title": "Review: wolftpm crates (standalone + TSS)",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T17:34:42Z",
+  "updated_at": "2026-04-30T17:44:43Z",
+  "closed_at": "2026-04-30T17:44:43Z"
+}

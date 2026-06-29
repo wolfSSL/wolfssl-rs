@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.9",
+  "title": "mldsa_round_trip feature-gated + self-oracle causes user confusion on failures",
+  "description": "The mldsa_round_trip test is both feature-gated (cfg(feature=mldsa)) and a self-oracle (sign+verify via same HSM). Users who encounter interoperability bugs against a FIPS 204 reference implementation will find this test passes even when there is a real conformance defect. When they file bugs, maintainers will need to explain why the passing test is not evidence of correctness. Adding an independent oracle (e.g. ml-dsa pure-Rust crate) would eliminate this class of confusion.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:02:51Z",
+  "updated_at": "2026-04-27T21:07:28Z",
+  "closed_at": "2026-04-27T21:07:28Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:02:51Z"
+    }
+  ]
+}

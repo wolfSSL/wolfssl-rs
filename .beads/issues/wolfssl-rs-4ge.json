@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-4ge",
+  "title": "keywrap mod gate missing wolfssl_aes_keywrap",
+  "description": "wolfcrypt/src/lib.rs gates 'pub mod keywrap' on feature=keywrap only, not on wolfssl_aes_keywrap. The module compiles but fails to link when wolfSSL is built without HAVE_AES_KEYWRAP. The re-export at line 406-407 has the correct dual gate; the mod declaration does not. Fix: change the mod declaration to #[cfg(all(feature = \"keywrap\", wolfssl_aes_keywrap))].",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T08:26:56Z",
+  "updated_at": "2026-04-04T18:07:38Z",
+  "closed_at": "2026-04-04T18:07:38Z"
+}

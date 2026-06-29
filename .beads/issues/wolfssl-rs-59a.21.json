@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-59a.21",
+  "title": "Drop panicking is explicitly suppressed in wh_Client_Cleanup",
+  "description": "client.rs Drop impl logs cleanup failure via eprintln\\! but does not panic. The comment says 'panicking in Drop is unsound'. This is correct Rust practice: panicking during drop while another panic is unwinding causes an immediate process abort, which is worse than a logged error. A future contributor might add a panic or unwrap in Drop to 'enforce' cleanup success, but that would introduce abort-on-double-panic in any code path that drops Client during error handling. The eprintln\\! approach is the correct tradeoff for a Drop impl on a type that wraps external C resources.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:25:55Z",
+  "updated_at": "2026-04-27T19:07:38Z",
+  "closed_at": "2026-04-27T19:07:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-59a",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:25:54Z"
+    }
+  ]
+}

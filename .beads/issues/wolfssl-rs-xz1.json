@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-xz1",
+  "title": "canary_signature_not_constant test canary never fires",
+  "description": "ecdsa.rs canary_signature_not_constant has an empty if sig1 == sig2 {} block. The test name implies it detects identical signatures (which would indicate catastrophic RNG failure \u2014 same nonce twice), but the empty branch means equal signatures are silently accepted. wolfCrypt's wc_ecc_sign_hash is not RFC 6979 deterministic by default; if two signatures are equal the RNG produced the same nonce twice, which is a catastrophic signing failure that should not go undetected even in tests. Fix: replace the empty if block with an assert_ne\\! or at minimum an eprintln\\! warning so the canary actually fires.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T08:27:22Z",
+  "updated_at": "2026-04-04T18:07:38Z",
+  "closed_at": "2026-04-04T18:07:38Z"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.16",
+  "title": "mldsa sign does not validate level; wrong buffer size on direct construction",
+  "description": "mldsa_sig_len has a fallthrough: _ => 4627 // level 87. This silently maps any invalid level value to level-87 buffer sizing. The generate() constructor validates level in {44, 65, 87}, so code that calls MlDsaKey::generate will never produce a bad level. However, MlDsaKey fields (id, level) are pub(crate), so any code within the crate can construct MlDsaKey { id: KeyId(x), level: 99 } and then call sign(), which will allocate a 4627-byte buffer, send level=99 to the server, and get back a server error \u2014 or worse, a truncated signature if the server accepts it. The issue is primarily a readability/surprise problem: mldsa_sig_len's fallthrough looks like a default but is really a silent lie. What would make it clear: either validate level inside sign() (matching the generate() guard), or make mldsa_sig_len return Option<usize> and have sign() return an error on None. The _ => 4627 comment should at minimum say 'unreachable via public API; pub(crate) field allows internal construction with invalid level'.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:03:47Z",
+  "updated_at": "2026-04-27T21:10:45Z",
+  "closed_at": "2026-04-27T21:10:45Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:03:47Z"
+    }
+  ]
+}

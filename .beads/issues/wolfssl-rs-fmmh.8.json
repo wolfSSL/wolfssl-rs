@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-fmmh.8",
+  "title": "All unsafe blocks carry // SAFETY: comments explaining invariants",
+  "description": "Every unsafe block in wolftpm-sys/src/swtpm.rs, wolftpm/src/device.rs, and wolftpm/src/key.rs has a // SAFETY: comment. This is non-negotiable for a security-sensitive library wrapping a TPM. A contributor removing these comments should be corrected immediately. The safety arguments are also correct (zeroed struct for FFI initial state; stable Box address; no wolfTPM global thread-local state) and should not be removed as 'obvious'.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:54:15Z",
+  "updated_at": "2026-04-30T15:57:04Z",
+  "closed_at": "2026-04-30T15:57:04Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fmmh",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:54:15Z"
+    }
+  ]
+}

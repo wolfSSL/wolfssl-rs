@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.19",
+  "title": "NvmMetadata::label_str: use split on null rather than position+match",
+  "description": "NvmMetadata::label_str (nvm.rs:63) uses a match on position(|&b| b == 0) to trim trailing nulls, then calls from_utf8. This can be written more directly as: let trimmed = self.label.split(|&b| b == 0).next().unwrap_or(&[]); core::str::from_utf8(trimmed).ok(). The split form makes the intent ('take bytes up to the first null') immediately clear without the match arm.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:19Z",
+  "updated_at": "2026-04-27T21:12:53Z",
+  "closed_at": "2026-04-27T21:12:53Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:18Z"
+    }
+  ]
+}

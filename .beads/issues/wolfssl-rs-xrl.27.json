@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.27",
+  "title": "ClientInner field order exploits Rust guaranteed drop order to keep comm_cfg alive during Cleanup",
+  "description": "ClientInner declares fields in the order: client_ctx, comm_cfg, transport. Rust drops struct fields in declaration order (first declared = first dropped). The Drop impl for Client calls wh_Client_Cleanup (which internally uses comm_cfg pointers) before the implicit field drops run, so by the time transport is freed (which owns the memory that comm_cfg's pointers point into), wh_Client_Cleanup has already finished. The comment in the source makes this invariant explicit. A future contributor might reorder fields for aesthetic reasons or to group related types together, breaking the drop-order contract silently. The comment correctly documents this as a load-bearing ordering. An alternative would be ManuallyDrop on the transport field, but that would require unsafe boilerplate for a problem that field ordering already solves cleanly.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:42:13Z",
+  "updated_at": "2026-04-27T21:13:11Z",
+  "closed_at": "2026-04-27T21:13:11Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:42:12Z"
+    }
+  ]
+}

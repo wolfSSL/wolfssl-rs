@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-alzl.7",
+  "title": "FMT1 modifier mask documented with TPM2 Part 2 spec cite and explained non-obvious discriminator",
+  "description": "key.rs verify() FMT1 stripping: the long comment explaining why 'bit 8 clear' is wrong (subject number 1 sets bit 8, so 0x1DB would bypass stripping) and why 'bit 7 set AND bits 15:12 clear' is the correct discriminator is genuinely valuable. It makes a non-obvious, spec-correct implementation decision auditable. Defend if a contributor suggests simplifying to a range check or a simpler mask.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:41:43Z",
+  "updated_at": "2026-04-30T06:46:55Z",
+  "closed_at": "2026-04-30T06:46:55Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-alzl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:41:42Z"
+    }
+  ]
+}

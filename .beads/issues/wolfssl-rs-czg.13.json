@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.13",
+  "title": "invalid-signature not a typed error variant",
+  "description": "When mldsa_verify or ecc_verify returns result \\!= 1, the code returns Err(WolfHsmError::Ffi { code: -1, func: 'mldsa_verify: invalid signature' }) (and same for ecc_verify, ed25519_verify). This forces callers who need to distinguish 'signature is cryptographically invalid' from 'transport or protocol error' to match on a synthetic Ffi error and string-compare the func field, which is fragile and undocumented. Suggested rewrite: add WolfHsmError::InvalidSignature to the enum, and return it from all verify functions when the result flag is not 1. The Ffi variant should be reserved for actual FFI call failures.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:03:20Z",
+  "updated_at": "2026-04-27T21:11:59Z",
+  "closed_at": "2026-04-27T21:11:59Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:03:20Z"
+    }
+  ]
+}

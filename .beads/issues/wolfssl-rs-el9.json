@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-el9",
+  "title": "Review R6: wolfhsm R5 pass",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:15:05Z",
+  "updated_at": "2026-04-28T02:23:27Z",
+  "closed_at": "2026-04-28T02:23:27Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 error lookup table is already wrong vs the pinned header; the with_key! structural coupling is a per-new-key manual audit; range bounds are hand-coded but currently correct.\nConfidence: 85% chance of missed bug. Uncertainty: the error.rs lookup table bug was compared against the pinned ~/GIT/wolfHSM header \u2014 if the wolfHSM version in the repo is different from what was used to write the table, there could be version mismatch rather than fabrication. Cannot verify without knowing what version of wolfHSM this Rust crate pins. Also did not read wolfhsm_sys bindings or the C shim files. Would raise confidence: check wolfhsm-sys Cargo.toml for pinned wolfHSM version and compare to ~/GIT/wolfHSM git log. BIKESHEDDING: NO"
+}

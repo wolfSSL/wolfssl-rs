@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-n3yv.2",
+  "title": "SWTPM_INIT_LOCK in wolftpm-sys/src/swtpm.rs is pub but should be private",
+  "description": "swtpm.rs line 10: SWTPM_INIT_LOCK is pub static. Callers (wolftpm, wolftpm-tss) only call init_swtpm(), not the mutex directly. Exposing the mutex lets callers lock it for arbitrary durations, bypassing the protection intent. Fix: remove pub from the static.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:43:22Z",
+  "updated_at": "2026-04-30T15:43:38Z",
+  "closed_at": "2026-04-30T15:43:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-n3yv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:43:22Z"
+    }
+  ]
+}

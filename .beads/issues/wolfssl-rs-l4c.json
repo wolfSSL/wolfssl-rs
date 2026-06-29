@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-l4c",
+  "title": "wolfCrypt sp_521_div_21 rejects valid P-521 edge-case point",
+  "description": "wolfCrypt's SP math in sp_c32.c sp_521_div_21 has a bug in its quotient-correction step. For P-521 public keys where x\u00b2 \u2261 -3 (mod p) (Wycheproof tc 55, flag EdgeCaseEphemeralKey), wc_ecc_import_x963 returns MP_VAL (-98) because WOLFSSL_VALIDATE_ECC_IMPORT triggers wc_ecc_check_key internally, which calls sp_521_ecc_is_point_21, which computes x\u00b2 mod p incorrectly for this specific x. Root cause: at loop i=0 in sp_521_div_21, the quotient estimate is 1 too large; sp_521_norm_21 absorbs the borrow into t1[20] leaving it as -1 (int32), but the correction check tests only t1[21] (which is 0 after normalization), so the correction never fires. The final sp_521_norm_21 cannot propagate the borrow out of t1[20], so sp_521_rshift_21 sign-extends it, producing a wrong value for x\u00b2 mod p. Confirmed by GDB inspection and Python simulation. Upstream wolfSSL source: wolfcrypt/src/sp_c32.c ~line 39033. Should be reported to wolfSSL. Workaround: wycheproof_ecdh.rs logs a warning and skips this vector rather than panicking.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T18:07:48Z",
+  "updated_at": "2026-04-04T19:28:38Z",
+  "closed_at": "2026-04-04T19:28:38Z"
+}

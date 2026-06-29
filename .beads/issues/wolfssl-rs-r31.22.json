@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.22",
+  "title": "EccKey::create correctly flushes srk on every failure path \u2014 defend against 'simplification'",
+  "description": "key.rs EccKey::create: after wolfTPM2_GetKeyTemplate_ECC fails (step 2), srk is already loaded. The code explicitly calls wolfTPM2_UnloadHandle(srk) before returning Err. Same after wolfTPM2_CreateAndLoadKey fails (step 3). This prevents TPM transient slot leaks. A future contributor who refactors create() with early returns via ? without preserving these cleanup paths would silently leak TPM object slots. The explicit Err-path cleanup should be kept and a comment should note that Rust's Drop does not run for partially-constructed values.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:06:39Z",
+  "updated_at": "2026-04-30T06:20:49Z",
+  "closed_at": "2026-04-30T06:20:49Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:06:39Z"
+    }
+  ]
+}

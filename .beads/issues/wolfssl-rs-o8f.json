@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-o8f",
+  "title": "der_to_fixed_rs: UB on unexpected r_len/s_len from wolfCrypt",
+  "description": "ecdsa_native.rs der_to_fixed_rs computes FIELD_SIZE - r_len as usize with no bounds check. If wolfCrypt returns r_len > FIELD_SIZE (e.g. corrupted key, C library bug, future API change), the subtraction wraps to a huge usize in release builds and the subsequent copy_from_slice causes undefined behavior. In debug it panics. Fix: bounds-check r_len and s_len against FIELD_SIZE before the arithmetic and return Err(WolfCryptError::Ffi{...}) if out of range. Review note: 15-20% estimated probability that r_len==0 or s_len==0 (maximum leading-zero strip) is not exercised by current tests.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T08:27:05Z",
+  "updated_at": "2026-04-04T18:07:38Z",
+  "closed_at": "2026-04-04T18:07:38Z"
+}

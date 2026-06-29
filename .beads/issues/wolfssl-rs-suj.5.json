@@ -1,0 +1,26 @@
+{
+  "id": "wolfssl-rs-suj.5",
+  "title": "wolfhsm key.rs: KeyId newtype and key operation helpers",
+  "description": "Create wolfhsm/src/key.rs. KeyId(u16) newtype wrapping whKeyId. Client methods: key_evict(id: KeyId), key_commit(id: KeyId), key_erase(id: KeyId), key_revoke(id: KeyId), key_cache(data: &[u8], label: &[u8]) -> Result<KeyId, WolfHsmError> (calls wh_Client_KeyCache with WH_KEYID_ERASED to let server assign ID; label truncated to 24 bytes). All call through error::check(). Expose KeyId with From<u16> and into/from conversions. In lib.rs: pub mod key;",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:11:19Z",
+  "updated_at": "2026-04-27T18:23:01Z",
+  "closed_at": "2026-04-27T18:23:01Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-suj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:11:19Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-suj.4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:12:22Z"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-xsmt.1",
+  "title": "tpm_rc_name doesn't resolve FMT1-qualified codes: bare hex in error messages",
+  "description": "wolfTPM commonly returns FMT1-qualified return codes (bit 7 set, with P-flag and subject-number modifier bits). E.g. TPM_RC_ATTRIBUTES with session_1 qualifier = 0x0182. Error::check() passes this as-is to TpmRc, and tpm_rc_name(0x0182) returns None (only base codes 0x0081-0x00a7 are in the match table). User sees 'TPM error 0x00000182' with no symbolic name. The fix: in tpm_rc_name or TpmRc::Display, strip FMT1 modifier bits (mask 0x0F40) when bit 7 is set and bits 15:12 are clear before doing the lookup, then show both the full code and the resolved base name.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T17:41:34Z",
+  "updated_at": "2026-04-30T17:48:23Z",
+  "closed_at": "2026-04-30T17:48:23Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xsmt",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T10:41:35Z"
+    }
+  ]
+}

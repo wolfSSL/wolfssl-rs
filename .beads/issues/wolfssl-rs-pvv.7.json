@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-pvv.7",
+  "title": "Error::Wh display is not actionable",
+  "description": "error.rs Display impl for Error::Wh emits 'wolfHSM error {code}' \u2014 a raw integer like -2104. A user seeing this at runtime cannot act on it without grepping wolfHSM headers for WH_ERROR_* constants. The message should either name the symbolic constant (requires a lookup table) or direct the user to wolfhsm/wh_error.h. Minimum fix: append 'see wolfhsm/wh_error.h for symbolic names' to the message so the user knows where to look.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T01:57:09Z",
+  "updated_at": "2026-04-28T02:12:07Z",
+  "closed_at": "2026-04-28T02:12:07Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-pvv",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T18:57:08Z"
+    }
+  ]
+}

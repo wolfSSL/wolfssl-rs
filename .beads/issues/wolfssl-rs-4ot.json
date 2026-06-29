@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-4ot",
+  "title": "wolfhsm crypto: Ed25519 and Curve25519",
+  "description": "ed25519.rs: Ed25519Key{id:KeyId} with generate, load, commit, evict, public_key_bytes(->[u8;32]), sign (wh_Client_Ed25519Sign with type=0,context=NULL,contextLen=0 \u2014 no shim needed, allocate ed25519_key on heap), verify, signer()->Ed25519Signer. Ed25519Signer impl signature::Signer<ed25519::Signature>. curve25519.rs: Curve25519Key{id:KeyId} with generate, load, commit, evict, public_key_bytes, diffie_hellman(peer_public:&[u8;32])->[u8;32] via wolfhsm_curve25519_shared_secret shim.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:18:54Z",
+  "updated_at": "2026-04-27T21:00:24Z",
+  "closed_at": "2026-04-27T21:00:24Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-230",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:20:02Z"
+    }
+  ]
+}

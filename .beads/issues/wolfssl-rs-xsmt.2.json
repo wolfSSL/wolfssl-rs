@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xsmt.2",
+  "title": "verify stores unstripped rc in Error::Tpm for non-SIGNATURE FMT1 codes",
+  "description": "In EccKey::verify, FMT1 stripping is applied to base_rc for the match arms, but the Error::Tpm fallthrough stores the ORIGINAL unstripped rc. So if wolfTPM returns a FMT1-qualified code other than TPM_RC_SIGNATURE (e.g. TPM_RC_ATTRIBUTES | param_1 = 0x0182), the user gets Error::Tpm { rc: TpmRc(0x0182) } and tpm_rc_name won't resolve it. Fix: also strip FMT1 bits in tpm_rc_name lookup (see sibling issue), or store base_rc instead and document that qualifier bits are dropped.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T17:42:32Z",
+  "updated_at": "2026-04-30T17:48:49Z",
+  "closed_at": "2026-04-30T17:48:49Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xsmt",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T10:42:32Z"
+    }
+  ]
+}

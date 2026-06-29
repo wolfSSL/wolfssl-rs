@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-gctq.2",
+  "title": "Duplicate swtpm env-var init logic will diverge",
+  "description": "wolftpm::Device::open_swtpm (device.rs) and wolftpm_tss::WolfTpmSwtpm::connect (connection.rs) contain near-identical setenv/init/unsetenv sequences with a comment saying 'Any bug fix to this function must also be applied there.' Manual sync of two copies across two crates will fail \u2014 the copies will diverge when the next bug is fixed in one and forgotten in the other. The fix is to extract the setenv/init/unsetenv sequence into a shared function in wolftpm-sys (which both depend on), or to have wolftpm-tss delegate to wolftpm's Device.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:33:33Z",
+  "updated_at": "2026-04-30T15:39:36Z",
+  "closed_at": "2026-04-30T15:39:36Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-gctq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:33:32Z"
+    }
+  ]
+}

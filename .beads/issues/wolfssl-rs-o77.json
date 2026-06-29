@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-o77",
+  "title": "Unnecessary .as_str() on CString::new(port_str)",
+  "description": "In wolftpm/src/device.rs (open_swtpm) and wolftpm-tss/src/connection.rs (WolfTpmSwtpm::connect), the code writes CString::new(port_str.as_str()) where port_str is a String. CString::new accepts Into<Vec<u8>>, so String satisfies it directly. The .as_str() call is a no-op coercion and should be removed: CString::new(port_str).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:35Z",
+  "updated_at": "2026-04-30T15:19:30Z",
+  "closed_at": "2026-04-30T15:19:30Z"
+}

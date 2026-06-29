@@ -1,0 +1,26 @@
+{
+  "id": "wolfssl-rs-suj.8",
+  "title": "wolfhsm cryptocb.rs: CryptoCbGuard RAII with OnceLock guard",
+  "description": "Create wolfhsm/src/cryptocb.rs. DEV_ID: i32 = 0x5748534D_u32 as i32 (WH_DEV_ID 'WHSM'). CryptoCbGuard(()) struct: created by Client::register_cryptocb(&self) -> Result<CryptoCbGuard, WolfHsmError>. Use static REGISTERED: AtomicBool to prevent double-registration: compare_exchange(false, true, SeqCst, SeqCst). On success: call wc_CryptoCb_RegisterDevice(DEV_ID, wh_Client_CryptoCb, ctx_ptr) via wolfcrypt-sys or wolfhsm-sys (whichever exposes wc_CryptoCb_RegisterDevice). Drop impl of CryptoCbGuard calls wc_CryptoCb_UnRegisterDevice(DEV_ID) and resets REGISTERED to false. Expose DEV_ID as pub const for callers to use with wolfCrypt _ex init variants. In lib.rs: pub mod cryptocb; pub use cryptocb::DEV_ID;",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T18:11:49Z",
+  "updated_at": "2026-04-27T18:23:02Z",
+  "closed_at": "2026-04-27T18:23:02Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-suj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:11:49Z"
+    },
+    {
+      "depends_on_id": "wolfssl-rs-suj.4",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T11:12:25Z"
+    }
+  ]
+}

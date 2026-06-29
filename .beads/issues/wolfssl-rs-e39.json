@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-e39",
+  "title": "Migrate OpenSSL compat to native wc_* API",
+  "description": "Replace EVP_*/HMAC_CTX/CMAC_CTX/DH_*/AES_* OpenSSL shims with direct wc_* wolfCrypt calls in: digest (SHA/SHA3), hmac, cmac, cipher/cbc, cipher/ecb, des3, dh",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T01:20:04Z",
+  "updated_at": "2026-04-04T01:48:55Z",
+  "closed_at": "2026-04-04T01:48:55Z"
+}

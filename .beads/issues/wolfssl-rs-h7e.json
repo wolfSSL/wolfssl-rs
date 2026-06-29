@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-h7e",
+  "title": "with_ecc_key closure guarantees transient key flush",
+  "description": "Device::with_ecc_key takes a closure and always calls key.flush() after the closure returns, whether it succeeded or failed. TPM transient object memory is a scarce resource (the TPM typically has only a handful of slots). If callers were given a raw EccKey and dropped it without flushing, the TPM slot would leak until reboot. The closure pattern makes it structurally impossible to forget: the key is created, used, and flushed atomically from the caller's perspective. The Drop impl on EccKey provides a second line of defense. Alternative rejected: returning EccKey directly to callers would require them to remember to call flush(), which is error-prone especially on error paths.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:53Z",
+  "updated_at": "2026-04-30T15:10:24Z",
+  "closed_at": "2026-04-30T15:10:24Z"
+}

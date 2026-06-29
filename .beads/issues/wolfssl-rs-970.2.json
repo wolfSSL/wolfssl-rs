@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-970.2",
+  "title": "extract truncate_label() helper: 3 duplication sites in cert.rs/nvm.rs",
+  "description": "cert_add_trusted(), nvm_add(), nvm_overwrite() all contain identical 3-line label-truncation: let label_len = label.len().min(24); let mut label_buf = [0u8; 24]; label_buf[..label_len].copy_from_slice(&label[..label_len]). Extract: fn truncate_label(label: &[u8]) -> ([u8; 24], usize). If truncation logic ever changes, one place to fix.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:28:41Z",
+  "updated_at": "2026-04-28T02:32:05Z",
+  "closed_at": "2026-04-28T02:32:05Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-970",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:28:40Z"
+    }
+  ]
+}

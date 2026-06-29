@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-970.4",
+  "title": "ecc.rs/mldsa.rs: use vec![0u8; n] instead of with_capacity+set_len",
+  "description": "sign_digest/public_key_der/ecdh/mldsa::sign allocate with Vec::with_capacity(n) then call unsafe set_len(sig_len). If the C function returns rc=0 but writes fewer bytes than sig_len (a C bug), the tail bytes are uninitialized \u2014 UB when the caller reads the &[u8]. Fix: vec![0u8; n] instead of with_capacity; then truncate to sig_len. Cost: one small memset; benefit: eliminates UB class even on C implementation bugs.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:28:44Z",
+  "updated_at": "2026-04-28T02:32:09Z",
+  "closed_at": "2026-04-28T02:32:09Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-970",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T19:28:43Z"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-xsmt.3",
+  "title": "wolftpm-src/build.rs: optional C sources silently skipped even when their feature is active",
+  "description": "optional_sources (tpm2_linux.c, tpm2_swtpm.c, etc.) are compiled only if the file exists, with no feature-flag check. If WOLFTPM_SRC points to an older wolfTPM that lacks tpm2_linux.c but the linux-dev feature is enabled, the build silently compiles without that file. options.h will define WOLFTPM_LINUX_DEV but the C source providing the HAL implementation is absent. This produces a linker error (undefined TPM2_IoCb_Linux or similar) rather than a clear build-time error. Fix: when linux-dev feature is active, assert tpm2_linux.c exists; same for swtpm / tpm2_swtpm.c.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T17:42:44Z",
+  "updated_at": "2026-04-30T17:50:20Z",
+  "closed_at": "2026-04-30T17:50:20Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xsmt",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T10:42:44Z"
+    }
+  ]
+}

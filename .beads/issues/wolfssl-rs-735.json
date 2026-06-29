@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-735",
+  "title": "#[non_exhaustive] on both Error enums",
+  "description": "Both wolftpm::Error and wolftpm_tss::Error are marked #[non_exhaustive]. This allows new error variants to be added in minor-version releases without breaking downstream match arms. TPM error handling is a space where new variants are likely: new transport types, new protocol-level error distinctions, new hardware error categories. Without non_exhaustive, any addition would require a semver major bump. Alternative rejected: making Error a struct with an opaque kind field avoids exhaustiveness entirely but loses the ability for callers to match specific variants cleanly. The non_exhaustive attribute is the standard Rust idiom for this tradeoff.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:27:39Z",
+  "updated_at": "2026-04-30T15:10:23Z",
+  "closed_at": "2026-04-30T15:10:23Z"
+}

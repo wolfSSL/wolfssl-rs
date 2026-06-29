@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-9tpo.3",
+  "title": "wolftpm crates missing rust-version; core::error::Error requires Rust 1.81",
+  "description": "wolftpm/src/error.rs uses 'impl core::error::Error for Error {}' and wolftpm-tss/src/error.rs uses 'impl std::error::Error for Error {}'. The core::error::Error trait was stabilized in Rust 1.81. Neither wolftpm/Cargo.toml nor wolftpm-tss/Cargo.toml declares rust-version, so there is no documented MSRV and no CI check that would catch a regression. If anyone builds this on a toolchain older than 1.81, they get a compile error. Trigger: cargo +1.79 build -p wolftpm.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:28:34Z",
+  "updated_at": "2026-04-30T06:35:54Z",
+  "closed_at": "2026-04-30T06:35:54Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-9tpo",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:28:34Z"
+    }
+  ]
+}

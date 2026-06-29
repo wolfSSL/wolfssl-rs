@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.15",
+  "title": "WolfTpmDev wrapper adds no value beyond centralizing Drop \u2014 net-negative abstraction",
+  "description": "connection.rs WolfTpmDev wraps a Box<WOLFTPM2_DEV> purely to put Drop in one place. WolfTpmLinuxDev and WolfTpmSwtpm both hold WolfTpmDev as inner. But both types are leaf types with no other shared behavior \u2014 there is no polymorphism over them, no trait object usage, no shared method forwarding. The abstraction saves approximately 8 lines of identical Drop code but adds an extra type name, a new() constructor, and a level of indirection in do_transact (self.inner.dev.as_mut()). Suggested rewrite: give each struct a Box<WOLFTPM2_DEV> directly and implement Drop on each. Total code delta is near zero and the type hierarchy becomes flat.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:05:40Z",
+  "updated_at": "2026-04-30T06:21:03Z",
+  "closed_at": "2026-04-30T06:21:03Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:05:39Z"
+    }
+  ]
+}

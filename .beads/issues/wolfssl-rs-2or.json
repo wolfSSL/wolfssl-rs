@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-2or",
+  "title": "wolfhsm: nvm_write non-atomicity and DataLost error are not visible at call site",
+  "description": "nvm_write silently performs delete-then-add with no atomicity guarantee. If the add fails after a successful delete, the original object is permanently gone and WolfHsmError::DataLost is returned. The risk is invisible from the function name. Consider renaming to nvm_replace_nonatomic, or splitting into nvm_add (create-only) and nvm_replace (overwrite with documented data-loss risk), so callers understand the hazard before writing code.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:54:59Z",
+  "updated_at": "2026-04-27T22:04:41Z",
+  "closed_at": "2026-04-27T22:04:41Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-epj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:55:37Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.25",
+  "title": "nvm_write auto-assign path: caller cannot recover the assigned NvmId",
+  "description": "When nvm_write is called with NvmId::INVALID (0), wolfHSM auto-assigns an ID and the call returns Ok(()). The assigned ID is not returned. To discover it, the caller must call nvm_list() and infer which ID is new \u2014 a racy operation if multiple threads or clients share the HSM. This implicit constraint (don't use NvmId::INVALID unless you don't need to reference the object again) is undiscoverable from the function signature. Consequence: users who follow the happy path write data they can never read back, then file bugs. Fix: return the assigned NvmId from nvm_write, or split into nvm_add (returns Id) and nvm_overwrite (takes existing Id).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:52Z",
+  "updated_at": "2026-04-27T20:50:08Z",
+  "closed_at": "2026-04-27T20:50:08Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:51Z"
+    }
+  ]
+}

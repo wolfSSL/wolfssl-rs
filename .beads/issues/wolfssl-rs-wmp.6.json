@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-wmp.6",
+  "title": "NvmMetadata access/flags fields undocumented",
+  "description": "nvm.rs: NvmMetadata.access and NvmMetadata.flags are raw u16 fields with no documentation. A contributor or user has no way to know what bit patterns are valid or what the fields control. The wolfHSM C headers define WH_NVM_ACCESS_* and WH_NVM_FLAGS_* constants for these fields, but they are not referenced anywhere in the Rust code. Add doc comments citing the wolfHSM header constants, or at minimum point to wh_nvm.h so a reader knows where to look.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T22:07:04Z",
+  "updated_at": "2026-04-28T00:54:38Z",
+  "closed_at": "2026-04-28T00:54:38Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-wmp",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T15:07:03Z"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-9tpo",
+  "title": "Review: wolftpm second pass (R31 follow-up)",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:26:59Z",
+  "updated_at": "2026-04-30T06:38:15Z",
+  "closed_at": "2026-04-30T06:38:15Z",
+  "notes": "Maintainer risk: MEDIUM \u2014 The env-var dup and the missing InvalidArg variant in wolftpm-tss are the main sources of recurring issues; the tss feature dependency situation is a silent time bomb.\nConfidence: 85% chance of no missed bug. Least confident flags: wolfssl-rs-9tpo.5 (WolfTpmLinuxDev without linux-dev \u2014 behavior depends on how wolfTPM was compiled; could be correct-by-default on Linux). Uncertainty driven by: cannot run the TPM code paths; the shim C code accesses dev->ctx.cmdBuf directly which is not part of wolfTPM's public API \u2014 a wolfTPM version change could break it silently. Would raise confidence if: CI ran against an swtpm instance; wolftpm-sys/build.rs emitted a version check warning.\nIdiom rating: ACCEPTABLE \u2014 The code is structurally sound: all unsafe blocks carry SAFETY comments, error types use thiserror-style structured variants with #[non_exhaustive], no gratuitous clones or ownership violations, no panic!-as-error-handling outside tests. The three new idiom findings (missing Debug on public types, unexplained mutex unwrap, TssError-into-Transport type confusion) are real friction points but none are correctness bugs in themselves.\nRust idiom confidence: 90% chance of no missed issue. Least confident flags: wolfssl-rs-9tpo.17 (TssError-into-Transport \u2014 the Connection trait bound may constrain the From impl shape; the fix may require a new Error variant or a newtype around TssError; need to check what tpm2-rs-client actually requires). Uncertainty driven by: cannot run the code paths; the tss feature gate means the From<TssError> impl is only active when tss is enabled, so its interaction with the trait bound is not fully visible from static reading alone."
+}

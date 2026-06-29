@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-gctq.3",
+  "title": "unsafe impl Send for Device relies on unverifiable C library claim",
+  "description": "device.rs line 20-21: 'SAFETY: WOLFTPM2_DEV holds no thread-local state and no raw pointers shared across threads.' This claim is not verifiable from this codebase \u2014 it requires reading wolfTPM internals. If wolfTPM adds global or thread-unsafe state in a future version, the Send impl becomes unsound and there is no compile-time detector. Minimum: document exactly which wolfTPM internal contract is being relied upon (e.g. no global mutable state outside DEV, Init is not called concurrently). Ideally add a note to the upgrade checklist.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:33:34Z",
+  "updated_at": "2026-04-30T15:40:08Z",
+  "closed_at": "2026-04-30T15:40:08Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-gctq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:33:34Z"
+    }
+  ]
+}

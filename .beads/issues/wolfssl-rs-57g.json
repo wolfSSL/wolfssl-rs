@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-57g",
+  "title": "wolfhsm: inconsistent API shape \u2014 sha256 free function vs Client methods",
+  "description": "SHA-256 is exposed as a free function sha::sha256(&mut client, data) while NVM, counter, and key-cache operations are all methods on Client (client.nvm_write(...), client.key_cache(...), etc.). Pick one convention. Either make all one-shot crypto operations free functions in their respective modules, or make them all methods on Client. The current split is arbitrary and surprising.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:29:06Z",
+  "updated_at": "2026-04-27T20:36:42Z",
+  "closed_at": "2026-04-27T20:36:42Z",
+  "notes": "Epic: wolfssl-rs-xsf"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-fbj",
+  "title": "wolfhsm: crate scaffold and error.rs",
+  "description": "Create wolfhsm/Cargo.toml (features: cert, auth, she, mldsa; deps: wolfhsm-sys, wolfcrypt-rs vendored, thiserror, signature 2, digest 0.10, aead 0.5, p256 with ecdsa, ed25519 2). Create wolfhsm/src/lib.rs with mod declarations and feature-gated mod cert/auth/she. Implement error.rs: WolfHsmError enum mapping WH_ERROR_* constants (NotFound, NoSpace, Access, BadArgs, Aborted, Timeout, NotReady, BufferSize, LabelTooLong{max}, Other(i32)), marked #[non_exhaustive]; pub(crate) fn check(rc: i32) -> Result<(), Error>.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:18:20Z",
+  "updated_at": "2026-04-27T18:39:56Z",
+  "closed_at": "2026-04-27T18:39:56Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-389",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:19:55Z"
+    }
+  ]
+}

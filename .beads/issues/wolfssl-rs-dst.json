@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-dst",
+  "title": "wolfhsm: cert.rs (feature=cert)",
+  "description": "Implement wolfhsm/src/cert.rs gated on #[cfg(feature=cert)]. Wrap wh_Client_Cert*: init(client), add_trusted(client,id,access,cert), read_trusted(client,id)->Vec<u8>, erase_trusted(client,id), verify(client,cert), verify_and_cache_leaf_pubkey(client,cert)->KeyId, verify_acert(client,cert). All return Result<_,Error>.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T17:19:17Z",
+  "updated_at": "2026-04-28T00:54:39Z",
+  "closed_at": "2026-04-28T00:54:39Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-fbj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T10:20:09Z"
+    }
+  ]
+}

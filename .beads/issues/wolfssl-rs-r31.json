@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-r31",
+  "title": "Review: feat(wolftpm): Device, EccKey, TSS Connection via shim",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:03:05Z",
+  "updated_at": "2026-04-30T06:24:16Z",
+  "closed_at": "2026-04-30T06:24:16Z",
+  "notes": "Maintainer risk: HIGH \u2014 env-var mutation for swtpm is a process-global side-effect that cannot be fully serialized; the shim depends on a wolfTPM private field without a hard version constraint; two copies of libc helpers will drift; tss/non-tss feature inconsistency will generate user confusion immediately.\nConfidence: 15% chance of missed bug. Least confident flags: FMT1 stripping logic in verify() (wolfssl-rs-r31.3) \u2014 the analysis is correct but the edge case requires intimate knowledge of the TPM2 spec error encoding that I could not cross-check against a running TPM. Uncertainty driven by: (1) no TPM hardware available to run the tests; (2) wolfTPM's exact behavior on handle==0 passed to UnloadHandle is undocumented and I could not read the wolfTPM source. Would raise confidence if: running the tests against a real TPM2 or swtpm instance; reading wolfTPM 4.0.0 source for UnloadHandle and TPM2_CTX::cmdBuf offset.\nIdiom rating: ACCEPTABLE \u2014 unsafe blocks are well-commented, error types use #[non_exhaustive] and Display, ownership model is sound. Six real idiom defects: unwrap() without poison justification, 'as' casts instead of try_from for len-to-c_int, if-let-Err where inspect_err applies, TpmRc missing Display, libc_unsetenv discarding return, and pub field on a semantic newtype. None are showstoppers but they would all get review comments from a careful Rust practitioner.\nRust idiom confidence: 85% chance of missed issue. Least confident flags: r31.26 (inspect_err availability depends on MSRV \u2014 if MSRV < 1.76 the suggestion is wrong and map_err should be used instead; need to check wolftpm Cargo.toml MSRV). Uncertainty driven by: no MSRV declared in wolftpm/Cargo.toml (could not verify), C shim is out of scope for Rust idiom review."
+}

@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-0ip",
+  "title": "Review R8: wolfhsm R7 pass",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-28T02:32:29Z",
+  "updated_at": "2026-04-28T02:35:15Z",
+  "closed_at": "2026-04-28T02:35:13Z",
+  "notes": "Maintainer risk: LOW \u2014 one P2 consistency fix (cert_read_trusted ProtocolError). SEC2-SEC7 found nothing new.\nConfidence: 5% chance of missed bug. Uncertainty from FFI boundary assumptions only. Would raise to 99% with test suite run."
+}

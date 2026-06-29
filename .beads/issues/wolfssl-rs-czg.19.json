@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.19",
+  "title": "two-level WolfHsmError (Wh vs Ffi) should not be collapsed",
+  "description": "WolfHsmError distinguishes Wh { code } (wolfHSM protocol errors in range -2302..-2000) from Ffi { code, func } (wolfSSL/wolfCrypt errors outside that range). Why this matters: callers that need to handle 'key not found' or 'NVM full' programmatically can match on WolfHsmError::Wh and inspect the code without doing arithmetic on raw i32 values. If both were collapsed to a single Ffi variant, callers would have to check numeric ranges to distinguish HSM-layer errors from transport-layer errors. The DataLost and AlreadyRegistered variants similarly carry typed semantic meaning that cannot be recovered from a raw code. A future contributor might suggest 'simplify to one error variant' to reduce the enum size \u2014 this would degrade the caller experience for any code that needs to handle specific error conditions programmatically.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:04:17Z",
+  "updated_at": "2026-04-27T21:10:40Z",
+  "closed_at": "2026-04-27T21:10:40Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:04:16Z"
+    }
+  ]
+}

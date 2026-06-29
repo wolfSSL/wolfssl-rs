@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-w3i",
+  "title": "device.rs pcr_read: magic 11 for TPM_ALG_SHA256",
+  "description": "In wolftpm/src/device.rs line 115, the literal 11 is passed as the hash algorithm ID to wolfTPM2_ReadPCR, with only a comment saying '// TPM_ALG_SHA256 = 11'. The bindgen output exports TPM_ALG_ID_T_TPM_ALG_SHA256; using it would catch any value drift at compile time and make the intent clear without requiring a reader to cross-reference the TPM spec.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:23Z",
+  "updated_at": "2026-04-30T16:47:54Z",
+  "closed_at": "2026-04-30T16:47:54Z"
+}

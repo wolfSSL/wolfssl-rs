@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-0r4",
+  "title": "WolfTpmLinuxDev and WolfTpmSwtpm duplicate Drop+Connection impls",
+  "description": "In wolftpm-tss/src/connection.rs, WolfTpmLinuxDev and WolfTpmSwtpm have identical fields (dev: Box<WOLFTPM2_DEV>), identical Drop impls, and identical Connection impls (both delegate to do_transact). The only difference is construction. A private shared newtype WolfTpmDev(Box<WOLFTPM2_DEV>) with a single Drop and a single Connection impl would let both public structs be thin wrappers around it, eliminating the duplication.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:44Z",
+  "updated_at": "2026-04-30T15:19:29Z",
+  "closed_at": "2026-04-30T15:19:29Z"
+}

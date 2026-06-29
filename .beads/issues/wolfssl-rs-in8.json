@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-in8",
+  "title": "Raw hex 0x0095 instead of TPM_RC_SIZE constant in do_transact",
+  "description": "In wolftpm-tss/src/connection.rs line 38, the condition 'if rc == 0x0095' checks for TPM_RC_SIZE using a raw hex literal. The constant wolftpm_sys::TPM_RC_T_TPM_RC_SIZE (or equivalent) exists in the sys crate and is used by name elsewhere. Using the constant instead of the raw hex would make the intent self-documenting without needing the inline comment, and would remain correct if the upstream constant ever changes. A reader currently needs to verify the comment against the TPM spec manually.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:57Z",
+  "updated_at": "2026-04-30T05:31:43Z",
+  "closed_at": "2026-04-30T05:31:43Z"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-czg.11",
+  "title": "nvm_write: deleted binding is always-true dead code",
+  "description": "In nvm_write, after calling self.nvm_delete(id)?, the code does: let deleted = true; The variable is then used in map_add_err only in the branch 'if deleted { ... }'. Because the delete call is followed by ? (early-return on error), deleted is always true at that point. The if deleted branch can never be false. The binding adds noise; a future reader might think deleted could be false and waste time tracing it. Suggested rewrite: remove let deleted = true entirely; simplify map_add_err to always return WolfHsmError::DataLost { id: id.0 }.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T21:03:06Z",
+  "updated_at": "2026-04-27T21:07:47Z",
+  "closed_at": "2026-04-27T21:07:47Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-czg",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T14:03:05Z"
+    }
+  ]
+}

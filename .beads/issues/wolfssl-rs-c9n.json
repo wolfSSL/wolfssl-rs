@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-c9n",
+  "title": "RSA migration: C shims for key lifecycle",
+  "description": "Add wolfcrypt_rsa_* C shims to compat_shim.c covering the full RSA key lifecycle. All heap allocation and struct layout lives in C; Rust gets opaque void* handles.\n\nFunctions to implement (guarded by #ifndef NO_RSA):\n- wolfcrypt_rsa_new() \u2192 void*   // malloc + wc_InitRsaKey\n- wolfcrypt_rsa_free(void*)\n- wolfcrypt_rsa_generate(void*, int bits)  // wc_MakeRsaKey\n- wolfcrypt_rsa_import_private_pkcs1(void*, const byte*, word32)  // wc_RsaPrivateKeyDecode (PKCS#1 DER)\n- wolfcrypt_rsa_import_public_spki(void*, const byte*, word32)    // wc_GetPubKeyDerToDer or DecodeSubjectPublicKeyInfo + wc_RsaPublicKeyDecode\n- wolfcrypt_rsa_export_private_pkcs1(void*, byte*, word32*)       // wc_RsaKeyToDer\n- wolfcrypt_rsa_export_public_spki(void*, byte*, word32*)         // wc_RsaKeyToPublicDer (outputs SPKI)\n- wolfcrypt_rsa_key_size_bytes(void*) \u2192 int                       // wc_RsaEncryptSize\n\nKey format contract:\n- Import private: PKCS#1 DER (same as current i2d_RSAPrivateKey / d2i_RSAPrivateKey)\n- Import public: SPKI DER (same as current i2d_PUBKEY / d2i_PUBKEY)\n- Export private: PKCS#1 DER\n- Export public: SPKI DER (via wc_RsaKeyToPublicDer which outputs SubjectPublicKeyInfo)\n\nEach shim returns 0 on success, negative wolfCrypt error code on failure. wolfcrypt_rsa_new returns NULL on error.\n\nAdd corresponding extern \"C\" declarations to wolfcrypt-rs/src/lib.rs under #[cfg(wolfssl_rsa)].\n\nAcceptance criteria:\n- All 8 shim functions compile without error in both default and vendored builds\n- Manual smoke test: generate key \u2192 export PKCS#1 \u2192 re-import \u2192 export again \u2192 bytes match",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:10:23Z",
+  "updated_at": "2026-04-04T05:12:34Z",
+  "closed_at": "2026-04-04T05:12:34Z"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-gctq.5",
+  "title": "Doctest in wolftpm-tss lib.rs uses 'ignore' \u2014 will silently bitrot",
+  "description": "wolftpm-tss/src/lib.rs line 12: the quick-start code block is marked no_run,ignore. The 'ignore' means it is not even compiled \u2014 type errors, renamed APIs, wrong import paths will all pass CI silently. 'no_run' is the correct attribute here (compile-checks but does not execute). Suggested rewrite: replace 'no_run,ignore' with 'no_run'; fix any compilation errors that surface.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:33:47Z",
+  "updated_at": "2026-04-30T15:41:15Z",
+  "closed_at": "2026-04-30T15:41:15Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-gctq",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:33:47Z"
+    }
+  ]
+}

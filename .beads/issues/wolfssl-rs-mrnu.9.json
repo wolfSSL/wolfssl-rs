@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-mrnu.9",
+  "title": "DECISION: process-wide mutex for swtpm env-var serialization is correct",
+  "description": "SWTPM_INIT_LOCK serializes concurrent open_swtpm/connect calls to prevent two threads corrupting each other's SWTPM_SERVER_NAME/PORT env vars. A contributor might suggest removing it as 'env vars are rarely set concurrently'. Do not. This is the only safe path given that setenv is a global mutation with no per-thread scope. The comment explicitly documents the remaining gap (unrelated threads touching the same vars) so users are not surprised.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:04:20Z",
+  "updated_at": "2026-04-30T15:09:45Z",
+  "closed_at": "2026-04-30T15:09:45Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:04:19Z"
+    }
+  ]
+}

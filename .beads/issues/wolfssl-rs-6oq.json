@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-6oq",
+  "title": "[epic] Migrate RSA from EVP to native wc_* API",
+  "description": "Migrate RsaPrivateKey and RsaPublicKey from wolfSSL's OpenSSL compat layer (EVP_PKEY, EVP_DigestSign*, EVP_PKEY_encrypt, i2d_PUBKEY, etc.) to native wolfCrypt wc_Rsa* functions.\n\nWhy: OPENSSL_EXTRA is the sole reason the vendored wolfSSL build includes ssl.o (451 KB text). RSA is the last module still requiring it; migrating unlocks removing OPENSSL_EXTRA from user_settings.h entirely.\n\nScope:\n- RsaPrivateKey and RsaPublicKey (main API)\n- Preserve all key formats: PKCS#1 DER for private keys, SPKI DER for public keys\n- Preserve all operations: PKCS#1v1.5 sign/verify, PSS sign/verify, OAEP encrypt/decrypt, PKCS#1v1.5 encrypt/decrypt\n- Preserve rsa-direct / NativeRsaKey (already native; no change needed)\n- Same public Rust API, same trait impls, same error types\n- After migration: update cfg gates from wolfssl_openssl_extra to wolfssl_rsa\n\nHow to apply: Work through issues in dependency order. Do not touch rsa.rs until all C shims are written and the baseline/oracle tests are in place.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:07:51Z",
+  "updated_at": "2026-04-04T06:08:26Z",
+  "closed_at": "2026-04-04T06:08:26Z"
+}

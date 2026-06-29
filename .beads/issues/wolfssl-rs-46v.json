@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-46v",
+  "title": "wolftpm-tss: implement Connection for Linux /dev/tpm0 and swtpm",
+  "description": "Implement tpm2_rs_client::connection::Connection for wolfTPM's Linux and swtpm transports.\n\n## What\nWolfTpmLinuxDev and WolfTpmSwtpm both implement Connection::transact by:\n1. Copying cmd bytes into rsp buffer (wolfTPM transport is in-place)\n2. Calling TPM2_CTX::ioCb directly \u2014 the only raw byte I/O interface wolfTPM exposes\n3. Parsing response length from rsp[2..6] (big-endian u32, TCG TPM2 response header)\n4. Returning &rsp[..resp_len]\n\n## Files\n- wolftpm-tss/src/connection.rs\n\n## Transact bridge pseudocode\nrsp[..cmd.len()].copy_from_slice(cmd);\nlet rc = unsafe { (ctx.ioCb.unwrap())(ctx, rsp.as_ptr(), rsp.as_mut_ptr(), cmd.len() as u16, ctx.userCtx) };\nError::check(rc)?;\nlet resp_len = u32::from_be_bytes(rsp[2..6].try_into().unwrap()) as usize;\nOk(&mut rsp[..resp_len])\n\n## Test\nSmoke test: use tpm2_rs_client::get_capability or run_command(GetRandom { bytes_requested: 32 }) against swtpm.\nRequires swtpm running locally \u2014 gate behind a feature flag or cfg(test) ignore annotation.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T04:44:39Z",
+  "updated_at": "2026-04-30T05:11:08Z",
+  "closed_at": "2026-04-30T05:11:08Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-emj",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T21:44:48Z"
+    }
+  ]
+}

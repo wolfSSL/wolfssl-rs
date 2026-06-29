@@ -1,0 +1,12 @@
+{
+  "id": "wolfssl-rs-ig7",
+  "title": "swtpm init: process-global setenv is thread-unsafe and duplicated",
+  "description": "Both wolftpm/src/device.rs (Device::open_swtpm) and wolftpm-tss/src/connection.rs (WolfTpmSwtpm::connect) set SWTPM_SERVER_NAME/SWTPM_SERVER_PORT via setenv, call wolfTPM2_Init, then unsetenv. This is: (1) process-global and thread-unsafe -- two concurrent calls race on the env vars; (2) duplicated between the two crates with no shared helper; (3) an API design that cannot be fixed without a breaking change once users depend on these constructors. The correct fix is to use a process-wide mutex, but that is a breaking internal change. Documents a known landmine for future parallelism.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T05:26:55Z",
+  "updated_at": "2026-04-30T16:47:52Z",
+  "closed_at": "2026-04-30T16:47:52Z"
+}

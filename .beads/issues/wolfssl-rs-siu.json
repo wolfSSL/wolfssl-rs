@@ -1,0 +1,13 @@
+{
+  "id": "wolfssl-rs-siu",
+  "title": "RSA migration: capture PKCS#1v1.5 baseline vectors",
+  "description": "Before touching any RSA code, capture deterministic baseline test vectors for PKCS#1v1.5 sign/verify. PKCS#1v1.5 is fully deterministic so we can do exact byte cross-validation between old EVP path and new native path.\n\nWhat to capture:\n- Generate a fixed 2048-bit and 4096-bit RSA key pair (seed the RNG or use fixed keys from a test vector set)\n- Sign a short message with SHA-256, SHA-384, SHA-512 using current EVP path\n- Record: input message, key (PKCS#1 DER), hash algo, expected signature bytes (hex)\n- Store as hardcoded test vectors in wolfcrypt-conformance\n\nAcceptance criteria:\n- Test vectors captured and committed to wolfcrypt-conformance before any RSA migration code is written\n- At minimum 2 key sizes \u00d7 3 hash algorithms = 6 vectors\n- Tests pass with current EVP-based implementation (green baseline)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-04T04:10:07Z",
+  "updated_at": "2026-04-04T05:12:34Z",
+  "closed_at": "2026-04-04T05:12:34Z"
+}

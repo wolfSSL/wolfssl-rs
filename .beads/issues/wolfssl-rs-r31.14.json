@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-r31.14",
+  "title": "with_ecc_key comment 'Drop flushes' is misleading \u2014 flush is always via Drop, never explicit",
+  "description": "device.rs with_ecc_key body comment: '// Drop flushes the key via EccKey::drop; no explicit flush needed.' This statement is trivially true (Drop is always implicit) but misleads a reader into thinking there used to be an explicit flush that was removed. The pub(crate) flush() method exists only to be called from Drop, but naming it flush() rather than just implementing in Drop directly adds a layer that has no benefit. Suggested rewrite: inline the UnloadHandle calls directly in EccKey's Drop impl; remove pub(crate) flush(). The comment in with_ecc_key can then be removed entirely since Drop behavior is standard Rust.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T06:05:31Z",
+  "updated_at": "2026-04-30T06:23:26Z",
+  "closed_at": "2026-04-30T06:23:26Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-r31",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-29T23:05:30Z"
+    }
+  ]
+}

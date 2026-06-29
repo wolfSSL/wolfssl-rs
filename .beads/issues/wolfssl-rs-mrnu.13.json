@@ -1,0 +1,21 @@
+{
+  "id": "wolfssl-rs-mrnu.13",
+  "title": "TpmRc::is_success takes &self but TpmRc is Copy \u2014 should take self",
+  "description": "wolftpm/src/error.rs: TpmRc::is_success(&self) takes a shared reference. TpmRc is Copy, so taking &self forces an unnecessary dereference step. Idiomatic Rust for Copy types: take self by value. pub fn is_success(self) -> bool. No semantic change; this is a Clippy-level idiom.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "chore",
+  "assignee": "Mark Atwood",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-30T15:04:46Z",
+  "updated_at": "2026-04-30T15:06:19Z",
+  "closed_at": "2026-04-30T15:06:19Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-mrnu",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-30T08:04:45Z"
+    }
+  ]
+}

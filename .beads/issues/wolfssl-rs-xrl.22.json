@@ -1,0 +1,20 @@
+{
+  "id": "wolfssl-rs-xrl.22",
+  "title": "Double out_rc check separates transport error from server-side error in wolfHSM protocol",
+  "description": "Every wolfHSM NVM and info call follows a pattern of checking two return codes: the FFI return code (transport-level: did the IPC call succeed?) and out_rc (server-level: did the server operation succeed?). For example, nvm_available calls WolfHsmError::check(rc, ...) then WolfHsmError::check(out_rc, ...(server)). The wolfHSM C API separates these because a successful IPC delivery can carry a server-side error response. Collapsing them into one check would silently ignore server-side errors when the IPC layer returned OK. A future contributor might try to simplify by only checking the FFI return value. nvm_list demonstrates why this matters further: WH_ERROR_NOTFOUND in out_rc is the normal end-of-list signal (not an error), and treating the FFI rc as the sole indicator would break the list termination logic.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "created_by": "Mark Atwood",
+  "created_at": "2026-04-27T20:41:35Z",
+  "updated_at": "2026-04-27T21:13:04Z",
+  "closed_at": "2026-04-27T21:13:04Z",
+  "dependencies": [
+    {
+      "depends_on_id": "wolfssl-rs-xrl",
+      "dep_type": "parent_child",
+      "created_by": "Mark Atwood",
+      "created_at": "2026-04-27T13:41:34Z"
+    }
+  ]
+}
