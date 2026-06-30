@@ -10,7 +10,7 @@ categories = ["cryptography"]
 description = "Safe Rust TLS API backed by wolfSSL"
 readme = "README.md"
 homepage = "http://wolfssl.com"
-repository = "https://github.com/wolfSSL/wolfssl-rs"
+repository = "https://github.com/MarkAtwood/wolfssl-rs"
 
 # Export as "wolfssl" so downstream code uses `use wolfssl::...`.
 # Once we recover the `wolfssl` crate name on crates.io, rename the

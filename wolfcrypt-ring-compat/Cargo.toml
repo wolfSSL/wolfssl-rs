@@ -11,7 +11,7 @@ license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
 description = "wolfcrypt-ring-compat is a cryptographic library using wolfSSL for its cryptographic operations. This library strives to be API-compatible with the popular Rust library named ring."
 documentation = "https://docs.rs/crate/wolfcrypt-ring-compat"
 homepage = "http://wolfssl.com"
-repository = "https://github.com/wolfSSL/wolfssl-rs"
+repository = "https://github.com/MarkAtwood/wolfssl-rs"
 readme = "README.md"
 # Exclude tests and test data from published crate
 exclude = [

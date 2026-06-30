@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.85"
 description = "Rust bindings to wolfHSM"
 license = "GPL-3.0-only OR LicenseRef-wolfSSL-commercial"
-repository = "https://github.com/wolfSSL/wolfssl-rs"
+repository = "https://github.com/MarkAtwood/wolfssl-rs"
 readme = "README.md"
 
 [features]
